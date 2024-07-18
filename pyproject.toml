@@ -1,0 +1,157 @@
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "r2x"
+version = "v0.5.2"
+authors = [
+    { name = "Pedro Sanchez", email = "psanchez@nrel.gov" },
+    { name = "Obika Kodi", email = "kodi.obika@nrel.gov" },
+    { name = "Vivienne Liu", email = "vivienne.liu@nrel.gov"},
+]
+description = "ReEDS to X parser"
+requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "jsonschema~=4.23",
+    "loguru~=0.7.2",
+    "pandas~=2.2",
+    "infrasys>=0.0.4",
+    "polars~=1.1.0",
+    "pyyaml~=6.0.1",
+    "rich~=13.7.1",
+    "tables~=3.9.2",
+]
+
+[project.optional-dependencies]
+all = ["r2x[docs,dev]"]
+docs = [
+    "sphinx-book-theme",
+    "ghp-import",
+    "myst-parser",
+    "sphinx-copybutton",
+    "sphinx-tabs",
+    "autodoc-pydantic",
+    "sphinxcontrib-mermaid",
+]
+# plexos = [
+    # "plexosdb", # Will enable once it is on pypi
+# ]
+dev = [
+    "bump2version",
+    "ipython",
+    "pudb",
+    "mypy",
+    "pre-commit",
+    "pytest",
+    "pytest-cov",
+    "pytest-pikachu",
+    "ruff",
+    "sphinx-autobuild",
+]
+
+[project.scripts]
+r2x = "r2x.__main__:cli"
+
+[tool.mypy]
+exclude = [
+    '__*',
+    'plugins',
+    'nodal',
+    "parser/sienna",
+    "parser/nodes"
+]
+ignore_missing_imports=true
+
+# mypy gets a false positive due to having pandas
+[[tool.mypy.overrides]]
+module = "polars"
+follow_imports = "skip"
+
+# Setuptools configuration
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["*"]
+
+# Setuptools configuration
+[tool.setuptools.dynamic]
+readme = { file = ["README.md"], content-type = "text/markdown" }
+
+[tool.setuptools.package-data]
+"*" = ["*.json", "*.csv", "*.xml", ".sql"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "utils",
+    "src/r2x/plugins/",
+    "src/r2x/nodal/",
+    "site-packages",
+    "venv",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle
+    "TD",  # flake-8 todos
+    "PD",  # pandas vet
+    "RUF", # Ruff rules
+    "N",   # pep8
+    "F",   # pyflakes
+    "UP",  # pyupgrade
+    "D",   # pydocstyle
+    "C90", # Complex code
+]
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+extend-ignore = ['D105', 'D107', 'D205', 'D415']
+pydocstyle.convention = "numpy"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-format = true
+docstring-code-line-length = "dynamic"
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["E402", "F401", "F403", "D104"]
+"__main__.py" = ["E402", "F401", "D104"]
+"**/{tests,docs,tools}/*" = ["D100", "D103", "E402"]
+
+[tool.pytest.ini_options]
+pythonpath = [
+  "src"
+]
