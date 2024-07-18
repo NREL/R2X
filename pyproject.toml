@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "r2x"
-version = "v0.5.2"
+version = "v1.0.0"
 authors = [
     { name = "Pedro Sanchez", email = "psanchez@nrel.gov" },
     { name = "Obika Kodi", email = "kodi.obika@nrel.gov" },
@@ -38,9 +38,6 @@ docs = [
     "autodoc-pydantic",
     "sphinxcontrib-mermaid",
 ]
-# plexos = [
-    # "plexosdb", # Will enable once it is on pypi
-# ]
 dev = [
     "bump2version",
     "ipython",
@@ -49,7 +46,6 @@ dev = [
     "pre-commit",
     "pytest",
     "pytest-cov",
-    "pytest-pikachu",
     "ruff",
     "sphinx-autobuild",
 ]
@@ -59,11 +55,7 @@ r2x = "r2x.__main__:cli"
 
 [tool.mypy]
 exclude = [
-    '__*',
     'plugins',
-    'nodal',
-    "parser/sienna",
-    "parser/nodes"
 ]
 ignore_missing_imports=true
 
@@ -114,9 +106,6 @@ exclude = [
     "buck-out",
     "build",
     "dist",
-    "utils",
-    "src/r2x/plugins/",
-    "src/r2x/nodal/",
     "site-packages",
     "venv",
 ]
