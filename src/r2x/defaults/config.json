@@ -1,0 +1,118 @@
+{
+  "branch_primary_shunt": 0,
+  "branch_r": 0,
+  "branch_x": 0,
+  "bus_units": 1,
+  "commit_prime_movers": [
+    "BA",
+    "HY",
+    "PS",
+    "PVe",
+    "WT",
+    "WS"
+  ],
+  "default_column_mapping": {
+    "*r": "region",
+    "*szn": "season",
+    "*t": "year",
+    "allh": "h",
+    "allt": "year",
+    "e": "pollutant",
+    "f": "fuel",
+    "i": "tech",
+    "r": "region",
+    "t": "year",
+    "v": "tech_class"
+  },
+  "default_num_units": 1,
+  "default_reserve_types": [
+    "Spinning",
+    "Flexibility",
+    "Regulation"
+  ],
+  "distribution_losses": 1,
+  "generator_map": {},
+  "heatrate_fits_file": "heatrate_generic_fits.csv",
+  "hydro_mean_time_to_repair": 24,
+  "hydro_ramp_rate": 0.05,
+  "hydro_rating_techs": [
+    "hydend",
+    "hydund"
+  ],
+  "initial_volume_divisor": 2,
+  "interface_flow_coefficient": -1,
+  "interface_max_ramp_up_divisor": 60,
+  "interface_max_ramp_up_multiplier": 0.1,
+  "load_participation_factor": 1,
+  "load_reserves": {
+    "Flexibility": 0.0,
+    "Regulation": 0.01,
+    "Spinning": 0.03
+  },
+  "load_scalar": 1,
+  "max_volume_divisor": 1000.0,
+  "min_soc": 0.1,
+  "reserve_duration": {
+    "Flexibility": 3600,
+    "Regulation": 3600,
+    "Spinning": 3600
+  },
+  "reserve_is_enabled": -1,
+  "reserve_load_risk": {
+    "Flexibility": 0,
+    "Regulation": 1,
+    "Spinning": 3
+  },
+  "reserve_mutually_exclusive": 1,
+  "reserve_time_frame": {
+    "Flexibility": 600,
+    "Regulation": 1200,
+    "Spinning": 300
+  },
+  "reserve_type_values": {
+    "Flexibility": 1,
+    "Regulation": 3,
+    "Spinning": 1,
+    "regulation_down": 4
+  },
+  "reserve_vors": {
+    "Flexibility": 390000,
+    "Regulation": 410000,
+    "Spinning": 400000
+  },
+  "solar_reserves": {
+    "Flexibility": 0.04,
+    "Regulation": 0.003,
+    "Spinning": 0
+  },
+  "storage_mean_time_to_repair": 24,
+  "tech_map": {},
+  "tz_roll": {
+    "ct": 1,
+    "et": 0,
+    "mt": 2,
+    "pt": 3
+  },
+  "unit_map": {
+    "%": "Percentage",
+    "MMBtu/MWh": "HeatRate",
+    "MW": "ActivePower",
+    "MWh": "Energy",
+    "h": "Time"
+  },
+  "valid_headers": [
+    "Dim1",
+    "*r",
+    "r",
+    "h",
+    "value",
+    "Value"
+  ],
+  "wheeling_charge": 0.001,
+  "wheeling_charge_back": 0.001,
+  "wind_reserves": {
+    "Flexibility": 0.1,
+    "Regulation": 0.05,
+    "Spinning": 0
+  }
+}

@@ -1,0 +1,236 @@
+{
+  "column_mapping": {
+    "max_load": "max_active_power",
+    "st": "area"
+  },
+  "decomposition_method": 1,
+  "generator_columns": {
+    "must_run": "bool"
+  },
+  "initial_volume_divisor": 2,
+  "max_volume_divisor": 1000,
+  "pm_fuel_tech_map": {
+    "BA_": [
+      "battery",
+      "10hrLDES",
+      "4hr",
+      "8hr"
+    ],
+    "CA_NATURAL_GAS": [
+      "gas-ct"
+    ],
+    "CC_MUNICIPAL_WASTE": [
+      "lfill-gas"
+    ],
+    "CC_NATURAL_GAS": [
+      "gas-cc",
+      "gas-cc-ccs"
+    ],
+    "CP_OTHER": [
+      "csp"
+    ],
+    "CT_COAL": [
+      "coal-ccs",
+      "coal-igcc",
+      "coal-new",
+      "coaloldscr",
+      "coalolduns"
+    ],
+    "CT_DISTILLATE_FUEL_OIL": [
+      "o-g-s"
+    ],
+    "CT_MUNICIPAL_WASTE": [
+      "lfill-gas"
+    ],
+    "CT_NATURAL_GAS": [
+      "gas-ct"
+    ],
+    "CT_OTHER": [
+      "gas-ct"
+    ],
+    "CT_RESIDUAL_FUEL_OIL": [
+      "o-g-s"
+    ],
+    "CT_WASTE_OIL": [
+      "o-g-s"
+    ],
+    "GT_MUNICIPAL_WASTE": [
+      "lfill-gas"
+    ],
+    "GT_NATURAL_GAS": [
+      "gas-ct"
+    ],
+    "GT_OTHER": [
+      "o-g-s",
+      "h2-ct"
+    ],
+    "GT_WOOD_WASTE": [
+      "biopower"
+    ],
+    "HY_": [
+      "hyded",
+      "hydend",
+      "hydnpd",
+      "hydnpnd",
+      "hydud",
+      "hydund",
+      "can-imports"
+    ],
+    "IC_": [
+      "o-g-s"
+    ],
+    "IC_DISTILLATE_FUEL_OIL": [
+      "o-g-s"
+    ],
+    "IC_MUNICIPAL_WASTE": [
+      "lfill-gas"
+    ],
+    "IC_NATURAL_GAS": [
+      "gas-cc",
+      "gas-cc-ccs",
+      "gas-ct"
+    ],
+    "IC_OTHER": [
+      "o-g-s"
+    ],
+    "OT_COAL": [
+      "coal-ccs",
+      "coal-igcc",
+      "coal-new",
+      "coaloldscr",
+      "coalolduns"
+    ],
+    "OT_MUNICIPAL_WASTE": [
+      "lfill-gas"
+    ],
+    "OT_NATURAL_GAS": [
+      "gas-cc",
+      "gas-cc-ccs",
+      "gas-ct"
+    ],
+    "OT_NUCLEAR": [
+      "nuclear"
+    ],
+    "OT_WASTE_COAL": [
+      "coal-igcc",
+      "coal-new",
+      "coaloldscr",
+      "coaloldsrc",
+      "coalolduns"
+    ],
+    "PS_": [
+      "pumped-hydro"
+    ],
+    "PS_OTHER": [
+      "pumped-hydro"
+    ],
+    "PVe_": [
+      "upv",
+      "dupv",
+      "distpv"
+    ],
+    "ST_COAL": [
+      "coal-ccs",
+      "coal-igcc",
+      "coal-new",
+      "coaloldscr",
+      "coalolduns"
+    ],
+    "ST_DISTILLATE_FUEL_OIL": [
+      "o-g-s"
+    ],
+    "ST_GEOTHERMAL": [
+      "egs",
+      "geohydro",
+      "geothermal",
+      "undisc"
+    ],
+    "ST_MUNICIPAL_WASTE": [
+      "lfill-gas"
+    ],
+    "ST_NATURAL_GAS": [
+      "o-g-s",
+      "gas-cc",
+      "gas-cc-ccs"
+    ],
+    "ST_NUCLEAR": [
+      "nuclear"
+    ],
+    "ST_OTHER": [
+      "o-g-s"
+    ],
+    "ST_PETROLEUM_COKE": [
+      "o-g-s"
+    ],
+    "ST_RESIDUAL_FUEL_OIL": [
+      "o-g-s"
+    ],
+    "ST_WASTE_COAL": [
+      "coal-igcc",
+      "coal-new",
+      "coaloldscr",
+      "coaloldsrc",
+      "coalolduns"
+    ],
+    "ST_WASTE_OIL": [
+      "o-g-s"
+    ],
+    "WS_": [
+      "wind-ofs"
+    ],
+    "WT_": [
+      "wind-ons"
+    ]
+  },
+  "sienna_property_map": {
+    "charge_efficiency": "input_efficiency",
+    "discharge_efficiency": "output_efficiency",
+    "heat_rate": "heat_rate_avg_0",
+    "initial_energy": "initial_storage_capacity_level",
+    "losses": "loss",
+    "max_load": "max_active_power",
+    "max_soc": "max_storage_capacity",
+    "min_rated_capacity": "active_power_limits_min",
+    "min_soc": "min_storage_capacity",
+    "pump_efficiency": "efficiency",
+    "rated_capacity": "max_active_power",
+    "reactance": "x",
+    "resistance": "r",
+    "time_frame": "timeframe",
+    "vom_price": "fixed_cost"
+  },
+  "sienna_unit_map": {
+    "initial_storage_capacity_level": " ",
+    "input_efficiency": " ",
+    "max_storage_capacity": " ",
+    "min_storage_capacity": " ",
+    "output_efficiency": " ",
+    "storage_capacity": "MWh"
+  },
+  "storage_prime_movers": [
+    "BA",
+    "PS",
+    "CE",
+    "CP",
+    "ES",
+    "FW"
+  ],
+  "valid_branch_types": [
+    "Line",
+    "TapTransformer",
+    "Transformer2W"
+  ],
+  "valid_bus_types": [
+    "Bus",
+    "ACBus"
+  ],
+  "valid_generator_types": [
+    "ThermalStandard",
+    "ThermalMultiStart",
+    "RenewableDispatch",
+    "RenewableFix",
+    "HydroDispatch",
+    "HydroPumpedStorage",
+    "GenericBattery"
+  ]
+}
