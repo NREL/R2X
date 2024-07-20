@@ -103,7 +103,7 @@ class PlexosParser(PCMParser):
         self.weather_year: int = self.config.weather_year
         self.run_folder = Path(self.config.run_folder)
         self.system = System(name=self.config.name)
-        self.property_map = {v: k for k, v in self.config.defaults["plexos_property_map"].items()}
+        self.property_map = self.config.defaults["plexos_property_map"]
         self.device_map = self.config.defaults["plexos_device_map"]
         self.prime_mover_map = self.config.defaults["tech_fuel_pm_map"]
 
@@ -258,7 +258,7 @@ class PlexosParser(PCMParser):
                     str(reserve_type), self.config.defaults["reserve_types"]["default"]
                 )  # Pass string so we do not need to convert the json mapping.
 
-                valid_fields["type"] = ReserveType[plexos_reserve_map["type"]]
+                valid_fields["reserve_type"] = ReserveType[plexos_reserve_map["type"]]
                 valid_fields["direction"] = ReserveDirection[plexos_reserve_map["direction"]]
 
                 valid_fields["ext"] = ext_data
@@ -345,11 +345,13 @@ class PlexosParser(PCMParser):
 
         # Iterate over properties for generator
         for generator_name, generator_data in system_generators.group_by("name"):
+            generator_name = generator_name[0]
             generator_fuel_type = generator_fuel_map.get(generator_name)
             logger.trace("Parsing generator = {} with fuel type = {}", generator_name, generator_fuel_type)
-            model_map = self.config.defaults["model_map"].get(
-                generator_fuel_type, ""
-            ) or self.config.defaults["generator_map"].get(generator_name, "")
+            model_map = self.config.model_map.get(generator_fuel_type, "") or self.config.generator_map.get(
+                generator_name, ""
+            )
+
             if getattr(R2X_MODELS, model_map, None) is None:
                 logger.warning(
                     "Model map not found for generator={} with fuel_type={}. Skipping it.",
@@ -404,6 +406,18 @@ class PlexosParser(PCMParser):
             ext_data = {
                 k: v for k, v in mapped_records.items() if k not in model_map.model_fields if v is not None
             }
+
+            # NOTE: need to define logic to handle the differences between Max Capacity,
+            #  Rating, and Rating Factor. Rating factor is a % value (0-100)
+            #  that gets assigned to nameplate. typically you use either [rating]
+            #  or # [rating factor]. if rating factor is defined it would be
+            # applied to rating if defined, otherwise to maxcapacity.
+            # Read Order: Rating Factor * Rating, Rating, Max Capacity.
+            # If the fixed load, it could be an exogenous profile, or a fixed value.
+            # BTM solar will typically use this.
+            # If it is zero then the default value is to honor the zero value, if a particular setting
+            #  is enabled then the zero is dispatchable.
+
             # NOTE: Plexos can define either a generator with Units = 0 to indicate
             # that it has been retired, 1 that is online or > 1 when it has
             # multiple units. For the R2X model to work, we need to check if
@@ -417,7 +431,7 @@ class PlexosParser(PCMParser):
 
             if not all(key in valid_fields for key in required_fields):
                 logger.warning(
-                    "Skipping battery {} since it does not have all the required fields", generator_name
+                    "Skipping Generator {} since it does not have all the required fields", generator_name
                 )
                 continue
 
@@ -484,6 +498,7 @@ class PlexosParser(PCMParser):
             key: value for key, value in GenericBattery.model_fields.items() if value.is_required()
         }
         for battery_name, battery_data in system_batteries.group_by("name"):
+            battery_name = battery_name[0]
             logger.trace("Parsing battery = {}", battery_name)
             property_records = battery_data[
                 ["band", "property_name", "property_unit", "property_value"]
@@ -531,7 +546,6 @@ class PlexosParser(PCMParser):
             if mapped_records["storage_capacity"] == 0:
                 logger.warning("Skipping battery {} since it has zero capacity", battery_name)
                 continue
-
             self.system.add_component(GenericBattery(**valid_fields))
         return
 
