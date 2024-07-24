@@ -114,8 +114,11 @@ class PlexosParser(PCMParser):
         self.db = PlexosSQLite(xml_fname=xml_file)
 
         # Extract scenario data
-        model_name = getattr(self.config, "model", None) or self.config.fmap[XML_FILE_KEY]["model"]
-
+        # CHECK with pedro if okay to remove this.
+        model_name = getattr(self.config, "model", None)  # or self.config.fmap[XML_FILE_KEY]["model"]
+        if model_name is None:
+            model_names = self._get_all_model_names()
+            model_name = self._select_model_name(model_names)
         self._process_scenarios(model_name=model_name)
 
     def build_system(self) -> System:
@@ -687,6 +690,32 @@ class PlexosParser(PCMParser):
                 tx_interface_map.mapping[interface_object.name].append(line.label)
         self.system.add_component(tx_interface_map)
         return
+
+    def _get_all_model_names(self):
+        query = f"""
+        select obj.name
+        from t_object as obj
+        left join t_class as cls on obj.class_id = cls.class_id
+        where cls.name = '{ClassEnum.Model.name}'
+        """
+        result = self.db.query(query)
+        model_names = [row[0] for row in result]  # Flatten list of tuples
+        return model_names
+
+    def _select_model_name(self, model_names):
+        print("Available models:")
+        for idx, name in enumerate(model_names):
+            print(f"{idx + 1}. {name}")
+
+        while True:
+            try:
+                choice = int(input("Select a model by number: "))
+                if 1 <= choice <= len(model_names):
+                    return model_names[choice - 1]
+                else:
+                    print(f"Please enter a number between 1 and {len(model_names)}.")
+            except ValueError:
+                print("Invalid input. Please enter a number.")
 
     def _process_scenarios(self, model_name: str | None = None) -> None:
         """Create a SQLite representation of the XML."""
