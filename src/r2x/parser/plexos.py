@@ -113,6 +113,7 @@ class PlexosParser(PCMParser):
 
         # Extract scenario data
         model_name = getattr(self.config, "model", None) or self.config.fmap[XML_FILE_KEY]["model"]
+
         self._process_scenarios(model_name=model_name)
 
     def build_system(self) -> System:
@@ -156,8 +157,8 @@ class PlexosParser(PCMParser):
         of doing it.
         """
         logger.debug("Creating load zone representation")
-        system_regions = (pl.col("child_class_id") == ClassEnum.Region) & (
-            pl.col("parent_class_id") == ClassEnum.System
+        system_regions = (pl.col("child_class_name") == ClassEnum.Region) & (
+            pl.col("parent_class_name") == ClassEnum.System
         )
         regions = self._get_model_data(system_regions)
 
@@ -181,11 +182,11 @@ class PlexosParser(PCMParser):
 
     def _construct_buses(self, default_model=ACBus) -> None:
         logger.debug("Creating buses representation")
-        system_buses = (pl.col("child_class_id") == ClassEnum.Node) & (
-            pl.col("parent_class_id") == ClassEnum.System
+        system_buses = (pl.col("child_class_name") == ClassEnum.Node) & (
+            pl.col("parent_class_name") == ClassEnum.System
         )
-        region_buses = (pl.col("child_class_id") == ClassEnum.Region) & (
-            pl.col("parent_class_id") == ClassEnum.Node
+        region_buses = (pl.col("child_class_name") == ClassEnum.Region) & (
+            pl.col("parent_class_name") == ClassEnum.Node
         )
         system_buses = self._get_model_data(system_buses)
         buses_region = self._get_model_data(region_buses)
@@ -223,7 +224,7 @@ class PlexosParser(PCMParser):
     def _construct_reserves(self, default_model=Reserve):
         logger.debug("Creating reserve representation")
         system_reserves = (pl.col("child_class_name") == ClassEnum.Reserve.name) & (
-            pl.col("parent_class_id") == ClassEnum.System
+            pl.col("parent_class_name") == ClassEnum.System.name
         )
         system_reserves = self._get_model_data(system_reserves)
 
@@ -272,7 +273,7 @@ class PlexosParser(PCMParser):
     def _construct_branches(self, default_model=MonitoredLine):
         logger.debug("Creating lines")
         system_lines = (pl.col("child_class_name") == ClassEnum.Line.name) & (
-            pl.col("parent_class_id") == ClassEnum.System
+            pl.col("parent_class_name") == ClassEnum.System
         )
         system_lines = self._get_model_data(system_lines)
         lines_pivot = system_lines.pivot(  # noqa: PD010
@@ -306,13 +307,21 @@ class PlexosParser(PCMParser):
             from_bus_name = next(
                 membership
                 for membership in lines_pivot_memberships
-                if membership[2] == line["name"] and membership[4] == int(CollectionEnum.LineNodeFrom.value)
+                if (
+                    membership[2] == line["name"]
+                    and membership[5] == ClassEnum.Line.name
+                    and membership[6].replace(" ", "") == CollectionEnum.NodeFrom.name
+                )
             )[3]
             from_bus = self.system.get_component(ACBus, from_bus_name)
             to_bus_name = next(
                 membership
                 for membership in lines_pivot_memberships
-                if membership[2] == line["name"] and membership[4] == int(CollectionEnum.LineNodeTo.value)
+                if (
+                    membership[2] == line["name"]
+                    and membership[5] == ClassEnum.Line.name
+                    and membership[6].replace(" ", "") == CollectionEnum.NodeTo.name
+                )
             )[3]
             to_bus = self.system.get_component(ACBus, to_bus_name)
             valid_fields["from_bus"] = from_bus
@@ -324,7 +333,7 @@ class PlexosParser(PCMParser):
     def _construct_generators(self):
         logger.debug("Creating generators")
         system_generators = (pl.col("child_class_name") == ClassEnum.Generator.name) & (
-            pl.col("parent_class_id") == ClassEnum.System
+            pl.col("parent_class_name") == ClassEnum.System.name
         )
         system_generators = self._get_model_data(system_generators)
 
@@ -333,12 +342,15 @@ class PlexosParser(PCMParser):
         SELECT
             parent_obj.name as parent_object_name,
             child_obj.name as fuel_name
-        FROM t_membership as mem
+        FROM
+            t_membership as mem
             left JOIN t_object as child_obj ON mem.child_object_id = child_obj.object_id
             left JOIN t_object as parent_obj ON mem.parent_object_id = parent_obj.object_id
+            LEFT JOIN t_class AS child_cls ON child_obj.class_id = child_cls.class_id
+            LEFT JOIN t_class AS parent_cls ON parent_obj.class_id = parent_cls.class_id
         WHERE
-            mem.child_class_id = {ClassEnum.Fuel.value}
-            and mem.parent_class_id = {ClassEnum.Generator.value}
+            child_cls.name = '{ClassEnum.Fuel.value}'
+            AND parent_cls.name = '{ClassEnum.Generator.value}'
         """
         generator_fuel = self.db.query(fuel_query)
         generator_fuel_map = {key: value for key, value in generator_fuel}
@@ -376,7 +388,6 @@ class PlexosParser(PCMParser):
             # NOTE: Add logic to create Function data here
             if multi_band_records:
                 pass
-                # breakpoint()
 
             # Add prime mover mapping
             mapped_records["prime_mover_type"] = (
@@ -443,7 +454,7 @@ class PlexosParser(PCMParser):
         generator_memberships = self.db.get_memberships(
             *generators,
             object_class=ClassEnum.Generator,
-            collection=CollectionEnum.GeneratorNodes,
+            collection=(ClassEnum.Generator, CollectionEnum.Nodes),
         )
         for generator in self.system.get_components(Generator):
             buses = [membership for membership in generator_memberships if membership[2] == generator.name]
@@ -467,7 +478,7 @@ class PlexosParser(PCMParser):
         generator_memberships = self.db.get_memberships(
             *generators,
             object_class=ClassEnum.Generator,
-            collection=CollectionEnum.ReserveGenerators,
+            collection=(ClassEnum.Reserve, CollectionEnum.Generators),
         )
         for generator in self.system.get_components(Generator):
             reserves = [membership for membership in generator_memberships if membership[3] == generator.name]
@@ -491,7 +502,7 @@ class PlexosParser(PCMParser):
     def _construct_batteries(self):
         logger.debug("Creating battery objects")
         batteries_mask = (pl.col("child_class_name") == ClassEnum.Battery.name) & (
-            pl.col("parent_class_id") == ClassEnum.System
+            pl.col("parent_class_name") == ClassEnum.System.name
         )
         system_batteries = self._get_model_data(batteries_mask)
         required_fields = {
@@ -554,7 +565,7 @@ class PlexosParser(PCMParser):
         generator_memberships = self.db.get_memberships(
             *batteries,
             object_class=ClassEnum.Battery,
-            collection=CollectionEnum.BatteryNodes,
+            collection=(ClassEnum.Battery, CollectionEnum.Nodes),
         )
         for component in self.system.get_components(GenericBattery):
             buses = [membership for membership in generator_memberships if membership[2] == component.name]
@@ -564,7 +575,7 @@ class PlexosParser(PCMParser):
                         bus_object = self.system.get_component(ACBus, name=bus[3])
                     except ISNotStored:
                         logger.warning(
-                            "Skipping membership for generator:{} since reserve {} is not stored",
+                            "Skipping membership for battery:{} since bus {} is not stored",
                             component.name,
                             buses[3],
                         )
@@ -578,7 +589,7 @@ class PlexosParser(PCMParser):
         generator_memberships = self.db.get_memberships(
             *batteries,
             object_class=ClassEnum.Battery,
-            collection=CollectionEnum.ReserveBatteries,
+            collection=(ClassEnum.Reserve, CollectionEnum.Batteries),
         )
         for battery in self.system.get_components(GenericBattery):
             reserves = [membership for membership in generator_memberships if membership[3] == battery.name]
@@ -602,7 +613,7 @@ class PlexosParser(PCMParser):
         """Construct Transmission Interface and Transmission Interface Map."""
         logger.debug("Creating transmission interfaces")
         system_interfaces_mask = (pl.col("child_class_name") == ClassEnum.Interface.name) & (
-            pl.col("parent_class_id") == ClassEnum.System
+            pl.col("parent_class_name") == ClassEnum.System.name
         )
         system_interfaces = self._get_model_data(system_interfaces_mask)
         interfaces = system_interfaces.pivot(  # noqa: PD010
@@ -653,7 +664,7 @@ class PlexosParser(PCMParser):
         lines_memberships = self.db.get_memberships(
             *lines,
             object_class=ClassEnum.Line,
-            collection=CollectionEnum.InterfaceLines,
+            collection=(ClassEnum.Interface, CollectionEnum.Lines),
         )
         for line in self.system.get_components(MonitoredLine):
             interface = next(
@@ -697,7 +708,8 @@ class PlexosParser(PCMParser):
         valid_scenarios = self.db.query(
             "select obj.name from t_membership mem "
             "left join t_object as obj on obj.object_id = mem.child_object_id "
-            f"where mem.parent_object_id = {self.model_id} and obj.class_id = {ClassEnum.Scenario}"
+            "left join t_class as cls on cls.class_id = obj.class_id "
+            f"where mem.parent_object_id = {self.model_id} and cls.name = '{ClassEnum.Scenario}'"
         )
         assert valid_scenarios
         self.scenarios = [scenario[0] for scenario in valid_scenarios]  # Flatten list of tuples
@@ -738,14 +750,20 @@ class PlexosParser(PCMParser):
         return pl.concat([scenario_specific_data, base_case_data])
 
     def _construct_load_profiles(self):
-        logger.debug("Creating load zone representation")
-        system_regions = (pl.col("child_class_id") == ClassEnum.Region) & (
-            pl.col("parent_class_id") == ClassEnum.System
+        logger.debug("Creating load profile representation")
+        system_regions = (pl.col("child_class_name") == ClassEnum.Region.name) & (
+            pl.col("parent_class_name") == ClassEnum.System.name
         )
         regions = self._get_model_data(system_regions).filter(~pl.col("text").is_null())
         assert self.config.run_folder
 
         for region, region_data in regions.group_by("name"):
+            # if region[0] == 'IV-NG':
+            #     breakpoint()
+            # If the weather year is not in the data, then drop that load.
+            # Each band needs to be a different time series and load.
+            # Expression is typically used when you want your outputs to track the different bands
+            # Action will modify the input data from the TS file. Only when there is an Expression definition.
             ts = self._csv_file_handler(property_name="max_active_power", property_data=region_data)
 
             if not ts:
@@ -753,7 +771,7 @@ class PlexosParser(PCMParser):
 
             max_load = np.max(ts.data.to_numpy())
             bus_region_membership = self.db.get_memberships(
-                region, object_class=ClassEnum.Region, collection=CollectionEnum.NodesRegion
+                region[0], object_class=ClassEnum.Region, collection=(ClassEnum.Node, CollectionEnum.Region)
             )
             for bus in bus_region_membership:
                 bus = self.system.get_component(ACBus, name=bus[2])
@@ -769,9 +787,9 @@ class PlexosParser(PCMParser):
         return
 
     def _construct_renewable_profiles(self):
-        logger.debug("Creating load zone representation")
-        system_regions = (pl.col("child_class_id") == ClassEnum.Generator) & (
-            pl.col("parent_class_id") == ClassEnum.System
+        logger.debug("Creating renewable profile representation")
+        system_regions = (pl.col("child_class_name") == ClassEnum.Generator) & (
+            pl.col("parent_class_name") == ClassEnum.System
         )
 
         # NOTE: The best way to identify the type of generator on Plexos is by reading the fuel
@@ -782,8 +800,8 @@ class PlexosParser(PCMParser):
         FROM t_membership as mem
             LEFT JOIN t_object as child_obj ON mem.child_object_id = child_obj.object_id
             LEFT JOIN t_object as parent_obj ON mem.parent_object_id = parent_obj.object_id
-        WHERE mem.child_class_id = {ClassEnum.Fuel.value}  and
-            mem.parent_class_id = {ClassEnum.Generator.value}
+        WHERE mem.child_class_name = {ClassEnum.Fuel.value}  and
+            mem.parent_class_name = {ClassEnum.Generator.value}
         """
         generator_fuel = self.db.query(fuel_query)
         generator_fuel_map = {key: value for key, value in generator_fuel}
@@ -934,7 +952,7 @@ if __name__ == "__main__":
     from ..logger import setup_logging
     from .handler import get_parser_data
 
-    run_folder = Path("/Users/psanchez/Downloads/IRP")
+    run_folder = Path("/Users/kamrantehranchi/Local_Documents/FPA_Sienna/Projects/Sonoma/NREL_revised")
     # Functions relative to the parser.
     setup_logging(level="DEBUG")
 
@@ -942,12 +960,10 @@ if __name__ == "__main__":
         name="Plexos-Test",
         input_model="plexos",
         run_folder=run_folder,
-        solve_year=2035,
-        weather_year=2012,
-        model="2021_P_IEPR_Mid",
-        # model="DA_TechBreak2050",
+        solve_year=2030,
+        weather_year=2030,
+        model="IRP 2022 25 MMT Base Outage 2024",
     )
-    config.fmap["xml_file"]["fname"] = "2021 IEPR Prelim_10.18.2021.xml"
-    # config.fmap["xml_file"]["fname"] = "NARIS_v92R06.xml"
+    config.fmap["xml_file"]["fname"] = "First Principles_WECC_CEC_Zonal_v0_9_0 (10.000 R02).xml"
 
     parser = get_parser_data(config=config, parser_class=PlexosParser)
