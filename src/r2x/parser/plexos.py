@@ -43,7 +43,9 @@ models = importlib.import_module("r2x.model")
 R2X_MODELS = importlib.import_module("r2x.model")
 BASE_WEATHER_YEAR = 2007
 XML_FILE_KEY = "xml_file"
-DATETIME_COLUMNS = ["year", "month", "day"]
+DATETIME_COLUMNS_BASIC = ["year", "month", "day", "period", "value"]
+DATETIME_COLUMNS_MULTIZONE = ["year", "month", "day", "period"]
+DATETIME_COLUMNS_PIVOT = ["year", "month", "day"]
 DEFAULT_QUERY_COLUMNS_SCHEMA = {  # NOTE: Order matters
     # "membership_id": pl.Int64,
     "parent_class_id": pl.Int32,
@@ -758,8 +760,6 @@ class PlexosParser(PCMParser):
         assert self.config.run_folder
 
         for region, region_data in regions.group_by("name"):
-            # if region[0] == 'IV-NG':
-            #     breakpoint()
             # If the weather year is not in the data, then drop that load.
             # Each band needs to be a different time series and load.
             # Expression is typically used when you want your outputs to track the different bands
@@ -864,9 +864,27 @@ class PlexosParser(PCMParser):
             {column: column.lower() for column in data_file.columns}
         )
 
-        if all(column in data_file.columns for column in DATETIME_COLUMNS):
-            data_file = data_file.filter(pl.col("year") == self.config.weather_year)
-            data_file = data_file.melt(id_vars=DATETIME_COLUMNS, variable_name="hour")
+        data_file = data_file.filter(pl.col("year") == self.config.weather_year)
+        if data_file.is_empty():
+            logger.warning("Data file {} weather year not aligned. Skipping it.", relative_path)
+            return
+
+        # region = property_data["name"].unique()[0]
+        if all(column in data_file.columns for column in DATETIME_COLUMNS_BASIC):
+            data_file = data_file.rename({"period": "hour"})
+        # elif all(column in data_file.columns for column in DATETIME_COLUMNS_MULTIZONE):
+        #     breakpoint()
+        #     # need to test these file types still
+        #     # drop all columns that are not datetime columns or the region name
+        #     data_file = data_file.drop(
+        #         *[col for col in data_file.columns if col not in DATETIME_COLUMNS_MULTIZONE + [region]]
+        #     )
+        #     # rename region name to hour
+        #     data_file = data_file.rename({region: "value"})
+        # elif all(column in data_file.columns for column in DATETIME_COLUMNS_PIVOT):
+        #     breakpoint()
+        #     # need to test these file types still
+        #     data_file = data_file.melt(id_vars=DATETIME_COLUMNS_PIVOT, variable_name="hour")
         else:
             logger.warning("Data file {} not supported yet.", relative_path)
             return
@@ -876,6 +894,7 @@ class PlexosParser(PCMParser):
         resolution = timedelta(hours=1)
 
         # First row should contain (year, month, day, hour)
+        assert data_file.columns == ["year", "month", "day", "hour", "value"], f"Columns: {data_file.columns}"
         first_row = data_file.row(0)
         start = datetime(year=first_row[0], month=first_row[1], day=first_row[2])
 
