@@ -117,8 +117,7 @@ class PlexosParser(PCMParser):
         # CHECK with pedro if okay to remove this.
         model_name = getattr(self.config, "model", None)  # or self.config.fmap[XML_FILE_KEY]["model"]
         if model_name is None:
-            model_names = self._get_all_model_names()
-            model_name = self._select_model_name(model_names)
+            model_name = self._select_model_name()
         self._process_scenarios(model_name=model_name)
 
     def build_system(self) -> System:
@@ -335,6 +334,22 @@ class PlexosParser(PCMParser):
             self.system.add_component(default_model(**valid_fields))
         return
 
+    def _infer_model_type(self, generator_name):
+        model_type_mapping = {
+            "wind": "RenewableDispatch",
+            "solar": "RenewableDispatch",
+            "upv": "RenewableDispatch",
+            "geothermal": "ThermalStandard",
+            "hydro": "HydroDispatch",
+            "dpv": "RenewableDispatch",
+        }
+        generator_name_lower = generator_name.lower()
+        for key, model_type in model_type_mapping.items():
+            if key in generator_name_lower:
+                logger.debug("Inferred model type for generator={} as {}", generator_name, model_type)
+                return model_type
+        return ""
+
     def _construct_generators(self):
         logger.debug("Creating generators")
         system_generators = (pl.col("child_class_name") == ClassEnum.Generator.name) & (
@@ -365,10 +380,12 @@ class PlexosParser(PCMParser):
             generator_name = generator_name[0]
             generator_fuel_type = generator_fuel_map.get(generator_name)
             logger.trace("Parsing generator = {} with fuel type = {}", generator_name, generator_fuel_type)
-            model_map = self.config.model_map.get(generator_fuel_type, "") or self.config.generator_map.get(
-                generator_name, ""
+            model_map = (
+                self.config.model_map.get(generator_fuel_type, "")
+                or self.config.generator_map.get(generator_name, "")
+                or self._infer_model_type(generator_name)
             )
-
+            # breakpoint()
             if getattr(R2X_MODELS, model_map, None) is None:
                 logger.warning(
                     "Model map not found for generator={} with fuel_type={}. Skipping it.",
@@ -691,7 +708,7 @@ class PlexosParser(PCMParser):
         self.system.add_component(tx_interface_map)
         return
 
-    def _get_all_model_names(self):
+    def _select_model_name(self):
         query = f"""
         select obj.name
         from t_object as obj
@@ -699,10 +716,8 @@ class PlexosParser(PCMParser):
         where cls.name = '{ClassEnum.Model.name}'
         """
         result = self.db.query(query)
-        model_names = [row[0] for row in result]  # Flatten list of tuples
-        return model_names
+        model_names = [row[0] for row in result]
 
-    def _select_model_name(self, model_names):
         print("Available models:")
         for idx, name in enumerate(model_names):
             print(f"{idx + 1}. {name}")
