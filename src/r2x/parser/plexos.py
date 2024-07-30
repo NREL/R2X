@@ -43,6 +43,8 @@ models = importlib.import_module("r2x.model")
 R2X_MODELS = importlib.import_module("r2x.model")
 BASE_WEATHER_YEAR = 2007
 XML_FILE_KEY = "xml_file"
+PROPERTY_COLUMNS_BASIC = ["name", "value"]
+PROPERTY_COLUMNS_TEMPORAL = ["name", "year", "month", "day", "period", "value"]
 DATETIME_COLUMNS_BASIC = ["year", "month", "day", "period", "value"]
 DATETIME_COLUMNS_MULTIZONE = ["year", "month", "day", "period"]
 DATETIME_COLUMNS_PIVOT = ["year", "month", "day"]
@@ -63,8 +65,11 @@ DEFAULT_QUERY_COLUMNS_SCHEMA = {  # NOTE: Order matters
     "date_to": pl.String,
     "date_from": pl.String,
     "memo": pl.String,
-    "text": pl.String,
     "scenario": pl.String,
+    "data_file": pl.String,
+    "variable": pl.String,
+    "timeslice": pl.String,
+    "action": pl.String,
 }
 COLUMNS = [
     "name",
@@ -385,7 +390,7 @@ class PlexosParser(PCMParser):
                 or self.config.generator_map.get(generator_name, "")
                 or self._infer_model_type(generator_name)
             )
-            # breakpoint()
+
             if getattr(R2X_MODELS, model_map, None) is None:
                 logger.warning(
                     "Model map not found for generator={} with fuel_type={}. Skipping it.",
@@ -397,14 +402,21 @@ class PlexosParser(PCMParser):
             required_fields = {
                 key: value for key, value in model_map.model_fields.items() if value.is_required()
             }
-
             # Handle properties from plexos assuming that same property can
             # appear multiple times on different bands.
             property_records = generator_data[
-                ["band", "property_name", "property_value", "property_unit"]
+                [
+                    "band",
+                    "property_name",
+                    "property_value",
+                    "property_unit",
+                    "data_file",
+                    "variable",
+                    "action",
+                ]
             ].to_dicts()
 
-            mapped_records, multi_band_records = self._parse_property_data(property_records)
+            mapped_records, multi_band_records = self._parse_property_data(property_records, generator_name)
             mapped_records["name"] = generator_name
 
             # NOTE: Add logic to create Function data here
@@ -457,7 +469,7 @@ class PlexosParser(PCMParser):
             # the unit is available, but fixed the available key to 1 to avoid
             # an error.
             if available := valid_fields.get("available", None):
-                if available > 1:
+                if available > 0:
                     valid_fields["available"] = 1
             if ext_data:
                 valid_fields["ext"] = ext_data
@@ -467,7 +479,7 @@ class PlexosParser(PCMParser):
                     "Skipping Generator {} since it does not have all the required fields", generator_name
                 )
                 continue
-
+            logger.debug("Adding generator {}", generator_name)
             self.system.add_component(model_map(**valid_fields))
 
     def _add_buses_to_generators(self):
@@ -523,10 +535,10 @@ class PlexosParser(PCMParser):
 
     def _construct_batteries(self):
         logger.debug("Creating battery objects")
-        batteries_mask = (pl.col("child_class_name") == ClassEnum.Battery.name) & (
-            pl.col("parent_class_name") == ClassEnum.System.name
+        system_batteries = self._get_model_data(
+            (pl.col("child_class_name") == ClassEnum.Battery.name)
+            & (pl.col("parent_class_name") == ClassEnum.System.name)
         )
-        system_batteries = self._get_model_data(batteries_mask)
         required_fields = {
             key: value for key, value in GenericBattery.model_fields.items() if value.is_required()
         }
@@ -534,10 +546,17 @@ class PlexosParser(PCMParser):
             battery_name = battery_name[0]
             logger.trace("Parsing battery = {}", battery_name)
             property_records = battery_data[
-                ["band", "property_name", "property_unit", "property_value"]
+                [
+                    "band",
+                    "property_name",
+                    "property_value",
+                    "property_unit",
+                    "data_file",
+                    "variable",
+                    "action",
+                ]
             ].to_dicts()
-
-            mapped_records, _ = self._parse_property_data(property_records)
+            mapped_records, _ = self._parse_property_data(property_records, battery_name)
             mapped_records["name"] = battery_name
 
             if "Max Power" in mapped_records:
@@ -564,7 +583,7 @@ class PlexosParser(PCMParser):
             # the unit is available, but fixed the available key to 1 to avoid
             # an error.
             if available := valid_fields.get("available", None):
-                if available > 1:
+                if available > 0:
                     valid_fields["available"] = 1
             if ext_data:
                 valid_fields["ext"] = ext_data
@@ -575,7 +594,16 @@ class PlexosParser(PCMParser):
                 )
                 continue
 
-            # If the storage capacity is 0 we skip it as well.
+            # # Look up date_file for any fields specified in the ext_data
+            # if "date_file" in ext_data:
+            #     date_file = ext_data.pop("date_file")
+            #     date_file_path = self.run_folder / date_file
+            #     if date_file_path.exists():
+            #         valid_fields["ext"]["date_file"] = date_file_path
+            #     else:
+            #         logger.warning("Date file {} not found for battery {}", date_file, battery_name)
+            #         valid_fields["ext"]["date_file"] = None
+
             if mapped_records["storage_capacity"] == 0:
                 logger.warning("Skipping battery {} since it has zero capacity", battery_name)
                 continue
@@ -800,7 +828,7 @@ class PlexosParser(PCMParser):
         system_regions = (pl.col("child_class_name") == ClassEnum.Region.name) & (
             pl.col("parent_class_name") == ClassEnum.System.name
         )
-        regions = self._get_model_data(system_regions).filter(~pl.col("text").is_null())
+        regions = self._get_model_data(system_regions).filter(~pl.col("data_file").is_null())
         assert self.config.run_folder
 
         for region, region_data in regions.group_by("name"):
@@ -808,7 +836,9 @@ class PlexosParser(PCMParser):
             # Each band needs to be a different time series and load.
             # Expression is typically used when you want your outputs to track the different bands
             # Action will modify the input data from the TS file. Only when there is an Expression definition.
-            ts = self._csv_file_handler(property_name="max_active_power", property_data=region_data)
+            ts = self._csv_file_handler(
+                property_name="max_active_power", property_data=region_data["data_file"][0]
+            )
 
             if not ts:
                 continue
@@ -887,7 +917,7 @@ class PlexosParser(PCMParser):
                 "Check filtering of properties"
             )
             logger.warning(msg, property_name)
-        fpath_text = property_data["text"][0]
+        fpath_text = property_data
         if "\\" in fpath_text:
             relative_path = PureWindowsPath(fpath_text)
         else:
@@ -908,18 +938,60 @@ class PlexosParser(PCMParser):
             {column: column.lower() for column in data_file.columns}
         )
 
-        data_file = data_file.filter(pl.col("year") == self.config.weather_year)
-        if data_file.is_empty():
-            logger.warning("Data file {} weather year not aligned. Skipping it.", relative_path)
-            return
+        single_value_data = self._retrieve_single_value_data(property_name, data_file)
+        if single_value_data is not None:
+            return single_value_data
+
+        time_series_data = self._retrieve_time_series_data(property_name, data_file)
+        if time_series_data is not None:
+            return time_series_data
+
+        logger.warning("Data file {} not supported yet. Skipping it.", relative_path)
+        logger.debug("Columns not supported: {}", data_file.columns)
+
+    def _retrieve_single_value_data(self, property_name, data_file):
+        if all(column in data_file.columns for column in [property_name.lower(), "year"]):
+            data_file = data_file.filter(pl.col("year") == self.config.weather_year)
+            return data_file[property_name.lower()][0]
+
+        if data_file.columns == PROPERTY_COLUMNS_BASIC:
+            return data_file.filter(pl.col("name") == property_name.lower())["value"][0]
+
+        if data_file.columns == PROPERTY_COLUMNS_TEMPORAL:
+            filter_condition = (pl.col("year") == self.config.weather_year) & (
+                pl.col("name") == property_name.lower()
+            )
+            try:
+                return data_file.filter(filter_condition)["value"][0]
+            except IndexError:
+                logger.warning("Property {} missing data_file data. Skipping it.", property_name)
+                return
+        return
+
+    def _retrieve_time_series_data(self, property_name, data_file):
+        # RETRIEVING TIME-SERIES DATA
+        # In this pattern, we convert the format to align with Sienna's TimeSeries Array Format
+        if data_file.columns == ["pattern", "value"]:
+            # breakpoint()
+            # Temporary Solution
+            return data_file.mean()["value"][0]
+
+        if data_file.columns == ["month", "day", "period", "value"]:
+            # breakpoint()
+            data_file = data_file.rename({"period": "hour"})
+            data_file = data_file.with_columns(pl.lit(self.config.weather_year).alias("year"))
+            columns = ["year"] + [col for col in data_file.columns if col != "year"]
+            data_file = data_file.select(columns)
 
         # region = property_data["name"].unique()[0]
-        if all(column in data_file.columns for column in DATETIME_COLUMNS_BASIC):
+        elif all(column in data_file.columns for column in DATETIME_COLUMNS_BASIC):
             data_file = data_file.rename({"period": "hour"})
+            data_file = data_file.filter(pl.col("year") == self.config.weather_year)
         # elif all(column in data_file.columns for column in DATETIME_COLUMNS_MULTIZONE):
         #     breakpoint()
         #     # need to test these file types still
         #     # drop all columns that are not datetime columns or the region name
+        #     data_file = data_file.filter(pl.col("year") == self.config.weather_year)
         #     data_file = data_file.drop(
         #         *[col for col in data_file.columns if col not in DATETIME_COLUMNS_MULTIZONE + [region]]
         #     )
@@ -928,24 +1000,33 @@ class PlexosParser(PCMParser):
         # elif all(column in data_file.columns for column in DATETIME_COLUMNS_PIVOT):
         #     breakpoint()
         #     # need to test these file types still
+        #     data_file = data_file.filter(pl.col("year") == self.config.weather_year)
         #     data_file = data_file.melt(id_vars=DATETIME_COLUMNS_PIVOT, variable_name="hour")
-        else:
-            logger.warning("Data file {} not supported yet.", relative_path)
+        # else:
+        #     logger.warning("Data file {} not supported yet.", relative_path)
+        #     logger.debug("Columns not supported: {}", data_file.columns)
+        #     return
+
+        if data_file.is_empty():
+            logger.warning("Weather year doesn't existing in {}. Skipping it.", property_name)
             return
 
         assert not data_file.is_empty()
 
-        resolution = timedelta(hours=1)
+        # Format to SingleTimeSeries
+        if data_file.columns == ["year", "month", "day", "hour", "value"]:
+            resolution = timedelta(hours=1)
+            first_row = data_file.row(0)
+            start = datetime(year=first_row[0], month=first_row[1], day=first_row[2])
 
-        # First row should contain (year, month, day, hour)
-        assert data_file.columns == ["year", "month", "day", "hour", "value"], f"Columns: {data_file.columns}"
-        first_row = data_file.row(0)
-        start = datetime(year=first_row[0], month=first_row[1], day=first_row[2])
-
-        variable_name = property_name  # Change with property mapping
-        return SingleTimeSeries.from_array(
-            data=data_file["value"], resolution=resolution, initial_time=start, variable_name=variable_name
-        )
+            variable_name = property_name  # Change with property mapping
+            return SingleTimeSeries.from_array(
+                data=data_file["value"],
+                resolution=resolution,
+                initial_time=start,
+                variable_name=variable_name,
+            )
+        return
 
     def _time_slice_handler(self, property_name, property_data):
         # Deconstruct pattern
@@ -976,10 +1057,38 @@ class PlexosParser(PCMParser):
             resolution=resolution,
         )
 
-    def _parse_property_data(self, record_data):
+    def _apply_unit(self, value, unit):
+        if type(value) is SingleTimeSeries:
+            return value
+        return value * unit if unit else value
+
+    def _get_value(self, prop_value, unit, record, record_name):
+        data_file = variable = action = None
+        if record.get("data_file"):
+            data_file = self._csv_file_handler(record_name, record.get("data_file"))
+        if record.get("variable"):
+            variable = self._csv_file_handler(record_name, record.get("variable"))
+        if record.get("action"):
+            actions = {
+                "x": np.multiply,
+                "+": np.add,
+                "-": np.subtract,
+                "/": np.divide,
+            }
+            action = actions[record.get("action")]
+        if variable is not None and data_file is not None:
+            return self._apply_unit(action(variable, data_file), unit)
+        elif variable is not None:
+            return self._apply_unit(variable, unit)
+        elif data_file is not None:
+            return self._apply_unit(data_file, unit)
+        return self._apply_unit(prop_value, unit)
+
+    def _parse_property_data(self, record_data, record_name):
         mapped_properties = {}
         property_counts = {}
         multi_band_properties = set()
+
         for record in record_data:
             band = record["band"]
             prop_name = record["property_name"]
@@ -994,19 +1103,19 @@ class PlexosParser(PCMParser):
                 except UndefinedUnitError:
                     unit = None
             if prop_name not in property_counts:
-                value = prop_value * unit if unit else prop_value
+                value = self._get_value(prop_value, unit, record, record_name)
                 mapped_properties[mapped_property_name] = value
                 property_counts[mapped_property_name] = {band}
             else:
                 if band not in property_counts[mapped_property_name]:
                     new_prop_name = f"{mapped_property_name}_{band}"
-                    value = prop_value * unit if unit else prop_value
+                    value = self._get_value(prop_value, unit, record, record_name)
                     mapped_properties[new_prop_name] = value
                     property_counts[mapped_property_name].add(band)
                     multi_band_properties.add(mapped_property_name)
                     # If it's the same property and band, update the value
                 else:
-                    value = prop_value * unit if unit else prop_value
+                    value = self._get_value(prop_value, unit, record, record_name)
                     mapped_properties[mapped_property_name] = value
         return mapped_properties, multi_band_properties
 
