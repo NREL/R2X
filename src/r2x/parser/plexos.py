@@ -516,7 +516,7 @@ class PlexosParser(PCMParser):
                 or self.config.fuel_map.get(generator_fuel_type, "")
                 or self._infer_model_type(generator_name)
             )
-            # breakpoint()
+
             if getattr(R2X_MODELS, model_map, None) is None:
                 logger.warning(
                     "Model map not found for generator={} with fuel_type={}. Skipping it.",
