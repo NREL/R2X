@@ -470,6 +470,7 @@ class PlexosParser(PCMParser):
             # an error.
             if available := valid_fields.get("available", None):
                 if available > 0:
+                    # breakpoint()
                     valid_fields["available"] = 1
             if ext_data:
                 valid_fields["ext"] = ext_data
@@ -479,7 +480,6 @@ class PlexosParser(PCMParser):
                     "Skipping Generator {} since it does not have all the required fields", generator_name
                 )
                 continue
-            logger.debug("Adding generator {}", generator_name)
             self.system.add_component(model_map(**valid_fields))
 
     def _add_buses_to_generators(self):
@@ -836,6 +836,14 @@ class PlexosParser(PCMParser):
             # Each band needs to be a different time series and load.
             # Expression is typically used when you want your outputs to track the different bands
             # Action will modify the input data from the TS file. Only when there is an Expression definition.
+            if not len(region_data) == 1:
+                # breakpoint()
+                msg = (
+                    "load data has more than one row for {}. Selecting the first match. "
+                    "Check filtering of properties"
+                )
+                logger.warning(msg, region)
+
             ts = self._csv_file_handler(
                 property_name="max_active_power", property_data=region_data["data_file"][0]
             )
@@ -911,12 +919,6 @@ class PlexosParser(PCMParser):
         return
 
     def _csv_file_handler(self, property_name, property_data):
-        if not len(property_data) == 1:
-            msg = (
-                "Property data has more than one row for {}. Selecting the first match. "
-                "Check filtering of properties"
-            )
-            logger.warning(msg, property_name)
         fpath_text = property_data
         if "\\" in fpath_text:
             relative_path = PureWindowsPath(fpath_text)
@@ -947,7 +949,7 @@ class PlexosParser(PCMParser):
             return time_series_data
 
         logger.warning("Data file {} not supported yet. Skipping it.", relative_path)
-        logger.debug("Columns not supported: {}", data_file.columns)
+        logger.warning("Columns not supported: {}", data_file.columns)
 
     def _retrieve_single_value_data(self, property_name, data_file):
         if all(column in data_file.columns for column in [property_name.lower(), "year"]):
