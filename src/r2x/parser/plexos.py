@@ -1126,7 +1126,7 @@ if __name__ == "__main__":
     from ..logger import setup_logging
     from .handler import get_parser_data
 
-    run_folder = Path("/Users/kamrantehranchi/Local_Documents/FPA_Sienna/Projects/Sonoma/NREL_revised")
+    run_folder = Path("")
     # Functions relative to the parser.
     setup_logging(level="DEBUG")
 
@@ -1136,8 +1136,8 @@ if __name__ == "__main__":
         run_folder=run_folder,
         solve_year=2030,
         weather_year=2030,
-        model="IRP 2022 25 MMT Base Outage 2024",
+        model="",
     )
-    config.fmap["xml_file"]["fname"] = "First Principles_WECC_CEC_Zonal_v0_9_0 (10.000 R02).xml"
+    config.fmap["xml_file"]["fname"] = ""
 
     parser = get_parser_data(config=config, parser_class=PlexosParser)
