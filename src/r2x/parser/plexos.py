@@ -1091,8 +1091,15 @@ class PlexosParser(PCMParser):
         if data_file.columns[:2] == PROPERTY_SV_COLUMNS_BASIC:
             return data_file.filter(pl.col("name") == property_name.lower())["value"][0]
 
+<<<<<<< HEAD
         if data_file.columns == PROPERTY_SV_COLUMNS_NAMEYEAR:  # double check this case
             filter_condition = (pl.col("year") == self.study_year) & (pl.col("name") == property_name.lower())
+=======
+        if data_file.columns == PROPERTY_COLUMNS_TEMPORAL:  # double check this case
+            filter_condition = (pl.col("year") == self.config.weather_year) & (
+                pl.col("name") == property_name.lower()
+            )
+>>>>>>> e4a9423 (Add new parent_class arg to get_memberships calls)
             try:
                 return data_file.filter(filter_condition)["value"][0]
             except IndexError:
@@ -1254,6 +1261,7 @@ class PlexosParser(PCMParser):
         if variable is not None and record.get("action") == "=":
             return self._apply_unit(variable, unit)
         if variable is not None and data_file is not None:
+<<<<<<< HEAD
             # logger.debug("Record Name: {}", record_name)
             # logger.debug("Variable: {}", variable)
             # logger.debug("Data File: {}", data_file)
@@ -1261,6 +1269,9 @@ class PlexosParser(PCMParser):
             return self._apply_unit(self._apply_action(action, variable, data_file), unit)
         if variable is not None and prop_value is not None:
             return self._apply_unit(self._apply_action(action, variable, prop_value), unit)
+=======
+            return self._apply_unit(action(variable, data_file), unit)  # confirm direction of operation
+>>>>>>> e4a9423 (Add new parent_class arg to get_memberships calls)
         elif variable is not None:
             return self._apply_unit(variable, unit)
         elif data_file is not None:
