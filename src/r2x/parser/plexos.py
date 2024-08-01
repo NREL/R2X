@@ -488,7 +488,7 @@ class PlexosParser(PCMParser):
         generator_memberships = self.db.get_memberships(
             *generators,
             object_class=ClassEnum.Generator,
-            collection=(ClassEnum.Generator, CollectionEnum.Nodes),
+            collection=CollectionEnum.Nodes,
         )
         for generator in self.system.get_components(Generator):
             buses = [membership for membership in generator_memberships if membership[2] == generator.name]
@@ -512,7 +512,8 @@ class PlexosParser(PCMParser):
         generator_memberships = self.db.get_memberships(
             *generators,
             object_class=ClassEnum.Generator,
-            collection=(ClassEnum.Reserve, CollectionEnum.Generators),
+            parent_class=ClassEnum.Reserve,
+            collection=CollectionEnum.Generators,
         )
         for generator in self.system.get_components(Generator):
             reserves = [membership for membership in generator_memberships if membership[3] == generator.name]
@@ -615,7 +616,7 @@ class PlexosParser(PCMParser):
         generator_memberships = self.db.get_memberships(
             *batteries,
             object_class=ClassEnum.Battery,
-            collection=(ClassEnum.Battery, CollectionEnum.Nodes),
+            collection=CollectionEnum.Nodes,
         )
         for component in self.system.get_components(GenericBattery):
             buses = [membership for membership in generator_memberships if membership[2] == component.name]
@@ -639,7 +640,8 @@ class PlexosParser(PCMParser):
         generator_memberships = self.db.get_memberships(
             *batteries,
             object_class=ClassEnum.Battery,
-            collection=(ClassEnum.Reserve, CollectionEnum.Batteries),
+            parent_class=ClassEnum.Reserve,
+            collection=CollectionEnum.Batteries,
         )
         for battery in self.system.get_components(GenericBattery):
             reserves = [membership for membership in generator_memberships if membership[3] == battery.name]
@@ -714,7 +716,8 @@ class PlexosParser(PCMParser):
         lines_memberships = self.db.get_memberships(
             *lines,
             object_class=ClassEnum.Line,
-            collection=(ClassEnum.Interface, CollectionEnum.Lines),
+            parent_class=ClassEnum.Interface,
+            collection=CollectionEnum.Lines,
         )
         for line in self.system.get_components(MonitoredLine):
             interface = next(
@@ -853,7 +856,10 @@ class PlexosParser(PCMParser):
 
             max_load = np.max(ts.data.to_numpy())
             bus_region_membership = self.db.get_memberships(
-                region[0], object_class=ClassEnum.Region, collection=(ClassEnum.Node, CollectionEnum.Region)
+                region[0],
+                object_class=ClassEnum.Region,
+                parent_class=ClassEnum.Node,
+                collection=CollectionEnum.Region,
             )
             for bus in bus_region_membership:
                 bus = self.system.get_component(ACBus, name=bus[2])
@@ -959,7 +965,7 @@ class PlexosParser(PCMParser):
         if data_file.columns == PROPERTY_COLUMNS_BASIC:
             return data_file.filter(pl.col("name") == property_name.lower())["value"][0]
 
-        if data_file.columns == PROPERTY_COLUMNS_TEMPORAL:
+        if data_file.columns == PROPERTY_COLUMNS_TEMPORAL:  # double check this case
             filter_condition = (pl.col("year") == self.config.weather_year) & (
                 pl.col("name") == property_name.lower()
             )
@@ -1079,7 +1085,7 @@ class PlexosParser(PCMParser):
             }
             action = actions[record.get("action")]
         if variable is not None and data_file is not None:
-            return self._apply_unit(action(variable, data_file), unit)
+            return self._apply_unit(action(variable, data_file), unit)  # confirm direction of operation
         elif variable is not None:
             return self._apply_unit(variable, unit)
         elif data_file is not None:
