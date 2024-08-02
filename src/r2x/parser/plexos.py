@@ -43,11 +43,12 @@ models = importlib.import_module("r2x.model")
 R2X_MODELS = importlib.import_module("r2x.model")
 BASE_WEATHER_YEAR = 2007
 XML_FILE_KEY = "xml_file"
-PROPERTY_COLUMNS_BASIC = ["name", "value"]
-PROPERTY_COLUMNS_TEMPORAL = ["name", "year", "month", "day", "period", "value"]
-DATETIME_COLUMNS_BASIC = ["year", "month", "day", "period", "value"]
-DATETIME_COLUMNS_MULTIZONE = ["year", "month", "day", "period"]
-DATETIME_COLUMNS_PIVOT = ["year", "month", "day"]
+PROPERTY_SV_COLUMNS_BASIC = ["name", "value"]
+PROPERTY_SV_COLUMNS_NAMEYEAR = ["name", "year", "month", "day", "period", "value"]
+PROPERTY_TS_COLUMNS_BASIC = ["year", "month", "day", "period", "value"]
+PROPERTY_TS_COLUMNS_MULTIZONE = ["year", "month", "day", "period"]
+PROPERTY_TS_COLUMNS_PIVOT = ["year", "month", "day"]
+PROPERTY_TS_COLUMNS_MDP = ["month", "day", "period"]
 DEFAULT_QUERY_COLUMNS_SCHEMA = {  # NOTE: Order matters
     # "membership_id": pl.Int64,
     "parent_class_id": pl.Int32,
@@ -70,6 +71,7 @@ DEFAULT_QUERY_COLUMNS_SCHEMA = {  # NOTE: Order matters
     "variable": pl.String,
     "timeslice": pl.String,
     "action": pl.String,
+    "tag_action_id": pl.Int32,
 }
 COLUMNS = [
     "name",
@@ -344,7 +346,7 @@ class PlexosParser(PCMParser):
         generator_name_lower = generator_name.lower()
         for key, model_type in model_type_mapping.items():
             if key in generator_name_lower:
-                logger.debug("Inferred model type for generator={} as {}", generator_name, model_type)
+                # logger.debug("Inferred model type for generator={} as {}", generator_name, model_type)
                 return model_type
         return ""
 
@@ -373,6 +375,7 @@ class PlexosParser(PCMParser):
         generator_fuel = self.db.query(fuel_query)
         generator_fuel_map = {key: value for key, value in generator_fuel}
 
+        system_generators.write_csv("system_generators.csv")
         # Iterate over properties for generator
         for generator_name, generator_data in system_generators.group_by("name"):
             generator_name = generator_name[0]
@@ -948,6 +951,7 @@ class PlexosParser(PCMParser):
             return time_series_data
 
         logger.warning("Data file {} not supported yet. Skipping it.", relative_path)
+        # breakpoint()
         logger.warning("Columns not supported: {}", data_file.columns)
 
     def _retrieve_single_value_data(self, property_name, data_file):
@@ -955,10 +959,10 @@ class PlexosParser(PCMParser):
             data_file = data_file.filter(pl.col("year") == self.config.weather_year)
             return data_file[property_name.lower()][0]
 
-        if data_file.columns == PROPERTY_COLUMNS_BASIC:
+        if data_file.columns == PROPERTY_SV_COLUMNS_BASIC:
             return data_file.filter(pl.col("name") == property_name.lower())["value"][0]
 
-        if data_file.columns == PROPERTY_COLUMNS_TEMPORAL:  # double check this case
+        if data_file.columns == PROPERTY_SV_COLUMNS_NAMEYEAR:  # double check this case
             filter_condition = (pl.col("year") == self.config.weather_year) & (
                 pl.col("name") == property_name.lower()
             )
@@ -970,24 +974,44 @@ class PlexosParser(PCMParser):
         return
 
     def _retrieve_time_series_data(self, property_name, data_file):
-        # RETRIEVING TIME-SERIES DATA
-        # In this pattern, we convert the format to align with Sienna's TimeSeries Array Format
+        output_columns = ["year", "month", "day", "hour", "value"]
         if data_file.columns == ["pattern", "value"]:
-            # breakpoint()
-            # Temporary Solution
-            return data_file.mean()["value"][0]
+            dt = pl.datetime_range(
+                datetime(self.weather_year, 1, 1), datetime(self.weather_year, 12, 31), "1h", eager=True
+            ).alias("datetime")
+            date_df = pl.DataFrame({"datetime": dt})
+            date_df = date_df.with_columns(
+                [
+                    date_df["datetime"].dt.year().alias("year"),
+                    date_df["datetime"].dt.month().alias("month"),
+                    date_df["datetime"].dt.day().alias("day"),
+                    date_df["datetime"].dt.hour().alias("hour"),
+                ]
+            )
 
-        if data_file.columns == ["month", "day", "period", "value"]:
-            # breakpoint()
+            data_file = data_file.with_columns(
+                month=pl.col("pattern").str.extract(r"(\d{2})$").cast(pl.Int8)
+            )  # if other patterns exist will need to change.
+            data_file = date_df.join(data_file.select("month", "value"), on="month", how="inner").select(
+                output_columns
+            )
+
+        elif data_file.columns == ["month", "day", "period", "value"]:
             data_file = data_file.rename({"period": "hour"})
             data_file = data_file.with_columns(pl.lit(self.config.weather_year).alias("year"))
             columns = ["year"] + [col for col in data_file.columns if col != "year"]
             data_file = data_file.select(columns)
 
-        # region = property_data["name"].unique()[0]
-        elif all(column in data_file.columns for column in DATETIME_COLUMNS_BASIC):
+        elif all(column in data_file.columns for column in [*PROPERTY_TS_COLUMNS_MDP, property_name.lower()]):
+            data_file = data_file.with_columns(pl.lit(self.config.weather_year).alias("year"))
+            data_file = data_file.rename({property_name.lower(): "value"})
+            data_file = data_file.rename({"period": "hour"})
+            data_file = data_file.select(output_columns)
+
+        elif all(column in data_file.columns for column in PROPERTY_TS_COLUMNS_BASIC):
             data_file = data_file.rename({"period": "hour"})
             data_file = data_file.filter(pl.col("year") == self.config.weather_year)
+        # region = property_data["name"].unique()[0]
         # elif all(column in data_file.columns for column in DATETIME_COLUMNS_MULTIZONE):
         #     breakpoint()
         #     # need to test these file types still
@@ -1015,7 +1039,7 @@ class PlexosParser(PCMParser):
         assert not data_file.is_empty()
 
         # Format to SingleTimeSeries
-        if data_file.columns == ["year", "month", "day", "hour", "value"]:
+        if data_file.columns == output_columns:
             resolution = timedelta(hours=1)
             first_row = data_file.row(0)
             start = datetime(year=first_row[0], month=first_row[1], day=first_row[2])
@@ -1079,6 +1103,8 @@ class PlexosParser(PCMParser):
             action = actions[record.get("action")]
         if variable is not None and data_file is not None:
             return self._apply_unit(action(variable, data_file), unit)  # confirm direction of operation
+        if variable is not None and prop_value is not None:
+            return self._apply_unit(action(variable, prop_value), unit)
         elif variable is not None:
             return self._apply_unit(variable, unit)
         elif data_file is not None:
