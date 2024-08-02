@@ -49,6 +49,21 @@ PROPERTY_TS_COLUMNS_BASIC = ["year", "month", "day", "period", "value"]
 PROPERTY_TS_COLUMNS_MULTIZONE = ["year", "month", "day", "period"]
 PROPERTY_TS_COLUMNS_PIVOT = ["year", "month", "day"]
 PROPERTY_TS_COLUMNS_MDP = ["month", "day", "period"]
+PROPERTY_TS_COLUMNS_MONTH_PIVOT = [
+    "name",
+    "m01",
+    "m02",
+    "m03",
+    "m04",
+    "m05",
+    "m06",
+    "m07",
+    "m08",
+    "m09",
+    "m10",
+    "m11",
+    "m12",
+]
 DEFAULT_QUERY_COLUMNS_SCHEMA = {  # NOTE: Order matters
     # "membership_id": pl.Int64,
     "parent_class_id": pl.Int32,
@@ -448,17 +463,6 @@ class PlexosParser(PCMParser):
                 k: v for k, v in mapped_records.items() if k not in model_map.model_fields if v is not None
             }
 
-            # NOTE: need to define logic to handle the differences between Max Capacity,
-            #  Rating, and Rating Factor. Rating factor is a % value (0-100)
-            #  that gets assigned to nameplate. typically you use either [rating]
-            #  or # [rating factor]. if rating factor is defined it would be
-            # applied to rating if defined, otherwise to maxcapacity.
-            # Read Order: Rating Factor * Rating, Rating, Max Capacity.
-            # If the fixed load, it could be an exogenous profile, or a fixed value.
-            # BTM solar will typically use this.
-            # If it is zero then the default value is to honor the zero value, if a particular setting
-            #  is enabled then the zero is dispatchable.
-
             # NOTE: Plexos can define either a generator with Units = 0 to indicate
             # that it has been retired, 1 that is online or > 1 when it has
             # multiple units. For the R2X model to work, we need to check if
@@ -466,7 +470,6 @@ class PlexosParser(PCMParser):
             # an error.
             if available := valid_fields.get("available", None):
                 if available > 0:
-                    # breakpoint()
                     valid_fields["available"] = 1
             if ext_data:
                 valid_fields["ext"] = ext_data
@@ -836,7 +839,6 @@ class PlexosParser(PCMParser):
             # Expression is typically used when you want your outputs to track the different bands
             # Action will modify the input data from the TS file. Only when there is an Expression definition.
             if not len(region_data) == 1:
-                # breakpoint()
                 msg = (
                     "load data has more than one row for {}. Selecting the first match. "
                     "Check filtering of properties"
@@ -951,7 +953,6 @@ class PlexosParser(PCMParser):
             return time_series_data
 
         logger.warning("Data file {} not supported yet. Skipping it.", relative_path)
-        # breakpoint()
         logger.warning("Columns not supported: {}", data_file.columns)
 
     def _retrieve_single_value_data(self, property_name, data_file):
@@ -975,6 +976,13 @@ class PlexosParser(PCMParser):
 
     def _retrieve_time_series_data(self, property_name, data_file):
         output_columns = ["year", "month", "day", "hour", "value"]
+
+        # Convert these types to ["pattern", "value"]
+        if all(column in data_file.columns for column in PROPERTY_TS_COLUMNS_MONTH_PIVOT):
+            data_file = data_file.filter(pl.col("name") == property_name.lower())
+            data_file = data_file.melt(id_vars=["name"], variable_name="pattern")
+            data_file = data_file.select(["pattern", "value"])
+
         if data_file.columns == ["pattern", "value"]:
             dt = pl.datetime_range(
                 datetime(self.weather_year, 1, 1), datetime(self.weather_year, 12, 31), "1h", eager=True
@@ -1011,9 +1019,8 @@ class PlexosParser(PCMParser):
         elif all(column in data_file.columns for column in PROPERTY_TS_COLUMNS_BASIC):
             data_file = data_file.rename({"period": "hour"})
             data_file = data_file.filter(pl.col("year") == self.config.weather_year)
-        # region = property_data["name"].unique()[0]
+
         # elif all(column in data_file.columns for column in DATETIME_COLUMNS_MULTIZONE):
-        #     breakpoint()
         #     # need to test these file types still
         #     # drop all columns that are not datetime columns or the region name
         #     data_file = data_file.filter(pl.col("year") == self.config.weather_year)
@@ -1023,7 +1030,6 @@ class PlexosParser(PCMParser):
         #     # rename region name to hour
         #     data_file = data_file.rename({region: "value"})
         # elif all(column in data_file.columns for column in DATETIME_COLUMNS_PIVOT):
-        #     breakpoint()
         #     # need to test these file types still
         #     data_file = data_file.filter(pl.col("year") == self.config.weather_year)
         #     data_file = data_file.melt(id_vars=DATETIME_COLUMNS_PIVOT, variable_name="hour")
