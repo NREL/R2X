@@ -365,6 +365,21 @@ class PlexosParser(PCMParser):
                 return model_type
         return ""
 
+    def _field_filter(self, property_fields, eligible_fields):
+        valid = {k: v for k, v in property_fields.items() if k in eligible_fields if v is not None}
+        extra = {k: v for k, v in property_fields.items() if k not in eligible_fields if v is not None}
+        if extra:
+            valid["ext"] = extra
+        # NOTE: Plexos can define either a generator with Units = 0 to indicate
+        # that it has been retired, 1 that is online or > 1 when it has
+        # multiple units. For the R2X model to work, we need to check if
+        # the unit is available, but fixed the available key to 1 to avoid
+        # an error.
+        if available := valid.get("available", None):
+            if available > 0:
+                valid["available"] = 1
+        return valid, extra
+
     def _construct_generators(self):
         logger.debug("Creating generators")
         system_generators = (pl.col("child_class_name") == ClassEnum.Generator.name) & (
@@ -390,7 +405,7 @@ class PlexosParser(PCMParser):
         generator_fuel = self.db.query(fuel_query)
         generator_fuel_map = {key: value for key, value in generator_fuel}
 
-        system_generators.write_csv("system_generators.csv")
+        # system_generators.write_csv("system_generators.csv")
         # Iterate over properties for generator
         for generator_name, generator_data in system_generators.group_by("name"):
             generator_name = generator_name[0]
@@ -455,24 +470,10 @@ class PlexosParser(PCMParser):
             if "base_power" not in mapped_records and "pump_load" in mapped_records:
                 mapped_records["base_power"] = mapped_records["pump_load"]
 
-            valid_fields = {
-                k: v for k, v in mapped_records.items() if k in model_map.model_fields if v is not None
-            }
+            valid_fields, ext_data = self._field_filter(mapped_records, model_map.model_fields)
 
-            ext_data = {
-                k: v for k, v in mapped_records.items() if k not in model_map.model_fields if v is not None
-            }
-
-            # NOTE: Plexos can define either a generator with Units = 0 to indicate
-            # that it has been retired, 1 that is online or > 1 when it has
-            # multiple units. For the R2X model to work, we need to check if
-            # the unit is available, but fixed the available key to 1 to avoid
-            # an error.
-            if available := valid_fields.get("available", None):
-                if available > 0:
-                    valid_fields["available"] = 1
-            if ext_data:
-                valid_fields["ext"] = ext_data
+            ts_fields = {k: v for k, v in valid_fields.items() if isinstance(v, SingleTimeSeries)}
+            valid_fields.update({ts_name: np.mean(ts.data) for ts_name, ts in ts_fields.items()})
 
             if not all(key in valid_fields for key in required_fields):
                 logger.warning(
@@ -480,6 +481,11 @@ class PlexosParser(PCMParser):
                 )
                 continue
             self.system.add_component(model_map(**valid_fields))
+            if ts_fields:
+                generator = self.system.get_component_by_label(f"{model_map.__name__}.{generator_name}")
+                ts_dict = {"solve_year": self.config.weather_year}
+                for ts_name, ts in ts_fields.items():
+                    self.system.add_time_series(ts, generator, **ts_dict)
 
     def _add_buses_to_generators(self):
         # Add buses to generators
@@ -831,8 +837,17 @@ class PlexosParser(PCMParser):
             pl.col("parent_class_name") == ClassEnum.System.name
         )
         regions = self._get_model_data(system_regions).filter(~pl.col("data_file").is_null())
-        assert self.config.run_folder
 
+        # system_nodes = (pl.col("child_class_name") == ClassEnum.Node.name) & (
+        #     pl.col("parent_class_name") == ClassEnum.System.name
+        # )
+        # nodes = self._get_model_data(system_nodes).filter(~pl.col("data_file").is_null())
+        # nodes.write_csv("load_nodes.csv")
+
+        # regions = self._get_model_data(system_regions).filter(~pl.col("data_file").is_null())
+        # assert self.config.run_folder
+        # regions.write_csv("load_regions.csv")
+        # breakpoint()
         for region, region_data in regions.group_by("name"):
             # If the weather year is not in the data, then drop that load.
             # Each band needs to be a different time series and load.
@@ -1043,7 +1058,6 @@ class PlexosParser(PCMParser):
             return
 
         assert not data_file.is_empty()
-
         # Format to SingleTimeSeries
         if data_file.columns == output_columns:
             resolution = timedelta(hours=1)
@@ -1056,6 +1070,7 @@ class PlexosParser(PCMParser):
                 resolution=resolution,
                 initial_time=start,
                 variable_name=variable_name,
+                # Maybe change this to be the property name rather than the object name?
             )
         return
 
