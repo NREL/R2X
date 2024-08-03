@@ -506,7 +506,7 @@ class PlexosParser(PCMParser):
         generator_fuel = self.db.query(fuel_query)
         generator_fuel_map = {key: value for key, value in generator_fuel}
 
-        system_generators.write_csv("system_generators.csv")
+        # system_generators.write_csv("system_generators.csv")
         # Iterate over properties for generator
         for generator_name, generator_data in system_generators.group_by("name"):
             generator_name = generator_name[0]
