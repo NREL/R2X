@@ -75,6 +75,28 @@
     "Spinning": 1,
     "regulation_down": 4
   },
+  "reserve_types": {
+    "1": {
+      "direction": "Up",
+      "type": "Spinning"
+    },
+    "2": {
+      "direction": "Down",
+      "type": "Spinning"
+    },
+    "3": {
+      "direction": "Up",
+      "type": "Regulation"
+    },
+    "4": {
+      "direction": "Down",
+      "type": "Regulation"
+    },
+    "default": {
+      "direction": "Up",
+      "type": "Spinning"
+    }
+  },
   "reserve_vors": {
     "Flexibility": 390000,
     "Regulation": 410000,

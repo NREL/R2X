@@ -22,7 +22,7 @@
 ### Prerequisites
 
 ```console
-mamba env create -f enviroment.yml && conda activate r2x
+mamba env create -f environment.yml && conda activate r2x
 ```
 To install all Python dependencies
 
