@@ -183,8 +183,8 @@ class PlexosParser(PCMParser):
         of doing it.
         """
         logger.debug("Creating load zone representation")
-        system_regions = (pl.col("child_class_name") == ClassEnum.Region) & (
-            pl.col("parent_class_name") == ClassEnum.System
+        system_regions = (pl.col("child_class_name") == ClassEnum.Region.value) & (
+            pl.col("parent_class_name") == ClassEnum.System.value
         )
         regions = self._get_model_data(system_regions)
 
@@ -208,11 +208,11 @@ class PlexosParser(PCMParser):
 
     def _construct_buses(self, default_model=ACBus) -> None:
         logger.debug("Creating buses representation")
-        system_buses = (pl.col("child_class_name") == ClassEnum.Node) & (
-            pl.col("parent_class_name") == ClassEnum.System
+        system_buses = (pl.col("child_class_name") == ClassEnum.Node.value) & (
+            pl.col("parent_class_name") == ClassEnum.System.value
         )
-        region_buses = (pl.col("child_class_name") == ClassEnum.Region) & (
-            pl.col("parent_class_name") == ClassEnum.Node
+        region_buses = (pl.col("child_class_name") == ClassEnum.Region.value) & (
+            pl.col("parent_class_name") == ClassEnum.Node.value
         )
         system_buses = self._get_model_data(system_buses)
         buses_region = self._get_model_data(region_buses)
@@ -298,8 +298,8 @@ class PlexosParser(PCMParser):
 
     def _construct_branches(self, default_model=MonitoredLine):
         logger.debug("Creating lines")
-        system_lines = (pl.col("child_class_name") == ClassEnum.Line.name) & (
-            pl.col("parent_class_name") == ClassEnum.System
+        system_lines = (pl.col("child_class_name") == ClassEnum.Line.value) & (
+            pl.col("parent_class_name") == ClassEnum.System.value
         )
         system_lines = self._get_model_data(system_lines)
         lines_pivot = system_lines.pivot(  # noqa: PD010
