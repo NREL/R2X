@@ -358,7 +358,7 @@ class PlexosParser(PCMParser):
         return
 
     def _infer_model_type(self, generator_name):
-        model_type_mapping = self.config.generator_name_inference_strings
+        model_type_mapping = self.config.device_name_inference_map
         generator_name_lower = generator_name.lower()
         for key, model_type in model_type_mapping.items():
             if key in generator_name_lower:
@@ -411,8 +411,8 @@ class PlexosParser(PCMParser):
             generator_fuel_type = generator_fuel_map.get(generator_name)
             logger.trace("Parsing generator = {} with fuel type = {}", generator_name, generator_fuel_type)
             model_map = (
-                self.config.generator_map.get(generator_name, "")
-                or self.config.model_map.get(generator_fuel_type, "")
+                self.config.device_map.get(generator_name, "")
+                or self.config.fuel_map.get(generator_fuel_type, "")
                 or self._infer_model_type(generator_name)
             )
 
