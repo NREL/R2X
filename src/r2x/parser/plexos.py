@@ -67,6 +67,7 @@ PROPERTY_TS_COLUMNS_MONTH_PIVOT = [
 DEFAULT_QUERY_COLUMNS_SCHEMA = {  # NOTE: Order matters
     "membership_id": pl.Int64,
     "parent_object_id": pl.Int32,
+    "parent_object_name": pl.String,
     "parent_class_name": pl.String,
     "child_class_name": pl.String,
     "category": pl.String,
@@ -79,8 +80,8 @@ DEFAULT_QUERY_COLUMNS_SCHEMA = {  # NOTE: Order matters
     "date_to": pl.String,
     "date_from": pl.String,
     "memo": pl.String,
+    "scenario_category": pl.String,
     "scenario": pl.String,
-    # "scenario_tag": pl.String,
     "action": pl.String,
     "data_file_tag": pl.String,
     "data_file": pl.String,
@@ -387,6 +388,7 @@ class PlexosParser(PCMParser):
             pl.col("parent_class_name") == ClassEnum.System.name
         )
         system_generators = self._get_model_data(system_generators)
+        system_generators.write_csv("generators.csv")
         # NOTE: The best way to identify the type of generator on Plexos is by reading the fuel
         fuel_query = f"""
         SELECT
@@ -472,8 +474,14 @@ class PlexosParser(PCMParser):
 
             valid_fields, ext_data = self._field_filter(mapped_records, model_map.model_fields)
 
-            ts_fields = {k: v for k, v in valid_fields.items() if isinstance(v, SingleTimeSeries)}
-            valid_fields.update({ts_name: np.mean(ts.data) for ts_name, ts in ts_fields.items()})
+            ts_fields = {k: v for k, v in mapped_records.items() if isinstance(v, SingleTimeSeries)}
+            valid_fields.update(
+                {
+                    ts_name: np.mean(ts.data)
+                    for ts_name, ts in ts_fields.items()
+                    if ts_name in valid_fields.keys()
+                }
+            )
 
             if not all(key in valid_fields for key in required_fields):
                 logger.warning(
@@ -482,10 +490,10 @@ class PlexosParser(PCMParser):
                 continue
             self.system.add_component(model_map(**valid_fields))
             if ts_fields:
-                # breakpoint()
                 generator = self.system.get_component_by_label(f"{model_map.__name__}.{generator_name}")
                 ts_dict = {"solve_year": self.config.weather_year}
                 for ts_name, ts in ts_fields.items():
+                    ts.variable_name = generator_name + ts_name
                     self.system.add_time_series(ts, generator, **ts_dict)
 
     def _add_buses_to_generators(self):
@@ -825,10 +833,10 @@ class PlexosParser(PCMParser):
         if scenario_specific_data.is_empty():
             return self.plexos_data.filter(data_filter & base_case_filter)
 
-        base_case_filter = base_case_filter | (
+        base_case_filter = base_case_filter & (
             ~(
                 pl.col("name").is_in(scenario_specific_data["name"])
-                | pl.col("property_name").is_in(scenario_specific_data["property_name"])
+                & pl.col("property_name").is_in(scenario_specific_data["property_name"])
             )
             | pl.col("property_name").is_null()
         )
@@ -981,8 +989,6 @@ class PlexosParser(PCMParser):
             return data_file[property_name.lower()][0]
 
         if data_file.columns[:2] == PROPERTY_SV_COLUMNS_BASIC:
-            # if len(data_file.filter(pl.col("name") == property_name.lower())["value"]) != 1:
-            #     # breakpoint()
             return data_file.filter(pl.col("name") == property_name.lower())["value"][0]
 
         if data_file.columns == PROPERTY_SV_COLUMNS_NAMEYEAR:  # double check this case
