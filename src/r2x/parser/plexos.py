@@ -589,7 +589,6 @@ class PlexosParser(PCMParser):
                 continue
             self.system.add_component(model_map(**valid_fields))
             if ts_fields:
-                # breakpoint()
                 generator = self.system.get_component_by_label(f"{model_map.__name__}.{generator_name}")
                 ts_dict = {"solve_year": self.study_year}
                 for ts_name, ts in ts_fields.items():
