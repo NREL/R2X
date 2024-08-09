@@ -65,11 +65,9 @@ PROPERTY_TS_COLUMNS_MONTH_PIVOT = [
     "m12",
 ]
 DEFAULT_QUERY_COLUMNS_SCHEMA = {  # NOTE: Order matters
-    # "membership_id": pl.Int64,
-    "parent_class_id": pl.Int32,
+    "membership_id": pl.Int64,
     "parent_object_id": pl.Int32,
     "parent_class_name": pl.String,
-    "child_class_id": pl.Int32,
     "child_class_name": pl.String,
     "category": pl.String,
     "object_id": pl.Int32,
@@ -82,11 +80,14 @@ DEFAULT_QUERY_COLUMNS_SCHEMA = {  # NOTE: Order matters
     "date_from": pl.String,
     "memo": pl.String,
     "scenario": pl.String,
-    "data_file": pl.String,
-    "variable": pl.String,
-    "timeslice": pl.String,
+    # "scenario_tag": pl.String,
     "action": pl.String,
-    "tag_action_id": pl.Int32,
+    "data_file_tag": pl.String,
+    "data_file": pl.String,
+    "variable_tag": pl.String,
+    "variable": pl.String,
+    "timeslice_tag": pl.String,
+    "timeslice": pl.String,
 }
 COLUMNS = [
     "name",
@@ -386,7 +387,6 @@ class PlexosParser(PCMParser):
             pl.col("parent_class_name") == ClassEnum.System.name
         )
         system_generators = self._get_model_data(system_generators)
-
         # NOTE: The best way to identify the type of generator on Plexos is by reading the fuel
         fuel_query = f"""
         SELECT
@@ -405,7 +405,6 @@ class PlexosParser(PCMParser):
         generator_fuel = self.db.query(fuel_query)
         generator_fuel_map = {key: value for key, value in generator_fuel}
 
-        # system_generators.write_csv("system_generators.csv")
         # Iterate over properties for generator
         for generator_name, generator_data in system_generators.group_by("name"):
             generator_name = generator_name[0]
@@ -439,6 +438,7 @@ class PlexosParser(PCMParser):
                     "data_file",
                     "variable",
                     "action",
+                    "variable_tag",
                 ]
             ].to_dicts()
 
@@ -482,6 +482,7 @@ class PlexosParser(PCMParser):
                 continue
             self.system.add_component(model_map(**valid_fields))
             if ts_fields:
+                # breakpoint()
                 generator = self.system.get_component_by_label(f"{model_map.__name__}.{generator_name}")
                 ts_dict = {"solve_year": self.config.weather_year}
                 for ts_name, ts in ts_fields.items():
@@ -560,8 +561,11 @@ class PlexosParser(PCMParser):
                     "data_file",
                     "variable",
                     "action",
+                    "variable_tag",
                 ]
             ].to_dicts()
+
+            # logger.debug("Parsing battery = {}", battery_name)
             mapped_records, _ = self._parse_property_data(property_records, battery_name)
             mapped_records["name"] = battery_name
 
@@ -966,8 +970,9 @@ class PlexosParser(PCMParser):
         time_series_data = self._retrieve_time_series_data(property_name, data_file)
         if time_series_data is not None:
             return time_series_data
-
+        logger.warning("Property {} not supported. Skipping it.", property_name)
         logger.warning("Data file {} not supported yet. Skipping it.", relative_path)
+        # breakpoint()
         logger.warning("Columns not supported: {}", data_file.columns)
 
     def _retrieve_single_value_data(self, property_name, data_file):
@@ -975,7 +980,9 @@ class PlexosParser(PCMParser):
             data_file = data_file.filter(pl.col("year") == self.config.weather_year)
             return data_file[property_name.lower()][0]
 
-        if data_file.columns == PROPERTY_SV_COLUMNS_BASIC:
+        if data_file.columns[:2] == PROPERTY_SV_COLUMNS_BASIC:
+            # if len(data_file.filter(pl.col("name") == property_name.lower())["value"]) != 1:
+            #     # breakpoint()
             return data_file.filter(pl.col("name") == property_name.lower())["value"][0]
 
         if data_file.columns == PROPERTY_SV_COLUMNS_NAMEYEAR:  # double check this case
@@ -1063,10 +1070,10 @@ class PlexosParser(PCMParser):
             resolution = timedelta(hours=1)
             first_row = data_file.row(0)
             start = datetime(year=first_row[0], month=first_row[1], day=first_row[2])
-
             variable_name = property_name  # Change with property mapping
+            # breakpoint()
             return SingleTimeSeries.from_array(
-                data=data_file["value"],
+                data=data_file["value"].cast(pl.Float64),
                 resolution=resolution,
                 initial_time=start,
                 variable_name=variable_name,
@@ -1108,24 +1115,47 @@ class PlexosParser(PCMParser):
             return value
         return value * unit if unit else value
 
+    def _apply_action(self, action, val_a, val_b):
+        val_a_data = val_a.data if isinstance(val_a, SingleTimeSeries) else val_a
+        val_b_data = val_b.data if isinstance(val_b, SingleTimeSeries) else val_b
+
+        results = action(val_a_data, val_b_data)
+        if isinstance(val_a, SingleTimeSeries):
+            val_a.data = results
+            return val_a
+        if isinstance(val_b, SingleTimeSeries):
+            val_b.data = results
+            return val_b
+        return results
+
     def _get_value(self, prop_value, unit, record, record_name):
         data_file = variable = action = None
         if record.get("data_file"):
             data_file = self._csv_file_handler(record_name, record.get("data_file"))
         if record.get("variable"):
-            variable = self._csv_file_handler(record_name, record.get("variable"))
+            variable = self._csv_file_handler(record.get("variable_tag"), record.get("variable"))
+            if variable is None:
+                variable = self._csv_file_handler(record_name, record.get("variable"))
+
         if record.get("action"):
             actions = {
-                "x": np.multiply,
+                "×": np.multiply,  # noqa
                 "+": np.add,
                 "-": np.subtract,
                 "/": np.divide,
+                "=": lambda x, y: y,
             }
             action = actions[record.get("action")]
+        if variable is not None and record.get("action") == "=":
+            return self._apply_unit(variable, unit)
         if variable is not None and data_file is not None:
-            return self._apply_unit(action(variable, data_file), unit)  # confirm direction of operation
+            # logger.debug("Record Name: {}", record_name)
+            # logger.debug("Variable: {}", variable)
+            # logger.debug("Data File: {}", data_file)
+            # confirm direction of action operator
+            return self._apply_unit(self._apply_action(action, variable, data_file), unit)
         if variable is not None and prop_value is not None:
-            return self._apply_unit(action(variable, prop_value), unit)
+            return self._apply_unit(self._apply_action(action, variable, prop_value), unit)
         elif variable is not None:
             return self._apply_unit(variable, unit)
         elif data_file is not None:
