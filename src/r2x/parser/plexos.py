@@ -506,7 +506,6 @@ class PlexosParser(PCMParser):
         generator_fuel = self.db.query(fuel_query)
         generator_fuel_map = {key: value for key, value in generator_fuel}
 
-        # system_generators.write_csv("system_generators.csv")
         # Iterate over properties for generator
         for generator_name, generator_data in system_generators.group_by("name"):
             generator_name = generator_name[0]
@@ -590,6 +589,7 @@ class PlexosParser(PCMParser):
                 continue
             self.system.add_component(model_map(**valid_fields))
             if ts_fields:
+                # breakpoint()
                 generator = self.system.get_component_by_label(f"{model_map.__name__}.{generator_name}")
                 ts_dict = {"solve_year": self.study_year}
                 for ts_name, ts in ts_fields.items():
@@ -1082,6 +1082,7 @@ class PlexosParser(PCMParser):
             return time_series_data
         logger.warning("Property {} not supported. Skipping it.", property_name)
         logger.warning("Data file {} not supported yet. Skipping it.", relative_path)
+        # breakpoint()
         logger.warning("Columns not supported: {}", data_file.columns)
 
     def _retrieve_single_value_data(self, property_name, data_file):
