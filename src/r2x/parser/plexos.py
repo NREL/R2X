@@ -848,8 +848,7 @@ class PlexosParser(PCMParser):
         system_regions = (pl.col("child_class_name") == ClassEnum.Region.name) & (
             pl.col("parent_class_name") == ClassEnum.System.name
         )
-        regions = self._get_model_data(system_regions).filter(~pl.col("data_file").is_null())
-
+        regions = self._get_model_data(system_regions).filter(~pl.col("variable").is_null())
         # system_nodes = (pl.col("child_class_name") == ClassEnum.Node.name) & (
         #     pl.col("parent_class_name") == ClassEnum.System.name
         # )
@@ -859,7 +858,6 @@ class PlexosParser(PCMParser):
         # regions = self._get_model_data(system_regions).filter(~pl.col("data_file").is_null())
         # assert self.config.run_folder
         # regions.write_csv("load_regions.csv")
-        # breakpoint()
         for region, region_data in regions.group_by("name"):
             # If the weather year is not in the data, then drop that load.
             # Each band needs to be a different time series and load.
@@ -873,9 +871,8 @@ class PlexosParser(PCMParser):
                 logger.warning(msg, region)
 
             ts = self._csv_file_handler(
-                property_name="max_active_power", property_data=region_data["data_file"][0]
+                property_name="max_active_power", property_data=region_data["variable"][0]
             )
-
             if not ts:
                 continue
 
@@ -896,7 +893,6 @@ class PlexosParser(PCMParser):
                 self.system.add_component(load)
                 ts_dict = {"solve_year": self.config.weather_year}
                 self.system.add_time_series(ts, load, **ts_dict)
-
         return
 
     def _construct_renewable_profiles(self):
@@ -980,7 +976,6 @@ class PlexosParser(PCMParser):
             return time_series_data
         logger.warning("Property {} not supported. Skipping it.", property_name)
         logger.warning("Data file {} not supported yet. Skipping it.", relative_path)
-        # breakpoint()
         logger.warning("Columns not supported: {}", data_file.columns)
 
     def _retrieve_single_value_data(self, property_name, data_file):
@@ -1048,7 +1043,7 @@ class PlexosParser(PCMParser):
             data_file = data_file.rename({"period": "hour"})
             data_file = data_file.filter(pl.col("year") == self.config.weather_year)
 
-        # elif all(column in data_file.columns for column in DATETIME_COLUMNS_MULTIZONE):
+        # elif all(column in data_file.columns for column in PROPERTY_TS_COLUMNS_MULTIZONE):
         #     # need to test these file types still
         #     # drop all columns that are not datetime columns or the region name
         #     data_file = data_file.filter(pl.col("year") == self.config.weather_year)
@@ -1057,14 +1052,10 @@ class PlexosParser(PCMParser):
         #     )
         #     # rename region name to hour
         #     data_file = data_file.rename({region: "value"})
-        # elif all(column in data_file.columns for column in DATETIME_COLUMNS_PIVOT):
-        #     # need to test these file types still
-        #     data_file = data_file.filter(pl.col("year") == self.config.weather_year)
-        #     data_file = data_file.melt(id_vars=DATETIME_COLUMNS_PIVOT, variable_name="hour")
-        # else:
-        #     logger.warning("Data file {} not supported yet.", relative_path)
-        #     logger.debug("Columns not supported: {}", data_file.columns)
-        #     return
+        elif all(column in data_file.columns for column in PROPERTY_TS_COLUMNS_PIVOT):
+            # need to test these file types still
+            data_file = data_file.filter(pl.col("year") == self.config.weather_year)
+            data_file = data_file.melt(id_vars=PROPERTY_TS_COLUMNS_PIVOT, variable_name="hour")
 
         if data_file.is_empty():
             logger.warning("Weather year doesn't existing in {}. Skipping it.", property_name)
@@ -1077,7 +1068,6 @@ class PlexosParser(PCMParser):
             first_row = data_file.row(0)
             start = datetime(year=first_row[0], month=first_row[1], day=first_row[2])
             variable_name = property_name  # Change with property mapping
-            # breakpoint()
             return SingleTimeSeries.from_array(
                 data=data_file["value"].cast(pl.Float64),
                 resolution=resolution,
