@@ -1081,7 +1081,6 @@ class PlexosParser(PCMParser):
             return time_series_data
         logger.warning("Property {} not supported. Skipping it.", property_name)
         logger.warning("Data file {} not supported yet. Skipping it.", relative_path)
-        # breakpoint()
         logger.warning("Columns not supported: {}", data_file.columns)
 
     def _retrieve_single_value_data(self, property_name, data_file):
