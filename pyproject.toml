@@ -149,4 +149,3 @@ pythonpath = [
 omit = [
     "tests/*",
     ]
-]
