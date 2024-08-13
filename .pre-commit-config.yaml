@@ -29,6 +29,6 @@ repos:
     hooks:
       - id: mypy
         types: [python]
-        args: [--config-file=pyproject.toml, ./src/plexosdb]
+        args: [--config-file=pyproject.toml, ./src/r2x]
         pass_filenames: false
         language: system
