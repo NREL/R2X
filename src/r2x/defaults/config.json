@@ -30,6 +30,7 @@
     "Flexibility",
     "Regulation"
   ],
+  "device_inference_string": {},
   "distribution_losses": 1,
   "generator_map": {},
   "heatrate_fits_file": "heatrate_generic_fits.csv",

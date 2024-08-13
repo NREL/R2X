@@ -19,7 +19,7 @@ from r2x.units import ureg
 from r2x.api import System
 from r2x.config import Scenario
 from r2x.enums import ACBusTypes, ReserveDirection, ReserveType, PrimeMoversType
-from r2x.exceptions import ModelError
+from r2x.exceptions import ModelError, ParserError
 from plexosdb import PlexosSQLite
 from plexosdb.enums import ClassEnum, CollectionEnum
 from r2x.model import (
@@ -126,12 +126,21 @@ class PlexosParser(PCMParser):
     def __init__(self, *args, xml_file: str | None = None, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         assert self.config.run_folder
-
         self.run_folder = Path(self.config.run_folder)
-        self.system = System(name=self.config.name)
         self.property_map = self.config.defaults["plexos_property_map"]
         self.device_map = self.config.defaults["plexos_device_map"]
-        self.prime_mover_map = self.config.defaults["tech_fuel_pm_map"]
+        self.fuel_map = self.config.defaults["plexos_fuel_map"]
+        self.device_match_string = self.config.defaults["device_inference_string"]
+
+        # TODO(pesap): Rename exceptions to include R2X
+        # https://github.com/NREL/R2X/issues/5
+        # R2X needs at least one of this maps defined to correctly work.
+        if not self.fuel_map and not self.device_map and not self.device_match_string:
+            msg = (
+                "Neither `plexos_fuel_map` or `plexos_device_map` or `device_match_string` was provided. "
+                "To fix, provide any of the mappings."
+            )
+            raise ParserError(msg)
 
         # Populate databse from XML file.
         xml_file = xml_file or self.run_folder / self.config.fmap["xml_file"]["fname"]
@@ -183,7 +192,6 @@ class PlexosParser(PCMParser):
     def build_system(self) -> System:
         """Create infrasys system."""
         logger.info("Building infrasys system using {}", self.__class__.__name__)
-        # self.append_to_db = self.config.defaults.get("append_to_existing_database", False)
 
         # If we decide to change the engine for handling the data we can do it here.
         object_data = self._plexos_table_data()
@@ -478,10 +486,16 @@ class PlexosParser(PCMParser):
             generator_name = generator_name[0]
             generator_fuel_type = generator_fuel_map.get(generator_name)
             logger.trace("Parsing generator = {} with fuel type = {}", generator_name, generator_fuel_type)
+
+            # Get prime mover map from fuel
+            generator_prime_mover = self.fuel_map.get(generator_fuel_type, "")
+
+            # First we check if there is a mapping one the name, if not, we try to use the prime
+            # mover map for the fuel and if not we infer the model by the name and a string.
             model_map = (
-                self.config.device_map.get(generator_name, "")
-                or self.config.fuel_map.get(generator_fuel_type, "")
-                or self._infer_model_type(generator_name)
+                self.device_map.get(generator_name, "") or generator_prime_mover["device"]
+                if generator_prime_mover
+                else None or self._infer_model_type(generator_name)
             )
 
             if getattr(R2X_MODELS, model_map, None) is None:
@@ -519,15 +533,15 @@ class PlexosParser(PCMParser):
 
             # Add prime mover mapping
             mapped_records["prime_mover_type"] = (
-                self.prime_mover_map[generator_fuel_type].get("type")
-                if generator_fuel_type in self.prime_mover_map.keys()
-                else self.prime_mover_map["default"].get("type")
+                self.fuel_map[generator_fuel_type].get("type")
+                if generator_fuel_type in self.fuel_map.keys()
+                else self.fuel_map["default"].get("type")
             )
             mapped_records["prime_mover_type"] = PrimeMoversType[mapped_records["prime_mover_type"]]
             mapped_records["fuel"] = (
-                self.prime_mover_map[generator_fuel_type].get("fuel")
-                if generator_fuel_type in self.prime_mover_map.keys()
-                else self.prime_mover_map["default"].get("fuel")
+                self.fuel_map[generator_fuel_type].get("fuel")
+                if generator_fuel_type in self.fuel_map.keys()
+                else self.fuel_map["default"].get("fuel")
             )
 
             match model_map:
@@ -696,6 +710,10 @@ class PlexosParser(PCMParser):
 
     def _add_buses_to_batteries(self):
         batteries = [battery["name"] for battery in self.system.to_records(GenericBattery)]
+        if not batteries:
+            msg = "No battery objects found on the system. Skipping adding membership to buses."
+            logger.warning(msg)
+            return
         generator_memberships = self.db.get_memberships(
             *batteries,
             object_class=ClassEnum.Battery,
@@ -720,6 +738,10 @@ class PlexosParser(PCMParser):
     def _add_battery_reserves(self):
         reserve_map = self.system.get_component(ReserveMap, name="contributing_generators")
         batteries = [battery["name"] for battery in self.system.to_records(GenericBattery)]
+        if not batteries:
+            msg = "No battery objects found on the system. Skipping adding membership to buses."
+            logger.warning(msg)
+            return
         generator_memberships = self.db.get_memberships(
             *batteries,
             object_class=ClassEnum.Battery,

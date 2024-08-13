@@ -24,3 +24,7 @@ class ModelError(Exception):
 
 class MultipleFilesError(Exception):
     pass
+
+
+class ParserError(Exception):
+    pass
