@@ -86,7 +86,7 @@ DEFAULT_QUERY_COLUMNS_SCHEMA = {  # NOTE: Order matters
     "data_file_tag": pl.String,
     "data_file": pl.String,
     "variable_tag": pl.String,
-    "variable": pl.String,
+    # "variable": pl.String,
     "timeslice_tag": pl.String,
     "timeslice": pl.String,
 }
@@ -175,6 +175,7 @@ class PlexosParser(PCMParser):
 
         # self._construct_areas()
         # self._construct_transformers()
+        # reconcile timeseries data here - source of truth is weather year, and ffill
         return self.system
 
     def _construct_load_zones(self, default_model=LoadZone) -> None:
@@ -387,6 +388,7 @@ class PlexosParser(PCMParser):
         system_generators = (pl.col("child_class_name") == ClassEnum.Generator.name) & (
             pl.col("parent_class_name") == ClassEnum.System.name
         )
+
         system_generators = self._get_model_data(system_generators)
         system_generators.write_csv("generators.csv")
         # NOTE: The best way to identify the type of generator on Plexos is by reading the fuel
@@ -841,7 +843,53 @@ class PlexosParser(PCMParser):
             | pl.col("property_name").is_null()
         )
         base_case_data = self.plexos_data.filter(data_filter & base_case_filter)
-        return pl.concat([scenario_specific_data, base_case_data])
+
+        system_data = pl.concat([scenario_specific_data, base_case_data])
+
+        # get system variables
+        variable_filter = (
+            (pl.col("child_class_name") == ClassEnum.Variable.name)
+            & (pl.col("parent_class_name") == ClassEnum.System.name)
+            & (pl.col("data_file").is_not_null())
+        )
+        variable_scenario_data = self.plexos_data.filter(variable_filter & scenario_filter)
+
+        if variable_scenario_data.is_empty():
+            variable_base_data = self.plexos_data.filter(variable_filter & pl.col("scenario").is_null())
+        else:
+            variable_base_data = self.plexos_data.filter(variable_filter & base_case_filter)
+        variable_data = pl.concat([variable_scenario_data, variable_base_data])
+
+        # Filter Variables
+        results = []
+        grouped = variable_data.group_by("name")
+        for group_name, group_df in grouped:
+            if group_df.height > 1:
+                # Check if any scenario_name exists
+                scenario_exists = group_df.filter(pl.col("scenario").is_not_null())
+
+                if scenario_exists.height > 0:
+                    # Select the first row with a scenario_name
+                    selected_row = scenario_exists[0]
+                else:
+                    # If no scenario_name, select the row with the lowest band_id
+                    selected_row = group_df.sort("band").head(1)[0]
+            else:
+                # If the group has only one row, select that row
+                selected_row = group_df[0]
+
+            results.append(
+                {
+                    "name": group_name[0],
+                    "variable_name": selected_row["data_file_tag"][0],
+                    "variable": selected_row["data_file"][0],
+                }
+            )
+        variables_filtered = pl.DataFrame(results)
+        system_data = system_data.join(
+            variables_filtered, left_on="variable_tag", right_on="name", how="left"
+        )
+        return system_data
 
     def _construct_load_profiles(self):
         logger.debug("Creating load profile representation")
