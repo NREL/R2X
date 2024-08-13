@@ -42,11 +42,11 @@ dev = [
     "bump2version",
     "ipython",
     "pudb",
-    "mypy",
+    "mypy~=1.11.0",
     "pre-commit",
     "pytest",
     "pytest-cov",
-    "ruff",
+    "ruff~=0.5.2",
     "sphinx-autobuild",
 ]
 
@@ -143,4 +143,10 @@ docstring-code-line-length = "dynamic"
 [tool.pytest.ini_options]
 pythonpath = [
   "src"
+]
+
+[tool.coverage.run]
+omit = [
+    "tests/*",
+    ]
 ]
