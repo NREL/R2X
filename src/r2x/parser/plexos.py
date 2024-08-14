@@ -43,17 +43,32 @@ models = importlib.import_module("r2x.model")
 R2X_MODELS = importlib.import_module("r2x.model")
 BASE_WEATHER_YEAR = 2007
 XML_FILE_KEY = "xml_file"
-PROPERTY_COLUMNS_BASIC = ["name", "value"]
-PROPERTY_COLUMNS_TEMPORAL = ["name", "year", "month", "day", "period", "value"]
-DATETIME_COLUMNS_BASIC = ["year", "month", "day", "period", "value"]
-DATETIME_COLUMNS_MULTIZONE = ["year", "month", "day", "period"]
-DATETIME_COLUMNS_PIVOT = ["year", "month", "day"]
+PROPERTY_SV_COLUMNS_BASIC = ["name", "value"]
+PROPERTY_SV_COLUMNS_NAMEYEAR = ["name", "year", "month", "day", "period", "value"]
+PROPERTY_TS_COLUMNS_BASIC = ["year", "month", "day", "period", "value"]
+PROPERTY_TS_COLUMNS_MULTIZONE = ["year", "month", "day", "period"]
+PROPERTY_TS_COLUMNS_PIVOT = ["year", "month", "day"]
+PROPERTY_TS_COLUMNS_MDP = ["month", "day", "period"]
+PROPERTY_TS_COLUMNS_MONTH_PIVOT = [
+    "name",
+    "m01",
+    "m02",
+    "m03",
+    "m04",
+    "m05",
+    "m06",
+    "m07",
+    "m08",
+    "m09",
+    "m10",
+    "m11",
+    "m12",
+]
 DEFAULT_QUERY_COLUMNS_SCHEMA = {  # NOTE: Order matters
-    # "membership_id": pl.Int64,
-    "parent_class_id": pl.Int32,
+    "membership_id": pl.Int64,
     "parent_object_id": pl.Int32,
+    "parent_object_name": pl.String,
     "parent_class_name": pl.String,
-    "child_class_id": pl.Int32,
     "child_class_name": pl.String,
     "category": pl.String,
     "object_id": pl.Int32,
@@ -65,11 +80,15 @@ DEFAULT_QUERY_COLUMNS_SCHEMA = {  # NOTE: Order matters
     "date_to": pl.String,
     "date_from": pl.String,
     "memo": pl.String,
+    "scenario_category": pl.String,
     "scenario": pl.String,
-    "data_file": pl.String,
-    "variable": pl.String,
-    "timeslice": pl.String,
     "action": pl.String,
+    "data_file_tag": pl.String,
+    "data_file": pl.String,
+    "variable_tag": pl.String,
+    # "variable": pl.String,
+    "timeslice_tag": pl.String,
+    "timeslice": pl.String,
 }
 COLUMNS = [
     "name",
@@ -156,6 +175,7 @@ class PlexosParser(PCMParser):
 
         # self._construct_areas()
         # self._construct_transformers()
+        # reconcile timeseries data here - source of truth is weather year, and ffill
         return self.system
 
     def _construct_load_zones(self, default_model=LoadZone) -> None:
@@ -340,21 +360,37 @@ class PlexosParser(PCMParser):
         return
 
     def _infer_model_type(self, generator_name):
-        model_type_mapping = self.config.generator_name_inference_strings
+        model_type_mapping = self.config.device_name_inference_map
         generator_name_lower = generator_name.lower()
         for key, model_type in model_type_mapping.items():
             if key in generator_name_lower:
-                logger.debug("Inferred model type for generator={} as {}", generator_name, model_type)
+                # logger.debug("Inferred model type for generator={} as {}", generator_name, model_type)
                 return model_type
         return ""
+
+    def _field_filter(self, property_fields, eligible_fields):
+        valid = {k: v for k, v in property_fields.items() if k in eligible_fields if v is not None}
+        extra = {k: v for k, v in property_fields.items() if k not in eligible_fields if v is not None}
+        if extra:
+            valid["ext"] = extra
+        # NOTE: Plexos can define either a generator with Units = 0 to indicate
+        # that it has been retired, 1 that is online or > 1 when it has
+        # multiple units. For the R2X model to work, we need to check if
+        # the unit is available, but fixed the available key to 1 to avoid
+        # an error.
+        if available := valid.get("available", None):
+            if available > 0:
+                valid["available"] = 1
+        return valid, extra
 
     def _construct_generators(self):
         logger.debug("Creating generators")
         system_generators = (pl.col("child_class_name") == ClassEnum.Generator.name) & (
             pl.col("parent_class_name") == ClassEnum.System.name
         )
-        system_generators = self._get_model_data(system_generators)
 
+        system_generators = self._get_model_data(system_generators)
+        system_generators.write_csv("generators.csv")
         # NOTE: The best way to identify the type of generator on Plexos is by reading the fuel
         fuel_query = f"""
         SELECT
@@ -379,8 +415,8 @@ class PlexosParser(PCMParser):
             generator_fuel_type = generator_fuel_map.get(generator_name)
             logger.trace("Parsing generator = {} with fuel type = {}", generator_name, generator_fuel_type)
             model_map = (
-                self.config.generator_map.get(generator_name, "")
-                or self.config.model_map.get(generator_fuel_type, "")
+                self.config.device_map.get(generator_name, "")
+                or self.config.fuel_map.get(generator_fuel_type, "")
                 or self._infer_model_type(generator_name)
             )
 
@@ -406,6 +442,7 @@ class PlexosParser(PCMParser):
                     "data_file",
                     "variable",
                     "action",
+                    "variable_tag",
                 ]
             ].to_dicts()
 
@@ -437,36 +474,16 @@ class PlexosParser(PCMParser):
             if "base_power" not in mapped_records and "pump_load" in mapped_records:
                 mapped_records["base_power"] = mapped_records["pump_load"]
 
-            valid_fields = {
-                k: v for k, v in mapped_records.items() if k in model_map.model_fields if v is not None
-            }
+            valid_fields, ext_data = self._field_filter(mapped_records, model_map.model_fields)
 
-            ext_data = {
-                k: v for k, v in mapped_records.items() if k not in model_map.model_fields if v is not None
-            }
-
-            # NOTE: need to define logic to handle the differences between Max Capacity,
-            #  Rating, and Rating Factor. Rating factor is a % value (0-100)
-            #  that gets assigned to nameplate. typically you use either [rating]
-            #  or # [rating factor]. if rating factor is defined it would be
-            # applied to rating if defined, otherwise to maxcapacity.
-            # Read Order: Rating Factor * Rating, Rating, Max Capacity.
-            # If the fixed load, it could be an exogenous profile, or a fixed value.
-            # BTM solar will typically use this.
-            # If it is zero then the default value is to honor the zero value, if a particular setting
-            #  is enabled then the zero is dispatchable.
-
-            # NOTE: Plexos can define either a generator with Units = 0 to indicate
-            # that it has been retired, 1 that is online or > 1 when it has
-            # multiple units. For the R2X model to work, we need to check if
-            # the unit is available, but fixed the available key to 1 to avoid
-            # an error.
-            if available := valid_fields.get("available", None):
-                if available > 0:
-                    # breakpoint()
-                    valid_fields["available"] = 1
-            if ext_data:
-                valid_fields["ext"] = ext_data
+            ts_fields = {k: v for k, v in mapped_records.items() if isinstance(v, SingleTimeSeries)}
+            valid_fields.update(
+                {
+                    ts_name: np.mean(ts.data)
+                    for ts_name, ts in ts_fields.items()
+                    if ts_name in valid_fields.keys()
+                }
+            )
 
             if not all(key in valid_fields for key in required_fields):
                 logger.warning(
@@ -474,6 +491,12 @@ class PlexosParser(PCMParser):
                 )
                 continue
             self.system.add_component(model_map(**valid_fields))
+            if ts_fields:
+                generator = self.system.get_component_by_label(f"{model_map.__name__}.{generator_name}")
+                ts_dict = {"solve_year": self.config.weather_year}
+                for ts_name, ts in ts_fields.items():
+                    ts.variable_name = generator_name + ts_name
+                    self.system.add_time_series(ts, generator, **ts_dict)
 
     def _add_buses_to_generators(self):
         # Add buses to generators
@@ -548,8 +571,11 @@ class PlexosParser(PCMParser):
                     "data_file",
                     "variable",
                     "action",
+                    "variable_tag",
                 ]
             ].to_dicts()
+
+            # logger.debug("Parsing battery = {}", battery_name)
             mapped_records, _ = self._parse_property_data(property_records, battery_name)
             mapped_records["name"] = battery_name
 
@@ -809,31 +835,83 @@ class PlexosParser(PCMParser):
         if scenario_specific_data.is_empty():
             return self.plexos_data.filter(data_filter & base_case_filter)
 
-        base_case_filter = base_case_filter | (
+        base_case_filter = base_case_filter & (
             ~(
                 pl.col("name").is_in(scenario_specific_data["name"])
-                | pl.col("property_name").is_in(scenario_specific_data["property_name"])
+                & pl.col("property_name").is_in(scenario_specific_data["property_name"])
             )
             | pl.col("property_name").is_null()
         )
         base_case_data = self.plexos_data.filter(data_filter & base_case_filter)
-        return pl.concat([scenario_specific_data, base_case_data])
+
+        system_data = pl.concat([scenario_specific_data, base_case_data])
+
+        # get system variables
+        variable_filter = (
+            (pl.col("child_class_name") == ClassEnum.Variable.name)
+            & (pl.col("parent_class_name") == ClassEnum.System.name)
+            & (pl.col("data_file").is_not_null())
+        )
+        variable_scenario_data = self.plexos_data.filter(variable_filter & scenario_filter)
+
+        if variable_scenario_data.is_empty():
+            variable_base_data = self.plexos_data.filter(variable_filter & pl.col("scenario").is_null())
+        else:
+            variable_base_data = self.plexos_data.filter(variable_filter & base_case_filter)
+        variable_data = pl.concat([variable_scenario_data, variable_base_data])
+
+        # Filter Variables
+        results = []
+        grouped = variable_data.group_by("name")
+        for group_name, group_df in grouped:
+            if group_df.height > 1:
+                # Check if any scenario_name exists
+                scenario_exists = group_df.filter(pl.col("scenario").is_not_null())
+
+                if scenario_exists.height > 0:
+                    # Select the first row with a scenario_name
+                    selected_row = scenario_exists[0]
+                else:
+                    # If no scenario_name, select the row with the lowest band_id
+                    selected_row = group_df.sort("band").head(1)[0]
+            else:
+                # If the group has only one row, select that row
+                selected_row = group_df[0]
+
+            results.append(
+                {
+                    "name": group_name[0],
+                    "variable_name": selected_row["data_file_tag"][0],
+                    "variable": selected_row["data_file"][0],
+                }
+            )
+        variables_filtered = pl.DataFrame(results)
+        system_data = system_data.join(
+            variables_filtered, left_on="variable_tag", right_on="name", how="left"
+        )
+        return system_data
 
     def _construct_load_profiles(self):
         logger.debug("Creating load profile representation")
         system_regions = (pl.col("child_class_name") == ClassEnum.Region.name) & (
             pl.col("parent_class_name") == ClassEnum.System.name
         )
-        regions = self._get_model_data(system_regions).filter(~pl.col("data_file").is_null())
-        assert self.config.run_folder
+        regions = self._get_model_data(system_regions).filter(~pl.col("variable").is_null())
+        # system_nodes = (pl.col("child_class_name") == ClassEnum.Node.name) & (
+        #     pl.col("parent_class_name") == ClassEnum.System.name
+        # )
+        # nodes = self._get_model_data(system_nodes).filter(~pl.col("data_file").is_null())
+        # nodes.write_csv("load_nodes.csv")
 
+        # regions = self._get_model_data(system_regions).filter(~pl.col("data_file").is_null())
+        # assert self.config.run_folder
+        # regions.write_csv("load_regions.csv")
         for region, region_data in regions.group_by("name"):
             # If the weather year is not in the data, then drop that load.
             # Each band needs to be a different time series and load.
             # Expression is typically used when you want your outputs to track the different bands
             # Action will modify the input data from the TS file. Only when there is an Expression definition.
             if not len(region_data) == 1:
-                # breakpoint()
                 msg = (
                     "load data has more than one row for {}. Selecting the first match. "
                     "Check filtering of properties"
@@ -841,9 +919,8 @@ class PlexosParser(PCMParser):
                 logger.warning(msg, region)
 
             ts = self._csv_file_handler(
-                property_name="max_active_power", property_data=region_data["data_file"][0]
+                property_name="max_active_power", property_data=region_data["variable"][0]
             )
-
             if not ts:
                 continue
 
@@ -864,7 +941,6 @@ class PlexosParser(PCMParser):
                 self.system.add_component(load)
                 ts_dict = {"solve_year": self.config.weather_year}
                 self.system.add_time_series(ts, load, **ts_dict)
-
         return
 
     def _construct_renewable_profiles(self):
@@ -946,7 +1022,7 @@ class PlexosParser(PCMParser):
         time_series_data = self._retrieve_time_series_data(property_name, data_file)
         if time_series_data is not None:
             return time_series_data
-
+        logger.warning("Property {} not supported. Skipping it.", property_name)
         logger.warning("Data file {} not supported yet. Skipping it.", relative_path)
         logger.warning("Columns not supported: {}", data_file.columns)
 
@@ -955,10 +1031,10 @@ class PlexosParser(PCMParser):
             data_file = data_file.filter(pl.col("year") == self.config.weather_year)
             return data_file[property_name.lower()][0]
 
-        if data_file.columns == PROPERTY_COLUMNS_BASIC:
+        if data_file.columns[:2] == PROPERTY_SV_COLUMNS_BASIC:
             return data_file.filter(pl.col("name") == property_name.lower())["value"][0]
 
-        if data_file.columns == PROPERTY_COLUMNS_TEMPORAL:  # double check this case
+        if data_file.columns == PROPERTY_SV_COLUMNS_NAMEYEAR:  # double check this case
             filter_condition = (pl.col("year") == self.config.weather_year) & (
                 pl.col("name") == property_name.lower()
             )
@@ -970,26 +1046,52 @@ class PlexosParser(PCMParser):
         return
 
     def _retrieve_time_series_data(self, property_name, data_file):
-        # RETRIEVING TIME-SERIES DATA
-        # In this pattern, we convert the format to align with Sienna's TimeSeries Array Format
-        if data_file.columns == ["pattern", "value"]:
-            # breakpoint()
-            # Temporary Solution
-            return data_file.mean()["value"][0]
+        output_columns = ["year", "month", "day", "hour", "value"]
 
-        if data_file.columns == ["month", "day", "period", "value"]:
-            # breakpoint()
+        # Convert these types to ["pattern", "value"]
+        if all(column in data_file.columns for column in PROPERTY_TS_COLUMNS_MONTH_PIVOT):
+            data_file = data_file.filter(pl.col("name") == property_name.lower())
+            data_file = data_file.melt(id_vars=["name"], variable_name="pattern")
+            data_file = data_file.select(["pattern", "value"])
+
+        if data_file.columns == ["pattern", "value"]:
+            dt = pl.datetime_range(
+                datetime(self.weather_year, 1, 1), datetime(self.weather_year, 12, 31), "1h", eager=True
+            ).alias("datetime")
+            date_df = pl.DataFrame({"datetime": dt})
+            date_df = date_df.with_columns(
+                [
+                    date_df["datetime"].dt.year().alias("year"),
+                    date_df["datetime"].dt.month().alias("month"),
+                    date_df["datetime"].dt.day().alias("day"),
+                    date_df["datetime"].dt.hour().alias("hour"),
+                ]
+            )
+
+            data_file = data_file.with_columns(
+                month=pl.col("pattern").str.extract(r"(\d{2})$").cast(pl.Int8)
+            )  # if other patterns exist will need to change.
+            data_file = date_df.join(data_file.select("month", "value"), on="month", how="inner").select(
+                output_columns
+            )
+
+        elif data_file.columns == ["month", "day", "period", "value"]:
             data_file = data_file.rename({"period": "hour"})
             data_file = data_file.with_columns(pl.lit(self.config.weather_year).alias("year"))
             columns = ["year"] + [col for col in data_file.columns if col != "year"]
             data_file = data_file.select(columns)
 
-        # region = property_data["name"].unique()[0]
-        elif all(column in data_file.columns for column in DATETIME_COLUMNS_BASIC):
+        elif all(column in data_file.columns for column in [*PROPERTY_TS_COLUMNS_MDP, property_name.lower()]):
+            data_file = data_file.with_columns(pl.lit(self.config.weather_year).alias("year"))
+            data_file = data_file.rename({property_name.lower(): "value"})
+            data_file = data_file.rename({"period": "hour"})
+            data_file = data_file.select(output_columns)
+
+        elif all(column in data_file.columns for column in PROPERTY_TS_COLUMNS_BASIC):
             data_file = data_file.rename({"period": "hour"})
             data_file = data_file.filter(pl.col("year") == self.config.weather_year)
-        # elif all(column in data_file.columns for column in DATETIME_COLUMNS_MULTIZONE):
-        #     breakpoint()
+
+        # elif all(column in data_file.columns for column in PROPERTY_TS_COLUMNS_MULTIZONE):
         #     # need to test these file types still
         #     # drop all columns that are not datetime columns or the region name
         #     data_file = data_file.filter(pl.col("year") == self.config.weather_year)
@@ -998,34 +1100,28 @@ class PlexosParser(PCMParser):
         #     )
         #     # rename region name to hour
         #     data_file = data_file.rename({region: "value"})
-        # elif all(column in data_file.columns for column in DATETIME_COLUMNS_PIVOT):
-        #     breakpoint()
-        #     # need to test these file types still
-        #     data_file = data_file.filter(pl.col("year") == self.config.weather_year)
-        #     data_file = data_file.melt(id_vars=DATETIME_COLUMNS_PIVOT, variable_name="hour")
-        # else:
-        #     logger.warning("Data file {} not supported yet.", relative_path)
-        #     logger.debug("Columns not supported: {}", data_file.columns)
-        #     return
+        elif all(column in data_file.columns for column in PROPERTY_TS_COLUMNS_PIVOT):
+            # need to test these file types still
+            data_file = data_file.filter(pl.col("year") == self.config.weather_year)
+            data_file = data_file.melt(id_vars=PROPERTY_TS_COLUMNS_PIVOT, variable_name="hour")
 
         if data_file.is_empty():
             logger.warning("Weather year doesn't existing in {}. Skipping it.", property_name)
             return
 
         assert not data_file.is_empty()
-
         # Format to SingleTimeSeries
-        if data_file.columns == ["year", "month", "day", "hour", "value"]:
+        if data_file.columns == output_columns:
             resolution = timedelta(hours=1)
             first_row = data_file.row(0)
             start = datetime(year=first_row[0], month=first_row[1], day=first_row[2])
-
             variable_name = property_name  # Change with property mapping
             return SingleTimeSeries.from_array(
-                data=data_file["value"],
+                data=data_file["value"].cast(pl.Float64),
                 resolution=resolution,
                 initial_time=start,
                 variable_name=variable_name,
+                # Maybe change this to be the property name rather than the object name?
             )
         return
 
@@ -1063,22 +1159,47 @@ class PlexosParser(PCMParser):
             return value
         return value * unit if unit else value
 
+    def _apply_action(self, action, val_a, val_b):
+        val_a_data = val_a.data if isinstance(val_a, SingleTimeSeries) else val_a
+        val_b_data = val_b.data if isinstance(val_b, SingleTimeSeries) else val_b
+
+        results = action(val_a_data, val_b_data)
+        if isinstance(val_a, SingleTimeSeries):
+            val_a.data = results
+            return val_a
+        if isinstance(val_b, SingleTimeSeries):
+            val_b.data = results
+            return val_b
+        return results
+
     def _get_value(self, prop_value, unit, record, record_name):
         data_file = variable = action = None
         if record.get("data_file"):
             data_file = self._csv_file_handler(record_name, record.get("data_file"))
         if record.get("variable"):
-            variable = self._csv_file_handler(record_name, record.get("variable"))
+            variable = self._csv_file_handler(record.get("variable_tag"), record.get("variable"))
+            if variable is None:
+                variable = self._csv_file_handler(record_name, record.get("variable"))
+
         if record.get("action"):
             actions = {
-                "x": np.multiply,
+                "×": np.multiply,  # noqa
                 "+": np.add,
                 "-": np.subtract,
                 "/": np.divide,
+                "=": lambda x, y: y,
             }
             action = actions[record.get("action")]
+        if variable is not None and record.get("action") == "=":
+            return self._apply_unit(variable, unit)
         if variable is not None and data_file is not None:
-            return self._apply_unit(action(variable, data_file), unit)  # confirm direction of operation
+            # logger.debug("Record Name: {}", record_name)
+            # logger.debug("Variable: {}", variable)
+            # logger.debug("Data File: {}", data_file)
+            # confirm direction of action operator
+            return self._apply_unit(self._apply_action(action, variable, data_file), unit)
+        if variable is not None and prop_value is not None:
+            return self._apply_unit(self._apply_action(action, variable, prop_value), unit)
         elif variable is not None:
             return self._apply_unit(variable, unit)
         elif data_file is not None:
