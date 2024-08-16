@@ -5,6 +5,7 @@ import importlib
 from importlib.resources import files
 from pathlib import Path, PureWindowsPath
 from argparse import ArgumentParser
+import pandas as pd
 
 from pint import UndefinedUnitError
 import polars as pl
@@ -126,7 +127,9 @@ class PlexosParser(PCMParser):
         assert self.config.run_folder
         if not self.config.weather_year:
             raise AttributeError("Missing weather year from the configuration class.")
-        self.weather_year: int = self.config.weather_year
+        self.weather_year: int = (
+            self.config.weather_year
+        )  # replace with weather year from horizon object, change name to study_year
         self.run_folder = Path(self.config.run_folder)
         self.system = System(name=self.config.name)
         self.property_map = self.config.defaults["plexos_property_map"]
@@ -175,8 +178,108 @@ class PlexosParser(PCMParser):
 
         # self._construct_areas()
         # self._construct_transformers()
-        # reconcile timeseries data here - source of truth is weather year, and ffill
         return self.system
+
+    def _reconcile_timeseries(self, data_file):
+        """Reconcile timeseries data."""
+
+        def handle_leap_year_adjustment(data_file):
+            # Adjust for non-leap year with leap-year data
+            feb_28 = data_file.slice(1392, 24)
+            before_feb_29 = data_file.slice(0, 1416)
+            after_feb_29 = data_file.slice(1416, len(data_file) - 1440)
+            return pl.concat([before_feb_29, feb_28, after_feb_29])
+
+        def fill_missing_timestamps(data_file, date_time_column):
+            # Add missing timestamps and fill nulls
+            data_file = data_file.with_columns(
+                (
+                    pl.col("year").cast(pl.Int32).cast(pl.Utf8)
+                    + "-"
+                    + pl.col("month").cast(pl.Int32).cast(pl.Utf8).str.zfill(2)
+                    + "-"
+                    + pl.col("day").cast(pl.Int32).cast(pl.Utf8).str.zfill(2)
+                    + " "
+                    + pl.col("hour").cast(pl.Int32).cast(pl.Utf8).str.zfill(2)
+                    + ":00:00"
+                )
+                .str.strptime(pl.Datetime, "%Y-%m-%d %H:%M:%S")
+                .alias("timestamp")
+            ).with_columns(pl.col("timestamp").dt.cast_time_unit("ns"))
+
+            complete_timestamps_df = pl.from_pandas(pd.DataFrame({"timestamp": date_time_column}))
+            missing_timestamps_df = complete_timestamps_df.join(data_file, on="timestamp", how="anti")
+
+            missing_timestamps_df = missing_timestamps_df.with_columns(
+                pl.col("timestamp").dt.year().alias("year"),
+                pl.col("timestamp").dt.month().alias("month"),
+                pl.col("timestamp").dt.day().alias("day"),
+                pl.col("timestamp").dt.hour().alias("hour"),
+                pl.lit(None).alias("value"),
+            ).select(["year", "month", "day", "hour", "value", "timestamp"])
+
+            complete_df = (
+                pl.concat([data_file, missing_timestamps_df]).sort("timestamp").fill_null(strategy="forward")
+            )
+            complete_df.drop_in_place("timestamp")
+            return complete_df
+
+        def resample_data_to_hourly(data_file):
+            # Resample data to hourly frequency
+            data_file = data_file.with_columns((pl.col("hour") % 48).alias("hour"))
+            data_file = (
+                data_file.with_columns(
+                    (
+                        pl.datetime(
+                            data_file["year"],
+                            data_file["month"],
+                            data_file["day"],
+                            hour=data_file["hour"] // 2,
+                            minute=(data_file["hour"] % 2) * 30,
+                        )
+                    ).alias("timestamp")
+                )
+                .sort("timestamp")
+                .filter(pl.col("timestamp").is_not_null())
+            )
+
+            return (
+                data_file.group_by_dynamic("timestamp", every="1h")
+                .agg([pl.col("value").mean().alias("value")])
+                .with_columns(
+                    pl.col("timestamp").dt.year().alias("year"),
+                    pl.col("timestamp").dt.month().alias("month"),
+                    pl.col("timestamp").dt.day().alias("day"),
+                    pl.col("timestamp").dt.hour().alias("hour"),
+                    pl.col("value").alias("value"),
+                )
+                .select(["year", "month", "day", "hour", "value"])
+            )
+
+        date_time_column = pd.date_range(
+            start=f"1/1/{self.config.weather_year}",
+            end=f"1/1/{self.config.weather_year + 1}",
+            freq="1h",
+            inclusive="left",
+        )
+        leap_year = len(date_time_column) == 8784
+
+        if data_file.height in [8784, 8760]:
+            if data_file.height == 8784 and not leap_year:
+                before_feb_29 = data_file.slice(0, 1416)
+                after_feb_29 = data_file.slice(1440, len(data_file) - 1440)
+                return pl.concat([before_feb_29, after_feb_29])
+            elif data_file.height == 8760 and leap_year:
+                return handle_leap_year_adjustment(data_file)
+            return data_file
+
+        if data_file.height <= 8760:
+            return fill_missing_timestamps(data_file, date_time_column)
+
+        if data_file.height in [17568, 17520]:
+            return resample_data_to_hourly(data_file)
+
+        return data_file
 
     def _construct_load_zones(self, default_model=LoadZone) -> None:
         """Create LoadZone representation.
@@ -1116,6 +1219,7 @@ class PlexosParser(PCMParser):
             first_row = data_file.row(0)
             start = datetime(year=first_row[0], month=first_row[1], day=first_row[2])
             variable_name = property_name  # Change with property mapping
+            data_file = self._reconcile_timeseries(data_file)
             return SingleTimeSeries.from_array(
                 data=data_file["value"].cast(pl.Float64),
                 resolution=resolution,
