@@ -125,11 +125,10 @@ class PlexosParser(PCMParser):
     def __init__(self, *args, xml_file: str | None = None, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         assert self.config.run_folder
-        if not self.config.weather_year:
-            raise AttributeError("Missing weather year from the configuration class.")
-        self.weather_year: int = (
-            self.config.weather_year
-        )  # replace with weather year from horizon object, change name to study_year
+
+        # if not self.study_year: #fall back on config??
+        #     self.study_year = self.config.weather_year
+
         self.run_folder = Path(self.config.run_folder)
         self.system = System(name=self.config.name)
         self.property_map = self.config.defaults["plexos_property_map"]
@@ -141,11 +140,42 @@ class PlexosParser(PCMParser):
         self.db = PlexosSQLite(xml_fname=xml_file)
 
         # Extract scenario data
-        # CHECK with pedro if okay to remove this.
-        model_name = getattr(self.config, "model", None)  # or self.config.fmap[XML_FILE_KEY]["model"]
+        model_name = getattr(self.config, "model", None)
         if model_name is None:
             model_name = self._select_model_name()
         self._process_scenarios(model_name=model_name)
+        self.study_year: int = int(
+            (self._collect_horizon_data(model_name=model_name).get("Date From") / 365.25) + 1900
+        )
+
+    def _collect_horizon_data(self, model_name: str) -> datetime:
+        horizon_query = f"""
+        SELECT
+        atr.name as attribute_name,
+        COALESCE(attr_data.value, atr.default_value) AS attr_val
+        -- t_object.name as object_name
+        FROM
+        t_object
+        left join t_class as class ON
+            t_object.class_id == class.class_id
+        left join t_attribute AS atr on
+            t_object.class_id  == atr.class_id
+        left join t_membership tm on
+            t_object.object_id  == tm.child_object_id
+        left join t_class AS parent_class on
+            tm.parent_class_id == parent_class.class_id
+        left join t_object to2 on
+            tm.parent_object_id == to2.object_id
+        LEFT JOIN t_attribute_data attr_data on
+            attr_data.attribute_id == atr.attribute_id and t_object.object_id == attr_data.object_id
+        WHERE
+            class.name == '{ClassEnum.Horizon.value}'
+            AND parent_class.name == '{ClassEnum.Model.value}'
+            AND to2.name == '{model_name}'
+        """
+        horizon_data = self.db.query(horizon_query)
+        horizon_map = {key: value for key, value in horizon_data}
+        return horizon_map
 
     def build_system(self) -> System:
         """Create infrasys system."""
@@ -257,8 +287,8 @@ class PlexosParser(PCMParser):
             )
 
         date_time_column = pd.date_range(
-            start=f"1/1/{self.config.weather_year}",
-            end=f"1/1/{self.config.weather_year + 1}",
+            start=f"1/1/{self.study_year}",
+            end=f"1/1/{self.study_year + 1}",
             freq="1h",
             inclusive="left",
         )
@@ -596,7 +626,7 @@ class PlexosParser(PCMParser):
             self.system.add_component(model_map(**valid_fields))
             if ts_fields:
                 generator = self.system.get_component_by_label(f"{model_map.__name__}.{generator_name}")
-                ts_dict = {"solve_year": self.config.weather_year}
+                ts_dict = {"solve_year": self.study_year}
                 for ts_name, ts in ts_fields.items():
                     ts.variable_name = generator_name + ts_name
                     self.system.add_time_series(ts, generator, **ts_dict)
@@ -1042,7 +1072,7 @@ class PlexosParser(PCMParser):
                     max_active_power=float(max_load / len(bus_region_membership)) * ureg.MW,
                 )
                 self.system.add_component(load)
-                ts_dict = {"solve_year": self.config.weather_year}
+                ts_dict = {"solve_year": self.study_year}
                 self.system.add_time_series(ts, load, **ts_dict)
         return
 
@@ -1081,7 +1111,7 @@ class PlexosParser(PCMParser):
                     continue
                 ts = self._text_handler(property_name, property_data)
                 if ts is not None:
-                    ts_dict = {"solve_year": self.config.weather_year}
+                    ts_dict = {"solve_year": self.study_year}
                     self.system.add_time_series(ts, generator, **ts_dict)
 
         return
@@ -1131,16 +1161,14 @@ class PlexosParser(PCMParser):
 
     def _retrieve_single_value_data(self, property_name, data_file):
         if all(column in data_file.columns for column in [property_name.lower(), "year"]):
-            data_file = data_file.filter(pl.col("year") == self.config.weather_year)
+            data_file = data_file.filter(pl.col("year") == self.study_year)
             return data_file[property_name.lower()][0]
 
         if data_file.columns[:2] == PROPERTY_SV_COLUMNS_BASIC:
             return data_file.filter(pl.col("name") == property_name.lower())["value"][0]
 
         if data_file.columns == PROPERTY_SV_COLUMNS_NAMEYEAR:  # double check this case
-            filter_condition = (pl.col("year") == self.config.weather_year) & (
-                pl.col("name") == property_name.lower()
-            )
+            filter_condition = (pl.col("year") == self.study_year) & (pl.col("name") == property_name.lower())
             try:
                 return data_file.filter(filter_condition)["value"][0]
             except IndexError:
@@ -1159,7 +1187,7 @@ class PlexosParser(PCMParser):
 
         if data_file.columns == ["pattern", "value"]:
             dt = pl.datetime_range(
-                datetime(self.weather_year, 1, 1), datetime(self.weather_year, 12, 31), "1h", eager=True
+                datetime(self.study_year, 1, 1), datetime(self.study_year, 12, 31), "1h", eager=True
             ).alias("datetime")
             date_df = pl.DataFrame({"datetime": dt})
             date_df = date_df.with_columns(
@@ -1180,24 +1208,24 @@ class PlexosParser(PCMParser):
 
         elif data_file.columns == ["month", "day", "period", "value"]:
             data_file = data_file.rename({"period": "hour"})
-            data_file = data_file.with_columns(pl.lit(self.config.weather_year).alias("year"))
+            data_file = data_file.with_columns(pl.lit(self.study_year).alias("year"))
             columns = ["year"] + [col for col in data_file.columns if col != "year"]
             data_file = data_file.select(columns)
 
         elif all(column in data_file.columns for column in [*PROPERTY_TS_COLUMNS_MDP, property_name.lower()]):
-            data_file = data_file.with_columns(pl.lit(self.config.weather_year).alias("year"))
+            data_file = data_file.with_columns(pl.lit(self.study_year).alias("year"))
             data_file = data_file.rename({property_name.lower(): "value"})
             data_file = data_file.rename({"period": "hour"})
             data_file = data_file.select(output_columns)
 
         elif all(column in data_file.columns for column in PROPERTY_TS_COLUMNS_BASIC):
             data_file = data_file.rename({"period": "hour"})
-            data_file = data_file.filter(pl.col("year") == self.config.weather_year)
+            data_file = data_file.filter(pl.col("year") == self.study_year)
 
         # elif all(column in data_file.columns for column in PROPERTY_TS_COLUMNS_MULTIZONE):
         #     # need to test these file types still
         #     # drop all columns that are not datetime columns or the region name
-        #     data_file = data_file.filter(pl.col("year") == self.config.weather_year)
+        #     data_file = data_file.filter(pl.col("year") == self.study_year)
         #     data_file = data_file.drop(
         #         *[col for col in data_file.columns if col not in DATETIME_COLUMNS_MULTIZONE + [region]]
         #     )
@@ -1205,7 +1233,7 @@ class PlexosParser(PCMParser):
         #     data_file = data_file.rename({region: "value"})
         elif all(column in data_file.columns for column in PROPERTY_TS_COLUMNS_PIVOT):
             # need to test these file types still
-            data_file = data_file.filter(pl.col("year") == self.config.weather_year)
+            data_file = data_file.filter(pl.col("year") == self.study_year)
             data_file = data_file.melt(id_vars=PROPERTY_TS_COLUMNS_PIVOT, variable_name="hour")
 
         if data_file.is_empty():
@@ -1232,10 +1260,10 @@ class PlexosParser(PCMParser):
     def _time_slice_handler(self, property_name, property_data):
         # Deconstruct pattern
         resolution = timedelta(hours=1)
-        initial_time = datetime(self.weather_year, 1, 1)
+        initial_time = datetime(self.study_year, 1, 1)
         date_time_array = np.arange(
-            f"{self.weather_year}",
-            f"{self.weather_year + 1}",
+            f"{self.study_year}",
+            f"{self.study_year + 1}",
             dtype="datetime64[h]",
         )  # Removing 1 day to match ReEDS convention and converting into a vector
         months = np.array([dt.astype("datetime64[M]").astype(int) % 12 + 1 for dt in date_time_array])
