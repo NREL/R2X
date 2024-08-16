@@ -1063,66 +1063,71 @@ class PlexosParser(PCMParser):
     def _retrieve_time_series_data(self, property_name, data_file):
         output_columns = ["year", "month", "day", "hour", "value"]
 
-        # Convert these types to ["pattern", "value"]
         if all(column in data_file.columns for column in PROPERTY_TS_COLUMNS_MONTH_PIVOT):
+            # Convert these types to ["pattern", "value"]
             data_file = data_file.filter(pl.col("name") == property_name.lower())
             data_file = data_file.melt(id_vars=["name"], variable_name="pattern")
             data_file = data_file.select(["pattern", "value"])
 
-        if data_file.columns == ["pattern", "value"]:
-            dt = pl.datetime_range(
-                datetime(self.study_year, 1, 1), datetime(self.study_year, 12, 31), "1h", eager=True
-            ).alias("datetime")
-            date_df = pl.DataFrame({"datetime": dt})
-            date_df = date_df.with_columns(
-                [
-                    date_df["datetime"].dt.year().alias("year"),
-                    date_df["datetime"].dt.month().alias("month"),
-                    date_df["datetime"].dt.day().alias("day"),
-                    date_df["datetime"].dt.hour().alias("hour"),
-                ]
-            )
+        match data_file.columns:
+            case ["pattern", "value"]:
+                dt = pl.datetime_range(
+                    datetime(self.study_year, 1, 1), datetime(self.study_year, 12, 31), "1h", eager=True
+                ).alias("datetime")
+                date_df = pl.DataFrame({"datetime": dt})
+                date_df = date_df.with_columns(
+                    [
+                        date_df["datetime"].dt.year().alias("year"),
+                        date_df["datetime"].dt.month().alias("month"),
+                        date_df["datetime"].dt.day().alias("day"),
+                        date_df["datetime"].dt.hour().alias("hour"),
+                    ]
+                )
 
-            data_file = data_file.with_columns(
-                month=pl.col("pattern").str.extract(r"(\d{2})$").cast(pl.Int8)
-            )  # if other patterns exist will need to change.
-            data_file = date_df.join(data_file.select("month", "value"), on="month", how="inner").select(
-                output_columns
-            )
+                data_file = data_file.with_columns(
+                    month=pl.col("pattern").str.extract(r"(\d{2})$").cast(pl.Int8)
+                )  # If other patterns exist, this will need to change.
+                data_file = date_df.join(data_file.select("month", "value"), on="month", how="inner").select(
+                    output_columns
+                )
 
-        elif data_file.columns == ["month", "day", "period", "value"]:
-            data_file = data_file.rename({"period": "hour"})
-            data_file = data_file.with_columns(pl.lit(self.study_year).alias("year"))
-            columns = ["year"] + [col for col in data_file.columns if col != "year"]
-            data_file = data_file.select(columns)
+            case ["month", "day", "period", "value"]:
+                data_file = data_file.rename({"period": "hour"})
+                data_file = data_file.with_columns(pl.lit(self.study_year).alias("year"))
+                columns = ["year"] + [col for col in data_file.columns if col != "year"]
+                data_file = data_file.select(columns)
 
-        elif all(column in data_file.columns for column in [*PROPERTY_TS_COLUMNS_MDP, property_name.lower()]):
-            data_file = data_file.with_columns(pl.lit(self.study_year).alias("year"))
-            data_file = data_file.rename({property_name.lower(): "value"})
-            data_file = data_file.rename({"period": "hour"})
-            data_file = data_file.select(output_columns)
+            case columns if all(
+                column in columns for column in [*PROPERTY_TS_COLUMNS_MDP, property_name.lower()]
+            ):
+                data_file = data_file.with_columns(pl.lit(self.study_year).alias("year"))
+                data_file = data_file.rename({property_name.lower(): "value"})
+                data_file = data_file.rename({"period": "hour"})
+                data_file = data_file.select(output_columns)
 
-        elif all(column in data_file.columns for column in PROPERTY_TS_COLUMNS_BASIC):
-            data_file = data_file.rename({"period": "hour"})
-            data_file = data_file.filter(pl.col("year") == self.study_year)
+            case columns if all(column in columns for column in PROPERTY_TS_COLUMNS_BASIC):
+                data_file = data_file.rename({"period": "hour"})
+                data_file = data_file.filter(pl.col("year") == self.study_year)
 
-        # elif all(column in data_file.columns for column in PROPERTY_TS_COLUMNS_MULTIZONE):
-        #     # need to test these file types still
-        #     # drop all columns that are not datetime columns or the region name
-        #     data_file = data_file.filter(pl.col("year") == self.study_year)
-        #     data_file = data_file.drop(
-        #         *[col for col in data_file.columns if col not in DATETIME_COLUMNS_MULTIZONE + [region]]
-        #     )
-        #     # rename region name to hour
-        #     data_file = data_file.rename({region: "value"})
-        elif all(column in data_file.columns for column in PROPERTY_TS_COLUMNS_PIVOT):
-            # need to test these file types still
-            data_file = data_file.filter(pl.col("year") == self.study_year)
-            data_file = data_file.melt(id_vars=PROPERTY_TS_COLUMNS_PIVOT, variable_name="hour")
+            # case columns if all(column in columns for column in PROPERTY_TS_COLUMNS_MULTIZONE):
+            #     # Need to test these file types still
+            #     # Drop all columns that are not datetime columns or the region name
+            #     data_file = data_file.filter(pl.col("year") == self.study_year)
+            #     data_file = data_file.drop(
+            #         *[col for col in data_file.columns if col not in DATETIME_COLUMNS_MULTIZONE + [region]]
+            #     )
+            #     # Rename region name to hour
+            #     data_file = data_file.rename({region: "value"})
 
-        if data_file.is_empty():
-            logger.warning("Weather year doesn't existing in {}. Skipping it.", property_name)
-            return
+            case columns if all(column in columns for column in PROPERTY_TS_COLUMNS_PIVOT):
+                # Need to test these file types still
+                data_file = data_file.filter(pl.col("year") == self.study_year)
+                data_file = data_file.melt(id_vars=PROPERTY_TS_COLUMNS_PIVOT, variable_name="hour")
+
+            case _:
+                if data_file.is_empty():
+                    logger.warning("Weather year doesn't exist in {}. Skipping it.", property_name)
+                    return
 
         assert not data_file.is_empty()
         # Format to SingleTimeSeries
