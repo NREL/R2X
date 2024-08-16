@@ -243,7 +243,6 @@ class PlexosParser(PCMParser):
 
         # self._construct_areas()
         # self._construct_transformers()
-        # reconcile timeseries data here - source of truth is weather year, and ffill
         return self.system
 
     def _reconcile_timeseries(self, data_file):
