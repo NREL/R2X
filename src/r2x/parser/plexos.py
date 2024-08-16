@@ -38,6 +38,7 @@ from r2x.model import (
 from r2x.utils import validate_string
 
 from .handler import PCMParser
+from .parser_helpers import handle_leap_year_adjustment, fill_missing_timestamps, resample_data_to_hourly
 
 models = importlib.import_module("r2x.model")
 
@@ -126,9 +127,6 @@ class PlexosParser(PCMParser):
         super().__init__(*args, **kwargs)
         assert self.config.run_folder
 
-        # if not self.study_year: #fall back on config??
-        #     self.study_year = self.config.weather_year
-
         self.run_folder = Path(self.config.run_folder)
         self.system = System(name=self.config.name)
         self.property_map = self.config.defaults["plexos_property_map"]
@@ -146,14 +144,15 @@ class PlexosParser(PCMParser):
         self._process_scenarios(model_name=model_name)
         self.study_year: int = int(
             (self._collect_horizon_data(model_name=model_name).get("Date From") / 365.25) + 1900
-        )
+        )  # div by 365.25 to convert days -> years
+        if not self.study_year:
+            self.study_year = self.config.weather_year
 
     def _collect_horizon_data(self, model_name: str) -> datetime:
         horizon_query = f"""
         SELECT
         atr.name as attribute_name,
         COALESCE(attr_data.value, atr.default_value) AS attr_val
-        -- t_object.name as object_name
         FROM
         t_object
         left join t_class as class ON
@@ -204,7 +203,6 @@ class PlexosParser(PCMParser):
         self._add_battery_reserves()
 
         self._construct_load_profiles()
-        # self._construct_renewable_profiles()
 
         # self._construct_areas()
         # self._construct_transformers()
@@ -212,80 +210,6 @@ class PlexosParser(PCMParser):
 
     def _reconcile_timeseries(self, data_file):
         """Reconcile timeseries data."""
-
-        def handle_leap_year_adjustment(data_file):
-            # Adjust for non-leap year with leap-year data
-            feb_28 = data_file.slice(1392, 24)
-            before_feb_29 = data_file.slice(0, 1416)
-            after_feb_29 = data_file.slice(1416, len(data_file) - 1440)
-            return pl.concat([before_feb_29, feb_28, after_feb_29])
-
-        def fill_missing_timestamps(data_file, date_time_column):
-            # Add missing timestamps and fill nulls
-            data_file = data_file.with_columns(
-                (
-                    pl.col("year").cast(pl.Int32).cast(pl.Utf8)
-                    + "-"
-                    + pl.col("month").cast(pl.Int32).cast(pl.Utf8).str.zfill(2)
-                    + "-"
-                    + pl.col("day").cast(pl.Int32).cast(pl.Utf8).str.zfill(2)
-                    + " "
-                    + pl.col("hour").cast(pl.Int32).cast(pl.Utf8).str.zfill(2)
-                    + ":00:00"
-                )
-                .str.strptime(pl.Datetime, "%Y-%m-%d %H:%M:%S")
-                .alias("timestamp")
-            ).with_columns(pl.col("timestamp").dt.cast_time_unit("ns"))
-
-            complete_timestamps_df = pl.from_pandas(pd.DataFrame({"timestamp": date_time_column}))
-            missing_timestamps_df = complete_timestamps_df.join(data_file, on="timestamp", how="anti")
-
-            missing_timestamps_df = missing_timestamps_df.with_columns(
-                pl.col("timestamp").dt.year().alias("year"),
-                pl.col("timestamp").dt.month().alias("month"),
-                pl.col("timestamp").dt.day().alias("day"),
-                pl.col("timestamp").dt.hour().alias("hour"),
-                pl.lit(None).alias("value"),
-            ).select(["year", "month", "day", "hour", "value", "timestamp"])
-
-            complete_df = (
-                pl.concat([data_file, missing_timestamps_df]).sort("timestamp").fill_null(strategy="forward")
-            )
-            complete_df.drop_in_place("timestamp")
-            return complete_df
-
-        def resample_data_to_hourly(data_file):
-            # Resample data to hourly frequency
-            data_file = data_file.with_columns((pl.col("hour") % 48).alias("hour"))
-            data_file = (
-                data_file.with_columns(
-                    (
-                        pl.datetime(
-                            data_file["year"],
-                            data_file["month"],
-                            data_file["day"],
-                            hour=data_file["hour"] // 2,
-                            minute=(data_file["hour"] % 2) * 30,
-                        )
-                    ).alias("timestamp")
-                )
-                .sort("timestamp")
-                .filter(pl.col("timestamp").is_not_null())
-            )
-
-            return (
-                data_file.group_by_dynamic("timestamp", every="1h")
-                .agg([pl.col("value").mean().alias("value")])
-                .with_columns(
-                    pl.col("timestamp").dt.year().alias("year"),
-                    pl.col("timestamp").dt.month().alias("month"),
-                    pl.col("timestamp").dt.day().alias("day"),
-                    pl.col("timestamp").dt.hour().alias("hour"),
-                    pl.col("value").alias("value"),
-                )
-                .select(["year", "month", "day", "hour", "value"])
-            )
-
         date_time_column = pd.date_range(
             start=f"1/1/{self.study_year}",
             end=f"1/1/{self.study_year + 1}",
@@ -1074,46 +998,6 @@ class PlexosParser(PCMParser):
                 self.system.add_component(load)
                 ts_dict = {"solve_year": self.study_year}
                 self.system.add_time_series(ts, load, **ts_dict)
-        return
-
-    def _construct_renewable_profiles(self):
-        logger.debug("Creating renewable profile representation")
-        system_regions = (pl.col("child_class_name") == ClassEnum.Generator) & (
-            pl.col("parent_class_name") == ClassEnum.System
-        )
-
-        # NOTE: The best way to identify the type of generator on Plexos is by reading the fuel
-        fuel_query = f"""
-        SELECT
-            parent_obj.name as parent_object_name,
-            child_obj.name as fuel_name
-        FROM t_membership as mem
-            LEFT JOIN t_object as child_obj ON mem.child_object_id = child_obj.object_id
-            LEFT JOIN t_object as parent_obj ON mem.parent_object_id = parent_obj.object_id
-        WHERE mem.child_class_name = {ClassEnum.Fuel.value}  and
-            mem.parent_class_name = {ClassEnum.Generator.value}
-        """
-        generator_fuel = self.db.query(fuel_query)
-        generator_fuel_map = {key: value for key, value in generator_fuel}
-        generators = self._get_model_data(system_regions).filter(~pl.col("text").is_null())
-        assert self.config.run_folder
-
-        for generator_name, generator_data in generators.group_by("name"):
-            fuel_type = generator_fuel_map.get(generator_name)
-            model_map = self.config.defaults["model_map"].get(fuel_type, "")
-            if not model_map:
-                logger.warning("Could not find model map for {}. Skipping it.", generator_name)
-                continue
-            generator = self.system.get_component_by_label(f"{model_map}.{generator_name}")
-
-            for property_name, property_data in generator_data.group_by("property_name"):
-                if property_name in PROPERTIES_WITH_TEXT_TO_SKIP:
-                    continue
-                ts = self._text_handler(property_name, property_data)
-                if ts is not None:
-                    ts_dict = {"solve_year": self.study_year}
-                    self.system.add_time_series(ts, generator, **ts_dict)
-
         return
 
     def _text_handler(self, property_name, property_data):
