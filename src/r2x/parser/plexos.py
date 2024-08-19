@@ -151,22 +151,22 @@ class PlexosParser(PCMParser):
     def _collect_horizon_data(self, model_name: str) -> datetime:
         horizon_query = f"""
         SELECT
-        atr.name as attribute_name,
-        COALESCE(attr_data.value, atr.default_value) AS attr_val
+            atr.name AS attribute_name,
+            COALESCE(attr_data.value, atr.default_value) AS attr_val
         FROM
-        t_object
-        left join t_class as class ON
+            t_object
+        LEFT JOIN t_class AS class ON
             t_object.class_id == class.class_id
-        left join t_attribute AS atr on
+        LEFT JOIN t_attribute AS atr ON
             t_object.class_id  == atr.class_id
-        left join t_membership tm on
+        LEFT JOIN t_membership AS tm ON
             t_object.object_id  == tm.child_object_id
-        left join t_class AS parent_class on
+        LEFT JOIN t_class AS parent_class ON
             tm.parent_class_id == parent_class.class_id
-        left join t_object to2 on
+        LEFT JOIN t_object AS to2 ON
             tm.parent_object_id == to2.object_id
-        LEFT JOIN t_attribute_data attr_data on
-            attr_data.attribute_id == atr.attribute_id and t_object.object_id == attr_data.object_id
+        LEFT JOIN t_attribute_data attr_data ON
+            attr_data.attribute_id == atr.attribute_id AND t_object.object_id == attr_data.object_id
         WHERE
             class.name == '{ClassEnum.Horizon.value}'
             AND parent_class.name == '{ClassEnum.Model.value}'
@@ -209,7 +209,10 @@ class PlexosParser(PCMParser):
         return self.system
 
     def _reconcile_timeseries(self, data_file):
-        """Reconcile timeseries data."""
+        """
+        Adjust timesseries data to match the study year datetime
+        index, such as removing or adding leap-year data.
+        """
         date_time_column = pd.date_range(
             start=f"1/1/{self.study_year}",
             end=f"1/1/{self.study_year + 1}",
@@ -451,12 +454,12 @@ class PlexosParser(PCMParser):
         # NOTE: The best way to identify the type of generator on Plexos is by reading the fuel
         fuel_query = f"""
         SELECT
-            parent_obj.name as parent_object_name,
-            child_obj.name as fuel_name
+            parent_obj.name AS parent_object_name,
+            child_obj.name AS fuel_name
         FROM
-            t_membership as mem
-            left JOIN t_object as child_obj ON mem.child_object_id = child_obj.object_id
-            left JOIN t_object as parent_obj ON mem.parent_object_id = parent_obj.object_id
+            t_membership AS mem
+            LEFT JOIN t_object AS child_obj ON mem.child_object_id = child_obj.object_id
+            LEFT JOIN t_object AS parent_obj ON mem.parent_object_id = parent_obj.object_id
             LEFT JOIN t_class AS child_cls ON child_obj.class_id = child_cls.class_id
             LEFT JOIN t_class AS parent_cls ON parent_obj.class_id = parent_cls.class_id
         WHERE

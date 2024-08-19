@@ -62,16 +62,16 @@ def pl_left_multi_join(l_df: pl.LazyFrame, *r_dfs: pl.LazyFrame, **kwargs):
     return output_df
 
 
-def handle_leap_year_adjustment(data_file):
-    # Adjust for non-leap year with leap-year data
+def handle_leap_year_adjustment(data_file: pl.DataFrame):
+    """Duplicate feb 28th to feb 29th for leap years."""
     feb_28 = data_file.slice(1392, 24)
     before_feb_29 = data_file.slice(0, 1416)
     after_feb_29 = data_file.slice(1416, len(data_file) - 1440)
     return pl.concat([before_feb_29, feb_28, after_feb_29])
 
 
-def fill_missing_timestamps(data_file, date_time_column):
-    # Add missing timestamps and fill nulls
+def fill_missing_timestamps(data_file: pl.DataFrame, date_time_column: list[str]):
+    """Add missing timestamps to data and forward fill nulls"""
     data_file = data_file.with_columns(
         (
             pl.col("year").cast(pl.Int32).cast(pl.Utf8)
@@ -105,8 +105,8 @@ def fill_missing_timestamps(data_file, date_time_column):
     return complete_df
 
 
-def resample_data_to_hourly(data_file):
-    # Resample data to hourly frequency
+def resample_data_to_hourly(data_file: pl.DataFrame):
+    """Resample data to hourly frequency from 30 minute data."""
     data_file = data_file.with_columns((pl.col("hour") % 48).alias("hour"))
     data_file = (
         data_file.with_columns(
