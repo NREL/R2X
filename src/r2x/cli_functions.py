@@ -13,7 +13,7 @@ class Flags(argparse.Action):
     argparse
     """
 
-    def __call__(
+    def __call__(  # type: ignore
         self,
         parser: argparse.ArgumentParser,
         namespace: argparse.Namespace,
