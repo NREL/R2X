@@ -176,6 +176,43 @@ class PlexosParser(PCMParser):
         horizon_map = {key: value for key, value in horizon_data}
         return horizon_map
 
+        # date from is in days since 1900, convert to year
+        date_from = self._collect_horizon_data(model_name=model_name).get("Date From")
+        if date_from is not None:
+            self.study_year: int = int((date_from / 365.25) + 1900)
+        else:
+            if self.config.weather_year is None:
+                raise ValueError("weather_year cannot be None")
+            self.study_year = self.config.weather_year
+
+    def _collect_horizon_data(self, model_name: str) -> dict[str, float]:
+        horizon_query = f"""
+        SELECT
+            atr.name AS attribute_name,
+            COALESCE(attr_data.value, atr.default_value) AS attr_val
+        FROM
+            t_object
+        LEFT JOIN t_class AS class ON
+            t_object.class_id == class.class_id
+        LEFT JOIN t_attribute AS atr ON
+            t_object.class_id  == atr.class_id
+        LEFT JOIN t_membership AS tm ON
+            t_object.object_id  == tm.child_object_id
+        LEFT JOIN t_class AS parent_class ON
+            tm.parent_class_id == parent_class.class_id
+        LEFT JOIN t_object AS to2 ON
+            tm.parent_object_id == to2.object_id
+        LEFT JOIN t_attribute_data attr_data ON
+            attr_data.attribute_id == atr.attribute_id AND t_object.object_id == attr_data.object_id
+        WHERE
+            class.name == '{ClassEnum.Horizon.value}'
+            AND parent_class.name == '{ClassEnum.Model.value}'
+            AND to2.name == '{model_name}'
+        """
+        horizon_data = self.db.query(horizon_query)
+        horizon_map = {key: value for key, value in horizon_data}
+        return horizon_map
+
     def build_system(self) -> System:
         """Create infrasys system."""
         logger.info("Building infrasys system using {}", self.__class__.__name__)
