@@ -5,6 +5,7 @@ import importlib
 from importlib.resources import files
 from pathlib import Path, PureWindowsPath
 from argparse import ArgumentParser
+import pandas as pd
 
 from pint import UndefinedUnitError
 import polars as pl
@@ -37,6 +38,7 @@ from r2x.model import (
 from r2x.utils import validate_string
 
 from .handler import PCMParser
+from .parser_helpers import handle_leap_year_adjustment, fill_missing_timestamps, resample_data_to_hourly
 
 models = importlib.import_module("r2x.model")
 
@@ -124,9 +126,7 @@ class PlexosParser(PCMParser):
     def __init__(self, *args, xml_file: str | None = None, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         assert self.config.run_folder
-        if not self.config.weather_year:
-            raise AttributeError("Missing weather year from the configuration class.")
-        self.weather_year: int = self.config.weather_year
+
         self.run_folder = Path(self.config.run_folder)
         self.system = System(name=self.config.name)
         self.property_map = self.config.defaults["plexos_property_map"]
@@ -138,11 +138,47 @@ class PlexosParser(PCMParser):
         self.db = PlexosSQLite(xml_fname=xml_file)
 
         # Extract scenario data
-        # CHECK with pedro if okay to remove this.
-        model_name = getattr(self.config, "model", None)  # or self.config.fmap[XML_FILE_KEY]["model"]
+        model_name = getattr(self.config, "model", None)
         if model_name is None:
             model_name = self._select_model_name()
         self._process_scenarios(model_name=model_name)
+
+        # date from is in days since 1900, convert to year
+        date_from = self._collect_horizon_data(model_name=model_name).get("Date From")
+        if date_from is not None:
+            self.study_year: int = int((date_from / 365.25) + 1900)
+        else:
+            if self.config.weather_year is None:
+                raise ValueError("weather_year cannot be None")
+            self.study_year = self.config.weather_year
+
+    def _collect_horizon_data(self, model_name: str) -> dict[str, float]:
+        horizon_query = f"""
+        SELECT
+            atr.name AS attribute_name,
+            COALESCE(attr_data.value, atr.default_value) AS attr_val
+        FROM
+            t_object
+        LEFT JOIN t_class AS class ON
+            t_object.class_id == class.class_id
+        LEFT JOIN t_attribute AS atr ON
+            t_object.class_id  == atr.class_id
+        LEFT JOIN t_membership AS tm ON
+            t_object.object_id  == tm.child_object_id
+        LEFT JOIN t_class AS parent_class ON
+            tm.parent_class_id == parent_class.class_id
+        LEFT JOIN t_object AS to2 ON
+            tm.parent_object_id == to2.object_id
+        LEFT JOIN t_attribute_data attr_data ON
+            attr_data.attribute_id == atr.attribute_id AND t_object.object_id == attr_data.object_id
+        WHERE
+            class.name == '{ClassEnum.Horizon.value}'
+            AND parent_class.name == '{ClassEnum.Model.value}'
+            AND to2.name == '{model_name}'
+        """
+        horizon_data = self.db.query(horizon_query)
+        horizon_map = {key: value for key, value in horizon_data}
+        return horizon_map
 
     def build_system(self) -> System:
         """Create infrasys system."""
@@ -171,12 +207,40 @@ class PlexosParser(PCMParser):
         self._add_battery_reserves()
 
         self._construct_load_profiles()
-        # self._construct_renewable_profiles()
 
         # self._construct_areas()
         # self._construct_transformers()
-        # reconcile timeseries data here - source of truth is weather year, and ffill
         return self.system
+
+    def _reconcile_timeseries(self, data_file):
+        """
+        Adjust timesseries data to match the study year datetime
+        index, such as removing or adding leap-year data.
+        """
+        date_time_column = pd.date_range(
+            start=f"1/1/{self.study_year}",
+            end=f"1/1/{self.study_year + 1}",
+            freq="1h",
+            inclusive="left",
+        )
+        leap_year = len(date_time_column) == 8784
+
+        if data_file.height in [8784, 8760]:
+            if data_file.height == 8784 and not leap_year:
+                before_feb_29 = data_file.slice(0, 1416)
+                after_feb_29 = data_file.slice(1440, len(data_file) - 1440)
+                return pl.concat([before_feb_29, after_feb_29])
+            elif data_file.height == 8760 and leap_year:
+                return handle_leap_year_adjustment(data_file)
+            return data_file
+
+        if data_file.height <= 8760:
+            return fill_missing_timestamps(data_file, date_time_column)
+
+        if data_file.height in [17568, 17520]:
+            return resample_data_to_hourly(data_file)
+
+        return data_file
 
     def _construct_load_zones(self, default_model=LoadZone) -> None:
         """Create LoadZone representation.
@@ -394,12 +458,12 @@ class PlexosParser(PCMParser):
         # NOTE: The best way to identify the type of generator on Plexos is by reading the fuel
         fuel_query = f"""
         SELECT
-            parent_obj.name as parent_object_name,
-            child_obj.name as fuel_name
+            parent_obj.name AS parent_object_name,
+            child_obj.name AS fuel_name
         FROM
-            t_membership as mem
-            left JOIN t_object as child_obj ON mem.child_object_id = child_obj.object_id
-            left JOIN t_object as parent_obj ON mem.parent_object_id = parent_obj.object_id
+            t_membership AS mem
+            LEFT JOIN t_object AS child_obj ON mem.child_object_id = child_obj.object_id
+            LEFT JOIN t_object AS parent_obj ON mem.parent_object_id = parent_obj.object_id
             LEFT JOIN t_class AS child_cls ON child_obj.class_id = child_cls.class_id
             LEFT JOIN t_class AS parent_cls ON parent_obj.class_id = parent_cls.class_id
         WHERE
@@ -493,7 +557,7 @@ class PlexosParser(PCMParser):
             self.system.add_component(model_map(**valid_fields))
             if ts_fields:
                 generator = self.system.get_component_by_label(f"{model_map.__name__}.{generator_name}")
-                ts_dict = {"solve_year": self.config.weather_year}
+                ts_dict = {"solve_year": self.study_year}
                 for ts_name, ts in ts_fields.items():
                     ts.variable_name = generator_name + ts_name
                     self.system.add_time_series(ts, generator, **ts_dict)
@@ -939,48 +1003,8 @@ class PlexosParser(PCMParser):
                     max_active_power=float(max_load / len(bus_region_membership)) * ureg.MW,
                 )
                 self.system.add_component(load)
-                ts_dict = {"solve_year": self.config.weather_year}
+                ts_dict = {"solve_year": self.study_year}
                 self.system.add_time_series(ts, load, **ts_dict)
-        return
-
-    def _construct_renewable_profiles(self):
-        logger.debug("Creating renewable profile representation")
-        system_regions = (pl.col("child_class_name") == ClassEnum.Generator) & (
-            pl.col("parent_class_name") == ClassEnum.System
-        )
-
-        # NOTE: The best way to identify the type of generator on Plexos is by reading the fuel
-        fuel_query = f"""
-        SELECT
-            parent_obj.name as parent_object_name,
-            child_obj.name as fuel_name
-        FROM t_membership as mem
-            LEFT JOIN t_object as child_obj ON mem.child_object_id = child_obj.object_id
-            LEFT JOIN t_object as parent_obj ON mem.parent_object_id = parent_obj.object_id
-        WHERE mem.child_class_name = {ClassEnum.Fuel.value}  and
-            mem.parent_class_name = {ClassEnum.Generator.value}
-        """
-        generator_fuel = self.db.query(fuel_query)
-        generator_fuel_map = {key: value for key, value in generator_fuel}
-        generators = self._get_model_data(system_regions).filter(~pl.col("text").is_null())
-        assert self.config.run_folder
-
-        for generator_name, generator_data in generators.group_by("name"):
-            fuel_type = generator_fuel_map.get(generator_name)
-            model_map = self.config.defaults["model_map"].get(fuel_type, "")
-            if not model_map:
-                logger.warning("Could not find model map for {}. Skipping it.", generator_name)
-                continue
-            generator = self.system.get_component_by_label(f"{model_map}.{generator_name}")
-
-            for property_name, property_data in generator_data.group_by("property_name"):
-                if property_name in PROPERTIES_WITH_TEXT_TO_SKIP:
-                    continue
-                ts = self._text_handler(property_name, property_data)
-                if ts is not None:
-                    ts_dict = {"solve_year": self.config.weather_year}
-                    self.system.add_time_series(ts, generator, **ts_dict)
-
         return
 
     def _text_handler(self, property_name, property_data):
@@ -1028,16 +1052,14 @@ class PlexosParser(PCMParser):
 
     def _retrieve_single_value_data(self, property_name, data_file):
         if all(column in data_file.columns for column in [property_name.lower(), "year"]):
-            data_file = data_file.filter(pl.col("year") == self.config.weather_year)
+            data_file = data_file.filter(pl.col("year") == self.study_year)
             return data_file[property_name.lower()][0]
 
         if data_file.columns[:2] == PROPERTY_SV_COLUMNS_BASIC:
             return data_file.filter(pl.col("name") == property_name.lower())["value"][0]
 
         if data_file.columns == PROPERTY_SV_COLUMNS_NAMEYEAR:  # double check this case
-            filter_condition = (pl.col("year") == self.config.weather_year) & (
-                pl.col("name") == property_name.lower()
-            )
+            filter_condition = (pl.col("year") == self.study_year) & (pl.col("name") == property_name.lower())
             try:
                 return data_file.filter(filter_condition)["value"][0]
             except IndexError:
@@ -1048,66 +1070,71 @@ class PlexosParser(PCMParser):
     def _retrieve_time_series_data(self, property_name, data_file):
         output_columns = ["year", "month", "day", "hour", "value"]
 
-        # Convert these types to ["pattern", "value"]
         if all(column in data_file.columns for column in PROPERTY_TS_COLUMNS_MONTH_PIVOT):
+            # Convert these types to ["pattern", "value"]
             data_file = data_file.filter(pl.col("name") == property_name.lower())
             data_file = data_file.melt(id_vars=["name"], variable_name="pattern")
             data_file = data_file.select(["pattern", "value"])
 
-        if data_file.columns == ["pattern", "value"]:
-            dt = pl.datetime_range(
-                datetime(self.weather_year, 1, 1), datetime(self.weather_year, 12, 31), "1h", eager=True
-            ).alias("datetime")
-            date_df = pl.DataFrame({"datetime": dt})
-            date_df = date_df.with_columns(
-                [
-                    date_df["datetime"].dt.year().alias("year"),
-                    date_df["datetime"].dt.month().alias("month"),
-                    date_df["datetime"].dt.day().alias("day"),
-                    date_df["datetime"].dt.hour().alias("hour"),
-                ]
-            )
+        match data_file.columns:
+            case ["pattern", "value"]:
+                dt = pl.datetime_range(
+                    datetime(self.study_year, 1, 1), datetime(self.study_year, 12, 31), "1h", eager=True
+                ).alias("datetime")
+                date_df = pl.DataFrame({"datetime": dt})
+                date_df = date_df.with_columns(
+                    [
+                        date_df["datetime"].dt.year().alias("year"),
+                        date_df["datetime"].dt.month().alias("month"),
+                        date_df["datetime"].dt.day().alias("day"),
+                        date_df["datetime"].dt.hour().alias("hour"),
+                    ]
+                )
 
-            data_file = data_file.with_columns(
-                month=pl.col("pattern").str.extract(r"(\d{2})$").cast(pl.Int8)
-            )  # if other patterns exist will need to change.
-            data_file = date_df.join(data_file.select("month", "value"), on="month", how="inner").select(
-                output_columns
-            )
+                data_file = data_file.with_columns(
+                    month=pl.col("pattern").str.extract(r"(\d{2})$").cast(pl.Int8)
+                )  # If other patterns exist, this will need to change.
+                data_file = date_df.join(data_file.select("month", "value"), on="month", how="inner").select(
+                    output_columns
+                )
 
-        elif data_file.columns == ["month", "day", "period", "value"]:
-            data_file = data_file.rename({"period": "hour"})
-            data_file = data_file.with_columns(pl.lit(self.config.weather_year).alias("year"))
-            columns = ["year"] + [col for col in data_file.columns if col != "year"]
-            data_file = data_file.select(columns)
+            case ["month", "day", "period", "value"]:
+                data_file = data_file.rename({"period": "hour"})
+                data_file = data_file.with_columns(pl.lit(self.study_year).alias("year"))
+                columns = ["year"] + [col for col in data_file.columns if col != "year"]
+                data_file = data_file.select(columns)
 
-        elif all(column in data_file.columns for column in [*PROPERTY_TS_COLUMNS_MDP, property_name.lower()]):
-            data_file = data_file.with_columns(pl.lit(self.config.weather_year).alias("year"))
-            data_file = data_file.rename({property_name.lower(): "value"})
-            data_file = data_file.rename({"period": "hour"})
-            data_file = data_file.select(output_columns)
+            case columns if all(
+                column in columns for column in [*PROPERTY_TS_COLUMNS_MDP, property_name.lower()]
+            ):
+                data_file = data_file.with_columns(pl.lit(self.study_year).alias("year"))
+                data_file = data_file.rename({property_name.lower(): "value"})
+                data_file = data_file.rename({"period": "hour"})
+                data_file = data_file.select(output_columns)
 
-        elif all(column in data_file.columns for column in PROPERTY_TS_COLUMNS_BASIC):
-            data_file = data_file.rename({"period": "hour"})
-            data_file = data_file.filter(pl.col("year") == self.config.weather_year)
+            case columns if all(column in columns for column in PROPERTY_TS_COLUMNS_BASIC):
+                data_file = data_file.rename({"period": "hour"})
+                data_file = data_file.filter(pl.col("year") == self.study_year)
 
-        # elif all(column in data_file.columns for column in PROPERTY_TS_COLUMNS_MULTIZONE):
-        #     # need to test these file types still
-        #     # drop all columns that are not datetime columns or the region name
-        #     data_file = data_file.filter(pl.col("year") == self.config.weather_year)
-        #     data_file = data_file.drop(
-        #         *[col for col in data_file.columns if col not in DATETIME_COLUMNS_MULTIZONE + [region]]
-        #     )
-        #     # rename region name to hour
-        #     data_file = data_file.rename({region: "value"})
-        elif all(column in data_file.columns for column in PROPERTY_TS_COLUMNS_PIVOT):
-            # need to test these file types still
-            data_file = data_file.filter(pl.col("year") == self.config.weather_year)
-            data_file = data_file.melt(id_vars=PROPERTY_TS_COLUMNS_PIVOT, variable_name="hour")
+            # case columns if all(column in columns for column in PROPERTY_TS_COLUMNS_MULTIZONE):
+            #     # Need to test these file types still
+            #     # Drop all columns that are not datetime columns or the region name
+            #     data_file = data_file.filter(pl.col("year") == self.study_year)
+            #     data_file = data_file.drop(
+            #         *[col for col in data_file.columns if col not in DATETIME_COLUMNS_MULTIZONE + [region]]
+            #     )
+            #     # Rename region name to hour
+            #     data_file = data_file.rename({region: "value"})
 
-        if data_file.is_empty():
-            logger.warning("Weather year doesn't existing in {}. Skipping it.", property_name)
-            return
+            case columns if all(column in columns for column in PROPERTY_TS_COLUMNS_PIVOT):
+                # Need to test these file types still
+                data_file = data_file.filter(pl.col("year") == self.study_year)
+                data_file = data_file.melt(id_vars=PROPERTY_TS_COLUMNS_PIVOT, variable_name="hour")
+
+            case _:
+                if data_file.is_empty():
+                    logger.warning("Weather year doesn't exist in {}. Skipping it.", property_name)
+                    return
 
         assert not data_file.is_empty()
         # Format to SingleTimeSeries
@@ -1116,6 +1143,7 @@ class PlexosParser(PCMParser):
             first_row = data_file.row(0)
             start = datetime(year=first_row[0], month=first_row[1], day=first_row[2])
             variable_name = property_name  # Change with property mapping
+            data_file = self._reconcile_timeseries(data_file)
             return SingleTimeSeries.from_array(
                 data=data_file["value"].cast(pl.Float64),
                 resolution=resolution,
@@ -1128,10 +1156,10 @@ class PlexosParser(PCMParser):
     def _time_slice_handler(self, property_name, property_data):
         # Deconstruct pattern
         resolution = timedelta(hours=1)
-        initial_time = datetime(self.weather_year, 1, 1)
+        initial_time = datetime(self.study_year, 1, 1)
         date_time_array = np.arange(
-            f"{self.weather_year}",
-            f"{self.weather_year + 1}",
+            f"{self.study_year}",
+            f"{self.study_year + 1}",
             dtype="datetime64[h]",
         )  # Removing 1 day to match ReEDS convention and converting into a vector
         months = np.array([dt.astype("datetime64[M]").astype(int) % 12 + 1 for dt in date_time_array])

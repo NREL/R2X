@@ -3,6 +3,7 @@
 
 from loguru import logger
 import polars as pl
+import pandas as pd
 
 
 def pl_filter_year(df, year: int | None = None, year_columns=["t", "year"], **kwargs):
@@ -59,3 +60,79 @@ def pl_left_multi_join(l_df: pl.LazyFrame, *r_dfs: pl.LazyFrame, **kwargs):
         output_df.shape[0] == l_df.collect().shape[0]
     ), f"Merge resulted in less rows. Check the shared keys. {original_keys=} vs {current_keys=}"
     return output_df
+
+
+def handle_leap_year_adjustment(data_file: pl.DataFrame):
+    """Duplicate feb 28th to feb 29th for leap years."""
+    feb_28 = data_file.slice(1392, 24)
+    before_feb_29 = data_file.slice(0, 1416)
+    after_feb_29 = data_file.slice(1416, len(data_file) - 1440)
+    return pl.concat([before_feb_29, feb_28, after_feb_29])
+
+
+def fill_missing_timestamps(data_file: pl.DataFrame, date_time_column: list[str]):
+    """Add missing timestamps to data and forward fill nulls"""
+    data_file = data_file.with_columns(
+        (
+            pl.col("year").cast(pl.Int32).cast(pl.Utf8)
+            + "-"
+            + pl.col("month").cast(pl.Int32).cast(pl.Utf8).str.zfill(2)
+            + "-"
+            + pl.col("day").cast(pl.Int32).cast(pl.Utf8).str.zfill(2)
+            + " "
+            + pl.col("hour").cast(pl.Int32).cast(pl.Utf8).str.zfill(2)
+            + ":00:00"
+        )
+        .str.strptime(pl.Datetime, "%Y-%m-%d %H:%M:%S")
+        .alias("timestamp")
+    ).with_columns(pl.col("timestamp").dt.cast_time_unit("ns"))
+
+    complete_timestamps_df = pl.from_pandas(pd.DataFrame({"timestamp": date_time_column}))
+    missing_timestamps_df = complete_timestamps_df.join(data_file, on="timestamp", how="anti")
+
+    missing_timestamps_df = missing_timestamps_df.with_columns(
+        pl.col("timestamp").dt.year().alias("year"),
+        pl.col("timestamp").dt.month().alias("month"),
+        pl.col("timestamp").dt.day().alias("day"),
+        pl.col("timestamp").dt.hour().alias("hour"),
+        pl.lit(None).alias("value"),
+    ).select(["year", "month", "day", "hour", "value", "timestamp"])
+
+    complete_df = (
+        pl.concat([data_file, missing_timestamps_df]).sort("timestamp").fill_null(strategy="forward")
+    )
+    complete_df.drop_in_place("timestamp")
+    return complete_df
+
+
+def resample_data_to_hourly(data_file: pl.DataFrame):
+    """Resample data to hourly frequency from 30 minute data."""
+    data_file = data_file.with_columns((pl.col("hour") % 48).alias("hour"))
+    data_file = (
+        data_file.with_columns(
+            (
+                pl.datetime(
+                    data_file["year"],
+                    data_file["month"],
+                    data_file["day"],
+                    hour=data_file["hour"] // 2,
+                    minute=(data_file["hour"] % 2) * 30,
+                )
+            ).alias("timestamp")
+        )
+        .sort("timestamp")
+        .filter(pl.col("timestamp").is_not_null())
+    )
+
+    return (
+        data_file.group_by_dynamic("timestamp", every="1h")
+        .agg([pl.col("value").mean().alias("value")])
+        .with_columns(
+            pl.col("timestamp").dt.year().alias("year"),
+            pl.col("timestamp").dt.month().alias("month"),
+            pl.col("timestamp").dt.day().alias("day"),
+            pl.col("timestamp").dt.hour().alias("hour"),
+            pl.col("value").alias("value"),
+        )
+        .select(["year", "month", "day", "hour", "value"])
+    )
