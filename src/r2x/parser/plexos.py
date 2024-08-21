@@ -79,8 +79,8 @@ DEFAULT_QUERY_COLUMNS_SCHEMA = {  # NOTE: Order matters
     "property_unit": pl.String,
     "property_value": pl.Float32,
     "band": pl.Int32,
-    "date_to": pl.String,
     "date_from": pl.String,
+    "date_to": pl.String,
     "memo": pl.String,
     "scenario_category": pl.String,
     "scenario": pl.String,
@@ -446,14 +446,6 @@ class PlexosParser(PCMParser):
         extra = {k: v for k, v in property_fields.items() if k not in eligible_fields if v is not None}
         if extra:
             valid["ext"] = extra
-        # NOTE: Plexos can define either a generator with Units = 0 to indicate
-        # that it has been retired, 1 that is online or > 1 when it has
-        # multiple units. For the R2X model to work, we need to check if
-        # the unit is available, but fixed the available key to 1 to avoid
-        # an error.
-        if available := valid.get("available", None):
-            if available > 0:
-                valid["available"] = 1
         return valid, extra
 
     def _construct_generators(self):
@@ -529,8 +521,8 @@ class PlexosParser(PCMParser):
             mapped_records["name"] = generator_name
 
             # NOTE: Add logic to create Function data here
-            if multi_band_records:
-                pass
+            # if multi_band_records:
+            #     pass
 
             # Add prime mover mapping
             mapped_records["prime_mover_type"] = (
@@ -554,6 +546,12 @@ class PlexosParser(PCMParser):
                 mapped_records["base_power"] = mapped_records["pump_load"]
 
             valid_fields, ext_data = self._field_filter(mapped_records, model_map.model_fields)
+
+            if available := valid_fields.get("available", None) is not None:
+                if available > 0:
+                    valid_fields["available"] = 1
+            else:  # if unit field not activated in model, skip generator
+                continue
 
             ts_fields = {k: v for k, v in mapped_records.items() if isinstance(v, SingleTimeSeries)}
             valid_fields.update(
@@ -666,42 +664,18 @@ class PlexosParser(PCMParser):
 
             mapped_records["prime_mover_type"] = PrimeMoversType.BA
 
-            valid_fields = {
-                k: v for k, v in mapped_records.items() if k in GenericBattery.model_fields if v is not None
-            }
+            valid_fields, ext_data = self._field_filter(mapped_records, GenericBattery.model_fields)
 
-            ext_data = {
-                k: v
-                for k, v in mapped_records.items()
-                if k not in GenericBattery.model_fields
-                if v is not None
-            }
-            # NOTE: Plexos can define either a generator with Units = 0 to indicate
-            # that it has been retired, 1 that is online or > 1 when it has
-            # multiple units. For the R2X model to work, we need to check if
-            # the unit is available, but fixed the available key to 1 to avoid
-            # an error.
-            if available := valid_fields.get("available", None):
+            if available := valid_fields.get("available", None) is not None:
                 if available > 0:
                     valid_fields["available"] = 1
-            if ext_data:
-                valid_fields["ext"] = ext_data
-
+            else:  # if unit field not activated in model, skip generator
+                continue
             if not all(key in valid_fields for key in required_fields):
                 logger.warning(
                     "Skipping battery {} since it does not have all the required fields", battery_name
                 )
                 continue
-
-            # # Look up date_file for any fields specified in the ext_data
-            # if "date_file" in ext_data:
-            #     date_file = ext_data.pop("date_file")
-            #     date_file_path = self.run_folder / date_file
-            #     if date_file_path.exists():
-            #         valid_fields["ext"]["date_file"] = date_file_path
-            #     else:
-            #         logger.warning("Date file {} not found for battery {}", date_file, battery_name)
-            #         valid_fields["ext"]["date_file"] = None
 
             if mapped_records["storage_capacity"] == 0:
                 logger.warning("Skipping battery {} since it has zero capacity", battery_name)
@@ -924,12 +898,11 @@ class PlexosParser(PCMParser):
         if scenario_specific_data.is_empty():
             return self.plexos_data.filter(data_filter & base_case_filter)
 
+        combined_key_base = pl.col("name") + "_" + pl.col("property_name")
+        combined_key_scenario = scenario_specific_data["name"] + "_" + scenario_specific_data["property_name"]
+
         base_case_filter = base_case_filter & (
-            ~(
-                pl.col("name").is_in(scenario_specific_data["name"])
-                & pl.col("property_name").is_in(scenario_specific_data["property_name"])
-            )
-            | pl.col("property_name").is_null()
+            ~combined_key_base.is_in(combined_key_scenario) | pl.col("property_name").is_null()
         )
         base_case_data = self.plexos_data.filter(data_filter & base_case_filter)
 
@@ -977,6 +950,21 @@ class PlexosParser(PCMParser):
         variables_filtered = pl.DataFrame(results)
         system_data = system_data.join(
             variables_filtered, left_on="variable_tag", right_on="name", how="left"
+        )
+
+        # Convert date_from and date_to to datetime
+        system_data = system_data.with_columns(
+            [
+                pl.col("date_from").str.strptime(pl.Datetime, "%Y-%m-%dT%H:%M:%S").cast(pl.Date),
+                pl.col("date_to").str.strptime(pl.Datetime, "%Y-%m-%dT%H:%M:%S").cast(pl.Date),
+            ]
+        )
+
+        # Remove Property by study year & date_from/to
+        study_year_date = datetime(self.study_year, 1, 1)
+        system_data = system_data.filter(
+            ((pl.col("date_from").is_null()) | (pl.col("date_from") <= study_year_date))
+            & ((pl.col("date_to").is_null()) | (pl.col("date_to") >= study_year_date))
         )
         return system_data
 
