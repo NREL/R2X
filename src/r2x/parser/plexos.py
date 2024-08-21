@@ -917,14 +917,14 @@ class PlexosParser(PCMParser):
                 # temp solution until model updated with rating field
                 records["base_power"] = val
             else:
-                val = val.copy()
                 val.variable_name = "max_active_power"
                 records["max_active_power"] = val
-                # breakpoint()
 
-            return records
+            if type(rating_factor) is SingleTimeSeries:
+                records.pop("Rating Factor")
         else:  # if unit field not activated in model, skip generator
-            return None
+            records = None
+        return records
 
     def _plexos_table_data(self) -> list[tuple]:
         # Get objects table/membership table
@@ -1057,6 +1057,7 @@ class PlexosParser(PCMParser):
                 )
                 self.system.add_component(load)
                 ts_dict = {"solve_year": self.study_year}
+                # breakpoint()
                 self.system.add_time_series(ts, load, **ts_dict)
         return
 
