@@ -875,33 +875,21 @@ class PlexosParser(PCMParser):
         return None
 
     def _set_unit_availability(self, records):
-        # Max active power LOGIC:
-        # Rating factor is a % value (0-100) that gets assigned to nameplate.
-        # typically you use either [rating] or # [rating factor].
-        # IF rating factor is defined it would be applied to rating IF defined,
-        # ELSE applied to maxcapacity.
-        # Read Order:
-        # 1ST: Rating Factor * Rating,
-        # 2ND: Rating,
-        # 3RD: Max Capacity.
-
+        """Set availability and active power limit TS for generators."""
         # NOTE: set min_energy_hour to min_active_power
+        # NOTE: Hybrid systems which ave availability to zero, still get added
 
         if available := records.get("available", None) is not None:
             # Set availability and base_power
             if available > 0:
                 records["base_power"] = records.get("base_power") * records.get("available")
                 records["available"] = 1
-            # NOTE: Hybrid systems which ave availability to zero, still get added
-            # to network as available. Their base power lives in ext data.
 
             # Set active power limits
             rating_factor = records.get("Rating Factor", 100)
             rating_factor = self._apply_action(np.divide, rating_factor, 100)
             rating = records.get("rating", None)
-            max_capacity = records.get("Max Capacity", None) or records.get(
-                "Firm Capacity", None
-            )  # or use base power? renewable gens dont use max_capacity or rating.
+            max_capacity = records.get("Max Capacity", None) or records.get("Firm Capacity", None)
 
             if rating is not None:
                 units = rating.units
