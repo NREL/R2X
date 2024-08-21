@@ -545,6 +545,16 @@ class PlexosParser(PCMParser):
             if "base_power" not in mapped_records and "pump_load" in mapped_records:
                 mapped_records["base_power"] = mapped_records["pump_load"]
 
+            if not all(key in mapped_records for key in required_fields):
+                logger.warning(
+                    "Skipping Generator {} since it does not have all the required fields", generator_name
+                )
+                continue
+
+            mapped_records = self._set_unit_availability(mapped_records)
+            if mapped_records is None:
+                continue  # Pass if not available
+
             valid_fields, ext_data = self._field_filter(mapped_records, model_map.model_fields)
 
             ts_fields = {k: v for k, v in mapped_records.items() if isinstance(v, SingleTimeSeries)}
@@ -556,30 +566,13 @@ class PlexosParser(PCMParser):
                 }
             )
 
-            if not all(key in valid_fields for key in required_fields):
-                logger.warning(
-                    "Skipping Generator {} since it does not have all the required fields", generator_name
-                )
-                continue
-
-            if available := valid_fields.get("available", None) is not None:
-                if valid_fields.get("base_power") is None:
-                    # breakpoint()
-                    pass
-                    # NOTE: Hybrid systems which ave availability to zero, still get added to network as available
-                else:    
-                    if available > 0:
-                        valid_fields["base_power"] = valid_fields.get("base_power")  * valid_fields.get("available") 
-                        valid_fields["available"] = 1
-            else:  # if unit field not activated in model, skip generator
-                continue
-
             self.system.add_component(model_map(**valid_fields))
             if ts_fields:
                 generator = self.system.get_component_by_label(f"{model_map.__name__}.{generator_name}")
                 ts_dict = {"solve_year": self.study_year}
                 for ts_name, ts in ts_fields.items():
-                    ts.variable_name = generator_name + ts_name
+                    ts.variable_name = ts_name
+                    # breakpoint()
                     self.system.add_time_series(ts, generator, **ts_dict)
 
     def _add_buses_to_generators(self):
@@ -683,16 +676,8 @@ class PlexosParser(PCMParser):
                 logger.warning("Skipping battery {} since it has zero capacity", battery_name)
                 continue
 
-            if available := valid_fields.get("available", None) is not None:
-                if valid_fields.get("base_power") is None:
-                    # breakpoint()
-                    pass
-                    # NOTE: Hybrid systems which ave availability to zero, still get added to network as available
-                else:    
-                    if available > 0:
-                        valid_fields["base_power"] = valid_fields.get("base_power")  * valid_fields.get("available") 
-                        valid_fields["available"] = 1
-            else:  # if unit field not activated in model, skip generator
+            valid_fields = self._set_unit_availability(valid_fields)
+            if valid_fields is None:
                 continue
 
             self.system.add_component(GenericBattery(**valid_fields))
@@ -888,6 +873,58 @@ class PlexosParser(PCMParser):
         assert valid_scenarios
         self.scenarios = [scenario[0] for scenario in valid_scenarios]  # Flatten list of tuples
         return None
+
+    def _set_unit_availability(self, records):
+        # Max active power LOGIC:
+        # Rating factor is a % value (0-100) that gets assigned to nameplate.
+        # typically you use either [rating] or # [rating factor].
+        # IF rating factor is defined it would be applied to rating IF defined,
+        # ELSE applied to maxcapacity.
+        # Read Order:
+        # 1ST: Rating Factor * Rating,
+        # 2ND: Rating,
+        # 3RD: Max Capacity.
+
+        # NOTE: set min_energy_hour to min_active_power
+
+        if available := records.get("available", None) is not None:
+            # Set availability and base_power
+            if available > 0:
+                records["base_power"] = records.get("base_power") * records.get("available")
+                records["available"] = 1
+            # NOTE: Hybrid systems which ave availability to zero, still get added
+            # to network as available. Their base power lives in ext data.
+
+            # Set active power limits
+            rating_factor = records.get("Rating Factor", 100)
+            rating_factor = self._apply_action(np.divide, rating_factor, 100)
+            rating = records.get("rating", None)
+            max_capacity = records.get("Max Capacity", None) or records.get(
+                "Firm Capacity", None
+            )  # or use base power? renewable gens dont use max_capacity or rating.
+
+            if rating is not None:
+                units = rating.units
+                val = rating_factor * rating.magnitude
+            elif max_capacity is not None:
+                units = max_capacity.units
+                val = self._apply_action(np.multiply, rating_factor, max_capacity.magnitude)
+            else:
+                return records
+            val = self._apply_unit(val, units)
+
+            if type(val) is not SingleTimeSeries:
+                # temp solution until model updated with rating field
+                records["base_power"] = val
+            else:
+                val = val.copy()
+                val.variable_name = "max_active_power"
+                records["max_active_power"] = val
+                # breakpoint()
+
+            return records
+        else:  # if unit field not activated in model, skip generator
+            return None
 
     def _plexos_table_data(self) -> list[tuple]:
         # Get objects table/membership table
@@ -1200,6 +1237,7 @@ class PlexosParser(PCMParser):
 
     def _apply_unit(self, value, unit):
         if type(value) is SingleTimeSeries:
+            value.units = str(unit)
             return value
         return value * unit if unit else value
 
@@ -1237,10 +1275,6 @@ class PlexosParser(PCMParser):
         if variable is not None and record.get("action") == "=":
             return self._apply_unit(variable, unit)
         if variable is not None and data_file is not None:
-            # logger.debug("Record Name: {}", record_name)
-            # logger.debug("Variable: {}", variable)
-            # logger.debug("Data File: {}", data_file)
-            # confirm direction of action operator
             return self._apply_unit(self._apply_action(action, variable, data_file), unit)
         if variable is not None and prop_value is not None:
             return self._apply_unit(self._apply_action(action, variable, prop_value), unit)
