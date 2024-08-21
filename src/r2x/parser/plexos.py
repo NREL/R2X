@@ -162,34 +162,6 @@ class PlexosParser(PCMParser):
                 raise ValueError("weather_year cannot be None")
             self.study_year = self.config.weather_year
 
-    def _collect_horizon_data(self, model_name: str) -> dict[str, float]:
-        horizon_query = f"""
-        SELECT
-            atr.name AS attribute_name,
-            COALESCE(attr_data.value, atr.default_value) AS attr_val
-        FROM
-            t_object
-        LEFT JOIN t_class AS class ON
-            t_object.class_id == class.class_id
-        LEFT JOIN t_attribute AS atr ON
-            t_object.class_id  == atr.class_id
-        LEFT JOIN t_membership AS tm ON
-            t_object.object_id  == tm.child_object_id
-        LEFT JOIN t_class AS parent_class ON
-            tm.parent_class_id == parent_class.class_id
-        LEFT JOIN t_object AS to2 ON
-            tm.parent_object_id == to2.object_id
-        LEFT JOIN t_attribute_data attr_data ON
-            attr_data.attribute_id == atr.attribute_id AND t_object.object_id == attr_data.object_id
-        WHERE
-            class.name == '{ClassEnum.Horizon.value}'
-            AND parent_class.name == '{ClassEnum.Model.value}'
-            AND to2.name == '{model_name}'
-        """
-        horizon_data = self.db.query(horizon_query)
-        horizon_map = {key: value for key, value in horizon_data}
-        return horizon_map
-
     def build_system(self) -> System:
         """Create infrasys system."""
         logger.info("Building infrasys system using {}", self.__class__.__name__)
@@ -220,6 +192,34 @@ class PlexosParser(PCMParser):
         # self._construct_areas()
         # self._construct_transformers()
         return self.system
+
+    def _collect_horizon_data(self, model_name: str) -> dict[str, float]:
+        horizon_query = f"""
+        SELECT
+            atr.name AS attribute_name,
+            COALESCE(attr_data.value, atr.default_value) AS attr_val
+        FROM
+            t_object
+        LEFT JOIN t_class AS class ON
+            t_object.class_id == class.class_id
+        LEFT JOIN t_attribute AS atr ON
+            t_object.class_id  == atr.class_id
+        LEFT JOIN t_membership AS tm ON
+            t_object.object_id  == tm.child_object_id
+        LEFT JOIN t_class AS parent_class ON
+            tm.parent_class_id == parent_class.class_id
+        LEFT JOIN t_object AS to2 ON
+            tm.parent_object_id == to2.object_id
+        LEFT JOIN t_attribute_data attr_data ON
+            attr_data.attribute_id == atr.attribute_id AND t_object.object_id == attr_data.object_id
+        WHERE
+            class.name == '{ClassEnum.Horizon.value}'
+            AND parent_class.name == '{ClassEnum.Model.value}'
+            AND to2.name == '{model_name}'
+        """
+        horizon_data = self.db.query(horizon_query)
+        horizon_map = {key: value for key, value in horizon_data}
+        return horizon_map
 
     def _reconcile_timeseries(self, data_file):
         """
@@ -547,12 +547,6 @@ class PlexosParser(PCMParser):
 
             valid_fields, ext_data = self._field_filter(mapped_records, model_map.model_fields)
 
-            if available := valid_fields.get("available", None) is not None:
-                if available > 0:
-                    valid_fields["available"] = 1
-            else:  # if unit field not activated in model, skip generator
-                continue
-
             ts_fields = {k: v for k, v in mapped_records.items() if isinstance(v, SingleTimeSeries)}
             valid_fields.update(
                 {
@@ -567,6 +561,19 @@ class PlexosParser(PCMParser):
                     "Skipping Generator {} since it does not have all the required fields", generator_name
                 )
                 continue
+
+            if available := valid_fields.get("available", None) is not None:
+                if valid_fields.get("base_power") is None:
+                    # breakpoint()
+                    pass
+                    # NOTE: Hybrid systems which ave availability to zero, still get added to network as available
+                else:    
+                    if available > 0:
+                        valid_fields["base_power"] = valid_fields.get("base_power")  * valid_fields.get("available") 
+                        valid_fields["available"] = 1
+            else:  # if unit field not activated in model, skip generator
+                continue
+
             self.system.add_component(model_map(**valid_fields))
             if ts_fields:
                 generator = self.system.get_component_by_label(f"{model_map.__name__}.{generator_name}")
@@ -666,11 +673,6 @@ class PlexosParser(PCMParser):
 
             valid_fields, ext_data = self._field_filter(mapped_records, GenericBattery.model_fields)
 
-            if available := valid_fields.get("available", None) is not None:
-                if available > 0:
-                    valid_fields["available"] = 1
-            else:  # if unit field not activated in model, skip generator
-                continue
             if not all(key in valid_fields for key in required_fields):
                 logger.warning(
                     "Skipping battery {} since it does not have all the required fields", battery_name
@@ -680,6 +682,19 @@ class PlexosParser(PCMParser):
             if mapped_records["storage_capacity"] == 0:
                 logger.warning("Skipping battery {} since it has zero capacity", battery_name)
                 continue
+
+            if available := valid_fields.get("available", None) is not None:
+                if valid_fields.get("base_power") is None:
+                    # breakpoint()
+                    pass
+                    # NOTE: Hybrid systems which ave availability to zero, still get added to network as available
+                else:    
+                    if available > 0:
+                        valid_fields["base_power"] = valid_fields.get("base_power")  * valid_fields.get("available") 
+                        valid_fields["available"] = 1
+            else:  # if unit field not activated in model, skip generator
+                continue
+
             self.system.add_component(GenericBattery(**valid_fields))
         return
 
@@ -974,20 +989,8 @@ class PlexosParser(PCMParser):
             pl.col("parent_class_name") == ClassEnum.System.name
         )
         regions = self._get_model_data(system_regions).filter(~pl.col("variable").is_null())
-        # system_nodes = (pl.col("child_class_name") == ClassEnum.Node.name) & (
-        #     pl.col("parent_class_name") == ClassEnum.System.name
-        # )
-        # nodes = self._get_model_data(system_nodes).filter(~pl.col("data_file").is_null())
-        # nodes.write_csv("load_nodes.csv")
 
-        # regions = self._get_model_data(system_regions).filter(~pl.col("data_file").is_null())
-        # assert self.config.run_folder
-        # regions.write_csv("load_regions.csv")
         for region, region_data in regions.group_by("name"):
-            # If the weather year is not in the data, then drop that load.
-            # Each band needs to be a different time series and load.
-            # Expression is typically used when you want your outputs to track the different bands
-            # Action will modify the input data from the TS file. Only when there is an Expression definition.
             if not len(region_data) == 1:
                 msg = (
                     "load data has more than one row for {}. Selecting the first match. "
