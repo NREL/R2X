@@ -1,10 +1,13 @@
 [build-system]
-requires = ["setuptools>=61.0.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "src/r2x/__version__.py"
 
 [project]
 name = "r2x"
-version = "v1.0.0"
+dynamic = ["version"]
 authors = [
     { name = "Pedro Sanchez", email = "psanchez@nrel.gov" },
     { name = "Obika Kodi", email = "kodi.obika@nrel.gov" },
@@ -13,7 +16,12 @@ authors = [
 description = "ReEDS to X parser"
 requires-python = ">=3.11"
 classifiers = [
-    "Programming Language :: Python :: 3",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Topic :: Software Development :: Build Tools",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Operating System :: OS Independent",
 ]
 dependencies = [
@@ -21,6 +29,7 @@ dependencies = [
     "loguru~=0.7.2",
     "pandas~=2.2",
     "infrasys>=0.0.4",
+    "plexosdb>=0.0.2",
     "polars~=1.1.0",
     "pyyaml~=6.0.1",
     "rich~=13.7.1",
@@ -64,21 +73,6 @@ ignore_missing_imports=true
 [[tool.mypy.overrides]]
 module = "polars"
 follow_imports = "skip"
-
-# Setuptools configuration
-[tool.setuptools]
-include-package-data = true
-
-[tool.setuptools.packages.find]
-where = ["src"]
-include = ["*"]
-
-# Setuptools configuration
-[tool.setuptools.dynamic]
-readme = { file = ["README.md"], content-type = "text/markdown" }
-
-[tool.setuptools.package-data]
-"*" = ["*.json", "*.csv", "*.xml", ".sql"]
 
 [tool.ruff]
 line-length = 110
