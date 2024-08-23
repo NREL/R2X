@@ -67,31 +67,31 @@ PROPERTY_TS_COLUMNS_MONTH_PIVOT = [
     "m12",
 ]
 DEFAULT_QUERY_COLUMNS_SCHEMA = {  # NOTE: Order matters
-    "membership_id": pl.Int64,
-    "parent_object_id": pl.Int32,
-    "parent_object_name": pl.String,
-    "parent_class_name": pl.String,
-    "child_class_name": pl.String,
-    "category": pl.String,
-    "object_id": pl.Int32,
-    "name": pl.String,
-    "property_name": pl.String,
-    "property_unit": pl.String,
-    "property_value": pl.Float32,
-    "band": pl.Int32,
-    "date_to": pl.String,
-    "date_from": pl.String,
-    "memo": pl.String,
-    "scenario_category": pl.String,
-    "scenario": pl.String,
-    "action": pl.String,
-    "data_file_tag": pl.String,
-    "data_file": pl.String,
-    "variable_tag": pl.String,
-    # "variable": pl.String,
-    "timeslice_tag": pl.String,
-    "timeslice": pl.String,
-}
+                                "membership_id": pl.Int64,
+                                "parent_object_id": pl.Int32,
+                                "parent_object_name": pl.String,
+                                "parent_class_name": pl.String,
+                                "child_class_name": pl.String,
+                                "category": pl.String,
+                                "object_id": pl.Int32,
+                                "name": pl.String,
+                                "property_name": pl.String,
+                                "property_unit": pl.String,
+                                "property_value": pl.Float32,
+                                "band": pl.Int32,
+                                "date_to": pl.String,
+                                "date_from": pl.String,
+                                "memo": pl.String,
+                                "scenario_category": pl.String,
+                                "scenario": pl.String,
+                                "action": pl.String,
+                                "data_file_tag": pl.String,
+                                "data_file": pl.String,
+                                "variable_tag": pl.String,
+                                # "variable": pl.String,
+                                "timeslice_tag": pl.String,
+                                "timeslice": pl.String,
+                                }
 COLUMNS = [
     "name",
     "property_name",
@@ -127,6 +127,7 @@ class PlexosParser(PCMParser):
         super().__init__(*args, **kwargs)
         assert self.config.run_folder
         self.run_folder = Path(self.config.run_folder)
+        self.system = System(name=self.config.name)
         self.property_map = self.config.defaults["plexos_property_map"]
         self.device_map = self.config.defaults["plexos_device_map"]
         self.fuel_map = self.config.defaults["plexos_fuel_map"]
@@ -138,7 +139,7 @@ class PlexosParser(PCMParser):
         if not self.fuel_map and not self.device_map and not self.device_match_string:
             msg = (
                 "Neither `plexos_fuel_map` or `plexos_device_map` or `device_match_string` was provided. "
-                "To fix, provide any of the mappings."
+                    "To fix, provide any of the mappings."
             )
             raise ParserError(msg)
 
@@ -264,11 +265,11 @@ class PlexosParser(PCMParser):
         regions = self._get_model_data(system_regions)
 
         region_pivot = regions.pivot(  # noqa: PD010
-            index=DEFAULT_INDEX,
-            columns="property_name",
-            values="property_value",
-            aggregate_function="first",
-        )
+                                     index=DEFAULT_INDEX,
+                                     columns="property_name",
+                                     values="property_value",
+                                     aggregate_function="first",
+                                     )
         for region in region_pivot.iter_rows(named=True):
             valid_fields = {
                 k: v for k, v in region.items() if k in default_model.model_fields if v is not None
@@ -292,11 +293,11 @@ class PlexosParser(PCMParser):
         system_buses = self._get_model_data(system_buses)
         buses_region = self._get_model_data(region_buses)
         buses = system_buses.pivot(  # noqa: PD010
-            index=DEFAULT_INDEX,
-            columns="property_name",
-            values="property_value",
-            aggregate_function="first",
-        )
+                                   index=DEFAULT_INDEX,
+                                   columns="property_name",
+                                   values="property_value",
+                                   aggregate_function="first",
+                                   )
         for idx, bus in enumerate(buses.iter_rows(named=True)):
             mapped_bus = {self.property_map.get(key, key): value for key, value in bus.items()}
             valid_fields = {
@@ -330,11 +331,11 @@ class PlexosParser(PCMParser):
         system_reserves = self._get_model_data(system_reserves)
 
         reserve_pivot = system_reserves.pivot(  # noqa: PD010
-            index=DEFAULT_INDEX,
-            columns="property_name",
-            values="property_value",
-            aggregate_function="first",
-        )
+                                              index=DEFAULT_INDEX,
+                                              columns="property_name",
+                                              values="property_value",
+                                              aggregate_function="first",
+                                              )
         for reserve in reserve_pivot.iter_rows(named=True):
             mapped_reserve = {self.property_map.get(key, key): value for key, value in reserve.items()}
             valid_fields = {
@@ -378,11 +379,11 @@ class PlexosParser(PCMParser):
         )
         system_lines = self._get_model_data(system_lines)
         lines_pivot = system_lines.pivot(  # noqa: PD010
-            index=DEFAULT_INDEX,
-            columns="property_name",
-            values="property_value",
-            aggregate_function="first",
-        )
+                                         index=DEFAULT_INDEX,
+                                         columns="property_name",
+                                         values="property_value",
+                                         aggregate_function="first",
+                                         )
 
         lines_pivot_memberships = self.db.get_memberships(
             *lines_pivot["name"].to_list(), object_class=ClassEnum.Line
@@ -512,17 +513,17 @@ class PlexosParser(PCMParser):
             # Handle properties from plexos assuming that same property can
             # appear multiple times on different bands.
             property_records = generator_data[
-                [
-                    "band",
-                    "property_name",
-                    "property_value",
-                    "property_unit",
-                    "data_file",
-                    "variable",
-                    "action",
-                    "variable_tag",
-                ]
-            ].to_dicts()
+            [
+                "band",
+                "property_name",
+                "property_value",
+                "property_unit",
+                "data_file",
+                "variable",
+                "action",
+                "variable_tag",
+            ]
+        ].to_dicts()
 
             mapped_records, multi_band_records = self._parse_property_data(property_records, generator_name)
             mapped_records["name"] = generator_name
@@ -632,7 +633,7 @@ class PlexosParser(PCMParser):
         logger.debug("Creating battery objects")
         system_batteries = self._get_model_data(
             (pl.col("child_class_name") == ClassEnum.Battery.name)
-            & (pl.col("parent_class_name") == ClassEnum.System.name)
+                & (pl.col("parent_class_name") == ClassEnum.System.name)
         )
         required_fields = {
             key: value for key, value in GenericBattery.model_fields.items() if value.is_required()
@@ -641,17 +642,17 @@ class PlexosParser(PCMParser):
             battery_name = battery_name[0]
             logger.trace("Parsing battery = {}", battery_name)
             property_records = battery_data[
-                [
-                    "band",
-                    "property_name",
-                    "property_value",
-                    "property_unit",
-                    "data_file",
-                    "variable",
-                    "action",
-                    "variable_tag",
-                ]
-            ].to_dicts()
+            [
+                "band",
+                "property_name",
+                "property_value",
+                "property_unit",
+                "data_file",
+                "variable",
+                "action",
+                "variable_tag",
+            ]
+        ].to_dicts()
 
             # logger.debug("Parsing battery = {}", battery_name)
             mapped_records, _ = self._parse_property_data(property_records, battery_name)
@@ -774,11 +775,11 @@ class PlexosParser(PCMParser):
         )
         system_interfaces = self._get_model_data(system_interfaces_mask)
         interfaces = system_interfaces.pivot(  # noqa: PD010
-            index=DEFAULT_INDEX,
-            columns="property_name",
-            values="property_value",
-            aggregate_function="first",
-        )
+                                             index=DEFAULT_INDEX,
+                                             columns="property_name",
+                                             values="property_value",
+                                             aggregate_function="first",
+                                             )
 
         interface_property_map = {
             v: k
@@ -845,7 +846,7 @@ class PlexosParser(PCMParser):
         return
 
     def _select_model_name(self):
-        # TODO(pesap): Add fail mechanism
+        # TODO(pesap): Handle exception if no model name found
         # https://github.com/NREL/R2X/issues/10
         query = f"""
         select obj.name
