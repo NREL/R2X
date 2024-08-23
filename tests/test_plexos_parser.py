@@ -4,7 +4,8 @@ from r2x.config import Scenario
 from r2x.parser.handler import get_parser_data
 from r2x.parser.plexos import PlexosParser
 
-DB_NAME = "plexos_example.xml"
+DB_NAME = "2-bus_example.xml"
+MODEL_NAME = "main_model"
 
 
 @pytest.fixture
@@ -14,6 +15,7 @@ def plexos_scenario(tmp_path, data_folder):
         input_model="plexos",
         run_folder=data_folder,
         output_folder=tmp_path,
+        model=MODEL_NAME,
         solve_year=2035,
         weather_year=2012,
         fmap={"xml_file": {"fname": DB_NAME, "model": "default"}},

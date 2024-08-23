@@ -823,6 +823,8 @@ class PlexosParser(PCMParser):
         return
 
     def _select_model_name(self):
+        # TODO(pesap): Add fail mechanism
+        # https://github.com/NREL/R2X/issues/10
         query = f"""
         select obj.name
         from t_object as obj
