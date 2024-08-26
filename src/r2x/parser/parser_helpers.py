@@ -87,10 +87,17 @@ def fill_missing_timestamps(data_file: pl.DataFrame, date_time_column: list[str]
         .alias("timestamp")
     ).with_columns(pl.col("timestamp").dt.cast_time_unit("ns"))
 
-    complete_timestamps_df = pl.from_pandas(pd.DataFrame({"timestamp": date_time_column}))
-    missing_timestamps_df = complete_timestamps_df.join(data_file, on="timestamp", how="anti")
+    data_file = data_file.with_columns(
+        pl.col("year").cast(pl.Int32),
+        pl.col("month").cast(pl.Int8),
+        pl.col("day").cast(pl.Int8),
+        pl.col("hour").cast(pl.Int8),
+    )
 
-    missing_timestamps_df = missing_timestamps_df.with_columns(
+    complete_timestamps = pl.from_pandas(pd.DataFrame({"timestamp": date_time_column}))
+    missing_timestamps = complete_timestamps.join(data_file, on="timestamp", how="anti")
+
+    missing_timestamps = missing_timestamps.with_columns(
         pl.col("timestamp").dt.year().alias("year"),
         pl.col("timestamp").dt.month().alias("month"),
         pl.col("timestamp").dt.day().alias("day"),
@@ -98,9 +105,7 @@ def fill_missing_timestamps(data_file: pl.DataFrame, date_time_column: list[str]
         pl.lit(None).alias("value"),
     ).select(["year", "month", "day", "hour", "value", "timestamp"])
 
-    complete_df = (
-        pl.concat([data_file, missing_timestamps_df]).sort("timestamp").fill_null(strategy="forward")
-    )
+    complete_df = pl.concat([data_file, missing_timestamps]).sort("timestamp").fill_null(strategy="forward")
     complete_df.drop_in_place("timestamp")
     return complete_df
 
