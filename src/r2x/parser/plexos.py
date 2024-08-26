@@ -930,14 +930,14 @@ class PlexosParser(PCMParser):
             rating_factor = records.get("Rating Factor", 100)
             rating_factor = self._apply_action(np.divide, rating_factor, 100)
             rating = records.get("rating", None)
-            max_capacity = records.get("Max Capacity", None) or records.get("Firm Capacity", None)
+            base_power = records.get("base_power", None)
 
             if rating is not None:
                 units = rating.units
                 val = rating_factor * rating.magnitude
-            elif max_capacity is not None:
-                units = max_capacity.units
-                val = self._apply_action(np.multiply, rating_factor, max_capacity.magnitude)
+            elif base_power is not None:
+                units = base_power.units
+                val = self._apply_action(np.multiply, rating_factor, base_power.magnitude)
             else:
                 return records
             val = self._apply_unit(val, units)
