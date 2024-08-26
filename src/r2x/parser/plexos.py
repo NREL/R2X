@@ -423,21 +423,10 @@ class PlexosParser(PCMParser):
         )
         for line in lines_pivot.iter_rows(named=True):
             line_properties_mapped = {self.property_map.get(key, key): value for key, value in line.items()}
-            valid_fields = {
-                k: v
-                for k, v in line_properties_mapped.items()
-                if k in default_model.model_fields
-                if v is not None
-            }
+            line_properties_mapped["rating_up"] = line_properties_mapped.pop("max_power_flow", None)
+            line_properties_mapped["rating_down"] = line_properties_mapped.pop("max_power_flow", None)
 
-            ext_data = {
-                k: v
-                for k, v in line_properties_mapped.items()
-                if k not in default_model.model_fields
-                if v is not None
-            }
-            if ext_data:
-                valid_fields["ext"] = ext_data
+            valid_fields, ext_data = self._field_filter(line_properties_mapped, default_model.model_fields)
 
             from_bus_name = next(
                 membership
