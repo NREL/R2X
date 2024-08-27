@@ -33,6 +33,188 @@
   "device_inference_string": {},
   "distribution_losses": 1,
   "generator_map": {},
+  "generator_models": {
+    "GenericBattery": [
+      {
+        "fuel": "STORAGE",
+        "type": null
+      },
+      {
+        "fuel": null,
+        "type": "BA"
+      }
+    ],
+    "HydroDispatch": [
+      {
+        "fuel": "HYDRO",
+        "type": null
+      },
+      {
+        "fuel": null,
+        "type": "HY"
+      }
+    ],
+    "HydroPumpedStorage": [
+      {
+        "fuel": "HYDRO",
+        "type": "PS"
+      },
+      {
+        "fuel": null,
+        "type": "PS"
+      }
+    ],
+    "RenewableDispatch": [
+      {
+        "fuel": "SOLAR",
+        "type": "PV"
+      },
+      {
+        "fuel": "SOLAR",
+        "type": "UN"
+      },
+      {
+        "fuel": "WIND",
+        "type": "WIND"
+      },
+      {
+        "fuel": "WIND",
+        "type": null
+      },
+      {
+        "fuel": "SOLAR",
+        "type": null
+      },
+      {
+        "fuel": null,
+        "type": "WT"
+      },
+      {
+        "fuel": null,
+        "type": "WS"
+      },
+      {
+        "fuel": null,
+        "type": "PV"
+      },
+      {
+        "fuel": null,
+        "type": "CP"
+      },
+      {
+        "fuel": null,
+        "type": "HA"
+      }
+    ],
+    "RenewableFix": [
+      {
+        "fuel": "SOLAR",
+        "type": "RTPV"
+      },
+      {
+        "fuel": "SOLAR",
+        "type": "OT"
+      },
+      {
+        "fuel": null,
+        "type": "RTPV"
+      }
+    ],
+    "ThermalStandard": [
+      {
+        "fuel": "OIL",
+        "type": null
+      },
+      {
+        "fuel": "DISTILLATE_FUEL_OIL",
+        "type": null
+      },
+      {
+        "fuel": "COAL",
+        "type": null
+      },
+      {
+        "fuel": "NG",
+        "type": null
+      },
+      {
+        "fuel": "GAS",
+        "type": null
+      },
+      {
+        "fuel": "OTHER_GAS",
+        "type": null
+      },
+      {
+        "fuel": "NATURAL_GAS",
+        "type": null
+      },
+      {
+        "fuel": "NUCLEAR",
+        "type": null
+      },
+      {
+        "fuel": "NUC",
+        "type": null
+      },
+      {
+        "fuel": "SYNC_COND",
+        "type": "SYNC_COND"
+      },
+      {
+        "fuel": "OTHER",
+        "type": "OT"
+      },
+      {
+        "fuel": "AG_BIPRODUCT",
+        "type": null
+      },
+      {
+        "fuel": "GEOTHERMAL",
+        "type": null
+      },
+      {
+        "fuel": "STORAGE",
+        "type": "CE"
+      },
+      {
+        "fuel": "MUNICIPAL_WASTE",
+        "type": null
+      },
+      {
+        "fuel": "WOOD_WASTE",
+        "type": "OT"
+      },
+      {
+        "fuel": "WOOD_WASTE",
+        "type": "GT"
+      },
+      {
+        "fuel": null,
+        "type": "OT"
+      },
+      {
+        "fuel": null,
+        "type": "ST"
+      },
+      {
+        "fuel": null,
+        "type": "GT"
+      },
+      {
+        "fuel": null,
+        "type": "CA"
+      },
+      {
+        "fuel": null,
+        "type": "CT"
+      },
+      {
+        "fuel": null,
+        "type": "CC"
+      }
+    ]
+  },
   "heatrate_fits_file": "heatrate_generic_fits.csv",
   "hydro_mean_time_to_repair": 24,
   "hydro_ramp_rate": 0.05,
