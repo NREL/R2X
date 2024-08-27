@@ -582,6 +582,7 @@ class PlexosParser(PCMParser):
             mapped_records = self._construct_value_curves(mapped_records, generator_name)
             mapped_records["fuel_price"] = fuel_prices.get(generator_fuel_map.get(generator_name))
 
+
             valid_fields, ext_data = self._field_filter(mapped_records, model_map.model_fields)
 
             ts_fields = {k: v for k, v in mapped_records.items() if isinstance(v, SingleTimeSeries)}
@@ -595,6 +596,7 @@ class PlexosParser(PCMParser):
 
             self.system.add_component(model_map(**valid_fields))
             generator = self.system.get_component_by_label(f"{model_map.__name__}.{generator_name}")
+
             if ts_fields:
                 generator = self.system.get_component_by_label(f"{model_map.__name__}.{generator_name}")
                 ts_dict = {"solve_year": self.study_year}
@@ -1107,6 +1109,7 @@ class PlexosParser(PCMParser):
                 )
                 self.system.add_component(load)
                 ts_dict = {"solve_year": self.study_year}
+
                 self.system.add_time_series(ts, load, **ts_dict)
         return
 
