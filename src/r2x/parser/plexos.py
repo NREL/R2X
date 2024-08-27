@@ -582,7 +582,6 @@ class PlexosParser(PCMParser):
             mapped_records = self._construct_value_curves(mapped_records, generator_name)
             mapped_records["fuel_price"] = fuel_prices.get(generator_fuel_map.get(generator_name))
 
-
             valid_fields, ext_data = self._field_filter(mapped_records, model_map.model_fields)
 
             ts_fields = {k: v for k, v in mapped_records.items() if isinstance(v, SingleTimeSeries)}
