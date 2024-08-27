@@ -450,7 +450,7 @@ class PlexosParser(PCMParser):
             valid["ext"] = extra
         return valid, extra
 
-    def _get_model_type(self, generator_name, generator_fuel_map):
+    def _get_fuel_pmtype(self, generator_name, generator_fuel_map):
         plexos_fuel_name = generator_fuel_map.get(generator_name)
         logger.trace("Parsing generator = {} with fuel type = {}", generator_name, plexos_fuel_name)
 
@@ -460,17 +460,17 @@ class PlexosParser(PCMParser):
             or self._infer_model_type(generator_name)
         )
 
-        if fuel_pmtype is None:
-            return "", plexos_fuel_name, ""
+        return fuel_pmtype, plexos_fuel_name
 
-        for model, conditions in self.config.defaults["generator_models"].items():
-            for cond in conditions:
-                if (cond["fuel"] == fuel_pmtype["fuel"] or cond["fuel"] is None) and (
-                    cond["type"] == fuel_pmtype["type"] or cond["type"] is None
-                ):
-                    return model, fuel_pmtype["fuel"], fuel_pmtype["type"]
-
-        return "", plexos_fuel_name, ""
+    def _get_model_type(self, fuel_pmtype):
+        if fuel_pmtype is not None:
+            for model, conditions in self.config.defaults["generator_models"].items():
+                for cond in conditions:
+                    if (cond["fuel"] == fuel_pmtype["fuel"] or cond["fuel"] is None) and (
+                        cond["type"] == fuel_pmtype["type"] or cond["type"] is None
+                    ):
+                        return model
+        return ""
 
     def _construct_generators(self):
         logger.debug("Creating generators")
@@ -501,15 +501,16 @@ class PlexosParser(PCMParser):
         # Iterate over properties for generator
         for generator_name, generator_data in system_generators.group_by("name"):
             generator_name = generator_name[0]
-            model_map, fuel_type, pm_type = self._get_model_type(generator_name, generator_fuel_map)
-
+            fuel_pmtype, plexos_fuel_name = self._get_fuel_pmtype(generator_name, generator_fuel_map)
+            model_map = self._get_model_type(fuel_pmtype)
             if getattr(R2X_MODELS, model_map, None) is None:
                 logger.warning(
                     "Model map not found for generator={} with fuel_type={}. Skipping it.",
                     generator_name,
-                    fuel_type,
+                    plexos_fuel_name,
                 )
                 continue
+            fuel_type, pm_type = fuel_pmtype["fuel"], fuel_pmtype["type"]
             model_map = getattr(R2X_MODELS, model_map)
             required_fields = {
                 key: value for key, value in model_map.model_fields.items() if value.is_required()
@@ -573,13 +574,13 @@ class PlexosParser(PCMParser):
 
             self.system.add_component(model_map(**valid_fields))
             generator = self.system.get_component_by_label(f"{model_map.__name__}.{generator_name}")
-            # breakpoint()
+
             if ts_fields:
                 generator = self.system.get_component_by_label(f"{model_map.__name__}.{generator_name}")
                 ts_dict = {"solve_year": self.study_year}
                 for ts_name, ts in ts_fields.items():
                     ts.variable_name = ts_name
-                    # breakpoint()
+
                     self.system.add_time_series(ts, generator, **ts_dict)
 
     def _add_buses_to_generators(self):
@@ -826,8 +827,8 @@ class PlexosParser(PCMParser):
         self.system.add_component(tx_interface_map)
         return
 
-    # heat-rates
     def _construct_value_curves(self, mapped_records, generator_name):
+        """Construct value curves for generators."""
         if any("Heat Rate" in key for key in mapped_records.keys()):
             vc = None
             heat_rate_avg = mapped_records.get("Heat Rate", None)
@@ -853,11 +854,9 @@ class PlexosParser(PCMParser):
             else:
                 logger.warning("Heat Rate type not implemented for generator={}", generator_name)
                 fn = None
-                # breakpoint()
             if not vc:
                 vc = InputOutputCurve(name=f"{generator_name}_HR", function_data=fn)
             mapped_records["heat_rate"] = vc
-            # breakpoint()
         return mapped_records
 
     def _select_model_name(self):
@@ -942,14 +941,14 @@ class PlexosParser(PCMParser):
                 return records
             val = self._apply_unit(val, units)
 
-            if type(val) is not SingleTimeSeries:
+            if not isinstance(val, SingleTimeSeries):
                 # temp solution until model updated with rating field
                 records["base_power"] = val
             else:
                 val.variable_name = "max_active_power"
                 records["max_active_power"] = val
 
-            if type(rating_factor) is SingleTimeSeries:
+            if isinstance(rating_factor, SingleTimeSeries):
                 records.pop("Rating Factor")
         else:  # if unit field not activated in model, skip generator
             records = None
@@ -1086,7 +1085,7 @@ class PlexosParser(PCMParser):
                 )
                 self.system.add_component(load)
                 ts_dict = {"solve_year": self.study_year}
-                # breakpoint()
+
                 self.system.add_time_series(ts, load, **ts_dict)
         return
 
@@ -1266,7 +1265,7 @@ class PlexosParser(PCMParser):
         )
 
     def _apply_unit(self, value, unit):
-        if type(value) is SingleTimeSeries:
+        if isinstance(value, SingleTimeSeries):
             value.units = str(unit)
             return value
         return value * unit if unit else value
