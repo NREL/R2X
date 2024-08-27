@@ -79,8 +79,8 @@ DEFAULT_QUERY_COLUMNS_SCHEMA = {  # NOTE: Order matters
     "property_unit": pl.String,
     "property_value": pl.Float32,
     "band": pl.Int32,
-    "date_to": pl.String,
     "date_from": pl.String,
+    "date_to": pl.String,
     "memo": pl.String,
     "scenario_category": pl.String,
     "scenario": pl.String,
@@ -162,34 +162,6 @@ class PlexosParser(PCMParser):
                 raise ValueError("weather_year cannot be None")
             self.study_year = self.config.weather_year
 
-    def _collect_horizon_data(self, model_name: str) -> dict[str, float]:
-        horizon_query = f"""
-        SELECT
-            atr.name AS attribute_name,
-            COALESCE(attr_data.value, atr.default_value) AS attr_val
-        FROM
-            t_object
-        LEFT JOIN t_class AS class ON
-            t_object.class_id == class.class_id
-        LEFT JOIN t_attribute AS atr ON
-            t_object.class_id  == atr.class_id
-        LEFT JOIN t_membership AS tm ON
-            t_object.object_id  == tm.child_object_id
-        LEFT JOIN t_class AS parent_class ON
-            tm.parent_class_id == parent_class.class_id
-        LEFT JOIN t_object AS to2 ON
-            tm.parent_object_id == to2.object_id
-        LEFT JOIN t_attribute_data attr_data ON
-            attr_data.attribute_id == atr.attribute_id AND t_object.object_id == attr_data.object_id
-        WHERE
-            class.name == '{ClassEnum.Horizon.value}'
-            AND parent_class.name == '{ClassEnum.Model.value}'
-            AND to2.name == '{model_name}'
-        """
-        horizon_data = self.db.query(horizon_query)
-        horizon_map = {key: value for key, value in horizon_data}
-        return horizon_map
-
     def build_system(self) -> System:
         """Create infrasys system."""
         logger.info("Building infrasys system using {}", self.__class__.__name__)
@@ -220,6 +192,34 @@ class PlexosParser(PCMParser):
         # self._construct_areas()
         # self._construct_transformers()
         return self.system
+
+    def _collect_horizon_data(self, model_name: str) -> dict[str, float]:
+        horizon_query = f"""
+        SELECT
+            atr.name AS attribute_name,
+            COALESCE(attr_data.value, atr.default_value) AS attr_val
+        FROM
+            t_object
+        LEFT JOIN t_class AS class ON
+            t_object.class_id == class.class_id
+        LEFT JOIN t_attribute AS atr ON
+            t_object.class_id  == atr.class_id
+        LEFT JOIN t_membership AS tm ON
+            t_object.object_id  == tm.child_object_id
+        LEFT JOIN t_class AS parent_class ON
+            tm.parent_class_id == parent_class.class_id
+        LEFT JOIN t_object AS to2 ON
+            tm.parent_object_id == to2.object_id
+        LEFT JOIN t_attribute_data attr_data ON
+            attr_data.attribute_id == atr.attribute_id AND t_object.object_id == attr_data.object_id
+        WHERE
+            class.name == '{ClassEnum.Horizon.value}'
+            AND parent_class.name == '{ClassEnum.Model.value}'
+            AND to2.name == '{model_name}'
+        """
+        horizon_data = self.db.query(horizon_query)
+        horizon_map = {key: value for key, value in horizon_data}
+        return horizon_map
 
     def _reconcile_timeseries(self, data_file):
         """
@@ -446,14 +446,6 @@ class PlexosParser(PCMParser):
         extra = {k: v for k, v in property_fields.items() if k not in eligible_fields if v is not None}
         if extra:
             valid["ext"] = extra
-        # NOTE: Plexos can define either a generator with Units = 0 to indicate
-        # that it has been retired, 1 that is online or > 1 when it has
-        # multiple units. For the R2X model to work, we need to check if
-        # the unit is available, but fixed the available key to 1 to avoid
-        # an error.
-        if available := valid.get("available", None):
-            if available > 0:
-                valid["available"] = 1
         return valid, extra
 
     def _construct_generators(self):
@@ -529,8 +521,8 @@ class PlexosParser(PCMParser):
             mapped_records["name"] = generator_name
 
             # NOTE: Add logic to create Function data here
-            if multi_band_records:
-                pass
+            # if multi_band_records:
+            #     pass
 
             # Add prime mover mapping
             mapped_records["prime_mover_type"] = (
@@ -553,6 +545,16 @@ class PlexosParser(PCMParser):
             if "base_power" not in mapped_records and "pump_load" in mapped_records:
                 mapped_records["base_power"] = mapped_records["pump_load"]
 
+            if not all(key in mapped_records for key in required_fields):
+                logger.warning(
+                    "Skipping Generator {} since it does not have all the required fields", generator_name
+                )
+                continue
+
+            mapped_records = self._set_unit_availability(mapped_records)
+            if mapped_records is None:
+                continue  # Pass if not available
+
             valid_fields, ext_data = self._field_filter(mapped_records, model_map.model_fields)
 
             ts_fields = {k: v for k, v in mapped_records.items() if isinstance(v, SingleTimeSeries)}
@@ -564,17 +566,12 @@ class PlexosParser(PCMParser):
                 }
             )
 
-            if not all(key in valid_fields for key in required_fields):
-                logger.warning(
-                    "Skipping Generator {} since it does not have all the required fields", generator_name
-                )
-                continue
             self.system.add_component(model_map(**valid_fields))
             if ts_fields:
                 generator = self.system.get_component_by_label(f"{model_map.__name__}.{generator_name}")
                 ts_dict = {"solve_year": self.study_year}
                 for ts_name, ts in ts_fields.items():
-                    ts.variable_name = generator_name + ts_name
+                    ts.variable_name = ts_name
                     self.system.add_time_series(ts, generator, **ts_dict)
 
     def _add_buses_to_generators(self):
@@ -666,26 +663,7 @@ class PlexosParser(PCMParser):
 
             mapped_records["prime_mover_type"] = PrimeMoversType.BA
 
-            valid_fields = {
-                k: v for k, v in mapped_records.items() if k in GenericBattery.model_fields if v is not None
-            }
-
-            ext_data = {
-                k: v
-                for k, v in mapped_records.items()
-                if k not in GenericBattery.model_fields
-                if v is not None
-            }
-            # NOTE: Plexos can define either a generator with Units = 0 to indicate
-            # that it has been retired, 1 that is online or > 1 when it has
-            # multiple units. For the R2X model to work, we need to check if
-            # the unit is available, but fixed the available key to 1 to avoid
-            # an error.
-            if available := valid_fields.get("available", None):
-                if available > 0:
-                    valid_fields["available"] = 1
-            if ext_data:
-                valid_fields["ext"] = ext_data
+            valid_fields, ext_data = self._field_filter(mapped_records, GenericBattery.model_fields)
 
             if not all(key in valid_fields for key in required_fields):
                 logger.warning(
@@ -693,19 +671,14 @@ class PlexosParser(PCMParser):
                 )
                 continue
 
-            # # Look up date_file for any fields specified in the ext_data
-            # if "date_file" in ext_data:
-            #     date_file = ext_data.pop("date_file")
-            #     date_file_path = self.run_folder / date_file
-            #     if date_file_path.exists():
-            #         valid_fields["ext"]["date_file"] = date_file_path
-            #     else:
-            #         logger.warning("Date file {} not found for battery {}", date_file, battery_name)
-            #         valid_fields["ext"]["date_file"] = None
-
             if mapped_records["storage_capacity"] == 0:
                 logger.warning("Skipping battery {} since it has zero capacity", battery_name)
                 continue
+
+            valid_fields = self._set_unit_availability(valid_fields)
+            if valid_fields is None:
+                continue
+
             self.system.add_component(GenericBattery(**valid_fields))
         return
 
@@ -900,6 +873,46 @@ class PlexosParser(PCMParser):
         self.scenarios = [scenario[0] for scenario in valid_scenarios]  # Flatten list of tuples
         return None
 
+    def _set_unit_availability(self, records):
+        """Set availability and active power limit TS for generators."""
+        # NOTE: set min_energy_hour to min_active_power
+        # NOTE: Hybrid systems which ave availability to zero, still get added
+
+        if available := records.get("available", None) is not None:
+            # Set availability and base_power
+            if available > 0:
+                records["base_power"] = records.get("base_power") * records.get("available")
+                records["available"] = 1
+
+            # Set active power limits
+            rating_factor = records.get("Rating Factor", 100)
+            rating_factor = self._apply_action(np.divide, rating_factor, 100)
+            rating = records.get("rating", None)
+            max_capacity = records.get("Max Capacity", None) or records.get("Firm Capacity", None)
+
+            if rating is not None:
+                units = rating.units
+                val = rating_factor * rating.magnitude
+            elif max_capacity is not None:
+                units = max_capacity.units
+                val = self._apply_action(np.multiply, rating_factor, max_capacity.magnitude)
+            else:
+                return records
+            val = self._apply_unit(val, units)
+
+            if type(val) is not SingleTimeSeries:
+                # temp solution until model updated with rating field
+                records["base_power"] = val
+            else:
+                val.variable_name = "max_active_power"
+                records["max_active_power"] = val
+
+            if type(rating_factor) is SingleTimeSeries:
+                records.pop("Rating Factor")
+        else:  # if unit field not activated in model, skip generator
+            records = None
+        return records
+
     def _plexos_table_data(self) -> list[tuple]:
         # Get objects table/membership table
         sql_query = files("plexosdb.queries").joinpath("object_query.sql").read_text()
@@ -924,12 +937,11 @@ class PlexosParser(PCMParser):
         if scenario_specific_data.is_empty():
             return self.plexos_data.filter(data_filter & base_case_filter)
 
+        combined_key_base = pl.col("name") + "_" + pl.col("property_name")
+        combined_key_scenario = scenario_specific_data["name"] + "_" + scenario_specific_data["property_name"]
+
         base_case_filter = base_case_filter & (
-            ~(
-                pl.col("name").is_in(scenario_specific_data["name"])
-                & pl.col("property_name").is_in(scenario_specific_data["property_name"])
-            )
-            | pl.col("property_name").is_null()
+            ~combined_key_base.is_in(combined_key_scenario) | pl.col("property_name").is_null()
         )
         base_case_data = self.plexos_data.filter(data_filter & base_case_filter)
 
@@ -978,6 +990,21 @@ class PlexosParser(PCMParser):
         system_data = system_data.join(
             variables_filtered, left_on="variable_tag", right_on="name", how="left"
         )
+
+        # Convert date_from and date_to to datetime
+        system_data = system_data.with_columns(
+            [
+                pl.col("date_from").str.strptime(pl.Datetime, "%Y-%m-%dT%H:%M:%S").cast(pl.Date),
+                pl.col("date_to").str.strptime(pl.Datetime, "%Y-%m-%dT%H:%M:%S").cast(pl.Date),
+            ]
+        )
+
+        # Remove Property by study year & date_from/to
+        study_year_date = datetime(self.study_year, 1, 1)
+        system_data = system_data.filter(
+            ((pl.col("date_from").is_null()) | (pl.col("date_from") <= study_year_date))
+            & ((pl.col("date_to").is_null()) | (pl.col("date_to") >= study_year_date))
+        )
         return system_data
 
     def _construct_load_profiles(self):
@@ -986,20 +1013,8 @@ class PlexosParser(PCMParser):
             pl.col("parent_class_name") == ClassEnum.System.name
         )
         regions = self._get_model_data(system_regions).filter(~pl.col("variable").is_null())
-        # system_nodes = (pl.col("child_class_name") == ClassEnum.Node.name) & (
-        #     pl.col("parent_class_name") == ClassEnum.System.name
-        # )
-        # nodes = self._get_model_data(system_nodes).filter(~pl.col("data_file").is_null())
-        # nodes.write_csv("load_nodes.csv")
 
-        # regions = self._get_model_data(system_regions).filter(~pl.col("data_file").is_null())
-        # assert self.config.run_folder
-        # regions.write_csv("load_regions.csv")
         for region, region_data in regions.group_by("name"):
-            # If the weather year is not in the data, then drop that load.
-            # Each band needs to be a different time series and load.
-            # Expression is typically used when you want your outputs to track the different bands
-            # Action will modify the input data from the TS file. Only when there is an Expression definition.
             if not len(region_data) == 1:
                 msg = (
                     "load data has more than one row for {}. Selecting the first match. "
@@ -1209,6 +1224,7 @@ class PlexosParser(PCMParser):
 
     def _apply_unit(self, value, unit):
         if type(value) is SingleTimeSeries:
+            value.units = str(unit)
             return value
         return value * unit if unit else value
 
@@ -1246,10 +1262,6 @@ class PlexosParser(PCMParser):
         if variable is not None and record.get("action") == "=":
             return self._apply_unit(variable, unit)
         if variable is not None and data_file is not None:
-            # logger.debug("Record Name: {}", record_name)
-            # logger.debug("Variable: {}", variable)
-            # logger.debug("Data File: {}", data_file)
-            # confirm direction of action operator
             return self._apply_unit(self._apply_action(action, variable, data_file), unit)
         if variable is not None and prop_value is not None:
             return self._apply_unit(self._apply_action(action, variable, prop_value), unit)
