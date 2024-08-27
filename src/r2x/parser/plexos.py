@@ -580,7 +580,6 @@ class PlexosParser(PCMParser):
                 ts_dict = {"solve_year": self.study_year}
                 for ts_name, ts in ts_fields.items():
                     ts.variable_name = ts_name
-
                     self.system.add_time_series(ts, generator, **ts_dict)
 
     def _add_buses_to_generators(self):
