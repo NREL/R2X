@@ -941,11 +941,13 @@ class PlexosParser(PCMParser):
 
     def _set_unit_availability(self, records):
         """Set availability and active power limit TS for generators."""
-        if records.get("available", None) is not None:
-            # Set availability and base_power
-            if records.get("available") > 0:
-                records["base_power"] = records.get("base_power") * records.get("available")
-                records["available"] = 1
+        availability = records.get("available", None)
+        if availability is not None and availability > 0:
+            # Set availability, base_power, storage_capacity as multiplier of availability
+            if records.get("storage_capacity") is not None:
+                records["storage_capacity"] *= records.get("available")
+            records["base_power"] = records.get("base_power") * records.get("available")
+            records["available"] = 1
 
             # Set active power limits
             rating_factor = records.get("Rating Factor", 100)
