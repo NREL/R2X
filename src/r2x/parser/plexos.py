@@ -54,6 +54,7 @@ PROPERTY_SV_COLUMNS_NAMEYEAR = ["name", "year", "month", "day", "period", "value
 PROPERTY_TS_COLUMNS_BASIC = ["year", "month", "day", "period", "value"]
 PROPERTY_TS_COLUMNS_MULTIZONE = ["year", "month", "day", "period"]
 PROPERTY_TS_COLUMNS_PIVOT = ["year", "month", "day"]
+PROPERTY_TS_COLUMNS_YM = ["year", "month"]
 PROPERTY_TS_COLUMNS_MDP = ["month", "day", "period"]
 PROPERTY_TS_COLUMNS_MONTH_PIVOT = [
     "name",
@@ -192,8 +193,6 @@ class PlexosParser(PCMParser):
         self._add_battery_reserves()
 
         self._construct_load_profiles()
-        # self._construct_areas()
-        # self._construct_transformers()
         return self.system
 
     def _collect_horizon_data(self, model_name: str) -> dict[str, float]:
@@ -253,6 +252,37 @@ class PlexosParser(PCMParser):
             return resample_data_to_hourly(data_file)
 
         return data_file
+
+    def _get_fuel_prices(self):
+        logger.debug("Creating fuel representation")
+        system_fuels = (pl.col("child_class_name") == ClassEnum.Fuel.value) & (
+            pl.col("parent_class_name") == ClassEnum.System.value
+        )
+        fuels = self._get_model_data(system_fuels)
+        fuel_prices = {}
+        for fuel_name, fuel_data in fuels.group_by("name"):
+            fuel_name = fuel_name[0]
+            property_records = fuel_data[
+                [
+                    "band",
+                    "property_name",
+                    "property_value",
+                    "property_unit",
+                    "data_file",
+                    "variable",
+                    "action",
+                    "variable_tag",
+                ]
+            ].to_dicts()
+
+            logger.debug("Parsing fuel = {}", fuel_name)
+            for property in property_records:
+                property.update({"property_unit": "$/MMBtu"})
+
+            mapped_records, multi_band_records = self._parse_property_data(property_records, fuel_name)
+            mapped_records["name"] = fuel_name
+            fuel_prices[fuel_name] = mapped_records["Price"]
+        return fuel_prices
 
     def _construct_load_zones(self, default_model=LoadZone) -> None:
         """Create LoadZone representation.
@@ -393,21 +423,10 @@ class PlexosParser(PCMParser):
         )
         for line in lines_pivot.iter_rows(named=True):
             line_properties_mapped = {self.property_map.get(key, key): value for key, value in line.items()}
-            valid_fields = {
-                k: v
-                for k, v in line_properties_mapped.items()
-                if k in default_model.model_fields
-                if v is not None
-            }
+            line_properties_mapped["rating_up"] = line_properties_mapped.pop("max_power_flow", None)
+            line_properties_mapped["rating_down"] = line_properties_mapped.pop("max_power_flow", None)
 
-            ext_data = {
-                k: v
-                for k, v in line_properties_mapped.items()
-                if k not in default_model.model_fields
-                if v is not None
-            }
-            if ext_data:
-                valid_fields["ext"] = ext_data
+            valid_fields, ext_data = self._field_filter(line_properties_mapped, default_model.model_fields)
 
             from_bus_name = next(
                 membership
@@ -497,6 +516,7 @@ class PlexosParser(PCMParser):
         """
         generator_fuel = self.db.query(fuel_query)
         generator_fuel_map = {key: value for key, value in generator_fuel}
+        fuel_prices = self._get_fuel_prices()
 
         # Iterate over properties for generator
         for generator_name, generator_data in system_generators.group_by("name"):
@@ -560,6 +580,7 @@ class PlexosParser(PCMParser):
                 continue  # Pass if not available
 
             mapped_records = self._construct_value_curves(mapped_records, generator_name)
+            mapped_records["fuel_price"] = fuel_prices.get(generator_fuel_map.get(generator_name))
 
             valid_fields, ext_data = self._field_filter(mapped_records, model_map.model_fields)
 
@@ -928,14 +949,14 @@ class PlexosParser(PCMParser):
             rating_factor = records.get("Rating Factor", 100)
             rating_factor = self._apply_action(np.divide, rating_factor, 100)
             rating = records.get("rating", None)
-            max_capacity = records.get("Max Capacity", None) or records.get("Firm Capacity", None)
+            base_power = records.get("base_power", None)
 
             if rating is not None:
                 units = rating.units
                 val = rating_factor * rating.magnitude
-            elif max_capacity is not None:
-                units = max_capacity.units
-                val = self._apply_action(np.multiply, rating_factor, max_capacity.magnitude)
+            elif base_power is not None:
+                units = base_power.units
+                val = self._apply_action(np.multiply, rating_factor, base_power.magnitude)
             else:
                 return records
             val = self._apply_unit(val, units)
@@ -975,17 +996,20 @@ class PlexosParser(PCMParser):
 
         base_case_filter = pl.col("scenario").is_null()
         if scenario_specific_data.is_empty():
-            return self.plexos_data.filter(data_filter & base_case_filter)
+            system_data = self.plexos_data.filter(data_filter & base_case_filter)
+        else:
+            # include both scenario specific and basecase data
+            combined_key_base = pl.col("name") + "_" + pl.col("property_name")
+            combined_key_scenario = (
+                scenario_specific_data["name"] + "_" + scenario_specific_data["property_name"]
+            )
 
-        combined_key_base = pl.col("name") + "_" + pl.col("property_name")
-        combined_key_scenario = scenario_specific_data["name"] + "_" + scenario_specific_data["property_name"]
+            base_case_filter = base_case_filter & (
+                ~combined_key_base.is_in(combined_key_scenario) | pl.col("property_name").is_null()
+            )
+            base_case_data = self.plexos_data.filter(data_filter & base_case_filter)
 
-        base_case_filter = base_case_filter & (
-            ~combined_key_base.is_in(combined_key_scenario) | pl.col("property_name").is_null()
-        )
-        base_case_data = self.plexos_data.filter(data_filter & base_case_filter)
-
-        system_data = pl.concat([scenario_specific_data, base_case_data])
+            system_data = pl.concat([scenario_specific_data, base_case_data])
 
         # get system variables
         variable_filter = (
@@ -1127,12 +1151,13 @@ class PlexosParser(PCMParser):
         time_series_data = self._retrieve_time_series_data(property_name, data_file)
         if time_series_data is not None:
             return time_series_data
-        logger.warning("Property {} not supported. Skipping it.", property_name)
-        logger.warning("Data file {} not supported yet. Skipping it.", relative_path)
-        logger.warning("Columns not supported: {}", data_file.columns)
+        logger.debug("Skipped file {}", relative_path)
 
     def _retrieve_single_value_data(self, property_name, data_file):
-        if all(column in data_file.columns for column in [property_name.lower(), "year"]):
+        if (
+            all(column in data_file.columns for column in [property_name.lower(), "year"])
+            and "month" not in data_file.columns
+        ):
             data_file = data_file.filter(pl.col("year") == self.study_year)
             return data_file[property_name.lower()][0]
 
@@ -1193,6 +1218,14 @@ class PlexosParser(PCMParser):
                 data_file = data_file.rename({"period": "hour"})
                 data_file = data_file.select(output_columns)
 
+            case columns if all(
+                column in columns for column in [*PROPERTY_TS_COLUMNS_YM, property_name.lower()]
+            ):
+                data_file = data_file.filter(pl.col("year") == self.study_year)
+                data_file = data_file.rename({property_name.lower(): "value"})
+                data_file = data_file.with_columns(day=pl.lit(1), hour=pl.lit(0))
+                data_file = data_file.select(output_columns)
+
             case columns if all(column in columns for column in PROPERTY_TS_COLUMNS_BASIC):
                 data_file = data_file.rename({"period": "hour"})
                 data_file = data_file.filter(pl.col("year") == self.study_year)
@@ -1213,11 +1246,15 @@ class PlexosParser(PCMParser):
                 data_file = data_file.melt(id_vars=PROPERTY_TS_COLUMNS_PIVOT, variable_name="hour")
 
             case _:
-                if data_file.is_empty():
-                    logger.warning("Weather year doesn't exist in {}. Skipping it.", property_name)
-                    return
+                logger.warning("Data file columns not supported. Skipping it.")
+                logger.warning("Datafile Columns: {}", data_file.columns)
+                return
 
-        assert not data_file.is_empty()
+        if data_file.is_empty():
+            logger.warning("Weather year doesn't exist in {}. Skipping it.", property_name)
+            return
+
+        # assert not data_file.is_empty()
         # Format to SingleTimeSeries
         if data_file.columns == output_columns:
             resolution = timedelta(hours=1)
