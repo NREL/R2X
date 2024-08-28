@@ -9,6 +9,8 @@ from typing import Any
 from loguru import logger
 
 # Local imports
+from infrasys.time_series_models import SingleTimeSeries
+from pint import Quantity
 from r2x.exporter.handler import BaseExporter
 from r2x.model import (
     ACBranch,
@@ -76,6 +78,7 @@ class SiennaExporter(BaseExporter):
         self.process_storage_data()
         self.export_data()
         self.create_timeseries_pointers()
+        self.create_extra_data_json()
         return self
 
     def process_bus_data(self, fname: str = "bus.csv") -> None:
@@ -397,13 +400,7 @@ class SiennaExporter(BaseExporter):
         logger.info("File storage.csv created.")
 
     def create_timeseries_pointers(self) -> None:
-        """Create timeseries_pointers.json file.
-
-        Parameters
-        ----------
-        fname : str
-            Name of the file to be created
-        """
+        """Create timeseries_pointers.json file."""
         ts_pointers_list = []
 
         for component_type, time_series in self.time_series_objects.items():
@@ -432,6 +429,28 @@ class SiennaExporter(BaseExporter):
             json.dump(ts_pointers_list, f)
 
         logger.info("File timeseries_pointers.json created.")
+        return
+
+    def create_extra_data_json(self) -> None:
+        """Create extra_data.json file."""
+        extra_data = []
+
+        for object_data in self.system.get_components(Generator):
+            ext = object_data.ext
+
+            ext = {item: value for item, value in ext.items() if not isinstance(value, SingleTimeSeries)}
+            ext = {
+                item: value.to_tuple() if isinstance(value, Quantity) else value
+                for item, value in ext.items()
+            }
+
+            if ext is not None:
+                extra_data.append(ext)
+
+        with open(os.path.join(self.output_folder, "extra_data.json"), mode="w") as f:
+            json.dump(extra_data, f)
+
+        logger.info("File extra_data.json created.")
         return
 
     def export_data(self) -> None:
