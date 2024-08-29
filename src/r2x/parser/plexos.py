@@ -424,7 +424,7 @@ class PlexosParser(PCMParser):
         for line in lines_pivot.iter_rows(named=True):
             line_properties_mapped = {self.property_map.get(key, key): value for key, value in line.items()}
             line_properties_mapped["rating_up"] = line_properties_mapped.pop("max_power_flow", None)
-            line_properties_mapped["rating_down"] = line_properties_mapped.pop("max_power_flow", None)
+            line_properties_mapped["rating_down"] = line_properties_mapped.pop("min_power_flow", None)
 
             valid_fields, ext_data = self._field_filter(line_properties_mapped, default_model.model_fields)
 
@@ -548,7 +548,6 @@ class PlexosParser(PCMParser):
                     "variable_tag",
                 ]
             ].to_dicts()
-
             mapped_records, multi_band_records = self._parse_property_data(property_records, generator_name)
             mapped_records["name"] = generator_name
 
@@ -849,17 +848,23 @@ class PlexosParser(PCMParser):
 
     def _construct_value_curves(self, mapped_records, generator_name):
         """Construct value curves for generators."""
-        if any("Heat Rate" in key for key in mapped_records.keys()):
+        if any("Heat Rate" in key or "heat_rate" in key for key in mapped_records.keys()):
             vc = None
-            heat_rate_avg = mapped_records.get("Heat Rate", None)
+            heat_rate_avg = mapped_records.get("heat_rate", None)
             heat_rate_base = mapped_records.get("Heat Rate Base", None)
             heat_rate_incr = mapped_records.get("Heat Rate Incr", None)
             heat_rate_incr2 = mapped_records.get("Heat Rate Incr2", None)
+            if any(
+                isinstance(val, SingleTimeSeries) for val in [heat_rate_avg, heat_rate_base, heat_rate_incr]
+            ):
+                logger.warning("Market-Bid Cost not implemented for generator={}", generator_name)
+                return mapped_records
             if heat_rate_avg:
                 fn = LinearFunctionData(proportional_term=heat_rate_avg.magnitude, constant_term=0)
                 vc = AverageRateCurve(
                     name=f"{generator_name}_HR",
                     function_data=fn,
+                    initial_input=heat_rate_avg.magnitude,
                 )
             elif heat_rate_incr2 and "** 2" in str(heat_rate_incr2.units):
                 fn = QuadraticFunctionData(
@@ -936,20 +941,25 @@ class PlexosParser(PCMParser):
 
     def _set_unit_availability(self, records):
         """Set availability and active power limit TS for generators."""
-        # NOTE: set min_energy_hour to min_active_power
-        # NOTE: Hybrid systems which ave availability to zero, still get added
-
-        if available := records.get("available", None) is not None:
-            # Set availability and base_power
-            if available > 0:
-                records["base_power"] = records.get("base_power") * records.get("available")
-                records["available"] = 1
+        availability = records.get("available", None)
+        if availability is not None and availability > 0:
+            # Set availability, base_power, storage_capacity as multiplier of availability
+            if records.get("storage_capacity") is not None:
+                records["storage_capacity"] *= records.get("available")
+            records["base_power"] = records.get("base_power") * records.get("available")
+            records["available"] = 1
 
             # Set active power limits
             rating_factor = records.get("Rating Factor", 100)
             rating_factor = self._apply_action(np.divide, rating_factor, 100)
             rating = records.get("rating", None)
             base_power = records.get("base_power", None)
+            min_energy_hour = records.get("Min Energy Hour", None)
+
+            # Hack temporary until Hydro Max Monthly Rating is corrected
+            max_energy_month = records.get("Max Energy Month", None)
+            if max_energy_month is not None:
+                rating = None
 
             if rating is not None:
                 units = rating.units
@@ -961,8 +971,11 @@ class PlexosParser(PCMParser):
                 return records
             val = self._apply_unit(val, units)
 
+            if min_energy_hour is not None:
+                records["min_active_power"] = records.pop("Min Energy Hour")
+
             if not isinstance(val, SingleTimeSeries):
-                # temp solution until model updated with rating field
+                # temp solution until Infrasys.model update to have both base_power and a rating field
                 records["base_power"] = val
             else:
                 val.variable_name = "max_active_power"
@@ -1112,16 +1125,6 @@ class PlexosParser(PCMParser):
                 self.system.add_time_series(ts, load, **ts_dict)
         return
 
-    def _text_handler(self, property_name, property_data):
-        if property_data["text"].str.ends_with(".csv").all():
-            return self._csv_file_handler(property_name, property_data)
-        elif property_data["text"].str.starts_with("M").all():
-            return self._time_slice_handler(property_name, property_data)
-        elif property_data["text"].str.starts_with("H").any():
-            logger.warning("Hour slices not yet supported for {}", property_name)
-            return
-        return
-
     def _csv_file_handler(self, property_name, property_data):
         fpath_text = property_data
         if "\\" in fpath_text:
@@ -1251,7 +1254,7 @@ class PlexosParser(PCMParser):
                 return
 
         if data_file.is_empty():
-            logger.warning("Weather year doesn't exist in {}. Skipping it.", property_name)
+            logger.debug("Weather year doesn't exist in {}. Skipping it.", property_name)
             return
 
         # assert not data_file.is_empty()
