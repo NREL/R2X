@@ -39,7 +39,7 @@ def test_plexos_parser_instance(plexos_parser_instance):
     assert isinstance(plexos_parser_instance.db, PlexosSQLite)
 
 
-@pytest.mark.skip
+@pytest.mark.skip(reason="We need a better test model")
 def test_build_system(plexos_parser_instance):
     system = plexos_parser_instance.build_system()
     assert isinstance(system, System)

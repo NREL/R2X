@@ -1,7 +1,7 @@
 import pytest
 from r2x.__version__ import __data_model_version__
 from r2x.api import System
-from r2x.model import ACBus, Generator
+from r2x.models import Area, ACBus, Generator
 from r2x.units import ureg
 
 
@@ -20,9 +20,9 @@ def test_system_data_model_version(empty_system):
 
 
 def test_add_single_component(empty_system):
-    generator = Generator.example()
-    empty_system.add_component(generator)
-    assert isinstance(empty_system.get_component(Generator, generator.name), Generator)
+    area = Area.example()
+    empty_system.add_component(area)
+    assert isinstance(empty_system.get_component(Area, area.name), Area)
 
 
 def test_add_composed_component():
@@ -30,7 +30,7 @@ def test_add_composed_component():
 
     # Simple scenario of Generator with a bus attached
     bus = ACBus.example()
-    generator = Generator(name="TestGen", base_power=100 * ureg.MW, bus=bus)
+    generator = Generator(name="TestGen", active_power=100 * ureg.MW, bus=bus)
     system.add_component(generator)
 
     assert system.get_component(Generator, "TestGen") == generator

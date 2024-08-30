@@ -14,7 +14,7 @@ class Distance(BaseQuantity):
 
 
 class Voltage(BaseQuantity):
-    __base_unit__ = "volt"
+    __base_unit__ = "kilovolt"
 
 
 class Current(BaseQuantity):
@@ -26,7 +26,11 @@ class Angle(BaseQuantity):
 
 
 class ActivePower(BaseQuantity):
-    __base_unit__ = "watt"
+    __base_unit__ = "megawatt"
+
+
+class ApparentPower(BaseQuantity):
+    __base_unit__ = "volt_ampere"
 
 
 class Time(BaseQuantity):

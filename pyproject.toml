@@ -134,6 +134,7 @@ docstring-code-line-length = "dynamic"
 "__init__.py" = ["E402", "F401", "F403", "D104"]
 "__main__.py" = ["E402", "F401", "D104"]
 "**/{tests,docs,tools}/*" = ["D100", "D103", "E402"]
+"src/r2x/models/*" = ["D"]
 
 [tool.pytest.ini_options]
 pythonpath = [

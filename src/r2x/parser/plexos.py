@@ -26,7 +26,7 @@ from r2x.enums import ACBusTypes, ReserveDirection, ReserveType, PrimeMoversType
 from r2x.exceptions import ModelError, ParserError
 from plexosdb import PlexosSQLite
 from plexosdb.enums import ClassEnum, CollectionEnum
-from r2x.model import (
+from r2x.models import (
     ACBus,
     Generator,
     GenericBattery,
@@ -44,9 +44,9 @@ from r2x.utils import validate_string
 from .handler import PCMParser
 from .parser_helpers import handle_leap_year_adjustment, fill_missing_timestamps, resample_data_to_hourly
 
-models = importlib.import_module("r2x.model")
+models = importlib.import_module("r2x.models")
 
-R2X_MODELS = importlib.import_module("r2x.model")
+R2X_MODELS = importlib.import_module("r2x.models")
 BASE_WEATHER_YEAR = 2007
 XML_FILE_KEY = "xml_file"
 PROPERTY_SV_COLUMNS_BASIC = ["name", "value"]

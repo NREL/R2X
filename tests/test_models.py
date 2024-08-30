@@ -1,12 +1,12 @@
 from r2x.enums import PrimeMoversType
-from r2x.model import Generator, ACBus, Emission, HydroPumpedStorage
+from r2x.models import Generator, ACBus, Emission, HydroPumpedStorage, ThermalStandard
 from r2x.units import EmissionRate, ureg
 
 
 def test_generator_model():
-    generator = Generator.example()
-    assert isinstance(generator, Generator)
-    assert isinstance(generator.base_power.magnitude, float)
+    generator = ThermalStandard.example()
+    assert isinstance(generator, ThermalStandard)
+    assert isinstance(generator.active_power.magnitude, float)
 
 
 def test_emission_objects():
@@ -21,12 +21,12 @@ def test_emission_objects():
 def test_bus_model():
     bus = ACBus.example()
     assert isinstance(bus, ACBus)
-    assert isinstance(bus.id, int)
+    assert isinstance(bus.number, int)
 
 
 def test_generator_objects():
     bus = ACBus.example()
-    generator = Generator(name="GEN01", base_power=100 * ureg.MW, bus=bus)
+    generator = Generator(name="GEN01", active_power=100 * ureg.MW, bus=bus)
     assert isinstance(generator.bus, ACBus)
 
 
