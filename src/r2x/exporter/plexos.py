@@ -4,12 +4,10 @@ from typing import Any
 import uuid
 import string
 from collections.abc import Callable
-from pathlib import Path
 
 from infrasys.component import Component
 from loguru import logger
 
-from r2x.config import Scenario
 from r2x.enums import ReserveType
 from r2x.exporter.handler import BaseExporter
 from plexosdb import PlexosSQLite
@@ -838,25 +836,3 @@ class PlexosExporter(BaseExporter):
                 property_value = get_property_magnitude(property_value, to_unit=unit_map.get(property_name))
                 valid_component_properties[property_name] = property_value
         return valid_component_properties
-
-
-if __name__ == "__main__":
-    run_folder = Path("tests/data/pacific/")
-    # Functions relative to the parser.
-    from tests.models.systems import ieee5bus_system
-
-    config = Scenario.from_kwargs(
-        name="PlexosExportTest",
-        input_model="reeds-US",
-        output_model="plexos",
-        run_folder=run_folder,
-        solve_year=2035,
-        weather_year=2012,
-    )
-    system = ieee5bus_system()
-
-    # fpath = "/Users/psanchez/downloads/test.xml"
-    fpath = "/Volumes/r2x/test_models/test.xml"
-    exporter = PlexosExporter(config=config, system=system)
-    exporter.run()
-    # handler = exporter.xml

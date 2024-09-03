@@ -392,7 +392,7 @@ class SiennaExporter(BaseExporter):
             fpath=self.output_folder / fname,
             fields=output_fields,
             key_mapping=key_mapping,
-            unnest_key="numer",
+            unnest_key="number",
             restval="NA",
         )
 
