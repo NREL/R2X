@@ -28,6 +28,9 @@ from tables import file
 import yaml
 from jsonschema import validate
 from loguru import logger
+import pint
+from infrasys.base_quantity import BaseQuantity
+from r2x.models import Generator
 
 
 DEFAULT_OUTPUT_FOLDER: str = "r2x_export"
@@ -57,10 +60,24 @@ def match_input_model(input_model: str) -> dict:
             fmap = {}
         case "reeds-US":
             fmap = read_fmap("r2x/defaults/reeds_us_mapping.json")
+        case "reeds-India":
+            fmap = read_fmap("r2x/defaults/india_mapping.json")
         case "sienna":
             fmap = read_fmap("r2x/defaults/sienna_mapping.json")
         case "plexos":
             fmap = read_fmap("r2x/defaults/plexos_mapping.json")
+        case "nodal-plexos":
+            fmap = (
+                read_fmap("r2x/defaults/nodal_mapping.json")
+                | read_fmap("r2x/defaults/plexos_mapping.json")
+                | read_fmap("r2x/defaults/reeds_us_mapping.json")
+            )
+        case "nodal-sienna":
+            fmap = (
+                read_fmap("r2x/defaults/sienna_mapping.json")
+                | read_fmap("r2x/defaults/nodal_mapping.json")
+                | read_fmap("r2x/defaults/reeds_us_mapping.json")
+            )
         case _:
             logger.error("Input model {} not recognized", input_model)
             raise KeyError(f"Input model {input_model=} not valid")
@@ -147,7 +164,6 @@ def update_dict(base_dict: dict, override_dict: ChainMap | dict | None = None) -
         "model_map",
         "tech_fuel_pm_map",
         "device_map",
-        "plexos_fuel_map",
     ]
     for key, value in override_dict.items():
         if key in base_dict and all(replace_key not in key for replace_key in _replace_keys):
@@ -437,6 +453,74 @@ def get_csv(fpath: str, fname: str, fmap: dict[str, str | dict | list] = {}, **k
     return data
 
 
+# NOTE: This is not actually used in the process but is kept here for documentation
+# purposes.
+def create_nodal_database(
+    plexos_node_to_reeds_region_fpath: str,
+    node_objects_fpath: str,
+    reeds_shapefiles_fpath: str,
+) -> pd.DataFrame:
+    """Un-used function, but creates the nodes objects for the Nodal dataset."""
+    import geopandas as gpd  # type: ignore
+
+    nodes_to_ba = pd.read_csv(plexos_node_to_reeds_region_fpath)
+    nodes_to_ba["node_id"] = nodes_to_ba["node"].str.split("_", n=1).str[0]
+    nodes_to_ba = nodes_to_ba.loc[nodes_to_ba["node_id"].str.isnumeric()]
+    nodes_to_ba = nodes_to_ba.groupby("node_id").agg({"reeds_region": list})
+    nodes_to_ba["num_bas"] = nodes_to_ba["reeds_region"].str.len()
+    nodes_to_ba = nodes_to_ba.loc[nodes_to_ba["num_bas"] == 1]
+    nodes_to_ba["reeds_region"] = nodes_to_ba["reeds_region"].str[0]
+    nodes_to_ba = nodes_to_ba.reset_index()[["node_id", "reeds_region"]]
+
+    node_objects = node_objects_fpath
+    usecols = ["Latitude", "Longitude", "Node ID", "kV", "Node", "Load Factor"]
+    rename_dict = {
+        "Node ID": "node_id",
+        "kV": "voltage",
+        "Load Factor": "load_participation_factor",
+    }
+    dtype = {
+        "Node ID": "str",
+        "Latitude": "float64",
+        "Longitude": "float64",
+        "kV": "float64",
+        "Load Factor": "float64",
+    }
+    nodes = (
+        pd.read_csv(node_objects, low_memory=False, dtype=dtype, usecols=usecols)  # type: ignore
+        .rename(columns=rename_dict)
+        .rename(columns=str.lower)
+    )
+
+    # Convert it to geopandas dataframe to assign the ReEDs region from the shapefile
+    # NOTE: This step is not necessary if the node csv has the ReEDS region.
+    reeds_shp = gpd.read_file(reeds_shapefiles_fpath)
+    nodes = gpd.GeoDataFrame(nodes, geometry=gpd.points_from_xy(nodes.longitude, nodes.latitude)).set_crs(
+        "epsg:4326"
+    )
+    nodes = gpd.sjoin(nodes, reeds_shp, predicate="within")
+
+    nodes_to_bas = nodes.merge(nodes_to_ba, on="node_id", how="outer")
+    nodes_to_bas.loc[nodes_to_bas["reeds_region"].isna(), "reeds_region"] = nodes_to_bas["pca"]
+    nodes_to_bas.loc[
+        (nodes_to_bas["reeds_region"] != nodes_to_bas["pca"]) & (~nodes_to_bas["pca"].isna()),
+        "reeds_region",
+    ] = nodes_to_bas["pca"]
+
+    node_data = nodes_to_bas[
+        [
+            "node_id",
+            "latitude",
+            "longitude",
+            "reeds_region",
+            "voltage",
+            "load_participation_factor",
+        ]
+    ]
+    node_data["plexos_id"] = node_data["node_id"]
+    return node_data
+
+
 def invert_dict(d: dict[str, list]) -> dict[str, str]:
     """Inverse dictionary with list values.
 
@@ -483,16 +567,43 @@ def get_defaults(
         logger.debug("Returning base defaults")
         return config_dict
 
-    # There is 3 paths for this to go:
+    # There is 4 paths for this to go:
     #   1. Zonal translations should always go throught "reeds-US" (as far as we only support one CEM"),
     #   2. If you want to translate a Plexos <-> Sienna model,
     #   3. If you want to read an existing infrasys system,
+    #   4. If you want to run zonal to nodal.
+    #       4.1 Plexos
+    #       4.2 Sienna
     match input_model:
         case "infrasys":
             logger.debug("Returning infrasys defaults")
         case "reeds-US":
             config_dict = config_dict | read_json("r2x/defaults/reeds_input.json")
             logger.debug("Returning reeds defaults")
+        case "reeds-India":
+            config_dict = config_dict | read_json("r2x/defaults/nodal_defaults.json")
+            logger.debug("Returning nodal defaults")
+        case "nodal-sienna":
+            config_dict = (
+                config_dict
+                | read_json("r2x/defaults/nodal_defaults.json")
+                | read_json("r2x/defaults/pcm_defaults.json")
+                | read_json("r2x/defaults/sienna_config.json")
+                | read_json("r2x/defaults/reeds_input.json")
+            )
+            logger.debug("Returning nodal-sienna defaults")
+        case "nodal-plexos":
+            config_dict = (
+                config_dict
+                | read_json("r2x/defaults/nodal_defaults.json")
+                | read_json("r2x/defaults/pcm_defaults.json")
+                | read_json("r2x/defaults/plexos_input.json")
+                | read_json("r2x/defaults/reeds_input.json")
+            )
+            logger.debug("Returning nodal-plexos defaults")
+        case "sienna":
+            config_dict = config_dict | read_json("r2x/defaults/sienna_config.json")
+            logger.debug("Returning sienna defaults")
         case "plexos":
             config_dict = config_dict | read_json("r2x/defaults/plexos_input.json")
             logger.debug("Returning input_model {} defaults", input_model)
@@ -576,6 +687,26 @@ def unnest_all(df, separator="."):  # noqa: D103
 def batched(lst, n):
     it = iter(lst)
     return iter(lambda: tuple(islice(it, n)), ())
+
+
+def get_property_magnitude(property_value, to_unit: str | None = None) -> float:
+    """Return magnitude with the given units for a pint Quantity.
+
+    Parameters
+    ----------
+    property_name
+
+    property_value
+        pint.Quantity to extract magnitude from
+    to_unit
+        String that contains the unit conversion desired. Unit must be compatible.
+    """
+    if not isinstance(property_value, pint.Quantity | BaseQuantity):
+        return property_value
+    if to_unit:
+        unit = to_unit.replace("$", "usd")  # Dollars are named usd on pint
+        property_value = property_value.to(unit)
+    return property_value.magnitude
 
 
 DEFAULT_COLUMN_MAP = read_json("r2x/defaults/config.json").get("default_column_mapping")

@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 from r2x.api import System
 
-from r2x.model import Emission, Generator
+from r2x.models import Emission, Generator
 from r2x.config import Scenario
 from r2x.parser.handler import BaseParser
 from r2x.units import ureg, ActivePower
@@ -116,16 +116,16 @@ def break_generators(  # noqa: C901
             continue
         logger.trace("Average_capacity: {}", avg_capacity)
         reference_base_power = (
-            component.base_power.magnitude
-            if isinstance(component.base_power, BaseQuantity)
-            else component.base_power
+            component.active_power.magnitude
+            if isinstance(component.active_power, BaseQuantity)
+            else component.active_power
         )
         no_splits = int(reference_base_power // avg_capacity)
         remainder = reference_base_power % avg_capacity
         if no_splits > 1:
             split_no = 1
             logger.trace(
-                "Breaking generator {} with base_power {} into {} generators of {} capacity",
+                "Breaking generator {} with active_power {} into {} generators of {} capacity",
                 component.name,
                 reference_base_power,
                 no_splits,
@@ -135,19 +135,19 @@ def break_generators(  # noqa: C901
                 component_name = component.name + f"_{split_no:02}"
                 new_component = system.copy_component(component, name=component_name, attach=True)
                 new_base_power = (
-                    ActivePower(avg_capacity, component.base_power.units)
-                    if isinstance(component.base_power, BaseQuantity)
+                    ActivePower(avg_capacity, component.active_power.units)
+                    if isinstance(component.active_power, BaseQuantity)
                     else avg_capacity * ureg.MW
                 )
-                new_component.base_power = new_base_power
+                new_component.active_power = new_base_power
                 proportion = (
                     avg_capacity / reference_base_power
-                )  # Required to recalculate properties that depend on base_power
+                )  # Required to recalculate properties that depend on active_power
                 for property in PROPERTIES_TO_BREAK:
                     if attr := getattr(new_component, property, None):
                         new_component.ext[f"{property}_original"] = attr
                         setattr(new_component, property, attr * proportion)
-                new_component.ext["original_capacity"] = component.base_power
+                new_component.ext["original_capacity"] = component.active_power
                 new_component.ext["original_name"] = component.name
                 new_component.ext["broken"] = True
 
@@ -172,15 +172,15 @@ def break_generators(  # noqa: C901
             if remainder > capacity_threshold:
                 component_name = component.name + f"_{split_no:02}"
                 new_component = system.copy_component(component, name=component_name, attach=True)
-                new_component.base_power = remainder * ureg.MW
+                new_component.active_power = remainder * ureg.MW
                 proportion = (
                     remainder / reference_base_power
-                )  # Required to recalculate properties that depend on base_power
+                )  # Required to recalculate properties that depend on active_power
                 for property in PROPERTIES_TO_BREAK:
                     if attr := getattr(new_component, property, None):
                         new_component.ext[f"{property}_original"] = attr
                         setattr(new_component, property, attr * proportion)
-                new_component.ext["original_capacity"] = component.base_power
+                new_component.ext["original_capacity"] = component.active_power
                 new_component.ext["original_name"] = component.name
                 new_component.ext["broken"] = True
                 # NOTE: This will be migrated once we implement the SQLite for the components.

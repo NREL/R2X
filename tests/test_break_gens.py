@@ -1,7 +1,7 @@
 from r2x.enums import PrimeMoversType
-from r2x.model import Generator
+from r2x.models import Generator
 from r2x.plugins.break_gens import break_generators
-from .models.systems import ieee5bus_system
+from .models.ieee5bus import ieee5bus_system
 
 
 def test_break_generators():
@@ -18,7 +18,7 @@ def test_break_generators():
         Generator, filter_func=lambda x: x.prime_mover_type == PrimeMoversType.BA
     )
     for generator in new_generators:
-        assert generator.base_power.magnitude == 100
+        assert generator.active_power.magnitude == 100
         assert generator.ext["original_capacity"].magnitude == 200
         assert generator.ext["broken"]
 

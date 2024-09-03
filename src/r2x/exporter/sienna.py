@@ -12,7 +12,7 @@ from loguru import logger
 from infrasys.time_series_models import SingleTimeSeries
 from pint import Quantity
 from r2x.exporter.handler import BaseExporter
-from r2x.model import (
+from r2x.models import (
     ACBranch,
     Bus,
     DCBranch,
@@ -78,7 +78,6 @@ class SiennaExporter(BaseExporter):
         self.process_storage_data()
         self.export_data()
         self.create_timeseries_pointers()
-        self.create_extra_data_json()
         return self
 
     def process_bus_data(self, fname: str = "bus.csv") -> None:
@@ -101,7 +100,7 @@ class SiennaExporter(BaseExporter):
             Bus,
             fpath=self.output_folder / fname,
             fields=output_fields,
-            key_mapping={"id": "bus_id", "load_zone": "zone"},
+            key_mapping={"number": "bus_id", "load_zone": "zone"},
             restval="NA",
         )
 
@@ -127,7 +126,7 @@ class SiennaExporter(BaseExporter):
             PowerLoad,
             fpath=self.output_folder / fname,
             fields=output_fields,
-            unnest_key="id",
+            unnest_key="number",
             key_mapping={"bus": "bus_id"},
             restval="0.0",
         )
@@ -164,12 +163,12 @@ class SiennaExporter(BaseExporter):
             ACBranch,
             fpath=self.output_folder / fname,
             fields=output_fields,
-            unnest_key="id",
+            unnest_key="number",
             key_mapping={
                 "from_bus": "connection_points_from",
                 "to_bus": "connection_points_to",
                 "class_type": "branch_type",
-                "rating_up": "rate",
+                "rating": "rate",
                 "b": "primary_shunt",
             },
             # restval=0.0,
@@ -203,7 +202,7 @@ class SiennaExporter(BaseExporter):
             DCBranch,
             fpath=self.output_folder / fname,
             fields=output_fields,
-            unnest_key="id",
+            unnest_key="number",
             key_mapping={
                 "from_bus": "connection_points_from",
                 "to_bus": "connection_points_to",
@@ -229,10 +228,9 @@ class SiennaExporter(BaseExporter):
             "prime_mover_type",
             "bus_id",
             "fuel",
+            "rating",
+            "unit_type",
             "base_power",
-            "fuel_price",
-            "heat_rate",
-            "vom_price",
             # "active_power_limits_max",
             # "active_power_limits_min",
             "min_rated_capacity",
@@ -243,10 +241,10 @@ class SiennaExporter(BaseExporter):
             "planned_outage_rate",
             "ramp_up",
             "ramp_down",
-            "startup_cost",
             "category",
             "must_run",
             "pump_load",
+            "operation_cost",
         ]
 
         key_mapping = {"bus": "bus_id"}
@@ -255,7 +253,7 @@ class SiennaExporter(BaseExporter):
             fpath=self.output_folder / fname,
             fields=output_fields,
             key_mapping=key_mapping,
-            unnest_key="id",
+            unnest_key="number",
             restval="NA",
         )
         logger.info(f"File {fname} created.")
@@ -292,8 +290,8 @@ class SiennaExporter(BaseExporter):
         if len(reserve_map_list) > 1:
             logger.warning("We do not support multiple reserve maps per system")
             return
-
         reserve_map: dict = reserve_map_list[0]
+
         reserves: list[dict[str, Any]] = list(self.system.to_records(Reserve))
 
         output_data = []
@@ -345,6 +343,7 @@ class SiennaExporter(BaseExporter):
             "input_active_power_limit_min",
             "output_active_power_limit_max",
             "output_active_power_limit_min",
+            "unit_type",
         ]
 
         generic_storage = self.get_valid_records_properties(
@@ -371,8 +370,8 @@ class SiennaExporter(BaseExporter):
             output_dict["input_active_power_limit_min"] = 0  # output_dict["base_power"]
             output_dict["output_active_power_limit_min"] = 0  # output_dict["base_power"]
             output_dict["base_power"] = output_dict["base_power"]
-            output_dict["bus_id"] = getattr(self.system.get_component_by_label(output_dict["bus"]), "id")
-            output_dict["rating"] = 1
+            output_dict["bus_id"] = getattr(self.system.get_component_by_label(output_dict["bus"]), "number")
+            output_dict["rating"] = output_dict["rating"]
 
             # NOTE: For pumped hydro storage we create a head and a tail
             # representation that keeps track of the upper and down reservoir
@@ -393,14 +392,20 @@ class SiennaExporter(BaseExporter):
             fpath=self.output_folder / fname,
             fields=output_fields,
             key_mapping=key_mapping,
-            unnest_key="id",
+            unnest_key="number",
             restval="NA",
         )
 
         logger.info("File storage.csv created.")
 
     def create_timeseries_pointers(self) -> None:
-        """Create timeseries_pointers.json file."""
+        """Create timeseries_pointers.json file.
+
+        Parameters
+        ----------
+        fname : str
+            Name of the file to be created
+        """
         ts_pointers_list = []
 
         for component_type, time_series in self.time_series_objects.items():
@@ -412,12 +417,13 @@ class SiennaExporter(BaseExporter):
                 ts_instance = time_series[i]
                 resolution = ts_instance.resolution.seconds
                 variable_name = self.property_map.get(ts_instance.variable_name, ts_instance.variable_name)
-
+                # TODO(pedro): check if the time series data is pre normalized
+                # https://github.nrel.gov/PCM/R2X/issues/417
                 ts_pointers = {
                     "category": component_type.split("_", maxsplit=1)[0],  # Component_name is the first
                     "component_name": component_name,
                     "data_file": str(csv_fpath),
-                    "normalization_factor": "MAX",
+                    "normalization_factor": 1.0,
                     "resolution": resolution,
                     "name": variable_name,
                     "scaling_factor_multiplier_module": "PowerSystems",

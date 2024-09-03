@@ -10,7 +10,7 @@ from loguru import logger
 from infrasys.system import System
 from r2x.exporter.handler import get_exporter
 
-# from r2x.model import *
+# from r2x.models import *
 # Module level imports
 from .config import Configuration, Scenario
 from .exporter import exporter_list

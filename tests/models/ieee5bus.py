@@ -1,22 +1,24 @@
 """Script that creates simple systems for testing."""
 
 from datetime import datetime, timedelta
+
+from infrasys.cost_curves import FuelCurve
+from infrasys.function_data import LinearFunctionData
 from infrasys.time_series_models import SingleTimeSeries
-import pytest
+from infrasys.value_curves import InputOutputCurve
 from r2x.api import System
-from r2x.model import (
+from r2x.enums import PrimeMoversType
+from r2x.models import (
+    ACBus,
     Area,
     GenericBattery,
-    MonitoredLine,
-    ACBus,
     LoadZone,
+    MonitoredLine,
     RenewableDispatch,
-    Reserve,
-    ReserveMap,
     ThermalStandard,
 )
-from r2x.enums import PrimeMoversType, ReserveDirection, ReserveType
-from r2x.units import Energy, Time, ureg
+from r2x.models.costs import ThermalGenerationCost
+from r2x.units import Energy, Percentage, Time, ureg
 
 
 def ieee5bus_system() -> System:
@@ -25,11 +27,11 @@ def ieee5bus_system() -> System:
 
     area_1 = Area(name="region1")
     load_zone_1 = LoadZone(name="LoadZone1")
-    bus_1 = ACBus(id=1, name="node_a", base_voltage=100 * ureg.volt, area=area_1, load_zone=load_zone_1)
-    bus_2 = ACBus(id=2, name="node_b", base_voltage=100 * ureg.volt, area=area_1, load_zone=load_zone_1)
-    bus_3 = ACBus(id=3, name="node_c", base_voltage=100 * ureg.volt, area=area_1, load_zone=load_zone_1)
-    bus_4 = ACBus(id=4, name="node_d", base_voltage=100 * ureg.volt, area=area_1, load_zone=load_zone_1)
-    bus_5 = ACBus(id=5, name="node_e", base_voltage=100 * ureg.volt, area=area_1, load_zone=load_zone_1)
+    bus_1 = ACBus(number=1, name="node_a", base_voltage=100 * ureg.volt, area=area_1, load_zone=load_zone_1)
+    bus_2 = ACBus(number=2, name="node_b", base_voltage=100 * ureg.volt, area=area_1, load_zone=load_zone_1)
+    bus_3 = ACBus(number=3, name="node_c", base_voltage=100 * ureg.volt, area=area_1, load_zone=load_zone_1)
+    bus_4 = ACBus(number=4, name="node_d", base_voltage=100 * ureg.volt, area=area_1, load_zone=load_zone_1)
+    bus_5 = ACBus(number=5, name="node_e", base_voltage=100 * ureg.volt, area=area_1, load_zone=load_zone_1)
     # Append buses generator
     for bus in [bus_1, bus_2, bus_3, bus_4, bus_5]:
         system.add_component(bus)
@@ -46,14 +48,14 @@ def ieee5bus_system() -> System:
         name="SolarPV1",
         bus=bus_3,
         prime_mover_type=PrimeMoversType.PV,
-        base_power=384 * ureg.MW,
+        active_power=384 * ureg.MW,
         category="solar",
     )
     solar_pv_02 = RenewableDispatch(
         name="SolarPV2",
         bus=bus_4,
         prime_mover_type=PrimeMoversType.PV,
-        base_power=384 * ureg.MW,
+        active_power=384 * ureg.MW,
         category="solar",
     )
     system.add_component(solar_pv_01)
@@ -65,8 +67,8 @@ def ieee5bus_system() -> System:
         name="Battery1",
         bus=bus_2,
         prime_mover_type=PrimeMoversType.BA,
-        base_power=200 * ureg.MW,
-        charge_efficiency=0.85 * ureg.Unit(""),
+        active_power=200 * ureg.MW,
+        charge_efficiency=Percentage(85, "%"),
         storage_capacity=Energy(800, "MWh"),
         storage_duration=Time(4, "h"),
         category="storage",
@@ -78,9 +80,8 @@ def ieee5bus_system() -> System:
         name="Alta",
         fuel="gas",
         prime_mover_type=PrimeMoversType.CC,
-        base_power=40 * ureg.MW,
+        active_power=40 * ureg.MW,
         min_rated_capacity=10 * ureg.MW,
-        fuel_price=10 * ureg.Unit("usd/MWh"),
         bus=bus_1,
         category="thermal",
     )
@@ -89,9 +90,8 @@ def ieee5bus_system() -> System:
         name="Brighton",
         fuel="Gas",
         prime_mover_type=PrimeMoversType.CC,
-        base_power=600 * ureg.MW,
+        active_power=600 * ureg.MW,
         min_rated_capacity=150 * ureg.MW,
-        fuel_price=10 * ureg.Unit("usd/MWh"),
         bus=bus_5,
         category="thermal",
     )
@@ -100,9 +100,16 @@ def ieee5bus_system() -> System:
         name="Park City",
         fuel="Gas",
         prime_mover_type=PrimeMoversType.CC,
-        base_power=170 * ureg.MW,
+        active_power=170 * ureg.MW,
         min_rated_capacity=20 * ureg.MW,
-        fuel_price=10 * ureg.Unit("usd/MWh"),
+        operation_cost=ThermalGenerationCost(
+            variable=FuelCurve(
+                value_curve=InputOutputCurve(
+                    function_data=LinearFunctionData(proportional_term=10, constant_term=0)
+                ),
+                fuel_cost=15,
+            )
+        ),
         bus=bus_1,
         category="thermal",
     )
@@ -111,9 +118,15 @@ def ieee5bus_system() -> System:
         name="Solitude",
         fuel="Gas",
         prime_mover_type=PrimeMoversType.CC,
-        base_power=520 * ureg.MW,
-        min_rated_capacity=100 * ureg.MW,
-        fuel_price=10 * ureg.Unit("usd/MWh"),
+        active_power=520 * ureg.MW,
+        operation_cost=ThermalGenerationCost(
+            variable=FuelCurve(
+                value_curve=InputOutputCurve(
+                    function_data=LinearFunctionData(proportional_term=10, constant_term=0)
+                ),
+                fuel_cost=15,
+            )
+        ),
         bus=bus_3,
         category="thermal",
     )
@@ -122,7 +135,7 @@ def ieee5bus_system() -> System:
         name="Sundance",
         fuel="Gas",
         prime_mover_type=PrimeMoversType.CC,
-        base_power=400 * ureg.MW,
+        active_power=400 * ureg.MW,
         min_rated_capacity=80 * ureg.MW,
         bus=bus_4,
         category="thermal",
@@ -148,24 +161,4 @@ def ieee5bus_system() -> System:
     branch_ed = MonitoredLine(name="line_ed", from_bus=bus_5, to_bus=bus_4, rating_up=240 * ureg.MW)
     system.add_component(branch_ed)
 
-    # Adding reserves
-    reserve = Reserve(
-        name="reg_down",
-        max_requirement=100,  # MW
-        reserve_type=ReserveType.Regulation,
-        direction=ReserveDirection.Down,
-    )
-    system.add_component(reserve)
-    reserve_map = ReserveMap(name="System reserves")
-    system.add_component(reserve_map)
-
-    # Adding contributing devices
-    reserve_map.mapping[reserve.name].append(solitude.name)
-    reserve_map.mapping[reserve.name].append(sundance.name)
-
     return system
-
-
-@pytest.fixture
-def ieee_5bus_test() -> System:
-    return ieee5bus_system()

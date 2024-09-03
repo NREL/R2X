@@ -2,6 +2,7 @@
 
 from typing import Any
 import uuid
+import string
 from collections.abc import Callable
 
 from infrasys.component import Component
@@ -11,10 +12,10 @@ from r2x.enums import ReserveType
 from r2x.exporter.handler import BaseExporter
 from plexosdb import PlexosSQLite
 from plexosdb.enums import ClassEnum, CollectionEnum
-from r2x.model import (
+from r2x.models import (
     ACBus,
     Emission,
-    FixedLoad,
+    InterruptiblePowerLoad,
     Generator,
     GenericBattery,
     HydroDispatch,
@@ -24,13 +25,14 @@ from r2x.model import (
     MonitoredLine,
     PowerLoad,
     RenewableDispatch,
-    RenewableFix,
+    RenewableNonDispatch,
     Reserve,
+    ThermalStandard,
     Transformer2W,
     TransmissionInterface,
 )
 from r2x.units import get_magnitude
-from r2x.utils import custom_attrgetter, get_enum_from_string, read_json
+from r2x.utils import custom_attrgetter, get_enum_from_string, read_json, get_property_magnitude
 
 NESTED_ATTRIBUTES = ["ext", "bus", "services"]
 TIME_SERIES_PROPERTIES = ["Min Provision", "Static Risk"]
@@ -43,7 +45,6 @@ class PlexosExporter(BaseExporter):
         self,
         *args,
         plexos_scenario: str = "default",
-        plexos_model: str | None = None,
         database_manager=None,
         xml_fname: str | None = None,
         **kwargs,
@@ -83,27 +84,32 @@ class PlexosExporter(BaseExporter):
 
         return self
 
-    def get_time_series_properties(self, component):  # noqa: C901
+    def _get_time_series_properties(self, component):  # noqa: C901
         """Add time series object to certain plexos properties."""
         if not self.system.has_time_series(component):
             return
-        component_name = component.__class__.__name__
-        csv_fname = (
-            f"{component_name}_{self.config.name}_{self.config.solve_year}{self.config.weather_year}.csv"
-        )
+
+        ts_metadata = self.system.get_time_series(component)
+
+        config_dict = self.config.__dict__
+        config_dict["name"] = self.config.name
+        csv_fname = config_dict.get("time_series_fname", "${component_type}_${name}_${weather_year}.csv")
+        string_template = string.Template(csv_fname)
+        config_dict["component_type"] = f"{component.__class__.__name__}_{ts_metadata.variable_name}"
+        csv_fname = string_template.safe_substitute(config_dict)
         csv_fpath = self.ts_directory / csv_fname
         time_series_property: dict[str, Any] = {"Data File": str(csv_fpath)}
 
         # Property with time series can change. Validate this option based on the component type.
         match component:
-            case FixedLoad():
+            case InterruptiblePowerLoad():
                 time_series_property["Fixed Load"] = "0"
             case PowerLoad():
                 time_series_property["Load"] = "0"
             case RenewableDispatch():
                 time_series_property["Rating"] = "0"
                 time_series_property["Load Subtracter"] = "0"
-            case RenewableFix():
+            case RenewableNonDispatch():
                 time_series_property["Rating"] = "0"
                 time_series_property["Load Subtracter"] = "0"
             case Reserve():
@@ -120,6 +126,13 @@ class PlexosExporter(BaseExporter):
                 time_series_property["Max Energy"] = "0"
             case HydroEnergyReservoir():
                 time_series_property["Fixed Load"] = "0"
+            case ThermalStandard():
+                variable_name = self.system.get_time_series(component).variable_name
+                if not variable_name:
+                    return None
+                property_name = self.property_map.get(variable_name, None)
+                if property_name:
+                    time_series_property[property_name] = "0"
             case _:
                 raise NotImplementedError(f"Time Series for {component.label} not supported yet.")
         return time_series_property
@@ -329,7 +342,7 @@ class PlexosExporter(BaseExporter):
         for component in self.system.get_components(
             PowerLoad, filter_func=lambda component: self.system.has_time_series(component)
         ):
-            time_series_properties = self.get_time_series_properties(component)
+            time_series_properties = self._get_time_series_properties(component)
             if time_series_properties:
                 text = time_series_properties.pop("Data File")
                 for property_name, property_value in time_series_properties.items():
@@ -477,7 +490,7 @@ class PlexosExporter(BaseExporter):
                     collection=CollectionEnum.SystemReserves,
                     scenario=self.plexos_scenario,
                 )
-            time_series_properties = self.get_time_series_properties(reserve)
+            time_series_properties = self._get_time_series_properties(reserve)
             if time_series_properties:
                 text = time_series_properties.pop("Data File")
                 for property_name, property_value in time_series_properties.items():
@@ -559,7 +572,7 @@ class PlexosExporter(BaseExporter):
                 child_class=ClassEnum.Node,
                 collection=CollectionEnum.GeneratorNodes,
             )
-            properties = self.get_time_series_properties(generator)
+            properties = self._get_time_series_properties(generator)
             if properties:
                 text = properties.pop("Data File")
                 for property_name, property_value in properties.items():
@@ -820,8 +833,6 @@ class PlexosExporter(BaseExporter):
         valid_properties = [key[0] for key in collection_properties]
         for property_name, property_value in component_dict_mapped.items():
             if property_name in valid_properties:
-                property_value = self.get_property_magnitude(
-                    property_value, to_unit=unit_map.get(property_name)
-                )
+                property_value = get_property_magnitude(property_value, to_unit=unit_map.get(property_name))
                 valid_component_properties[property_name] = property_value
         return valid_component_properties

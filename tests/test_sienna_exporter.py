@@ -1,7 +1,7 @@
 import pytest
 from r2x.config import Scenario
 from r2x.exporter.sienna import SiennaExporter
-from .models.systems import ieee5bus_system
+from .models.ieee5bus import ieee5bus_system
 
 
 @pytest.fixture
@@ -38,7 +38,7 @@ def test_sienna_exporter_run(sienna_exporter, tmp_folder):
         "bus.csv",
         "timeseries_pointers.json",
         "storage.csv",
-        "reserves.csv",  # Reserve could be optional
+        # "reserves.csv",  # Reserve could be optional
         "dc_branch.csv",
         "branch.csv",
     ]

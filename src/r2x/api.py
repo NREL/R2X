@@ -6,21 +6,13 @@ from os import PathLike
 from pathlib import Path
 from itertools import chain
 from collections.abc import Iterable
-import pandas as pd
-import polars as pl
 from loguru import logger
 
 from infrasys.component import Component
 from infrasys.system import System as ISSystem
 from .__version__ import __data_model_version__
-from .model import (
-    Branch,
-    Bus,
-    Generator,
-    LoadZone,
-    Area,
-)
-from .utils import unnest_all
+import uuid
+import infrasys.cost_curves
 
 
 class System(ISSystem):
@@ -40,79 +32,6 @@ class System(ISSystem):
     def version(self):
         """The version property."""
         return __data_model_version__
-
-    def get_generators(self, attributes: list | None = None) -> pl.DataFrame | pd.DataFrame:
-        """Return the list of generators in the system as a DataFrame."""
-        generator_list = []
-
-        generator_components = [
-            component_class
-            for component_class in self.get_component_types()
-            if Generator in component_class.__mro__
-        ]
-        for model in generator_components:
-            generator_list.extend(
-                list(
-                    map(
-                        lambda component: component.model_dump(),
-                        self.get_components(model),
-                    )
-                )
-            )
-
-        generators = pl.from_pandas(
-            pd.json_normalize(generator_list).drop(columns="services", errors="ignore")
-        )
-        if attributes:
-            generators = generators.select(pl.col(attributes))
-
-        # NOTE: This can work in the short term. In a near future we might want to patch it.
-        # We only incldue one nested attribut which is the bus
-        generators = unnest_all(generators)
-
-        return generators
-
-    def get_load_zones(self, attributes: list | None = None) -> pl.DataFrame:
-        """Return all LoadZone objects in the system."""
-        load_zones = pl.DataFrame(
-            map(lambda component: component.model_dump(), self.get_components(LoadZone))
-        )
-
-        if attributes:
-            load_zones = load_zones.select(pl.col(attributes))
-
-        load_zones = unnest_all(load_zones)
-        return load_zones
-
-    def get_areas(self, attributes: list | None = None) -> pl.DataFrame:
-        """Return all Area objects in the system."""
-        areas = pl.DataFrame(map(lambda component: component.model_dump(), self.get_components(Area)))
-
-        if attributes:
-            areas = areas.select(pl.col(attributes))
-
-        areas = unnest_all(areas)
-        return areas
-
-    def get_buses(self, attributes: list | None = None) -> pl.DataFrame:
-        """Return all Bus objects in the system."""
-        buses = pl.DataFrame(map(lambda component: component.model_dump(), self.get_components(Bus)))
-
-        if attributes:
-            buses = buses.select(pl.col(attributes))
-
-        buses = unnest_all(buses)
-        return buses
-
-    def get_branches(self, attributes: list | None = None) -> pl.DataFrame:
-        """Get Branch objects in the system."""
-        branches = pl.DataFrame(map(lambda component: component.model_dump(), self.get_components(Branch)))
-
-        if attributes:
-            branches = branches.select(pl.col(attributes))
-
-        branches = unnest_all(branches)
-        return branches
 
     def export_component_to_csv(
         self,
@@ -148,6 +67,73 @@ class System(ISSystem):
             **dict_writer_kwargs,
         )
 
+    def _add_operation_cost_data(  # noqa: C901
+        self,
+        data: Iterable[dict],
+        fields: list | None = None,
+    ):
+        operation_cost_fields = set()
+        for sub_dict in data:
+            if "operation_cost" not in sub_dict.keys():
+                continue
+
+            operation_cost = sub_dict["operation_cost"]
+            for cost_field_key, cost_field_value in operation_cost.items():
+                if isinstance(cost_field_value, dict):
+                    assert (
+                        "uuid" in cost_field_value.keys()
+                    ), f"Operation cost field {cost_field_key} was assumed to be a component but is not."
+                    variable_cost = self.get_component_by_uuid(uuid.UUID(cost_field_value["uuid"]))
+                    sub_dict["variable_cost"] = variable_cost.vom_units.function_data.proportional_term
+                    if "fuel_cost" in variable_cost.model_fields:
+                        # Note: We multiply the fuel price by 1000 to offset the division
+                        # done by Sienna when it parses .csv files
+                        sub_dict["fuel_price"] = variable_cost.fuel_cost * 1000
+                        operation_cost_fields.add("fuel_price")
+
+                    function_data = variable_cost.value_curve.function_data
+                    if "constant_term" in function_data.model_fields:
+                        sub_dict["heat_rate_a0"] = function_data.constant_term
+                        operation_cost_fields.add("heat_rate_a0")
+                    if "proportional_term" in function_data.model_fields:
+                        sub_dict["heat_rate_a1"] = function_data.proportional_term
+                        operation_cost_fields.add("heat_rate_a1")
+                    if "quadratic_term" in function_data.model_fields:
+                        sub_dict["heat_rate_a2"] = function_data.quadratic_term
+                        operation_cost_fields.add("heat_rate_a2")
+                    if "x_coords" in function_data.model_fields:
+                        x_y_coords = dict(zip(function_data.x_coords, function_data.y_coords))
+                        match type(variable_cost):
+                            case infrasys.cost_curves.CostCurve:
+                                for i, (x_coord, y_coord) in enumerate(x_y_coords.items()):
+                                    output_point_col = f"output_point_{i}"
+                                    sub_dict[output_point_col] = x_coord
+                                    operation_cost_fields.add(output_point_col)
+
+                                    cost_point_col = f"cost_point_{i}"
+                                    sub_dict[cost_point_col] = y_coord
+                                    operation_cost_fields.add(cost_point_col)
+
+                            case infrasys.cost_curves.FuelCurve:
+                                for i, (x_coord, y_coord) in enumerate(x_y_coords.items()):
+                                    output_point_col = f"output_point_{i}"
+                                    sub_dict[output_point_col] = x_coord
+                                    operation_cost_fields.add(output_point_col)
+
+                                    heat_rate_col = "heat_rate_avg_0" if i == 0 else f"heat_rate_incr_{i}"
+                                    sub_dict[heat_rate_col] = y_coord
+                                    operation_cost_fields.add(heat_rate_col)
+                elif cost_field_key not in sub_dict.keys():
+                    sub_dict[cost_field_key] = cost_field_value
+                    operation_cost_fields.add(cost_field_key)
+                else:
+                    pass
+
+        fields.remove("operation_cost")  # type: ignore
+        fields.extend(list(operation_cost_fields))  # type: ignore
+
+        return data, fields
+
     def _export_dict_to_csv(
         self,
         data: Iterable[dict],
@@ -169,8 +155,11 @@ class System(ISSystem):
         if fields is None:
             fields = list(set(chain.from_iterable(data)))
 
+        if "operation_cost" in fields:
+            data, fields = self._add_operation_cost_data(data, fields)
+
         with open(str(fpath), "w", newline="") as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=fields, extrasaction="ignore", **dict_writer_kwargs)
+            writer = csv.DictWriter(csvfile, fieldnames=fields, extrasaction="ignore", **dict_writer_kwargs)  # type: ignore
             writer.writeheader()
             for row in data:
                 filter_row = {
