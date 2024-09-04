@@ -1,4 +1,5 @@
 {
+  "device_name_inference_map": {},
   "plexos_device_map": {},
   "plexos_fuel_map": {},
   "plexos_property_map": {
@@ -17,7 +18,7 @@
     "Load Risk": "load_risk",
     "Loss Incr": "losses",
     "Maintenance Rate": "planned_outage_rate",
-    "Max Capacity": "base_power",
+    "Max Capacity": "active_power",
     "Max Flow": "max_power_flow",
     "Max Ramp Down": "ramp_down",
     "Max Ramp Up": "ramp_up",

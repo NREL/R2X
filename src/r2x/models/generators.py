@@ -27,7 +27,7 @@ class Generator(Device):
     bus: Annotated[ACBus, Field(description="Bus where the generator is connected.")] | None = None
     rating: Annotated[
         ApparentPower | None,
-        Field(gt=0, description="Maximum output power rating of the unit (MVA)."),
+        Field(ge=0, description="Maximum output power rating of the unit (MVA)."),
     ] = None
     active_power: Annotated[
         ActivePower,

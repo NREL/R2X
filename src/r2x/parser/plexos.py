@@ -7,13 +7,14 @@ from pathlib import Path, PureWindowsPath
 from argparse import ArgumentParser
 import pandas as pd
 
-from pint import UndefinedUnitError
+from pint import UndefinedUnitError, Quantity
 import polars as pl
 import numpy as np
 from loguru import logger
 from infrasys.exceptions import ISNotStored
 from infrasys.time_series_models import SingleTimeSeries
 from infrasys.value_curves import InputOutputCurve, AverageRateCurve
+from infrasys.cost_curves import FuelCurve
 from infrasys.function_data import (
     LinearFunctionData,
     QuadraticFunctionData,
@@ -26,6 +27,7 @@ from r2x.enums import ACBusTypes, ReserveDirection, ReserveType, PrimeMoversType
 from r2x.exceptions import ModelError, ParserError
 from plexosdb import PlexosSQLite
 from plexosdb.enums import ClassEnum, CollectionEnum
+from r2x.models.costs import ThermalGenerationCost
 from r2x.models import (
     ACBus,
     Generator,
@@ -132,11 +134,11 @@ class PlexosParser(PCMParser):
         super().__init__(*args, **kwargs)
         assert self.config.run_folder
         self.run_folder = Path(self.config.run_folder)
-        self.system = System(name=self.config.name)
+        self.system = System(name=self.config.name, auto_add_composed_components=True)
         self.property_map = self.config.defaults["plexos_property_map"]
         self.device_map = self.config.defaults["plexos_device_map"]
         self.fuel_map = self.config.defaults["plexos_fuel_map"]
-        self.device_match_string = self.config.defaults["device_inference_string"]
+        self.device_match_string = self.config.defaults["device_name_inference_map"]
 
         # TODO(pesap): Rename exceptions to include R2X
         # https://github.com/NREL/R2X/issues/5
@@ -353,7 +355,7 @@ class PlexosParser(PCMParser):
             valid_fields["base_voltage"] = (
                 230.0 if not valid_fields.get("base_voltage") else valid_fields["base_voltage"]
             )
-            self.system.add_component(default_model(id=idx + 1, **valid_fields))
+            self.system.add_component(default_model(number=idx + 1, **valid_fields))
         return
 
     def _construct_reserves(self, default_model=Reserve):
@@ -423,6 +425,7 @@ class PlexosParser(PCMParser):
         )
         for line in lines_pivot.iter_rows(named=True):
             line_properties_mapped = {self.property_map.get(key, key): value for key, value in line.items()}
+            line_properties_mapped["rating"] = line_properties_mapped.pop("max_power_flow", None)
             line_properties_mapped["rating_up"] = line_properties_mapped.pop("max_power_flow", None)
             line_properties_mapped["rating_down"] = line_properties_mapped.pop("min_power_flow", None)
 
@@ -455,7 +458,7 @@ class PlexosParser(PCMParser):
         return
 
     def _infer_model_type(self, generator_name):
-        inference_mapper = self.config.device_name_inference_map
+        inference_mapper = self.device_match_string
         generator_name_lower = generator_name.lower()
         for key, device_info in inference_mapper.items():
             if key in generator_name_lower:
@@ -474,8 +477,8 @@ class PlexosParser(PCMParser):
         logger.trace("Parsing generator = {} with fuel type = {}", generator_name, plexos_fuel_name)
 
         fuel_pmtype = (
-            self.config.device_map.get(generator_name)
-            or self.config.plexos_fuel_map.get(plexos_fuel_name)
+            self.device_map.get(generator_name)
+            or self.fuel_map.get(plexos_fuel_name)
             or self._infer_model_type(generator_name)
         )
 
@@ -565,9 +568,9 @@ class PlexosParser(PCMParser):
                     mapped_records["prime_mover_type"] = PrimeMoversType.PS
 
             # Pumped Storage generators are not required to have Max Capacity property
-            if "base_power" not in mapped_records and "pump_load" in mapped_records:
-                mapped_records["base_power"] = mapped_records["pump_load"]
-
+            if "active_power" not in mapped_records and "pump_load" in mapped_records:
+                mapped_records["active_power"] = mapped_records["pump_load"]
+            # NOTE print which missing fields
             if not all(key in mapped_records for key in required_fields):
                 logger.warning(
                     "Skipping Generator {} since it does not have all the required fields", generator_name
@@ -578,9 +581,9 @@ class PlexosParser(PCMParser):
             if mapped_records is None:
                 continue  # Pass if not available
 
+            mapped_records["fuel_price"] = fuel_prices.get(generator_fuel_map.get(generator_name), 0)
             mapped_records = self._construct_value_curves(mapped_records, generator_name)
-            mapped_records["fuel_price"] = fuel_prices.get(generator_fuel_map.get(generator_name))
-
+            mapped_records = self._construct_operating_costs(mapped_records, generator_name)
             valid_fields, ext_data = self._field_filter(mapped_records, model_map.model_fields)
 
             ts_fields = {k: v for k, v in mapped_records.items() if isinstance(v, SingleTimeSeries)}
@@ -684,7 +687,7 @@ class PlexosParser(PCMParser):
             mapped_records["name"] = battery_name
 
             if "Max Power" in mapped_records:
-                mapped_records["base_power"] = mapped_records["Max Power"]
+                mapped_records["active_power"] = mapped_records["Max Power"]
 
             if "Capacity" in mapped_records:
                 mapped_records["storage_capacity"] = mapped_records["Capacity"]
@@ -881,7 +884,20 @@ class PlexosParser(PCMParser):
                 fn = None
             if not vc:
                 vc = InputOutputCurve(name=f"{generator_name}_HR", function_data=fn)
-            mapped_records["heat_rate"] = vc
+            mapped_records["hr_value_curve"] = vc
+        return mapped_records
+
+    def _construct_operating_costs(self, mapped_records, generator_name):
+        """Construct operating costs from Value Curves and Operating Costs."""
+        if mapped_records.get("hr_value_curve"):
+            hr_curve = mapped_records["hr_value_curve"]
+            fuel_cost = mapped_records["fuel_price"]
+            if isinstance(fuel_cost, SingleTimeSeries):
+                fuel_cost = np.mean(fuel_cost.data)
+            elif isinstance(fuel_cost, Quantity):
+                fuel_cost = fuel_cost.magnitude
+            fuel_curve = FuelCurve(value_curve=hr_curve, fuel_cost=fuel_cost)
+            mapped_records["operation_cost"] = ThermalGenerationCost(variable=fuel_curve)
         return mapped_records
 
     def _select_model_name(self):
@@ -943,17 +959,17 @@ class PlexosParser(PCMParser):
         """Set availability and active power limit TS for generators."""
         availability = records.get("available", None)
         if availability is not None and availability > 0:
-            # Set availability, base_power, storage_capacity as multiplier of availability
+            # Set availability, active_power, storage_capacity as multiplier of availability
             if records.get("storage_capacity") is not None:
                 records["storage_capacity"] *= records.get("available")
-            records["base_power"] = records.get("base_power") * records.get("available")
+            records["active_power"] = records.get("active_power") * records.get("available")
             records["available"] = 1
 
             # Set active power limits
             rating_factor = records.get("Rating Factor", 100)
             rating_factor = self._apply_action(np.divide, rating_factor, 100)
             rating = records.get("rating", None)
-            base_power = records.get("base_power", None)
+            active_power = records.get("active_power", None)
             min_energy_hour = records.get("Min Energy Hour", None)
 
             # Hack temporary until Hydro Max Monthly Rating is corrected
@@ -964,9 +980,9 @@ class PlexosParser(PCMParser):
             if rating is not None:
                 units = rating.units
                 val = rating_factor * rating.magnitude
-            elif base_power is not None:
-                units = base_power.units
-                val = self._apply_action(np.multiply, rating_factor, base_power.magnitude)
+            elif active_power is not None:
+                units = active_power.units
+                val = self._apply_action(np.multiply, rating_factor, active_power.magnitude)
             else:
                 return records
             val = self._apply_unit(val, units)
@@ -975,8 +991,8 @@ class PlexosParser(PCMParser):
                 records["min_active_power"] = records.pop("Min Energy Hour")
 
             if not isinstance(val, SingleTimeSeries):
-                # temp solution until Infrasys.model update to have both base_power and a rating field
-                records["base_power"] = val
+                # temp solution until Infrasys.model update to have both active_power and a rating field
+                records["active_power"] = val
             else:
                 val.variable_name = "max_active_power"
                 records["max_active_power"] = val
