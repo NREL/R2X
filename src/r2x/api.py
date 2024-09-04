@@ -78,7 +78,6 @@ class System(ISSystem):
                 continue
 
             operation_cost = sub_dict["operation_cost"]
-
             for cost_field_key, cost_field_value in operation_cost.items():
                 if isinstance(cost_field_value, dict):
                     assert (

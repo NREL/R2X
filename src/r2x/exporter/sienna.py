@@ -242,6 +242,7 @@ class SiennaExporter(BaseExporter):
             "category",
             "must_run",
             "pump_load",
+            "vom_price",
             "operation_cost",
         ]
 

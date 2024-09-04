@@ -27,12 +27,11 @@ from r2x.enums import ACBusTypes, ReserveDirection, ReserveType, PrimeMoversType
 from r2x.exceptions import ModelError, ParserError
 from plexosdb import PlexosSQLite
 from plexosdb.enums import ClassEnum, CollectionEnum
-from r2x.models.costs import ThermalGenerationCost
+from r2x.models.costs import ThermalGenerationCost, RenewableGenerationCost, HydroGenerationCost
 from r2x.models import (
     ACBus,
     Generator,
     GenericBattery,
-    HydroPumpedStorage,
     MonitoredLine,
     PowerLoad,
     Reserve,
@@ -40,6 +39,10 @@ from r2x.models import (
     ReserveMap,
     TransmissionInterface,
     TransmissionInterfaceMap,
+    RenewableGen,
+    ThermalGen,
+    HydroDispatch,
+    HydroPumpedStorage,
 )
 from r2x.utils import validate_string
 
@@ -277,7 +280,6 @@ class PlexosParser(PCMParser):
                 ]
             ].to_dicts()
 
-            logger.debug("Parsing fuel = {}", fuel_name)
             for property in property_records:
                 property.update({"property_unit": "$/MMBtu"})
 
@@ -582,8 +584,8 @@ class PlexosParser(PCMParser):
                 continue  # Pass if not available
 
             mapped_records["fuel_price"] = fuel_prices.get(generator_fuel_map.get(generator_name), 0)
-            mapped_records = self._construct_value_curves(mapped_records, generator_name)
-            mapped_records = self._construct_operating_costs(mapped_records, generator_name)
+            mapped_records = self._construct_operating_costs(mapped_records, generator_name, model_map)
+
             valid_fields, ext_data = self._field_filter(mapped_records, model_map.model_fields)
 
             ts_fields = {k: v for k, v in mapped_records.items() if isinstance(v, SingleTimeSeries)}
@@ -887,17 +889,29 @@ class PlexosParser(PCMParser):
             mapped_records["hr_value_curve"] = vc
         return mapped_records
 
-    def _construct_operating_costs(self, mapped_records, generator_name):
+    def _construct_operating_costs(self, mapped_records, generator_name, model_map):
         """Construct operating costs from Value Curves and Operating Costs."""
-        if mapped_records.get("hr_value_curve"):
-            hr_curve = mapped_records["hr_value_curve"]
-            fuel_cost = mapped_records["fuel_price"]
-            if isinstance(fuel_cost, SingleTimeSeries):
-                fuel_cost = np.mean(fuel_cost.data)
-            elif isinstance(fuel_cost, Quantity):
-                fuel_cost = fuel_cost.magnitude
-            fuel_curve = FuelCurve(value_curve=hr_curve, fuel_cost=fuel_cost)
-            mapped_records["operation_cost"] = ThermalGenerationCost(variable=fuel_curve)
+        mapped_records = self._construct_value_curves(mapped_records, generator_name)
+        hr_curve = mapped_records.get("hr_value_curve")
+        if issubclass(model_map, RenewableGen):
+            mapped_records["operation_cost"] = RenewableGenerationCost()
+        elif issubclass(model_map, ThermalGen):
+            if hr_curve:
+                fuel_cost = mapped_records["fuel_price"]
+                if isinstance(fuel_cost, SingleTimeSeries):
+                    fuel_cost = np.mean(fuel_cost.data)
+                elif isinstance(fuel_cost, Quantity):
+                    fuel_cost = fuel_cost.magnitude
+                fuel_curve = FuelCurve(value_curve=hr_curve, fuel_cost=fuel_cost)
+                mapped_records["operation_cost"] = ThermalGenerationCost(variable=fuel_curve)
+            else:
+                logger.warning("No heat rate curve found for generator={}", generator_name)
+        elif issubclass(model_map, HydroDispatch):
+            mapped_records["operation_cost"] = HydroGenerationCost()
+        else:
+            logger.warning(
+                "Operating Cost not implemented for generator={} model map={}", generator_name, model_map
+            )
         return mapped_records
 
     def _select_model_name(self):
@@ -990,12 +1004,14 @@ class PlexosParser(PCMParser):
             if min_energy_hour is not None:
                 records["min_active_power"] = records.pop("Min Energy Hour")
 
-            if not isinstance(val, SingleTimeSeries):
-                # temp solution until Infrasys.model update to have both active_power and a rating field
-                records["active_power"] = val
-            else:
+            if isinstance(val, SingleTimeSeries):
                 val.variable_name = "max_active_power"
                 records["max_active_power"] = val
+                records["rating"] = active_power
+            else:
+                # Assume reactive power not modeled
+                records["active_power"] = val
+                records["rating"] = val
 
             if isinstance(rating_factor, SingleTimeSeries):
                 records.pop("Rating Factor")
