@@ -1,12 +1,12 @@
 import pytest
 from r2x.config import Scenario
 from r2x.exporter.sienna import SiennaExporter
-from .models.ieee5bus import ieee5bus_system
+from .models import ieee5bus
 
 
 @pytest.fixture
 def infrasys_test_system():
-    return ieee5bus_system()
+    return ieee5bus()
 
 
 @pytest.fixture

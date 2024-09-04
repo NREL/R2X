@@ -54,8 +54,8 @@ class Reserve(Service):
         return Reserve(
             name="ExampleReserve",
             region=LoadZone.example(),
-            direction=ReserveDirection.Up,
-            reserve_type=ReserveType.Regulation,
+            direction=ReserveDirection.UP,
+            reserve_type=ReserveType.REGULATION,
         )
 
 
