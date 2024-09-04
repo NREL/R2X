@@ -1,11 +1,11 @@
 from r2x.enums import PrimeMoversType
 from r2x.models import Generator
 from r2x.plugins.break_gens import break_generators
-from .models.ieee5bus import ieee5bus_system
+from .models import ieee5bus
 
 
 def test_break_generators():
-    system = ieee5bus_system()
+    system = ieee5bus()
     capacity_threshold = 10
     reference_generators = {
         "storage": {"avg_capacity_MW": 100},
@@ -24,7 +24,7 @@ def test_break_generators():
 
 
 def test_break_generators_break_category():
-    system = ieee5bus_system()
+    system = ieee5bus()
     capacity_threshold = 10
     reference_generators = {
         "Battery1": {"avg_capacity_MW": 100},
@@ -39,7 +39,7 @@ def test_break_generators_break_category():
 
 
 def test_break_generators_multi_category():
-    system = ieee5bus_system()
+    system = ieee5bus()
     capacity_threshold = 10
     reference_generators = {
         "storage": {"avg_capacity_MW": 100},
@@ -53,7 +53,7 @@ def test_break_generators_multi_category():
 
 
 def test_break_generators_capacity_threshold():
-    system = ieee5bus_system()
+    system = ieee5bus()
     capacity_threshold = 50
     reference_generators = {
         "storage": {"avg_capacity_MW": 150},

@@ -1,33 +1,21 @@
 """R2X enums."""
 
-from enum import Enum, auto
-
-
-class StrEnum(Enum):
-    """Class to allow printing of Enums.
-
-    NOTE: This class could be deprecated once most people migrate to
-    python3.11. For the mean time, we are going to maintain this for backwards
-    compatibility.
-    """
-
-    def __str__(self) -> str:
-        return str(self.value)
+from enum import auto, StrEnum
 
 
 class ReserveType(StrEnum):
     """Class representing different types of Reserves."""
 
-    Spinning = auto()
-    Flexibility = auto()
-    Regulation = auto()
+    SPINNING = auto()
+    FLEXIBILITY = auto()
+    REGULATION = auto()
 
 
 class ReserveDirection(StrEnum):
     """Class representing different Reserve Direction."""
 
-    Up = auto()
-    Down = auto()
+    UP = auto()
+    DOWN = auto()
 
 
 class ACBusTypes(StrEnum):
@@ -36,33 +24,54 @@ class ACBusTypes(StrEnum):
     For PCM translations, must of the buses are `PV`.
     """
 
-    PV = "PV"
+    PV = auto()
+    PQ = auto()
+    REF = auto()
 
 
 class PrimeMoversType(StrEnum):
     """EIA prime mover codes."""
 
-    BA = "BA"
-    BT = "BT"
-    CA = "CA"
-    CC = "CC"
-    CE = "CE"
-    CP = "CP"
-    CS = "CS"
-    CT = "CT"
-    ES = "ES"
-    FC = "FC"
-    FW = "FW"
-    GT = "GT"
-    HA = "HA"
-    HB = "HB"
-    HK = "HK"
-    HY = "HY"
-    IC = "IC"
-    PS = "PS"
-    OT = "OT"
-    ST = "ST"
-    PV = "PV"
-    WT = "WT"
-    WS = "WS"
-    RTPV = "RTPV"
+    BA = auto()
+    BT = auto()
+    CA = auto()
+    CC = auto()
+    CE = auto()
+    CP = auto()
+    CS = auto()
+    CT = auto()
+    ES = auto()
+    FC = auto()
+    FW = auto()
+    GT = auto()
+    HA = auto()
+    HB = auto()
+    HK = auto()
+    HY = auto()
+    IC = auto()
+    PS = auto()
+    OT = auto()
+    ST = auto()
+    PV = auto()
+    WT = auto()
+    WS = auto()
+    RTPV = auto()
+
+
+class ThermalFuels(StrEnum):
+    """Thermal fuels that reflect options in the EIA annual energy review."""
+
+    COAL = auto()
+    WASTE_COAL = auto()
+    DISTILLATE_FUEL_OIL = auto()
+    WASTE_OIL = auto()
+    PETROLEUM_COKE = auto()
+    RESIDUAL_FUEL_OIL = auto()
+    NATURAL_GAS = auto()
+    OTHER_GAS = auto()
+    NUCLEAR = auto()
+    AG_BIPRODUCT = auto()
+    MUNICIPAL_WASTE = auto()
+    WOOD_WASTE = auto()
+    GEOTHERMAL = auto()
+    OTHER = auto()
