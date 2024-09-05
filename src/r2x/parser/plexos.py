@@ -581,7 +581,8 @@ class PlexosParser(PCMParser):
 
             mapped_records = self._set_unit_availability(mapped_records)
             if mapped_records is None:
-                continue  # Pass if not available
+                # When unit availability is not set, we skip the generator
+                continue
 
             mapped_records["fuel_price"] = fuel_prices.get(generator_fuel_map.get(generator_name), 0)
             mapped_records = self._construct_operating_costs(mapped_records, generator_name, model_map)
@@ -893,6 +894,31 @@ class PlexosParser(PCMParser):
         """Construct operating costs from Value Curves and Operating Costs."""
         mapped_records = self._construct_value_curves(mapped_records, generator_name)
         hr_curve = mapped_records.get("hr_value_curve")
+
+        # match model_map:
+        #     case RenewableDispatch:
+        #         mapped_records["operation_cost"] = RenewableGenerationCost()
+        #     case RenewableNonDispatch():
+        #         mapped_records["operation_cost"] = RenewableGenerationCost()
+        #     case ThermalStandard():
+        #         if hr_curve:
+        #             fuel_cost = mapped_records["fuel_price"]
+        #             if isinstance(fuel_cost, SingleTimeSeries):
+        #                 fuel_cost = np.mean(fuel_cost.data)
+        #             elif isinstance(fuel_cost, Quantity):
+        #                 fuel_cost = fuel_cost.magnitude
+        #             fuel_curve = FuelCurve(value_curve=hr_curve, fuel_cost=fuel_cost)
+        #             mapped_records["operation_cost"] = ThermalGenerationCost(variable=fuel_curve)
+        #         else:
+        #             logger.warning("No heat rate curve found for generator={}", generator_name)
+        #     case HydroDispatch():
+        #         mapped_records["operation_cost"] = HydroGenerationCost()
+        #     case _:
+        #         logger.warning(
+        #             "Operating Cost not implemented for generator={} model map={}",
+        #               generator_name, model_map
+        #         )
+
         if issubclass(model_map, RenewableGen):
             mapped_records["operation_cost"] = RenewableGenerationCost()
         elif issubclass(model_map, ThermalGen):

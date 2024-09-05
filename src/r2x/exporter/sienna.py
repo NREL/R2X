@@ -425,8 +425,8 @@ class SiennaExporter(BaseExporter):
                     "normalization_factor": 1.0,
                     "resolution": resolution,
                     "name": variable_name,
-                    "scaling_factor_multiplier_module": "PowerSystems",
-                    "scaling_factor_multiplier": "get_" + variable_name,
+                    "scaling_factor_multiplier_module": None,
+                    "scaling_factor_multiplier": None,
                 }
                 ts_pointers_list.append(ts_pointers)
 
