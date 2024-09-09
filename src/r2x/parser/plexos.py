@@ -98,7 +98,6 @@ DEFAULT_QUERY_COLUMNS_SCHEMA = {  # NOTE: Order matters
     "data_file_tag": pl.String,
     "data_file": pl.String,
     "variable_tag": pl.String,
-    # "variable": pl.String,
     "timeslice_tag": pl.String,
     "timeslice": pl.String,
 }
@@ -112,13 +111,7 @@ COLUMNS = [
     "date_to",
     "text",
 ]
-DEFAULT_INDEX = [
-    "object_id",
-    "name",
-    "category",
-    # "band",
-]
-PROPERTIES_WITH_TEXT_TO_SKIP = ["Units Out", "Forced Outage Rate", "Commit", "Rating", "Maintenance Rate"]
+DEFAULT_INDEX = ["object_id", "name", "category"]
 
 
 def cli_arguments(parser: ArgumentParser):
@@ -540,7 +533,6 @@ class PlexosParser(PCMParser):
             required_fields = {
                 key: value for key, value in model_map.model_fields.items() if value.is_required()
             }
-            # breakpoint()
 
             property_records = generator_data[
                 [
@@ -570,8 +562,14 @@ class PlexosParser(PCMParser):
                     mapped_records["prime_mover_type"] = PrimeMoversType.PS
 
             # Pumped Storage generators are not required to have Max Capacity property
-            if "active_power" not in mapped_records and "pump_load" in mapped_records:
+            if "max_active_power" not in mapped_records and "pump_load" in mapped_records:
                 mapped_records["rating"] = mapped_records["pump_load"]
+
+            mapped_records = self._set_unit_availability(mapped_records)
+            if mapped_records is None:
+                # When unit availability is not set, we skip the generator
+                continue
+
             # NOTE print which missing fields
             if not all(key in mapped_records for key in required_fields):
                 logger.warning(
@@ -579,15 +577,10 @@ class PlexosParser(PCMParser):
                 )
                 continue
 
-            mapped_records = self._set_unit_availability(mapped_records)
-            if mapped_records is None:
-                # When unit availability is not set, we skip the generator
-                continue
-
             mapped_records["fuel_price"] = fuel_prices.get(generator_fuel_map.get(generator_name), 0)
             mapped_records = self._construct_operating_costs(mapped_records, generator_name, model_map)
 
-            mapped_records["base_power"] = 1
+            mapped_records["base_mva"] = 1
 
             valid_fields, ext_data = self._field_filter(mapped_records, model_map.model_fields)
 
@@ -701,6 +694,10 @@ class PlexosParser(PCMParser):
 
             valid_fields, ext_data = self._field_filter(mapped_records, GenericBattery.model_fields)
 
+            valid_fields = self._set_unit_availability(valid_fields)
+            if valid_fields is None:
+                continue
+
             if not all(key in valid_fields for key in required_fields):
                 logger.warning(
                     "Skipping battery {} since it does not have all the required fields", battery_name
@@ -709,10 +706,6 @@ class PlexosParser(PCMParser):
 
             if mapped_records["storage_capacity"] == 0:
                 logger.warning("Skipping battery {} since it has zero capacity", battery_name)
-                continue
-
-            valid_fields = self._set_unit_availability(valid_fields)
-            if valid_fields is None:
                 continue
 
             self.system.add_component(GenericBattery(**valid_fields))
@@ -974,10 +967,12 @@ class PlexosParser(PCMParser):
         return None
 
     def _set_unit_availability(self, mapped_records):
-        """Set availability and active power limit TS for generators."""
+        """
+        Set availability and active power limit TS for generators.
+        Note: variables use infrasys naming scheme, rating != plexos rating.
+        """
         availability = mapped_records.get("available", None)
         if availability is not None and availability > 0:
-            # breakpoint()
             # Set availability, rating, storage_capacity as multiplier of availability/'units'
             if mapped_records.get("storage_capacity") is not None:
                 mapped_records["storage_capacity"] *= mapped_records.get("available")
@@ -988,19 +983,19 @@ class PlexosParser(PCMParser):
             rating_factor = mapped_records.get("Rating Factor", 100)
             rating_factor = self._apply_action(np.divide, rating_factor, 100)
             rating = mapped_records.get("rating", None)
-            active_power = mapped_records.get("active_power", None)
+            max_active_power = mapped_records.get("max_active_power", None)
             min_energy_hour = mapped_records.get("Min Energy Hour", None)
 
             # Hack temporary until Hydro Max Monthly Rating is corrected
             max_energy_month = mapped_records.get("Max Energy Month", None)
             if max_energy_month is not None:
-                active_power = None
+                max_active_power = None
 
-            if active_power is not None:
+            if max_active_power is not None:
                 # Need to fix rating timeslice handler.
                 # to convert the timeslice strings to max active power series
-                units = active_power.units
-                val = rating_factor * active_power.magnitude
+                units = max_active_power.units
+                val = rating_factor * max_active_power.magnitude
             elif rating is not None:
                 units = rating.units
                 val = self._apply_action(np.multiply, rating_factor, rating.magnitude)
@@ -1013,15 +1008,13 @@ class PlexosParser(PCMParser):
 
             if isinstance(val, SingleTimeSeries):
                 val.variable_name = "max_active_power"
+                self._apply_action(np.divide, val, rating.magnitude)
                 mapped_records["max_active_power"] = val
-                mapped_records["active_power"] = rating
-            else:
-                # Assume reactive power not modeled
-                mapped_records["rating"] = val
-                mapped_records["active_power"] = val
+            mapped_records["active_power"] = rating
 
             if isinstance(rating_factor, SingleTimeSeries):
-                mapped_records.pop("Rating Factor")
+                mapped_records.pop("Rating Factor")  # rm for ext exporter
+
         else:  # if unit field not activated in model, skip generator
             mapped_records = None
         return mapped_records
@@ -1141,10 +1134,11 @@ class PlexosParser(PCMParser):
             ts = self._csv_file_handler(
                 property_name="max_active_power", property_data=region_data["variable"][0]
             )
+            max_load = np.max(ts.data.to_numpy())
+            ts = self._apply_action(np.divide, ts, max_load)
             if not ts:
                 continue
 
-            max_load = np.max(ts.data.to_numpy())
             bus_region_membership = self.db.get_memberships(
                 region[0],
                 object_class=ClassEnum.Region,

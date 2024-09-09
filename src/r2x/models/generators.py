@@ -26,18 +26,18 @@ class Generator(Device):
 
     bus: Annotated[ACBus, Field(description="Bus where the generator is connected.")] | None = None
     rating: Annotated[
-        ApparentPower,
+        ApparentPower | None,
         Field(ge=0, description="Maximum output power rating of the unit (MVA)."),
-    ]
+    ] = None
     active_power: Annotated[
-        ActivePower | None,
+        ActivePower,
         Field(
             description=(
                 "Initial active power set point of the unit in MW. For power flow, this is the steady "
                 "state operating point of the system."
             ),
         ),
-    ] = None
+    ]
     operation_cost: (
         ThermalGenerationCost | RenewableGenerationCost | HydroGenerationCost | StorageCost | None
     ) = None
@@ -229,7 +229,7 @@ class HydroPumpedStorage(HydroGen):
     def example(cls) -> "HydroPumpedStorage":
         return HydroPumpedStorage(
             name="HydroPumpedStorage",
-            rating=ActivePower(100, "MW"),
+            active_power=ActivePower(100, "MW"),
             pump_load=ActivePower(100, "MW"),
             bus=ACBus.example(),
             prime_mover_type=PrimeMoversType.PS,
@@ -257,7 +257,7 @@ class ThermalStandard(ThermalGen):
             name="ThermalStandard",
             bus=ACBus.example(),
             fuel="gas",
-            rating=100.0 * ureg.MW,
+            active_power=100.0 * ureg.MW,
             ext={"Additional data": "Additional value"},
         )
 
