@@ -228,6 +228,7 @@ class SiennaExporter(BaseExporter):
             "prime_mover_type",
             "bus_id",
             "fuel",
+            # "base_power",
             "rating",
             "unit_type",
             "active_power",

@@ -540,6 +540,7 @@ class PlexosParser(PCMParser):
             required_fields = {
                 key: value for key, value in model_map.model_fields.items() if value.is_required()
             }
+            # breakpoint()
 
             property_records = generator_data[
                 [
@@ -556,7 +557,6 @@ class PlexosParser(PCMParser):
             mapped_records, multi_band_records = self._parse_property_data(property_records, generator_name)
             mapped_records["name"] = generator_name
 
-            # NOTE: Add logic to create Function data here
             # if multi_band_records:
             #     pass
 
@@ -571,7 +571,7 @@ class PlexosParser(PCMParser):
 
             # Pumped Storage generators are not required to have Max Capacity property
             if "active_power" not in mapped_records and "pump_load" in mapped_records:
-                mapped_records["active_power"] = mapped_records["pump_load"]
+                mapped_records["rating"] = mapped_records["pump_load"]
             # NOTE print which missing fields
             if not all(key in mapped_records for key in required_fields):
                 logger.warning(
@@ -586,6 +586,8 @@ class PlexosParser(PCMParser):
 
             mapped_records["fuel_price"] = fuel_prices.get(generator_fuel_map.get(generator_name), 0)
             mapped_records = self._construct_operating_costs(mapped_records, generator_name, model_map)
+
+            mapped_records["base_power"] = 1
 
             valid_fields, ext_data = self._field_filter(mapped_records, model_map.model_fields)
 
@@ -690,7 +692,7 @@ class PlexosParser(PCMParser):
             mapped_records["name"] = battery_name
 
             if "Max Power" in mapped_records:
-                mapped_records["active_power"] = mapped_records["Max Power"]
+                mapped_records["rating"] = mapped_records["Max Power"]
 
             if "Capacity" in mapped_records:
                 mapped_records["storage_capacity"] = mapped_records["Capacity"]
@@ -895,30 +897,6 @@ class PlexosParser(PCMParser):
         mapped_records = self._construct_value_curves(mapped_records, generator_name)
         hr_curve = mapped_records.get("hr_value_curve")
 
-        # match model_map:
-        #     case RenewableDispatch:
-        #         mapped_records["operation_cost"] = RenewableGenerationCost()
-        #     case RenewableNonDispatch():
-        #         mapped_records["operation_cost"] = RenewableGenerationCost()
-        #     case ThermalStandard():
-        #         if hr_curve:
-        #             fuel_cost = mapped_records["fuel_price"]
-        #             if isinstance(fuel_cost, SingleTimeSeries):
-        #                 fuel_cost = np.mean(fuel_cost.data)
-        #             elif isinstance(fuel_cost, Quantity):
-        #                 fuel_cost = fuel_cost.magnitude
-        #             fuel_curve = FuelCurve(value_curve=hr_curve, fuel_cost=fuel_cost)
-        #             mapped_records["operation_cost"] = ThermalGenerationCost(variable=fuel_curve)
-        #         else:
-        #             logger.warning("No heat rate curve found for generator={}", generator_name)
-        #     case HydroDispatch():
-        #         mapped_records["operation_cost"] = HydroGenerationCost()
-        #     case _:
-        #         logger.warning(
-        #             "Operating Cost not implemented for generator={} model map={}",
-        #               generator_name, model_map
-        #         )
-
         if issubclass(model_map, RenewableGen):
             mapped_records["operation_cost"] = RenewableGenerationCost()
         elif issubclass(model_map, ThermalGen):
@@ -995,55 +973,58 @@ class PlexosParser(PCMParser):
         self.scenarios = [scenario[0] for scenario in valid_scenarios]  # Flatten list of tuples
         return None
 
-    def _set_unit_availability(self, records):
+    def _set_unit_availability(self, mapped_records):
         """Set availability and active power limit TS for generators."""
-        availability = records.get("available", None)
+        availability = mapped_records.get("available", None)
         if availability is not None and availability > 0:
-            # Set availability, active_power, storage_capacity as multiplier of availability
-            if records.get("storage_capacity") is not None:
-                records["storage_capacity"] *= records.get("available")
-            records["active_power"] = records.get("active_power") * records.get("available")
-            records["available"] = 1
+            # breakpoint()
+            # Set availability, rating, storage_capacity as multiplier of availability/'units'
+            if mapped_records.get("storage_capacity") is not None:
+                mapped_records["storage_capacity"] *= mapped_records.get("available")
+            mapped_records["rating"] = mapped_records.get("rating") * mapped_records.get("available")
+            mapped_records["available"] = 1
 
             # Set active power limits
-            rating_factor = records.get("Rating Factor", 100)
+            rating_factor = mapped_records.get("Rating Factor", 100)
             rating_factor = self._apply_action(np.divide, rating_factor, 100)
-            rating = records.get("rating", None)
-            active_power = records.get("active_power", None)
-            min_energy_hour = records.get("Min Energy Hour", None)
+            rating = mapped_records.get("rating", None)
+            active_power = mapped_records.get("active_power", None)
+            min_energy_hour = mapped_records.get("Min Energy Hour", None)
 
             # Hack temporary until Hydro Max Monthly Rating is corrected
-            max_energy_month = records.get("Max Energy Month", None)
+            max_energy_month = mapped_records.get("Max Energy Month", None)
             if max_energy_month is not None:
-                rating = None
+                active_power = None
 
-            if rating is not None:
-                units = rating.units
-                val = rating_factor * rating.magnitude
-            elif active_power is not None:
+            if active_power is not None:
+                # Need to fix rating timeslice handler.
+                # to convert the timeslice strings to max active power series
                 units = active_power.units
-                val = self._apply_action(np.multiply, rating_factor, active_power.magnitude)
+                val = rating_factor * active_power.magnitude
+            elif rating is not None:
+                units = rating.units
+                val = self._apply_action(np.multiply, rating_factor, rating.magnitude)
             else:
-                return records
+                return mapped_records
             val = self._apply_unit(val, units)
 
             if min_energy_hour is not None:
-                records["min_active_power"] = records.pop("Min Energy Hour")
+                mapped_records["min_active_power"] = mapped_records.pop("Min Energy Hour")
 
             if isinstance(val, SingleTimeSeries):
                 val.variable_name = "max_active_power"
-                records["max_active_power"] = val
-                records["rating"] = active_power
+                mapped_records["max_active_power"] = val
+                mapped_records["active_power"] = rating
             else:
                 # Assume reactive power not modeled
-                records["active_power"] = val
-                records["rating"] = val
+                mapped_records["rating"] = val
+                mapped_records["active_power"] = val
 
             if isinstance(rating_factor, SingleTimeSeries):
-                records.pop("Rating Factor")
+                mapped_records.pop("Rating Factor")
         else:  # if unit field not activated in model, skip generator
-            records = None
-        return records
+            mapped_records = None
+        return mapped_records
 
     def _plexos_table_data(self) -> list[tuple]:
         # Get objects table/membership table
