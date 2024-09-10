@@ -76,7 +76,6 @@ class SiennaExporter(BaseExporter):
         self.process_storage_data()
         self.export_data()
         self.create_timeseries_pointers()
-        # self.create_extra_data_json()
         return self
 
     def process_bus_data(self, fname: str = "bus.csv") -> None:
@@ -435,39 +434,6 @@ class SiennaExporter(BaseExporter):
 
         logger.info("File timeseries_pointers.json created.")
         return
-
-    # def create_extra_data_json(self) -> None:
-    #     """Create extra_data.json file."""
-    #     extra_data = []
-    #     model_types = [
-    #         ACBranch,
-    #         Bus,
-    #         DCBranch,
-    #         Generator,
-    #         HydroPumpedStorage,
-    #         PowerLoad,
-    #         Reserve,
-    #         ReserveMap,
-    #         Storage,
-    #     ]
-    #     for model in model_types:
-    #         model_type_name = model.__name__
-    #         logger.debug(f"Processing {model_type_name}")
-    #         component_dict = {
-    #             component.name: {
-    #                 item: value.to_tuple() if isinstance(value, Quantity) else value
-    #                 for item, value in component.ext.items()
-    #                 if not isinstance(value, SingleTimeSeries)
-    #             }
-    #             for component in self.system.get_components(model)
-    #         }
-    #         extra_data.append({model_type_name: component_dict})
-
-    #     with open(os.path.join(self.output_folder, "extra_data.json"), mode="w") as f:
-    #         json.dump(extra_data, f)
-
-    #     logger.info("File extra_data.json created.")
-    #     return
 
     def export_data(self) -> None:
         """Export csv data to specified folder from output_data attribute."""
