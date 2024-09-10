@@ -901,6 +901,7 @@ class PlexosParser(PCMParser):
                     fuel_cost = fuel_cost.magnitude
                 fuel_curve = FuelCurve(value_curve=hr_curve, fuel_cost=fuel_cost)
                 mapped_records["operation_cost"] = ThermalGenerationCost(variable=fuel_curve)
+                mapped_records.pop("hr_value_curve")
             else:
                 logger.warning("No heat rate curve found for generator={}", generator_name)
         elif issubclass(model_map, HydroDispatch):
