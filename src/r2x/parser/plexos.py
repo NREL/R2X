@@ -47,7 +47,12 @@ from r2x.models import (
 from r2x.utils import validate_string
 
 from .handler import PCMParser
-from .parser_helpers import handle_leap_year_adjustment, fill_missing_timestamps, resample_data_to_hourly
+from .parser_helpers import (
+    handle_leap_year_adjustment,
+    fill_missing_timestamps,
+    resample_data_to_hourly,
+    filter_property_dates,
+)
 
 models = importlib.import_module("r2x.models")
 
@@ -100,6 +105,7 @@ DEFAULT_QUERY_COLUMNS_SCHEMA = {  # NOTE: Order matters
     "variable_tag": pl.String,
     "timeslice_tag": pl.String,
     "timeslice": pl.String,
+    "timeslice_value": pl.Float32,
 }
 COLUMNS = [
     "name",
@@ -194,6 +200,7 @@ class PlexosParser(PCMParser):
         return self.system
 
     def _collect_horizon_data(self, model_name: str) -> dict[str, float]:
+        """Collect horizon data (Date From/To) from Plexos database."""
         horizon_query = f"""
         SELECT
             atr.name AS attribute_name,
@@ -1037,12 +1044,15 @@ class PlexosParser(PCMParser):
                 "Check that the model name exists on the xml file."
             )
             raise ModelError(msg)
-        scenario_filter = pl.col("scenario").is_in(self.scenarios)
-        scenario_specific_data = self.plexos_data.filter(data_filter & scenario_filter)
 
         base_case_filter = pl.col("scenario").is_null()
+        scenario_filter = pl.col("scenario").is_in(self.scenarios)
+        scenario_specific_data = self.plexos_data.filter(data_filter & scenario_filter)
+        scenario_specific_data = filter_property_dates(scenario_specific_data, self.study_year)
+
         if scenario_specific_data.is_empty():
             system_data = self.plexos_data.filter(data_filter & base_case_filter)
+            system_data = filter_property_dates(system_data, self.study_year)
         else:
             # include both scenario specific and basecase data
             combined_key_base = pl.col("name") + "_" + pl.col("property_name")
@@ -1054,6 +1064,7 @@ class PlexosParser(PCMParser):
                 ~combined_key_base.is_in(combined_key_scenario) | pl.col("property_name").is_null()
             )
             base_case_data = self.plexos_data.filter(data_filter & base_case_filter)
+            base_case_data = filter_property_dates(base_case_data, self.study_year)
 
             system_data = pl.concat([scenario_specific_data, base_case_data])
 
@@ -1099,21 +1110,6 @@ class PlexosParser(PCMParser):
         variables_filtered = pl.DataFrame(results)
         system_data = system_data.join(
             variables_filtered, left_on="variable_tag", right_on="name", how="left"
-        )
-
-        # Convert date_from and date_to to datetime
-        system_data = system_data.with_columns(
-            [
-                pl.col("date_from").str.strptime(pl.Datetime, "%Y-%m-%dT%H:%M:%S").cast(pl.Date),
-                pl.col("date_to").str.strptime(pl.Datetime, "%Y-%m-%dT%H:%M:%S").cast(pl.Date),
-            ]
-        )
-
-        # Remove Property by study year & date_from/to
-        study_year_date = datetime(self.study_year, 1, 1)
-        system_data = system_data.filter(
-            ((pl.col("date_from").is_null()) | (pl.col("date_from") <= study_year_date))
-            & ((pl.col("date_to").is_null()) | (pl.col("date_to") >= study_year_date))
         )
         return system_data
 

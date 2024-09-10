@@ -4,6 +4,7 @@
 from loguru import logger
 import polars as pl
 import pandas as pd
+from datetime import datetime
 
 
 def pl_filter_year(df, year: int | None = None, year_columns=["t", "year"], **kwargs):
@@ -20,6 +21,26 @@ def pl_filter_year(df, year: int | None = None, year_columns=["t", "year"], **kw
         return KeyError(f"More than one column identified as year. {matching_names=}")
     logger.trace("Filtering data for year {}", year)
     return df.filter(pl.col(matching_names[0]) == year)
+
+
+def filter_property_dates(system_data: pl.DataFrame, study_year: int):
+    """filters query by date_from and date_to"""
+    # Remove Property by study year & date_from/to
+    study_year_date = datetime(study_year, 1, 1)
+    date_filter = ((pl.col("date_from").is_null()) | (pl.col("date_from") <= study_year_date)) & (
+        (pl.col("date_to").is_null()) | (pl.col("date_to") >= study_year_date)
+    )
+
+    # Convert date_from and date_to to datetime
+    system_data = system_data.with_columns(
+        [
+            pl.col("date_from").str.strptime(pl.Datetime, "%Y-%m-%dT%H:%M:%S").cast(pl.Date),
+            pl.col("date_to").str.strptime(pl.Datetime, "%Y-%m-%dT%H:%M:%S").cast(pl.Date),
+        ]
+    )
+
+    system_data = system_data.filter(date_filter)
+    return system_data
 
 
 def pl_lowercase(df: pl.DataFrame, **kwargs):
