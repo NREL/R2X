@@ -1294,7 +1294,6 @@ class PlexosParser(PCMParser):
             logger.debug("Weather year doesn't exist in {}. Skipping it.", property_name)
             return
 
-        # assert not data_file.is_empty()
         # Format to SingleTimeSeries
         if data_file.columns == output_columns:
             resolution = timedelta(hours=1)
@@ -1406,9 +1405,7 @@ class PlexosParser(PCMParser):
             return self._apply_unit(variable, unit)
 
         if data_file is not None:
-            if timeslice_value is not None or timeslice_value == -1:
-                return self._apply_unit(data_file, unit)
-            if timeslice_value is not None:
+            if timeslice_value is not None and timeslice_value != -1:
                 return self._apply_unit(self._apply_action(action, data_file, timeslice_value), unit)
             return self._apply_unit(data_file, unit)
 
@@ -1416,24 +1413,6 @@ class PlexosParser(PCMParser):
             return self._apply_unit(timeslice_value, unit)
 
         return self._apply_unit(prop_value, unit)
-
-        # if variable is not None and record.get("action") == "=":
-        #     return self._apply_unit(variable, unit)
-        # if variable is not None and data_file is not None:
-        #     return self._apply_unit(self._apply_action(action, variable, data_file), unit)
-        # if variable is not None and prop_value is not None:
-        #     return self._apply_unit(self._apply_action(action, variable, prop_value), unit)
-        # elif variable is not None:
-        #     return self._apply_unit(variable, unit)
-        # if data_file is not None and (timeslice_value is not None or timeslice_value == -1):
-        #     return self._apply_unit(data_file, unit)
-        # elif data_file is not None and timeslice_value is not None:
-        #     return self._apply_unit(self._apply_action(action, data_file, timeslice_value), unit)
-        # elif data_file is not None:
-        #     return self._apply_unit(data_file, unit)
-        # elif timeslice_value is not None and timeslice_value != -1:
-        #     return self._apply_unit(timeslice_value, unit)
-        # return self._apply_unit(prop_value, unit)
 
     def _parse_property_data(self, record_data, record_name):
         mapped_properties = {}
@@ -1455,12 +1434,11 @@ class PlexosParser(PCMParser):
                 except UndefinedUnitError:
                     unit = None
 
-            value = self._get_value(
-                prop_value, unit, record, record_name
-            )  # need to modify to include timeslice logic
+            value = self._get_value(prop_value, unit, record, record_name)
             if value is None:
                 logger.warning("Property {} missing record {} data. Skipping it.", prop_name, record)
                 continue
+
             # logger.debug("record name : {}", record_name)
             # logger.debug("Property: {} Value: {}", mapped_property_name, value)
 
