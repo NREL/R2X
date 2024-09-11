@@ -1000,11 +1000,6 @@ class PlexosParser(PCMParser):
             max_active_power = mapped_records.get("max_active_power", None)
             min_energy_hour = mapped_records.get("Min Energy Hour", None)
 
-            # Hack temporary until Hydro Max Monthly Rating is corrected
-            # max_energy_month = mapped_records.get("Max Energy Month", None)
-            # if max_energy_month is not None:
-            #     breakpoint()
-
             if isinstance(max_active_power, dict):
                 max_active_power = self._time_slice_handler("max_active_power", max_active_power)
 
@@ -1385,7 +1380,6 @@ class PlexosParser(PCMParser):
             self._csv_file_handler(record_name, record.get("data_file")) if record.get("data_file") else None
         )
         if data_file is None and record.get("data_file"):
-            logger.warning("Assigned datafile is missing data. Skipping property.")
             return None
 
         variable = (
@@ -1445,11 +1439,8 @@ class PlexosParser(PCMParser):
 
             value = self._get_value(prop_value, unit, record, record_name)
             if value is None:
-                logger.warning("Property {} missing record {} data. Skipping it.", prop_name, record)
+                logger.warning("Property {} missing record data for {}. Skipping it.", prop_name, record_name)
                 continue
-
-            # logger.debug("record name : {}", record_name)
-            # logger.debug("Property: {} Value: {}", mapped_property_name, value)
 
             if timeslice is not None:
                 # Timeslice Properties
@@ -1477,13 +1468,11 @@ class PlexosParser(PCMParser):
                         property_counts[mapped_property_name].add(band)
                         multi_band_properties.add(mapped_property_name)
                     else:
-                        # If it's the same property and band, update the value
-                        logger.debug(
-                            "Property {} has multiple values specified. Using the last one.",
+                        logger.warning(
+                            "Property {} for {} has multiple values specified. Using the last one.",
                             mapped_property_name,
+                            record_name,
                         )
-                        # breakpoint()
-                        value = self._get_value(prop_value, unit, record, record_name)
                         mapped_properties[mapped_property_name] = value
         return mapped_properties, multi_band_properties
 
