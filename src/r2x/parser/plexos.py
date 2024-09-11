@@ -277,6 +277,8 @@ class PlexosParser(PCMParser):
                     "variable",
                     "action",
                     "variable_tag",
+                    "timeslice",
+                    "timeslice_value",
                 ]
             ].to_dicts()
 
@@ -551,6 +553,8 @@ class PlexosParser(PCMParser):
                     "variable",
                     "action",
                     "variable_tag",
+                    "timeslice",
+                    "timeslice_value",
                 ]
             ].to_dicts()
             mapped_records, multi_band_records = self._parse_property_data(property_records, generator_name)
@@ -684,10 +688,11 @@ class PlexosParser(PCMParser):
                     "variable",
                     "action",
                     "variable_tag",
+                    "timeslice",
+                    "timeslice_value",
                 ]
             ].to_dicts()
 
-            # logger.debug("Parsing battery = {}", battery_name)
             mapped_records, _ = self._parse_property_data(property_records, battery_name)
             mapped_records["name"] = battery_name
 
@@ -1389,6 +1394,7 @@ class PlexosParser(PCMParser):
 
         for record in record_data:
             band = record["band"]
+            timeslice = record["timeslice"]
             prop_name = record["property_name"]
             prop_value = record["property_value"]
             unit = record["property_unit"].replace("$", "usd")
@@ -1400,19 +1406,30 @@ class PlexosParser(PCMParser):
                     unit = ureg[unit]
                 except UndefinedUnitError:
                     unit = None
-            if prop_name not in property_counts:
-                value = self._get_value(prop_value, unit, record, record_name)
+            value = self._get_value(prop_value, unit, record, record_name)
+
+            # if record_name == "Hoover Dam (NV)":
+            #     logger.debug("property name: {}", prop_name)
+            #     breakpoint()
+            if mapped_property_name not in property_counts:
+                # First time reading property
                 mapped_properties[mapped_property_name] = value
                 property_counts[mapped_property_name] = {band}
+                property_counts[mapped_property_name].add(timeslice)
             else:
+                # Multi-band or Timeslice properties
                 if band not in property_counts[mapped_property_name]:
                     new_prop_name = f"{mapped_property_name}_{band}"
-                    value = self._get_value(prop_value, unit, record, record_name)
                     mapped_properties[new_prop_name] = value
                     property_counts[mapped_property_name].add(band)
                     multi_band_properties.add(mapped_property_name)
-                    # If it's the same property and band, update the value
+                elif timeslice not in property_counts[mapped_property_name]:
+                    new_prop_name = f"{mapped_property_name}_{timeslice}"
+                    mapped_properties[new_prop_name] = value
+                    property_counts[mapped_property_name].add(timeslice)
+                    multi_band_properties.add(mapped_property_name)
                 else:
+                    # If it's the same property and band, update the value
                     value = self._get_value(prop_value, unit, record, record_name)
                     mapped_properties[mapped_property_name] = value
         return mapped_properties, multi_band_properties
