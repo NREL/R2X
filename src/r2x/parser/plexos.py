@@ -540,9 +540,6 @@ class PlexosParser(PCMParser):
                 continue
             fuel_type, pm_type = fuel_pmtype["fuel"], fuel_pmtype["type"]
             model_map = getattr(R2X_MODELS, model_map)
-            required_fields = {
-                key: value for key, value in model_map.model_fields.items() if value.is_required()
-            }
 
             property_records = generator_data[
                 [
@@ -582,10 +579,13 @@ class PlexosParser(PCMParser):
                 # When unit availability is not set, we skip the generator
                 continue
 
-            # NOTE print which missing fields
+            required_fields = {
+                key: value for key, value in model_map.model_fields.items() if value.is_required()
+            }
             if not all(key in mapped_records for key in required_fields):
+                missing_fields = [key for key in required_fields if key not in mapped_records]
                 logger.warning(
-                    "Skipping Generator {} since it does not have all the required fields", generator_name
+                    "Skipping Generator {}. Missing Required Fields: {}", generator_name, missing_fields
                 )
                 continue
 
@@ -673,9 +673,7 @@ class PlexosParser(PCMParser):
             (pl.col("child_class_name") == ClassEnum.Battery.name)
             & (pl.col("parent_class_name") == ClassEnum.System.name)
         )
-        required_fields = {
-            key: value for key, value in GenericBattery.model_fields.items() if value.is_required()
-        }
+
         for battery_name, battery_data in system_batteries.group_by("name"):
             battery_name = battery_name[0]
             logger.trace("Parsing battery = {}", battery_name)
@@ -711,9 +709,13 @@ class PlexosParser(PCMParser):
             if valid_fields is None:
                 continue
 
-            if not all(key in valid_fields for key in required_fields):
+            required_fields = {
+                key: value for key, value in GenericBattery.model_fields.items() if value.is_required()
+            }
+            if not all(key in mapped_records for key in required_fields):
+                missing_fields = [key for key in required_fields if key not in mapped_records]
                 logger.warning(
-                    "Skipping battery {} since it does not have all the required fields", battery_name
+                    "Skipping battery {}. Missing required fields: {}", battery_name, missing_fields
                 )
                 continue
 
@@ -820,13 +822,16 @@ class PlexosParser(PCMParser):
                 valid_fields["ext"] = ext_data
 
             # Check that the interface has all the required fields of the model.
-            if not all(
-                k in valid_fields for k, field in default_model.model_fields.items() if field.is_required()
-            ):
+            required_fields = {
+                key: value for key, value in default_model.model_fields.items() if value.is_required()
+            }
+            if not all(key in mapped_interface for key in required_fields):
+                missing_fields = [key for key in required_fields if key not in mapped_interface]
                 logger.warning(
-                    "{}:{} does not have all the required fields. Skipping it.",
+                    "{}:{} missing required fields: {}. Skipping it.",
                     default_model.__name__,
                     interface["name"],
+                    missing_fields,
                 )
                 continue
 
