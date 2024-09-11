@@ -1075,7 +1075,16 @@ class PlexosParser(PCMParser):
 
             system_data = pl.concat([scenario_specific_data, base_case_data])
 
-        # get system variables
+        # If date_from / date_to is specified, override the base_case_value
+        rows_to_keep = system_data.filter(pl.col("date_from").is_not_null() | pl.col("date_to").is_not_null())
+        rtk_key = rows_to_keep["name"] + "_" + rows_to_keep["property_name"]
+        sys_data_key = system_data["name"] + "_" + system_data["property_name"]
+        if not rows_to_keep.is_empty():
+            # remove if name and property_name are the same
+            system_data = system_data.filter(~sys_data_key.is_in(rtk_key))
+            system_data = pl.concat([system_data, rows_to_keep])
+
+        # Get System Variables
         variable_filter = (
             (pl.col("child_class_name") == ClassEnum.Variable.name)
             & (pl.col("parent_class_name") == ClassEnum.System.name)
@@ -1089,7 +1098,7 @@ class PlexosParser(PCMParser):
             variable_base_data = self.plexos_data.filter(variable_filter & base_case_filter)
         variable_data = pl.concat([variable_scenario_data, variable_base_data])
 
-        # Filter Variables
+        # Filter and Join Variables
         results = []
         grouped = variable_data.group_by("name")
         for group_name, group_df in grouped:
