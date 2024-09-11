@@ -6,6 +6,7 @@ from importlib.resources import files
 from pathlib import Path, PureWindowsPath
 from argparse import ArgumentParser
 import pandas as pd
+import re
 
 from pint import UndefinedUnitError, Quantity
 import polars as pl
@@ -1000,15 +1001,16 @@ class PlexosParser(PCMParser):
             min_energy_hour = mapped_records.get("Min Energy Hour", None)
 
             # Hack temporary until Hydro Max Monthly Rating is corrected
-            max_energy_month = mapped_records.get("Max Energy Month", None)
-            if max_energy_month is not None:
-                max_active_power = None
+            # max_energy_month = mapped_records.get("Max Energy Month", None)
+            # if max_energy_month is not None:
+            #     breakpoint()
+
+            if isinstance(max_active_power, dict):
+                max_active_power = self._time_slice_handler("max_active_power", max_active_power)
 
             if max_active_power is not None:
-                # Need to fix rating timeslice handler.
-                # to convert the timeslice strings to max active power series
                 units = max_active_power.units
-                val = rating_factor * max_active_power.magnitude
+                val = self._apply_action(np.multiply, rating_factor, max_active_power)
             elif rating is not None:
                 units = rating.units
                 val = self._apply_action(np.multiply, rating_factor, rating.magnitude)
@@ -1310,7 +1312,7 @@ class PlexosParser(PCMParser):
         return
 
     def _time_slice_handler(self, property_name, property_data):
-        # Deconstruct pattern
+        """Deconstructs dict of timeslices into SingleTimeSeries objects."""
         resolution = timedelta(hours=1)
         initial_time = datetime(self.study_year, 1, 1)
         date_time_array = np.arange(
@@ -1319,21 +1321,33 @@ class PlexosParser(PCMParser):
             dtype="datetime64[h]",
         )  # Removing 1 day to match ReEDS convention and converting into a vector
         months = np.array([dt.astype("datetime64[M]").astype(int) % 12 + 1 for dt in date_time_array])
-
         month_datetime_series = np.zeros(len(date_time_array), dtype=float)
-        if not len(property_data) == 12:
-            logger.warning("Partial time slices is not yet supported for {}", property_name)
-            return
 
-        property_records = property_data[["text", "property_value"]].to_dicts()
-        variable_name = property_name  # Change with property mapping
-        for record in property_records:
-            month = int(record["text"].strip("M"))
-            month_indices = np.where(months == month)
-            month_datetime_series[month_indices] = record["property_value"]
+        # Helper function to parse the key patterns
+        def parse_key(key):
+            # Split by semicolons for multiple ranges
+            ranges = key.split(";")
+            month_list = []
+            for rng in ranges:
+                # Match ranges like 'M5-10' and single months like 'M1'
+                match = re.match(r"M(\d+)(?:-(\d+))?", rng)
+                if match:
+                    start_month = int(match.group(1))
+                    end_month = int(match.group(2)) if match.group(2) else start_month
+                    # Generate the list of months from the range
+                    month_list.extend(range(start_month, end_month + 1))
+            return month_list
+
+        # Fill the month_datetime_series with the property data values
+        for key, value in property_data.items():
+            months_in_key = parse_key(key)
+            # Set the value in the array for the corresponding months
+            for month in months_in_key:
+                month_datetime_series[months == month] = value.magnitude
+
         return SingleTimeSeries.from_array(
             month_datetime_series,
-            variable_name,
+            property_name,
             initial_time=initial_time,
             resolution=resolution,
         )
@@ -1358,34 +1372,68 @@ class PlexosParser(PCMParser):
         return results
 
     def _get_value(self, prop_value, unit, record, record_name):
-        data_file = variable = action = None
-        if record.get("data_file"):
-            data_file = self._csv_file_handler(record_name, record.get("data_file"))
-        if record.get("variable"):
-            variable = self._csv_file_handler(record.get("variable_tag"), record.get("variable"))
-            if variable is None:
-                variable = self._csv_file_handler(record_name, record.get("variable"))
+        """Parse Property value from record csv, timeslice, and datafiles."""
+        data_file = (
+            self._csv_file_handler(record_name, record.get("data_file")) if record.get("data_file") else None
+        )
+        if data_file is None and record.get("data_file"):
+            logger.warning("Assigned datafile is missing data. Skipping property.")
+            return None
 
-        if record.get("action"):
-            actions = {
-                "×": np.multiply,  # noqa
-                "+": np.add,
-                "-": np.subtract,
-                "/": np.divide,
-                "=": lambda x, y: y,
-            }
-            action = actions[record.get("action")]
-        if variable is not None and record.get("action") == "=":
+        variable = (
+            self._csv_file_handler(record.get("variable_tag"), record.get("variable"))
+            if record.get("variable")
+            else None
+        )
+
+        actions = {
+            "×": np.multiply,  # noqa
+            "+": np.add,
+            "-": np.subtract,
+            "/": np.divide,
+            "=": lambda x, y: y,
+        }
+        action = actions[record.get("action")] if record.get("action") else None
+        timeslice_value = record.get("timeslice_value")
+
+        if variable is not None:
+            if record.get("action") == "=":
+                return self._apply_unit(variable, unit)
+            if data_file is not None:
+                return self._apply_unit(self._apply_action(action, variable, data_file), unit)
+            if prop_value is not None:
+                return self._apply_unit(self._apply_action(action, variable, prop_value), unit)
             return self._apply_unit(variable, unit)
-        if variable is not None and data_file is not None:
-            return self._apply_unit(self._apply_action(action, variable, data_file), unit)
-        if variable is not None and prop_value is not None:
-            return self._apply_unit(self._apply_action(action, variable, prop_value), unit)
-        elif variable is not None:
-            return self._apply_unit(variable, unit)
-        elif data_file is not None:
+
+        if data_file is not None:
+            if timeslice_value is not None or timeslice_value == -1:
+                return self._apply_unit(data_file, unit)
+            if timeslice_value is not None:
+                return self._apply_unit(self._apply_action(action, data_file, timeslice_value), unit)
             return self._apply_unit(data_file, unit)
+
+        if timeslice_value is not None and timeslice_value != -1:
+            return self._apply_unit(timeslice_value, unit)
+
         return self._apply_unit(prop_value, unit)
+
+        # if variable is not None and record.get("action") == "=":
+        #     return self._apply_unit(variable, unit)
+        # if variable is not None and data_file is not None:
+        #     return self._apply_unit(self._apply_action(action, variable, data_file), unit)
+        # if variable is not None and prop_value is not None:
+        #     return self._apply_unit(self._apply_action(action, variable, prop_value), unit)
+        # elif variable is not None:
+        #     return self._apply_unit(variable, unit)
+        # if data_file is not None and (timeslice_value is not None or timeslice_value == -1):
+        #     return self._apply_unit(data_file, unit)
+        # elif data_file is not None and timeslice_value is not None:
+        #     return self._apply_unit(self._apply_action(action, data_file, timeslice_value), unit)
+        # elif data_file is not None:
+        #     return self._apply_unit(data_file, unit)
+        # elif timeslice_value is not None and timeslice_value != -1:
+        #     return self._apply_unit(timeslice_value, unit)
+        # return self._apply_unit(prop_value, unit)
 
     def _parse_property_data(self, record_data, record_name):
         mapped_properties = {}
@@ -1406,32 +1454,50 @@ class PlexosParser(PCMParser):
                     unit = ureg[unit]
                 except UndefinedUnitError:
                     unit = None
-            value = self._get_value(prop_value, unit, record, record_name)
 
-            # if record_name == "Hoover Dam (NV)":
-            #     logger.debug("property name: {}", prop_name)
-            #     breakpoint()
-            if mapped_property_name not in property_counts:
-                # First time reading property
-                mapped_properties[mapped_property_name] = value
-                property_counts[mapped_property_name] = {band}
-                property_counts[mapped_property_name].add(timeslice)
-            else:
-                # Multi-band or Timeslice properties
-                if band not in property_counts[mapped_property_name]:
-                    new_prop_name = f"{mapped_property_name}_{band}"
-                    mapped_properties[new_prop_name] = value
-                    property_counts[mapped_property_name].add(band)
-                    multi_band_properties.add(mapped_property_name)
+            value = self._get_value(
+                prop_value, unit, record, record_name
+            )  # need to modify to include timeslice logic
+            if value is None:
+                logger.warning("Property {} missing record {} data. Skipping it.", prop_name, record)
+                continue
+            # logger.debug("record name : {}", record_name)
+            # logger.debug("Property: {} Value: {}", mapped_property_name, value)
+
+            if timeslice is not None:
+                # Timeslice Properties
+                if mapped_property_name not in property_counts:
+                    # First Time reading timeslice
+                    nested_dict = {}
+                    nested_dict[timeslice] = value
+                    mapped_properties[mapped_property_name] = nested_dict
+                    property_counts[mapped_property_name] = {timeslice}
                 elif timeslice not in property_counts[mapped_property_name]:
-                    new_prop_name = f"{mapped_property_name}_{timeslice}"
-                    mapped_properties[new_prop_name] = value
+                    mapped_properties[mapped_property_name][timeslice] = value
                     property_counts[mapped_property_name].add(timeslice)
                     multi_band_properties.add(mapped_property_name)
-                else:
-                    # If it's the same property and band, update the value
-                    value = self._get_value(prop_value, unit, record, record_name)
+            else:
+                # Standard Properties
+                if mapped_property_name not in property_counts:
+                    # First time reading basic property
                     mapped_properties[mapped_property_name] = value
+                    property_counts[mapped_property_name] = {band}
+                else:
+                    # Multi-band properties
+                    if band not in property_counts[mapped_property_name]:
+                        new_prop_name = f"{mapped_property_name}_{band}"
+                        mapped_properties[new_prop_name] = value
+                        property_counts[mapped_property_name].add(band)
+                        multi_band_properties.add(mapped_property_name)
+                    else:
+                        # If it's the same property and band, update the value
+                        logger.debug(
+                            "Property {} has multiple values specified. Using the last one.",
+                            mapped_property_name,
+                        )
+                        # breakpoint()
+                        value = self._get_value(prop_value, unit, record, record_name)
+                        mapped_properties[mapped_property_name] = value
         return mapped_properties, multi_band_properties
 
 
