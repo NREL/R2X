@@ -21,7 +21,7 @@ from r2x.models.costs import ThermalGenerationCost
 from r2x.units import Energy, Percentage, Time, ureg
 
 
-def ieee5bus_system() -> System:
+def ieee5bus() -> System:
     """Return an instance of the IEE 5-bus system."""
     system = System(name="IEEE 5-bus System", auto_add_composed_components=True)
 

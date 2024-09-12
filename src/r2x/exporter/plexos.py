@@ -114,11 +114,11 @@ class PlexosExporter(BaseExporter):
                 time_series_property["Load Subtracter"] = "0"
             case Reserve():
                 match component.reserve_type:
-                    case ReserveType.Spinning:
+                    case ReserveType.SPINNING:
                         time_series_property["Min Provision"] = "0"
-                    case ReserveType.Flexibility:
+                    case ReserveType.FLEXIBILITY:
                         time_series_property["Min Provision"] = "0"
-                    case ReserveType.Regulation:
+                    case ReserveType.REGULATION:
                         time_series_property["Static Risk"] = "0"
                     case _:
                         raise NotImplementedError(f"Reserve {component.type} not supported")

@@ -1,33 +1,24 @@
-"""R2X enums."""
+"""Definition of enums used on R2X.
 
-from enum import Enum, auto
+In R2X most of the enums are `StrEnums` to be able to export it to csv easier.
+"""
 
-
-class StrEnum(Enum):
-    """Class to allow printing of Enums.
-
-    NOTE: This class could be deprecated once most people migrate to
-    python3.11. For the mean time, we are going to maintain this for backwards
-    compatibility.
-    """
-
-    def __str__(self) -> str:
-        return str(self.value)
+from enum import StrEnum
 
 
 class ReserveType(StrEnum):
     """Class representing different types of Reserves."""
 
-    Spinning = auto()
-    Flexibility = auto()
-    Regulation = auto()
+    SPINNING = "SPINNING"
+    FLEXIBILITY = "FLEXIBILITY"
+    REGULATION = "REGULATION"
 
 
 class ReserveDirection(StrEnum):
     """Class representing different Reserve Direction."""
 
-    Up = auto()
-    Down = auto()
+    UP = "UP"
+    DOWN = "DOWN"
 
 
 class ACBusTypes(StrEnum):
@@ -37,6 +28,8 @@ class ACBusTypes(StrEnum):
     """
 
     PV = "PV"
+    PQ = "PQ"
+    REF = "REF"
 
 
 class PrimeMoversType(StrEnum):
@@ -48,7 +41,7 @@ class PrimeMoversType(StrEnum):
     CC = "CC"
     CE = "CE"
     CP = "CP"
-    CS = "CS"
+    CS = "CSV"
     CT = "CT"
     ES = "ES"
     FC = "FC"
@@ -66,3 +59,22 @@ class PrimeMoversType(StrEnum):
     WT = "WT"
     WS = "WS"
     RTPV = "RTPV"
+
+
+class ThermalFuels(StrEnum):
+    """Thermal fuels that reflect options in the EIA annual energy review."""
+
+    COAL = "COAL"
+    WASTE_COAL = "WASTE_COAL"
+    DISTILLATE_FUEL_OIL = "DISTILLATE_FUEL_OIL"
+    WASTE_OIL = "WASTE_OIL"
+    PETROLEUM_COKE = "PETROLEUM_COKE"
+    RESIDUAL_FUEL_OIL = "RESIDUAL_FUEL_OIL"
+    NATURAL_GAS = "NATURAL_GAS"
+    OTHER_GAS = "OTHER_GAS"
+    NUCLEAR = "NUCLEAR"
+    AG_BIOPRODUCT = "AG_BIOPRODUCT"
+    MUNICIPAL_WASTE = "MUNICIPAL_WASTE"
+    WOOD_WASTE = "WOOD_WASTE"
+    GEOTHERMAL = "GEOTHERMAL"
+    OTHER = "OTHER"

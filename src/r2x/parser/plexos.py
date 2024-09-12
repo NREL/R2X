@@ -43,7 +43,6 @@ from r2x.models import (
     RenewableGen,
     ThermalGen,
     HydroDispatch,
-    HydroPumpedStorage,
 )
 from r2x.utils import validate_string
 
@@ -159,6 +158,7 @@ class PlexosParser(PCMParser):
 
         # Extract scenario data
         model_name = getattr(self.config, "model", None)
+        logger.debug("Parsing plexos model={}", model_name)
         if model_name is None:
             model_name = self._select_model_name()
         self._process_scenarios(model_name=model_name)
@@ -167,9 +167,14 @@ class PlexosParser(PCMParser):
         date_from = self._collect_horizon_data(model_name=model_name).get("Date From")
         if date_from is not None:
             self.study_year: int = int((date_from / 365.25) + 1900)
+            self.config.weather_year = self.study_year
         else:
             if self.config.weather_year is None:
-                raise ValueError("weather_year cannot be None")
+                msg = (
+                    "Weather year can not be None if the model does not provide a year."
+                    "Check for correct model name"
+                )
+                raise ValueError(msg)
             self.study_year = self.config.weather_year
 
     def build_system(self) -> System:
@@ -506,7 +511,8 @@ class PlexosParser(PCMParser):
         )
 
         system_generators = self._get_model_data(system_generators)
-        system_generators.write_csv("generators.csv")
+        if getattr(self.config.feature_flags, "plexos-csv", None):
+            system_generators.write_csv("generators.csv")
         # NOTE: The best way to identify the type of generator on Plexos is by reading the fuel
         fuel_query = f"""
         SELECT
@@ -566,9 +572,9 @@ class PlexosParser(PCMParser):
             mapped_records["prime_mover_type"] = PrimeMoversType[mapped_records["prime_mover_type"]]
             mapped_records["fuel"] = fuel_type or self.config.prime_mover_map["default"].get("fuel")
 
-            match model_map:
-                case HydroPumpedStorage():
-                    mapped_records["prime_mover_type"] = PrimeMoversType.PS
+            # match model_map:
+            #     case HydroPumpedStorage():
+            #         mapped_records["prime_mover_type"] = PrimeMoversType.PS
 
             # Pumped Storage generators are not required to have Max Capacity property
             if "max_active_power" not in mapped_records and "pump_load" in mapped_records:
@@ -963,15 +969,15 @@ class PlexosParser(PCMParser):
             raise ModelError(msg)
         # self.db = PlexosSQLite(xml_fname=xml_fpath)
 
-        logger.debug("Getting object_id for model={}", model_name)
+        logger.trace("Getting object_id for model={}", model_name)
         model_id = self.db.query("select object_id from t_object where name = ?", params=(model_name,))
         if len(model_id) > 1:
             msg = f"Multiple models with the same {model_name} returned. Check database or spelling."
+            logger.debug(model_id)
             raise ModelError(msg)
-
         if not model_id:
-            logger.warning("Model {} not found on the system.", model_name)
-            return
+            msg = f"Model `{model_name}` not found on the XML. Check spelling of the `model_name`."
+            raise ParserError(msg)
         self.model_id = model_id[0][0]  # Unpacking tuple [(model_id,)]
 
         # NOTE: When doing performance updates this query could get some love.
@@ -981,6 +987,10 @@ class PlexosParser(PCMParser):
             "left join t_class as cls on cls.class_id = obj.class_id "
             f"where mem.parent_object_id = {self.model_id} and cls.name = '{ClassEnum.Scenario}'"
         )
+        if not valid_scenarios:
+            msg = f"{model_name=} does not have any scenario attached to it."
+            logger.warning(msg)
+            return
         assert valid_scenarios
         self.scenarios = [scenario[0] for scenario in valid_scenarios]  # Flatten list of tuples
         return None
@@ -1045,19 +1055,16 @@ class PlexosParser(PCMParser):
 
     def _get_model_data(self, data_filter) -> pl.DataFrame:
         """Filter plexos data for a given class and all scenarios in a model."""
-        if not getattr(self, "scenarios", None):
-            msg = (
-                "Function `._get_model_data` does not work without any valid scenarios. "
-                "Check that the model name exists on the xml file."
-            )
-            raise ModelError(msg)
+        scenario_specific_data = None
+        scenario_filter = None
+        if getattr(self, "scenarios", None):
+            scenario_filter = pl.col("scenario").is_in(self.scenarios)
+            scenario_specific_data = self.plexos_data.filter(data_filter & scenario_filter)
+            scenario_specific_data = filter_property_dates(scenario_specific_data, self.study_year)
 
         base_case_filter = pl.col("scenario").is_null()
-        scenario_filter = pl.col("scenario").is_in(self.scenarios)
-        scenario_specific_data = self.plexos_data.filter(data_filter & scenario_filter)
-        scenario_specific_data = filter_property_dates(scenario_specific_data, self.study_year)
-
-        if scenario_specific_data.is_empty():
+        # Default is to parse data normally if there is not scenario. If scenario exist modify the filter.
+        if scenario_specific_data is None:
             system_data = self.plexos_data.filter(data_filter & base_case_filter)
             system_data = filter_property_dates(system_data, self.study_year)
         else:
@@ -1085,45 +1092,62 @@ class PlexosParser(PCMParser):
             system_data = pl.concat([system_data, rows_to_keep])
 
         # Get System Variables
+        variable_data = None
         variable_filter = (
             (pl.col("child_class_name") == ClassEnum.Variable.name)
             & (pl.col("parent_class_name") == ClassEnum.System.name)
             & (pl.col("data_file").is_not_null())
         )
-        variable_scenario_data = self.plexos_data.filter(variable_filter & scenario_filter)
+        variable_scenario_data = None
+        if scenario_specific_data is not None and scenario_filter is not None:
+            variable_scenario_data = self.plexos_data.filter(variable_filter & scenario_filter)
 
-        if variable_scenario_data.is_empty():
+        if variable_scenario_data is not None:
             variable_base_data = self.plexos_data.filter(variable_filter & pl.col("scenario").is_null())
         else:
             variable_base_data = self.plexos_data.filter(variable_filter & base_case_filter)
-        variable_data = pl.concat([variable_scenario_data, variable_base_data])
+        if variable_base_data is not None and variable_scenario_data is not None:
+            variable_data = pl.concat([variable_scenario_data, variable_base_data])
 
-        # Filter and Join Variables
-        results = []
-        grouped = variable_data.group_by("name")
-        for group_name, group_df in grouped:
-            if group_df.height > 1:
-                # Check if any scenario_name exists
-                scenario_exists = group_df.filter(pl.col("scenario").is_not_null())
+        return self._join_variable_data(system_data, variable_data)
 
-                if scenario_exists.height > 0:
-                    # Select the first row with a scenario_name
-                    selected_row = scenario_exists[0]
+    def _join_variable_data(self, system_data, variable_data):
+        """Join system data with variable data."""
+        # Filter Variables
+        if variable_data is not None:
+            results = []
+            grouped = variable_data.group_by("name")
+            for group_name, group_df in grouped:
+                if group_df.height > 1:
+                    # Check if any scenario_name exists
+                    scenario_exists = group_df.filter(pl.col("scenario").is_not_null())
+
+                    if scenario_exists.height > 0:
+                        # Select the first row with a scenario_name
+                        selected_row = scenario_exists[0]
+                    else:
+                        # If no scenario_name, select the row with the lowest band_id
+                        selected_row = group_df.sort("band").head(1)[0]
                 else:
-                    # If no scenario_name, select the row with the lowest band_id
-                    selected_row = group_df.sort("band").head(1)[0]
-            else:
-                # If the group has only one row, select that row
-                selected_row = group_df[0]
+                    # If the group has only one row, select that row
+                    selected_row = group_df[0]
 
-            results.append(
-                {
-                    "name": group_name[0],
-                    "variable_name": selected_row["data_file_tag"][0],
-                    "variable": selected_row["data_file"][0],
-                }
+                results.append(
+                    {
+                        "name": group_name[0],
+                        "variable_name": selected_row["data_file_tag"][0],
+                        "variable": selected_row["data_file"][0],
+                    }
+                )
+            variables_filtered = pl.DataFrame(results)
+            system_data = system_data.join(
+                variables_filtered, left_on="variable_tag", right_on="name", how="left"
             )
-        variables_filtered = pl.DataFrame(results)
+        else:
+            # NOTE: We might want to include this at the instead of each function call
+            system_data = system_data.with_columns(
+                pl.lit(None).alias("variable"), pl.lit(None).alias("variable_name")
+            )
         system_data = system_data.join(
             variables_filtered, left_on="variable_tag", right_on="name", how="left"
         )
