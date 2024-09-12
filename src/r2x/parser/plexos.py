@@ -1000,6 +1000,9 @@ class PlexosParser(PCMParser):
         Set availability and active power limit TS for generators.
         Note: variables use infrasys naming scheme, rating != plexos rating.
         """
+        # TODO @ktehranchi: #35 Include date_from and date_to in the availability
+        # https://github.com/NREL/R2X/issues/35
+
         availability = mapped_records.get("available", None)
         if availability is not None and availability > 0:
             # Set availability, rating, storage_capacity as multiplier of availability/'units'
