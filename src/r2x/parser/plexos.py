@@ -53,6 +53,7 @@ from .parser_helpers import (
     resample_data_to_hourly,
     filter_property_dates,
     field_filter,
+    prepare_ext_field,
 )
 
 models = importlib.import_module("r2x.models")
@@ -318,6 +319,7 @@ class PlexosParser(PCMParser):
         )
         for region in region_pivot.iter_rows(named=True):
             valid_fields, ext_data = field_filter(region, default_model.model_fields)
+            valid_fields = prepare_ext_field(valid_fields, ext_data)
             self.system.add_component(default_model(**valid_fields))
         return
 
@@ -353,6 +355,8 @@ class PlexosParser(PCMParser):
             valid_fields["base_voltage"] = (
                 230.0 if not valid_fields.get("base_voltage") else valid_fields["base_voltage"]
             )
+
+            valid_fields = prepare_ext_field(valid_fields, ext_data)
             self.system.add_component(default_model(number=idx + 1, **valid_fields))
         return
 
@@ -371,15 +375,8 @@ class PlexosParser(PCMParser):
         )
         for reserve in reserve_pivot.iter_rows(named=True):
             mapped_reserve = {self.property_map.get(key, key): value for key, value in reserve.items()}
-            valid_fields = {
-                k: v for k, v in mapped_reserve.items() if k in default_model.model_fields if v is not None
-            }
-            ext_data = {
-                k: v
-                for k, v in mapped_reserve.items()
-                if k not in default_model.model_fields
-                if v is not None
-            }
+            valid_fields, ext_data = field_filter(mapped_reserve, default_model.model_fields)
+
             if ext_data:
                 # Add reserve type and direction based on Plexos type. If the
                 # key is not present, the assumed one is the default (Spinning.Up)
@@ -397,7 +394,7 @@ class PlexosParser(PCMParser):
                 valid_fields["reserve_type"] = ReserveType[plexos_reserve_map["type"]]
                 valid_fields["direction"] = ReserveDirection[plexos_reserve_map["direction"]]
 
-                valid_fields["ext"] = ext_data
+                valid_fields = prepare_ext_field(valid_fields, ext_data)
 
             self.system.add_component(default_model(**valid_fields))
 
@@ -452,6 +449,7 @@ class PlexosParser(PCMParser):
             valid_fields["from_bus"] = from_bus
             valid_fields["to_bus"] = to_bus
 
+            valid_fields = prepare_ext_field(valid_fields, ext_data)
             self.system.add_component(default_model(**valid_fields))
         return
 
@@ -592,6 +590,7 @@ class PlexosParser(PCMParser):
                 }
             )
 
+            valid_fields = prepare_ext_field(valid_fields, ext_data)
             self.system.add_component(model_map(**valid_fields))
             generator = self.system.get_component_by_label(f"{model_map.__name__}.{generator_name}")
 
@@ -661,6 +660,10 @@ class PlexosParser(PCMParser):
             & (pl.col("parent_class_name") == ClassEnum.System.name)
         )
 
+        required_fields = {
+            key: value for key, value in GenericBattery.model_fields.items() if value.is_required()
+        }
+
         for battery_name, battery_data in system_batteries.group_by("name"):
             battery_name = battery_name[0]
             logger.trace("Parsing battery = {}", battery_name)
@@ -696,11 +699,8 @@ class PlexosParser(PCMParser):
             if valid_fields is None:
                 continue
 
-            required_fields = {
-                key: value for key, value in GenericBattery.model_fields.items() if value.is_required()
-            }
-            if not all(key in mapped_records for key in required_fields):
-                missing_fields = [key for key in required_fields if key not in mapped_records]
+            if not all(key in valid_fields for key in required_fields):
+                missing_fields = [key for key in required_fields if key not in valid_fields]
                 logger.warning(
                     "Skipping battery {}. Missing required fields: {}", battery_name, missing_fields
                 )
@@ -710,6 +710,7 @@ class PlexosParser(PCMParser):
                 logger.warning("Skipping battery {} since it has zero capacity", battery_name)
                 continue
 
+            valid_fields = prepare_ext_field(valid_fields, ext_data)
             self.system.add_component(GenericBattery(**valid_fields))
         return
 
@@ -812,6 +813,7 @@ class PlexosParser(PCMParser):
                 )
                 continue
 
+            valid_fields = prepare_ext_field(valid_fields, ext_data)
             self.system.add_component(default_model(**valid_fields))
 
         # Add lines memberships
