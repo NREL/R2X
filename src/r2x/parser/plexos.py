@@ -52,6 +52,7 @@ from .parser_helpers import (
     fill_missing_timestamps,
     resample_data_to_hourly,
     filter_property_dates,
+    field_filter,
 )
 
 models = importlib.import_module("r2x.models")
@@ -316,14 +317,7 @@ class PlexosParser(PCMParser):
             aggregate_function="first",
         )
         for region in region_pivot.iter_rows(named=True):
-            valid_fields = {
-                k: v for k, v in region.items() if k in default_model.model_fields if v is not None
-            }
-            ext_data = {
-                k: v for k, v in region.items() if k not in default_model.model_fields if v is not None
-            }
-            if ext_data:
-                valid_fields["ext"] = ext_data
+            valid_fields, ext_data = field_filter(region, default_model.model_fields)
             self.system.add_component(default_model(**valid_fields))
         return
 
@@ -345,14 +339,8 @@ class PlexosParser(PCMParser):
         )
         for idx, bus in enumerate(buses.iter_rows(named=True)):
             mapped_bus = {self.property_map.get(key, key): value for key, value in bus.items()}
-            valid_fields = {
-                k: v for k, v in mapped_bus.items() if k in default_model.model_fields if v is not None
-            }
-            ext_data = {
-                k: v for k, v in mapped_bus.items() if k not in default_model.model_fields if v is not None
-            }
-            if ext_data:
-                valid_fields["ext"] = ext_data
+
+            valid_fields, ext_data = field_filter(mapped_bus, default_model.model_fields)
 
             # Get region from buses region memberships
             region_name = buses_region.filter(pl.col("parent_object_id") == bus["object_id"])["name"].item()
@@ -439,7 +427,7 @@ class PlexosParser(PCMParser):
             line_properties_mapped["rating_up"] = line_properties_mapped.pop("max_power_flow", None)
             line_properties_mapped["rating_down"] = line_properties_mapped.pop("min_power_flow", None)
 
-            valid_fields, ext_data = self._field_filter(line_properties_mapped, default_model.model_fields)
+            valid_fields, ext_data = field_filter(line_properties_mapped, default_model.model_fields)
 
             from_bus_name = next(
                 membership
@@ -474,13 +462,6 @@ class PlexosParser(PCMParser):
             if key in generator_name_lower:
                 return device_info
         return None
-
-    def _field_filter(self, property_fields, eligible_fields):
-        valid = {k: v for k, v in property_fields.items() if k in eligible_fields if v is not None}
-        extra = {k: v for k, v in property_fields.items() if k not in eligible_fields if v is not None}
-        if extra:
-            valid["ext"] = extra
-        return valid, extra
 
     def _get_fuel_pmtype(self, generator_name, generator_fuel_map):
         plexos_fuel_name = generator_fuel_map.get(generator_name)
@@ -600,7 +581,7 @@ class PlexosParser(PCMParser):
 
             mapped_records["base_mva"] = 1
 
-            valid_fields, ext_data = self._field_filter(mapped_records, model_map.model_fields)
+            valid_fields, ext_data = field_filter(mapped_records, model_map.model_fields)
 
             ts_fields = {k: v for k, v in mapped_records.items() if isinstance(v, SingleTimeSeries)}
             valid_fields.update(
@@ -709,7 +690,7 @@ class PlexosParser(PCMParser):
 
             mapped_records["prime_mover_type"] = PrimeMoversType.BA
 
-            valid_fields, ext_data = self._field_filter(mapped_records, GenericBattery.model_fields)
+            valid_fields, ext_data = field_filter(mapped_records, GenericBattery.model_fields)
 
             valid_fields = self._set_unit_availability(valid_fields)
             if valid_fields is None:
@@ -815,17 +796,7 @@ class PlexosParser(PCMParser):
             mapped_interface = {
                 interface_property_map.get(key, key): value for key, value in interface.items()
             }
-            valid_fields = {
-                k: v for k, v in mapped_interface.items() if k in default_model.model_fields if v is not None
-            }
-            ext_data = {
-                k: v
-                for k, v in mapped_interface.items()
-                if k not in default_model.model_fields
-                if v is not None
-            }
-            if ext_data:
-                valid_fields["ext"] = ext_data
+            valid_fields, ext_data = field_filter(mapped_interface, default_model.model_fields)
 
             # Check that the interface has all the required fields of the model.
             required_fields = {
