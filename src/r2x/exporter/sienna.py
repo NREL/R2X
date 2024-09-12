@@ -9,8 +9,6 @@ from typing import Any
 from loguru import logger
 
 # Local imports
-from infrasys.time_series_models import SingleTimeSeries
-from pint import Quantity
 from r2x.exporter.handler import BaseExporter
 from r2x.models import (
     ACBranch,
@@ -228,6 +226,7 @@ class SiennaExporter(BaseExporter):
             "prime_mover_type",
             "bus_id",
             "fuel",
+            "base_mva",
             "rating",
             "unit_type",
             "active_power",
@@ -434,27 +433,6 @@ class SiennaExporter(BaseExporter):
             json.dump(ts_pointers_list, f)
 
         logger.info("File timeseries_pointers.json created.")
-        return
-
-    def create_extra_data_json(self) -> None:
-        """Create extra_data.json file."""
-        extra_data = []
-        for model in self.system.get_component_types():
-            model_type_name = model.__name__
-            component_dict = {
-                component.name: {
-                    item: value.to_tuple() if isinstance(value, Quantity) else value
-                    for item, value in component.ext.items()
-                    if not isinstance(value, SingleTimeSeries)
-                }
-                for component in self.system.get_components(model)
-            }
-            extra_data.append({model_type_name: component_dict})
-
-        with open(os.path.join(self.output_folder, "extra_data.json"), mode="w") as f:
-            json.dump(extra_data, f)
-
-        logger.info("File extra_data.json created.")
         return
 
     def export_data(self) -> None:

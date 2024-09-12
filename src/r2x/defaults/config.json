@@ -26,9 +26,9 @@
   },
   "default_num_units": 1,
   "default_reserve_types": [
-    "Spinning",
-    "Flexibility",
-    "Regulation"
+    "SPINNING",
+    "FLEXIBILITY",
+    "REGULATION"
   ],
   "device_inference_string": {},
   "distribution_losses": 1,
@@ -260,24 +260,24 @@
   },
   "reserve_types": {
     "1": {
-      "direction": "Up",
-      "type": "Spinning"
+      "direction": "UP",
+      "type": "SPINNING"
     },
     "2": {
-      "direction": "Down",
-      "type": "Spinning"
+      "direction": "DOWN",
+      "type": "SPINNING"
     },
     "3": {
-      "direction": "Up",
-      "type": "Regulation"
+      "direction": "UP",
+      "type": "REGULATION"
     },
     "4": {
-      "direction": "Down",
-      "type": "Regulation"
+      "direction": "DOWN",
+      "type": "REGULATION"
     },
     "default": {
-      "direction": "Up",
-      "type": "Spinning"
+      "direction": "UP",
+      "type": "SPINNING"
     }
   },
   "reserve_vors": {
