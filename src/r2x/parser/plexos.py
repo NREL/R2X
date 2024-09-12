@@ -7,13 +7,14 @@ from pathlib import Path, PureWindowsPath
 from argparse import ArgumentParser
 import pandas as pd
 
-from pint import UndefinedUnitError
+from pint import UndefinedUnitError, Quantity
 import polars as pl
 import numpy as np
 from loguru import logger
 from infrasys.exceptions import ISNotStored
 from infrasys.time_series_models import SingleTimeSeries
 from infrasys.value_curves import InputOutputCurve, AverageRateCurve
+from infrasys.cost_curves import FuelCurve
 from infrasys.function_data import (
     LinearFunctionData,
     QuadraticFunctionData,
@@ -26,11 +27,11 @@ from r2x.enums import ACBusTypes, ReserveDirection, ReserveType, PrimeMoversType
 from r2x.exceptions import ModelError, ParserError
 from plexosdb import PlexosSQLite
 from plexosdb.enums import ClassEnum, CollectionEnum
+from r2x.models.costs import ThermalGenerationCost, RenewableGenerationCost, HydroGenerationCost
 from r2x.models import (
     ACBus,
     Generator,
     GenericBattery,
-    HydroPumpedStorage,
     MonitoredLine,
     PowerLoad,
     Reserve,
@@ -38,6 +39,9 @@ from r2x.models import (
     ReserveMap,
     TransmissionInterface,
     TransmissionInterfaceMap,
+    RenewableGen,
+    ThermalGen,
+    HydroDispatch,
 )
 from r2x.utils import validate_string
 
@@ -132,11 +136,11 @@ class PlexosParser(PCMParser):
         super().__init__(*args, **kwargs)
         assert self.config.run_folder
         self.run_folder = Path(self.config.run_folder)
-        self.system = System(name=self.config.name)
+        self.system = System(name=self.config.name, auto_add_composed_components=True)
         self.property_map = self.config.defaults["plexos_property_map"]
         self.device_map = self.config.defaults["plexos_device_map"]
         self.fuel_map = self.config.defaults["plexos_fuel_map"]
-        self.device_match_string = self.config.defaults["device_inference_string"]
+        self.device_match_string = self.config.defaults["device_name_inference_map"]
 
         # TODO(pesap): Rename exceptions to include R2X
         # https://github.com/NREL/R2X/issues/5
@@ -154,6 +158,7 @@ class PlexosParser(PCMParser):
 
         # Extract scenario data
         model_name = getattr(self.config, "model", None)
+        logger.debug("Parsing plexos model={}", model_name)
         if model_name is None:
             model_name = self._select_model_name()
         self._process_scenarios(model_name=model_name)
@@ -162,9 +167,14 @@ class PlexosParser(PCMParser):
         date_from = self._collect_horizon_data(model_name=model_name).get("Date From")
         if date_from is not None:
             self.study_year: int = int((date_from / 365.25) + 1900)
+            self.config.weather_year = self.study_year
         else:
             if self.config.weather_year is None:
-                raise ValueError("weather_year cannot be None")
+                msg = (
+                    "Weather year can not be None if the model does not provide a year."
+                    "Check for correct model name"
+                )
+                raise ValueError(msg)
             self.study_year = self.config.weather_year
 
     def build_system(self) -> System:
@@ -275,7 +285,6 @@ class PlexosParser(PCMParser):
                 ]
             ].to_dicts()
 
-            logger.debug("Parsing fuel = {}", fuel_name)
             for property in property_records:
                 property.update({"property_unit": "$/MMBtu"})
 
@@ -353,7 +362,7 @@ class PlexosParser(PCMParser):
             valid_fields["base_voltage"] = (
                 230.0 if not valid_fields.get("base_voltage") else valid_fields["base_voltage"]
             )
-            self.system.add_component(default_model(id=idx + 1, **valid_fields))
+            self.system.add_component(default_model(number=idx + 1, **valid_fields))
         return
 
     def _construct_reserves(self, default_model=Reserve):
@@ -423,6 +432,7 @@ class PlexosParser(PCMParser):
         )
         for line in lines_pivot.iter_rows(named=True):
             line_properties_mapped = {self.property_map.get(key, key): value for key, value in line.items()}
+            line_properties_mapped["rating"] = line_properties_mapped.pop("max_power_flow", None)
             line_properties_mapped["rating_up"] = line_properties_mapped.pop("max_power_flow", None)
             line_properties_mapped["rating_down"] = line_properties_mapped.pop("min_power_flow", None)
 
@@ -455,7 +465,7 @@ class PlexosParser(PCMParser):
         return
 
     def _infer_model_type(self, generator_name):
-        inference_mapper = self.config.device_name_inference_map
+        inference_mapper = self.device_match_string
         generator_name_lower = generator_name.lower()
         for key, device_info in inference_mapper.items():
             if key in generator_name_lower:
@@ -474,8 +484,8 @@ class PlexosParser(PCMParser):
         logger.trace("Parsing generator = {} with fuel type = {}", generator_name, plexos_fuel_name)
 
         fuel_pmtype = (
-            self.config.device_map.get(generator_name)
-            or self.config.plexos_fuel_map.get(plexos_fuel_name)
+            self.device_map.get(generator_name)
+            or self.fuel_map.get(plexos_fuel_name)
             or self._infer_model_type(generator_name)
         )
 
@@ -498,7 +508,8 @@ class PlexosParser(PCMParser):
         )
 
         system_generators = self._get_model_data(system_generators)
-        system_generators.write_csv("generators.csv")
+        if getattr(self.config.feature_flags, "plexos-csv", None):
+            system_generators.write_csv("generators.csv")
         # NOTE: The best way to identify the type of generator on Plexos is by reading the fuel
         fuel_query = f"""
         SELECT
@@ -537,16 +548,17 @@ class PlexosParser(PCMParser):
             }
 
             property_records = generator_data[
-                [
-                    "band",
-                    "property_name",
-                    "property_value",
-                    "property_unit",
-                    "data_file",
-                    "variable",
-                    "action",
-                    "variable_tag",
-                ]
+                :
+                # [
+                #     "band",
+                #     "property_name",
+                #     "property_value",
+                #     "property_unit",
+                #     "data_file",
+                #     "variable",
+                #     "action",
+                #     "variable_tag",
+                # ]
             ].to_dicts()
             mapped_records, multi_band_records = self._parse_property_data(property_records, generator_name)
             mapped_records["name"] = generator_name
@@ -560,14 +572,14 @@ class PlexosParser(PCMParser):
             mapped_records["prime_mover_type"] = PrimeMoversType[mapped_records["prime_mover_type"]]
             mapped_records["fuel"] = fuel_type or self.config.prime_mover_map["default"].get("fuel")
 
-            match model_map:
-                case HydroPumpedStorage():
-                    mapped_records["prime_mover_type"] = PrimeMoversType.PS
+            # match model_map:
+            #     case HydroPumpedStorage():
+            #         mapped_records["prime_mover_type"] = PrimeMoversType.PS
 
             # Pumped Storage generators are not required to have Max Capacity property
-            if "base_power" not in mapped_records and "pump_load" in mapped_records:
-                mapped_records["base_power"] = mapped_records["pump_load"]
-
+            if "active_power" not in mapped_records and "pump_load" in mapped_records:
+                mapped_records["active_power"] = mapped_records["pump_load"]
+            # NOTE print which missing fields
             if not all(key in mapped_records for key in required_fields):
                 logger.warning(
                     "Skipping Generator {} since it does not have all the required fields", generator_name
@@ -576,10 +588,11 @@ class PlexosParser(PCMParser):
 
             mapped_records = self._set_unit_availability(mapped_records)
             if mapped_records is None:
-                continue  # Pass if not available
+                # When unit availability is not set, we skip the generator
+                continue
 
-            mapped_records = self._construct_value_curves(mapped_records, generator_name)
-            mapped_records["fuel_price"] = fuel_prices.get(generator_fuel_map.get(generator_name))
+            mapped_records["fuel_price"] = fuel_prices.get(generator_fuel_map.get(generator_name), 0)
+            mapped_records = self._construct_operating_costs(mapped_records, generator_name, model_map)
 
             valid_fields, ext_data = self._field_filter(mapped_records, model_map.model_fields)
 
@@ -684,7 +697,7 @@ class PlexosParser(PCMParser):
             mapped_records["name"] = battery_name
 
             if "Max Power" in mapped_records:
-                mapped_records["base_power"] = mapped_records["Max Power"]
+                mapped_records["active_power"] = mapped_records["Max Power"]
 
             if "Capacity" in mapped_records:
                 mapped_records["storage_capacity"] = mapped_records["Capacity"]
@@ -881,7 +894,33 @@ class PlexosParser(PCMParser):
                 fn = None
             if not vc:
                 vc = InputOutputCurve(name=f"{generator_name}_HR", function_data=fn)
-            mapped_records["heat_rate"] = vc
+            mapped_records["hr_value_curve"] = vc
+        return mapped_records
+
+    def _construct_operating_costs(self, mapped_records, generator_name, model_map):
+        """Construct operating costs from Value Curves and Operating Costs."""
+        mapped_records = self._construct_value_curves(mapped_records, generator_name)
+        hr_curve = mapped_records.get("hr_value_curve")
+
+        if issubclass(model_map, RenewableGen):
+            mapped_records["operation_cost"] = RenewableGenerationCost()
+        elif issubclass(model_map, ThermalGen):
+            if hr_curve:
+                fuel_cost = mapped_records["fuel_price"]
+                if isinstance(fuel_cost, SingleTimeSeries):
+                    fuel_cost = np.mean(fuel_cost.data)
+                elif isinstance(fuel_cost, Quantity):
+                    fuel_cost = fuel_cost.magnitude
+                fuel_curve = FuelCurve(value_curve=hr_curve, fuel_cost=fuel_cost)
+                mapped_records["operation_cost"] = ThermalGenerationCost(variable=fuel_curve)
+            else:
+                logger.warning("No heat rate curve found for generator={}", generator_name)
+        elif issubclass(model_map, HydroDispatch):
+            mapped_records["operation_cost"] = HydroGenerationCost()
+        else:
+            logger.warning(
+                "Operating Cost not implemented for generator={} model map={}", generator_name, model_map
+            )
         return mapped_records
 
     def _select_model_name(self):
@@ -917,15 +956,15 @@ class PlexosParser(PCMParser):
             raise ModelError(msg)
         # self.db = PlexosSQLite(xml_fname=xml_fpath)
 
-        logger.debug("Getting object_id for model={}", model_name)
+        logger.trace("Getting object_id for model={}", model_name)
         model_id = self.db.query("select object_id from t_object where name = ?", params=(model_name,))
         if len(model_id) > 1:
             msg = f"Multiple models with the same {model_name} returned. Check database or spelling."
+            logger.debug(model_id)
             raise ModelError(msg)
-
         if not model_id:
-            logger.warning("Model {} not found on the system.", model_name)
-            return
+            msg = f"Model `{model_name}` not found on the XML. Check spelling of the `model_name`."
+            raise ParserError(msg)
         self.model_id = model_id[0][0]  # Unpacking tuple [(model_id,)]
 
         # NOTE: When doing performance updates this query could get some love.
@@ -935,6 +974,10 @@ class PlexosParser(PCMParser):
             "left join t_class as cls on cls.class_id = obj.class_id "
             f"where mem.parent_object_id = {self.model_id} and cls.name = '{ClassEnum.Scenario}'"
         )
+        if not valid_scenarios:
+            msg = f"{model_name=} does not have any scenario attached to it."
+            logger.warning(msg)
+            return
         assert valid_scenarios
         self.scenarios = [scenario[0] for scenario in valid_scenarios]  # Flatten list of tuples
         return None
@@ -943,17 +986,17 @@ class PlexosParser(PCMParser):
         """Set availability and active power limit TS for generators."""
         availability = records.get("available", None)
         if availability is not None and availability > 0:
-            # Set availability, base_power, storage_capacity as multiplier of availability
+            # Set availability, active_power, storage_capacity as multiplier of availability
             if records.get("storage_capacity") is not None:
                 records["storage_capacity"] *= records.get("available")
-            records["base_power"] = records.get("base_power") * records.get("available")
+            records["active_power"] = records.get("active_power") * records.get("available")
             records["available"] = 1
 
             # Set active power limits
             rating_factor = records.get("Rating Factor", 100)
             rating_factor = self._apply_action(np.divide, rating_factor, 100)
             rating = records.get("rating", None)
-            base_power = records.get("base_power", None)
+            active_power = records.get("active_power", None)
             min_energy_hour = records.get("Min Energy Hour", None)
 
             # Hack temporary until Hydro Max Monthly Rating is corrected
@@ -964,9 +1007,9 @@ class PlexosParser(PCMParser):
             if rating is not None:
                 units = rating.units
                 val = rating_factor * rating.magnitude
-            elif base_power is not None:
-                units = base_power.units
-                val = self._apply_action(np.multiply, rating_factor, base_power.magnitude)
+            elif active_power is not None:
+                units = active_power.units
+                val = self._apply_action(np.multiply, rating_factor, active_power.magnitude)
             else:
                 return records
             val = self._apply_unit(val, units)
@@ -974,12 +1017,14 @@ class PlexosParser(PCMParser):
             if min_energy_hour is not None:
                 records["min_active_power"] = records.pop("Min Energy Hour")
 
-            if not isinstance(val, SingleTimeSeries):
-                # temp solution until Infrasys.model update to have both base_power and a rating field
-                records["base_power"] = val
-            else:
+            if isinstance(val, SingleTimeSeries):
                 val.variable_name = "max_active_power"
                 records["max_active_power"] = val
+                records["rating"] = active_power
+            else:
+                # Assume reactive power not modeled
+                records["active_power"] = val
+                records["rating"] = val
 
             if isinstance(rating_factor, SingleTimeSeries):
                 records.pop("Rating Factor")
@@ -998,17 +1043,15 @@ class PlexosParser(PCMParser):
 
     def _get_model_data(self, data_filter) -> pl.DataFrame:
         """Filter plexos data for a given class and all scenarios in a model."""
-        if not getattr(self, "scenarios", None):
-            msg = (
-                "Function `._get_model_data` does not work without any valid scenarios. "
-                "Check that the model name exists on the xml file."
-            )
-            raise ModelError(msg)
-        scenario_filter = pl.col("scenario").is_in(self.scenarios)
-        scenario_specific_data = self.plexos_data.filter(data_filter & scenario_filter)
+        scenario_specific_data = None
+        scenario_filter = None
+        if getattr(self, "scenarios", None):
+            scenario_filter = pl.col("scenario").is_in(self.scenarios)
+            scenario_specific_data = self.plexos_data.filter(data_filter & scenario_filter)
 
         base_case_filter = pl.col("scenario").is_null()
-        if scenario_specific_data.is_empty():
+        # Default is to parse data normally if there is not scenario. If scenario exist modify the filter.
+        if scenario_specific_data is None:
             system_data = self.plexos_data.filter(data_filter & base_case_filter)
         else:
             # include both scenario specific and basecase data
@@ -1025,48 +1068,58 @@ class PlexosParser(PCMParser):
             system_data = pl.concat([scenario_specific_data, base_case_data])
 
         # get system variables
+        variable_data = None
         variable_filter = (
             (pl.col("child_class_name") == ClassEnum.Variable.name)
             & (pl.col("parent_class_name") == ClassEnum.System.name)
             & (pl.col("data_file").is_not_null())
         )
-        variable_scenario_data = self.plexos_data.filter(variable_filter & scenario_filter)
+        variable_scenario_data = None
+        if scenario_specific_data is not None and scenario_filter is not None:
+            variable_scenario_data = self.plexos_data.filter(variable_filter & scenario_filter)
 
-        if variable_scenario_data.is_empty():
+        if variable_scenario_data is not None:
             variable_base_data = self.plexos_data.filter(variable_filter & pl.col("scenario").is_null())
         else:
             variable_base_data = self.plexos_data.filter(variable_filter & base_case_filter)
-        variable_data = pl.concat([variable_scenario_data, variable_base_data])
+        if variable_base_data is not None and variable_scenario_data is not None:
+            variable_data = pl.concat([variable_scenario_data, variable_base_data])
 
         # Filter Variables
-        results = []
-        grouped = variable_data.group_by("name")
-        for group_name, group_df in grouped:
-            if group_df.height > 1:
-                # Check if any scenario_name exists
-                scenario_exists = group_df.filter(pl.col("scenario").is_not_null())
+        if variable_data is not None:
+            results = []
+            grouped = variable_data.group_by("name")
+            for group_name, group_df in grouped:
+                if group_df.height > 1:
+                    # Check if any scenario_name exists
+                    scenario_exists = group_df.filter(pl.col("scenario").is_not_null())
 
-                if scenario_exists.height > 0:
-                    # Select the first row with a scenario_name
-                    selected_row = scenario_exists[0]
+                    if scenario_exists.height > 0:
+                        # Select the first row with a scenario_name
+                        selected_row = scenario_exists[0]
+                    else:
+                        # If no scenario_name, select the row with the lowest band_id
+                        selected_row = group_df.sort("band").head(1)[0]
                 else:
-                    # If no scenario_name, select the row with the lowest band_id
-                    selected_row = group_df.sort("band").head(1)[0]
-            else:
-                # If the group has only one row, select that row
-                selected_row = group_df[0]
+                    # If the group has only one row, select that row
+                    selected_row = group_df[0]
 
-            results.append(
-                {
-                    "name": group_name[0],
-                    "variable_name": selected_row["data_file_tag"][0],
-                    "variable": selected_row["data_file"][0],
-                }
+                results.append(
+                    {
+                        "name": group_name[0],
+                        "variable_name": selected_row["data_file_tag"][0],
+                        "variable": selected_row["data_file"][0],
+                    }
+                )
+            variables_filtered = pl.DataFrame(results)
+            system_data = system_data.join(
+                variables_filtered, left_on="variable_tag", right_on="name", how="left"
             )
-        variables_filtered = pl.DataFrame(results)
-        system_data = system_data.join(
-            variables_filtered, left_on="variable_tag", right_on="name", how="left"
-        )
+        else:
+            # NOTE: We might want to include this at the instead of each function call
+            system_data = system_data.with_columns(
+                pl.lit(None).alias("variable"), pl.lit(None).alias("variable_name")
+            )
 
         # Convert date_from and date_to to datetime
         system_data = system_data.with_columns(

@@ -120,7 +120,7 @@ class SiennaExporter(BaseExporter):
             "reactive_power",
             "max_active_power",
             "max_reeactive_power",
-            "base_power",
+            "active_power",
         ]
         self.system.export_component_to_csv(
             PowerLoad,
@@ -230,9 +230,7 @@ class SiennaExporter(BaseExporter):
             "fuel",
             "rating",
             "unit_type",
-            "base_power",
-            # "active_power_limits_max",
-            # "active_power_limits_min",
+            "active_power",
             "min_rated_capacity",
             "min_down_time",
             "min_up_time",
@@ -244,6 +242,7 @@ class SiennaExporter(BaseExporter):
             "category",
             "must_run",
             "pump_load",
+            "vom_price",
             "operation_cost",
         ]
 
@@ -333,7 +332,7 @@ class SiennaExporter(BaseExporter):
             "available",
             "generator_name",
             "bus_id",
-            "base_power",
+            "active_power",
             "rating",
             "input_efficiency",
             "output_efficiency",
@@ -363,13 +362,13 @@ class SiennaExporter(BaseExporter):
         for storage in storage_list:
             output_dict = storage
             output_dict["generator_name"] = storage["name"]
-            output_dict["input_active_power_limit_max"] = output_dict["base_power"]
-            output_dict["output_active_power_limit_max"] = output_dict["base_power"]
+            output_dict["input_active_power_limit_max"] = output_dict["active_power"]
+            output_dict["output_active_power_limit_max"] = output_dict["active_power"]
             # NOTE: If we need to change this in the future, we could probably
             # use the function max to check if the component has the field.
-            output_dict["input_active_power_limit_min"] = 0  # output_dict["base_power"]
-            output_dict["output_active_power_limit_min"] = 0  # output_dict["base_power"]
-            output_dict["base_power"] = output_dict["base_power"]
+            output_dict["input_active_power_limit_min"] = 0  # output_dict["active_power"]
+            output_dict["output_active_power_limit_min"] = 0  # output_dict["active_power"]
+            output_dict["active_power"] = output_dict["active_power"]
             output_dict["bus_id"] = getattr(self.system.get_component_by_label(output_dict["bus"]), "number")
             output_dict["rating"] = output_dict["rating"]
 
@@ -426,8 +425,8 @@ class SiennaExporter(BaseExporter):
                     "normalization_factor": 1.0,
                     "resolution": resolution,
                     "name": variable_name,
-                    "scaling_factor_multiplier_module": "PowerSystems",
-                    "scaling_factor_multiplier": "get_" + variable_name,
+                    "scaling_factor_multiplier_module": None,
+                    "scaling_factor_multiplier": None,
                 }
                 ts_pointers_list.append(ts_pointers)
 

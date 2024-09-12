@@ -106,7 +106,7 @@
         "type": "HA"
       }
     ],
-    "RenewableFix": [
+    "RenewableNonDispatch": [
       {
         "fuel": "SOLAR",
         "type": "RTPV"
