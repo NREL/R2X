@@ -25,13 +25,6 @@ def pl_filter_year(df, year: int | None = None, year_columns=["t", "year"], **kw
 
 def filter_property_dates(system_data: pl.DataFrame, study_year: int):
     """filters query by date_from and date_to"""
-    # note this only filters by first day of year, at some point revisit this to include partial years
-    # Remove Property by study year & date_from/to
-    study_year_date = datetime(study_year, 1, 1)
-    date_filter = ((pl.col("date_from").is_null()) | (pl.col("date_from") <= study_year_date)) & (
-        (pl.col("date_to").is_null()) | (pl.col("date_to") >= study_year_date)
-    )
-
     # Convert date_from and date_to to datetime
     system_data = system_data.with_columns(
         [
@@ -40,6 +33,18 @@ def filter_property_dates(system_data: pl.DataFrame, study_year: int):
         ]
     )
 
+    # Create two new columns year_from and year_to
+    system_data = system_data.with_columns(
+        [
+            pl.col("date_from").dt.year().alias("year_from"),
+            pl.col("date_to").dt.year().alias("year_to"),
+        ]
+    )
+
+    # Remove Property by study year & date_from/to
+    date_filter = ((pl.col("date_from").is_null()) | (pl.col("year_from") <= study_year)) & (
+        (pl.col("date_to").is_null()) | (pl.col("year_to") >= study_year)
+    )
     system_data = system_data.filter(date_filter)
     return system_data
 
