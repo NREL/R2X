@@ -23,6 +23,23 @@ def pl_filter_year(df, year: int | None = None, year_columns=["t", "year"], **kw
     return df.filter(pl.col(matching_names[0]) == year)
 
 
+def field_filter(property_fields, eligible_fields):
+    valid = {k: v for k, v in property_fields.items() if k in eligible_fields if v is not None}
+    extra = {k: v for k, v in property_fields.items() if k not in eligible_fields if v is not None}
+
+    return valid, extra
+
+
+def prepare_ext_field(valid_fields, extra_fields):
+    """Cleanses the extra fields by removing any timeseries data"""
+    if extra_fields:
+        # Implement any filtering of ext_data here
+        valid_fields["ext"] = extra_fields
+    else:
+        valid_fields["ext"] = {}
+    return valid_fields
+
+
 def filter_property_dates(system_data: pl.DataFrame, study_year: int):
     """filters query by date_from and date_to"""
     # Convert date_from and date_to to datetime
