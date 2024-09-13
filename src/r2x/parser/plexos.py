@@ -1132,7 +1132,6 @@ class PlexosParser(PCMParser):
             pl.col("parent_class_name") == ClassEnum.System.name
         )
         regions = self._get_model_data(system_regions).filter(~pl.col("variable").is_null())
-
         for region, region_data in regions.group_by("name"):
             if not len(region_data) == 1:
                 msg = (
@@ -1287,9 +1286,9 @@ class PlexosParser(PCMParser):
             #     data_file = data_file.rename({region: "value"})
 
             case columns if all(column in columns for column in PROPERTY_TS_COLUMNS_PIVOT):
-                # Need to test these file types still
                 data_file = data_file.filter(pl.col("year") == self.study_year)
                 data_file = data_file.melt(id_vars=PROPERTY_TS_COLUMNS_PIVOT, variable_name="hour")
+                data_file = data_file.with_columns(pl.col("hour").cast(pl.Int8))
 
             case _:
                 logger.warning("Data file columns not supported. Skipping it.")
@@ -1302,6 +1301,7 @@ class PlexosParser(PCMParser):
 
         # Format to SingleTimeSeries
         if data_file.columns == output_columns:
+            data_file = data_file.sort(["year", "month", "day", "hour"])
             resolution = timedelta(hours=1)
             first_row = data_file.row(0)
             start = datetime(year=first_row[0], month=first_row[1], day=first_row[2])
