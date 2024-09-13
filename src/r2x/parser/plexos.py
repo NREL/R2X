@@ -52,6 +52,8 @@ from .parser_helpers import (
     fill_missing_timestamps,
     resample_data_to_hourly,
     filter_property_dates,
+    field_filter,
+    prepare_ext_field,
 )
 
 models = importlib.import_module("r2x.models")
@@ -316,14 +318,8 @@ class PlexosParser(PCMParser):
             aggregate_function="first",
         )
         for region in region_pivot.iter_rows(named=True):
-            valid_fields = {
-                k: v for k, v in region.items() if k in default_model.model_fields if v is not None
-            }
-            ext_data = {
-                k: v for k, v in region.items() if k not in default_model.model_fields if v is not None
-            }
-            if ext_data:
-                valid_fields["ext"] = ext_data
+            valid_fields, ext_data = field_filter(region, default_model.model_fields)
+            valid_fields = prepare_ext_field(valid_fields, ext_data)
             self.system.add_component(default_model(**valid_fields))
         return
 
@@ -345,14 +341,8 @@ class PlexosParser(PCMParser):
         )
         for idx, bus in enumerate(buses.iter_rows(named=True)):
             mapped_bus = {self.property_map.get(key, key): value for key, value in bus.items()}
-            valid_fields = {
-                k: v for k, v in mapped_bus.items() if k in default_model.model_fields if v is not None
-            }
-            ext_data = {
-                k: v for k, v in mapped_bus.items() if k not in default_model.model_fields if v is not None
-            }
-            if ext_data:
-                valid_fields["ext"] = ext_data
+
+            valid_fields, ext_data = field_filter(mapped_bus, default_model.model_fields)
 
             # Get region from buses region memberships
             region_name = buses_region.filter(pl.col("parent_object_id") == bus["object_id"])["name"].item()
@@ -365,6 +355,8 @@ class PlexosParser(PCMParser):
             valid_fields["base_voltage"] = (
                 230.0 if not valid_fields.get("base_voltage") else valid_fields["base_voltage"]
             )
+
+            valid_fields = prepare_ext_field(valid_fields, ext_data)
             self.system.add_component(default_model(number=idx + 1, **valid_fields))
         return
 
@@ -383,15 +375,8 @@ class PlexosParser(PCMParser):
         )
         for reserve in reserve_pivot.iter_rows(named=True):
             mapped_reserve = {self.property_map.get(key, key): value for key, value in reserve.items()}
-            valid_fields = {
-                k: v for k, v in mapped_reserve.items() if k in default_model.model_fields if v is not None
-            }
-            ext_data = {
-                k: v
-                for k, v in mapped_reserve.items()
-                if k not in default_model.model_fields
-                if v is not None
-            }
+            valid_fields, ext_data = field_filter(mapped_reserve, default_model.model_fields)
+
             if ext_data:
                 # Add reserve type and direction based on Plexos type. If the
                 # key is not present, the assumed one is the default (Spinning.Up)
@@ -409,7 +394,7 @@ class PlexosParser(PCMParser):
                 valid_fields["reserve_type"] = ReserveType[plexos_reserve_map["type"]]
                 valid_fields["direction"] = ReserveDirection[plexos_reserve_map["direction"]]
 
-                valid_fields["ext"] = ext_data
+                valid_fields = prepare_ext_field(valid_fields, ext_data)
 
             self.system.add_component(default_model(**valid_fields))
 
@@ -439,7 +424,7 @@ class PlexosParser(PCMParser):
             line_properties_mapped["rating_up"] = line_properties_mapped.pop("max_power_flow", None)
             line_properties_mapped["rating_down"] = line_properties_mapped.pop("min_power_flow", None)
 
-            valid_fields, ext_data = self._field_filter(line_properties_mapped, default_model.model_fields)
+            valid_fields, ext_data = field_filter(line_properties_mapped, default_model.model_fields)
 
             from_bus_name = next(
                 membership
@@ -464,6 +449,7 @@ class PlexosParser(PCMParser):
             valid_fields["from_bus"] = from_bus
             valid_fields["to_bus"] = to_bus
 
+            valid_fields = prepare_ext_field(valid_fields, ext_data)
             self.system.add_component(default_model(**valid_fields))
         return
 
@@ -474,13 +460,6 @@ class PlexosParser(PCMParser):
             if key in generator_name_lower:
                 return device_info
         return None
-
-    def _field_filter(self, property_fields, eligible_fields):
-        valid = {k: v for k, v in property_fields.items() if k in eligible_fields if v is not None}
-        extra = {k: v for k, v in property_fields.items() if k not in eligible_fields if v is not None}
-        if extra:
-            valid["ext"] = extra
-        return valid, extra
 
     def _get_fuel_pmtype(self, generator_name, generator_fuel_map):
         plexos_fuel_name = generator_fuel_map.get(generator_name)
@@ -600,7 +579,7 @@ class PlexosParser(PCMParser):
 
             mapped_records["base_mva"] = 1
 
-            valid_fields, ext_data = self._field_filter(mapped_records, model_map.model_fields)
+            valid_fields, ext_data = field_filter(mapped_records, model_map.model_fields)
 
             ts_fields = {k: v for k, v in mapped_records.items() if isinstance(v, SingleTimeSeries)}
             valid_fields.update(
@@ -611,6 +590,7 @@ class PlexosParser(PCMParser):
                 }
             )
 
+            valid_fields = prepare_ext_field(valid_fields, ext_data)
             self.system.add_component(model_map(**valid_fields))
             generator = self.system.get_component_by_label(f"{model_map.__name__}.{generator_name}")
 
@@ -680,6 +660,10 @@ class PlexosParser(PCMParser):
             & (pl.col("parent_class_name") == ClassEnum.System.name)
         )
 
+        required_fields = {
+            key: value for key, value in GenericBattery.model_fields.items() if value.is_required()
+        }
+
         for battery_name, battery_data in system_batteries.group_by("name"):
             battery_name = battery_name[0]
             logger.trace("Parsing battery = {}", battery_name)
@@ -709,17 +693,14 @@ class PlexosParser(PCMParser):
 
             mapped_records["prime_mover_type"] = PrimeMoversType.BA
 
-            valid_fields, ext_data = self._field_filter(mapped_records, GenericBattery.model_fields)
+            valid_fields, ext_data = field_filter(mapped_records, GenericBattery.model_fields)
 
             valid_fields = self._set_unit_availability(valid_fields)
             if valid_fields is None:
                 continue
 
-            required_fields = {
-                key: value for key, value in GenericBattery.model_fields.items() if value.is_required()
-            }
-            if not all(key in mapped_records for key in required_fields):
-                missing_fields = [key for key in required_fields if key not in mapped_records]
+            if not all(key in valid_fields for key in required_fields):
+                missing_fields = [key for key in required_fields if key not in valid_fields]
                 logger.warning(
                     "Skipping battery {}. Missing required fields: {}", battery_name, missing_fields
                 )
@@ -729,6 +710,7 @@ class PlexosParser(PCMParser):
                 logger.warning("Skipping battery {} since it has zero capacity", battery_name)
                 continue
 
+            valid_fields = prepare_ext_field(valid_fields, ext_data)
             self.system.add_component(GenericBattery(**valid_fields))
         return
 
@@ -815,17 +797,7 @@ class PlexosParser(PCMParser):
             mapped_interface = {
                 interface_property_map.get(key, key): value for key, value in interface.items()
             }
-            valid_fields = {
-                k: v for k, v in mapped_interface.items() if k in default_model.model_fields if v is not None
-            }
-            ext_data = {
-                k: v
-                for k, v in mapped_interface.items()
-                if k not in default_model.model_fields
-                if v is not None
-            }
-            if ext_data:
-                valid_fields["ext"] = ext_data
+            valid_fields, ext_data = field_filter(mapped_interface, default_model.model_fields)
 
             # Check that the interface has all the required fields of the model.
             required_fields = {
@@ -841,6 +813,7 @@ class PlexosParser(PCMParser):
                 )
                 continue
 
+            valid_fields = prepare_ext_field(valid_fields, ext_data)
             self.system.add_component(default_model(**valid_fields))
 
         # Add lines memberships
@@ -1162,7 +1135,6 @@ class PlexosParser(PCMParser):
             pl.col("parent_class_name") == ClassEnum.System.name
         )
         regions = self._get_model_data(system_regions).filter(~pl.col("variable").is_null())
-
         for region, region_data in regions.group_by("name"):
             if not len(region_data) == 1:
                 msg = (
@@ -1317,9 +1289,9 @@ class PlexosParser(PCMParser):
             #     data_file = data_file.rename({region: "value"})
 
             case columns if all(column in columns for column in PROPERTY_TS_COLUMNS_PIVOT):
-                # Need to test these file types still
                 data_file = data_file.filter(pl.col("year") == self.study_year)
                 data_file = data_file.melt(id_vars=PROPERTY_TS_COLUMNS_PIVOT, variable_name="hour")
+                data_file = data_file.with_columns(pl.col("hour").cast(pl.Int8))
 
             case _:
                 logger.warning("Data file columns not supported. Skipping it.")
@@ -1332,6 +1304,7 @@ class PlexosParser(PCMParser):
 
         # Format to SingleTimeSeries
         if data_file.columns == output_columns:
+            data_file = data_file.sort(["year", "month", "day", "hour"])
             resolution = timedelta(hours=1)
             first_row = data_file.row(0)
             start = datetime(year=first_row[0], month=first_row[1], day=first_row[2])
