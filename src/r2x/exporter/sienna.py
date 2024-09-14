@@ -147,15 +147,10 @@ class SiennaExporter(BaseExporter):
             "b",
             "rate",
             "branch_type",
+            "rating_up",
+            "rating_down",
+            "ext",
         ]
-
-        # NOTE: We need to decide what we do if the user provides a rate or bi-directional rate
-        # if "rate" in output_df.columns:
-        #     output_df["rate"] = output_df["rate"].fillna(
-        #         (output_df["rating_up"] + np.abs(output_df["rating_down"])) / 2
-        #     )
-        # else:
-        #     output_df["rate"] = (output_df["rating_up"] + np.abs(output_df["rating_down"])) / 2
 
         self.system.export_component_to_csv(
             ACBranch,
@@ -168,8 +163,8 @@ class SiennaExporter(BaseExporter):
                 "class_type": "branch_type",
                 "rating": "rate",
                 "b": "primary_shunt",
+                "ext": "ext",
             },
-            # restval=0.0,
         )
         logger.info(f"File {fname} created.")
 
@@ -189,13 +184,6 @@ class SiennaExporter(BaseExporter):
             "loss",
         ]
 
-        # NOTE: We need to decide what we do if the user provides a rate or bi-directional rate
-        # if "rate" in output_df.columns:
-        #     output_df["rate"] = output_df["rate"].fillna(
-        #         (output_df["rating_up"] + np.abs(output_df["rating_down"])) / 2
-        #     )
-        # else:
-        #     output_df["rate"] = (output_df["rating_up"] + np.abs(output_df["rating_down"])) / 2
         self.system.export_component_to_csv(
             DCBranch,
             fpath=self.output_folder / fname,
