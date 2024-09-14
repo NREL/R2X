@@ -420,7 +420,7 @@ class PlexosParser(PCMParser):
         )
         for line in lines_pivot.iter_rows(named=True):
             line_properties_mapped = {self.property_map.get(key, key): value for key, value in line.items()}
-            line_properties_mapped["rating"] = line_properties_mapped.pop("max_power_flow", None)
+            line_properties_mapped["rating"] = line_properties_mapped.get("max_power_flow", None)
             line_properties_mapped["rating_up"] = line_properties_mapped.pop("max_power_flow", None)
             line_properties_mapped["rating_down"] = line_properties_mapped.pop("min_power_flow", None)
 
