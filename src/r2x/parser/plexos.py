@@ -285,6 +285,7 @@ class PlexosParser(PCMParser):
                     "variable",
                     "action",
                     "variable_tag",
+                    "variable_default",
                     "timeslice",
                     "timeslice_value",
                 ]
@@ -536,6 +537,7 @@ class PlexosParser(PCMParser):
                     "variable",
                     "action",
                     "variable_tag",
+                    "variable_default",
                     "timeslice",
                     "timeslice_value",
                 ]
@@ -650,7 +652,6 @@ class PlexosParser(PCMParser):
                         )
                         continue
                     reserve_map.mapping[reserve_object.name].append(generator.name)
-
         return
 
     def _construct_batteries(self):
@@ -677,6 +678,7 @@ class PlexosParser(PCMParser):
                     "variable",
                     "action",
                     "variable_tag",
+                    "variable_default",
                     "timeslice",
                     "timeslice_value",
                 ]
@@ -694,7 +696,6 @@ class PlexosParser(PCMParser):
             mapped_records["prime_mover_type"] = PrimeMoversType.BA
 
             valid_fields, ext_data = field_filter(mapped_records, GenericBattery.model_fields)
-
             valid_fields = self._set_unit_availability(valid_fields)
             if valid_fields is None:
                 continue
@@ -754,6 +755,7 @@ class PlexosParser(PCMParser):
             parent_class=ClassEnum.Reserve,
             collection=CollectionEnum.Batteries,
         )
+
         for battery in self.system.get_components(GenericBattery):
             reserves = [membership for membership in generator_memberships if membership[3] == battery.name]
             if reserves:
@@ -1072,7 +1074,7 @@ class PlexosParser(PCMParser):
         variable_filter = (
             (pl.col("child_class_name") == ClassEnum.Variable.name)
             & (pl.col("parent_class_name") == ClassEnum.System.name)
-            & (pl.col("data_file").is_not_null())
+            & (pl.col("property_name") != "Sampling Method")
         )
         variable_scenario_data = None
         if scenario_specific_data is not None and scenario_filter is not None:
@@ -1092,6 +1094,7 @@ class PlexosParser(PCMParser):
         # Filter Variables
         if variable_data is not None:
             results = []
+            # breakpoint()
             grouped = variable_data.group_by("name")
             for group_name, group_df in grouped:
                 if group_df.height > 1:
@@ -1107,12 +1110,12 @@ class PlexosParser(PCMParser):
                 else:
                     # If the group has only one row, select that row
                     selected_row = group_df[0]
-
                 results.append(
                     {
                         "name": group_name[0],
                         "variable_name": selected_row["data_file_tag"][0],
                         "variable": selected_row["data_file"][0],
+                        "variable_default": selected_row["property_value"][0],
                     }
                 )
             variables_filtered = pl.DataFrame(results)
@@ -1387,9 +1390,12 @@ class PlexosParser(PCMParser):
         if data_file is None and record.get("data_file"):
             return None
 
+        var_default = record.get("variable_default")
         variable = (
             self._csv_file_handler(record.get("variable_tag"), record.get("variable"))
             if record.get("variable")
+            else var_default
+            if var_default != 0
             else None
         )
 
