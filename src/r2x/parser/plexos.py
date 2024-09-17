@@ -108,6 +108,7 @@ DEFAULT_QUERY_COLUMNS_SCHEMA = {  # NOTE: Order matters
     "timeslice_tag": pl.String,
     "timeslice": pl.String,
     "timeslice_value": pl.Float32,
+    "data_text": pl.String,
 }
 COLUMNS = [
     "name",
@@ -489,7 +490,6 @@ class PlexosParser(PCMParser):
         system_generators = (pl.col("child_class_name") == ClassEnum.Generator.name) & (
             pl.col("parent_class_name") == ClassEnum.System.name
         )
-
         system_generators = self._get_model_data(system_generators)
         if getattr(self.config.feature_flags, "plexos-csv", None):
             system_generators.write_csv("generators.csv")
@@ -1086,15 +1086,71 @@ class PlexosParser(PCMParser):
             variable_base_data = self.plexos_data.filter(variable_filter & base_case_filter)
         if variable_base_data is not None and variable_scenario_data is not None:
             variable_data = pl.concat([variable_scenario_data, variable_base_data])
+        system_data = self._join_variable_data(system_data, variable_data)
 
-        return self._join_variable_data(system_data, variable_data)
+        # Get System Data Files
+        # drop column named data_file and replace it with correct scenario-filtered datafile
+        # system_data.drop_in_place("data_file")
+        datafile_data = None
+        datafile_filter = (pl.col("child_class_name") == ClassEnum.DataFile.value) & (
+            pl.col("parent_class_name") == ClassEnum.System.name
+        )
+        datafile_scenario_data = None
+        if scenario_specific_data is not None and scenario_filter is not None:
+            datafile_scenario_data = self.plexos_data.filter(datafile_filter & scenario_filter)
+
+        if datafile_scenario_data is not None:
+            datafile_base_data = self.plexos_data.filter(datafile_filter & pl.col("scenario").is_null())
+        else:
+            datafile_base_data = self.plexos_data.filter(datafile_filter & base_case_filter)
+        if datafile_base_data is not None and datafile_scenario_data is not None:
+            datafile_data = pl.concat([datafile_scenario_data, datafile_base_data])
+        system_data = self._join_datafile_data(system_data, datafile_data)
+        return system_data
+
+    def _join_datafile_data(self, system_data, datafile_data):
+        """Join system data with datafile data."""
+        # Filter datafiles
+        if datafile_data.height > 0:
+            results = []
+            grouped = datafile_data.group_by("name")
+            for group_name, group_df in grouped:
+                if group_df.height > 1:
+                    # Check if any scenario_name exists
+                    scenario_exists = group_df.filter(pl.col("scenario").is_not_null())
+
+                    if scenario_exists.height > 0:
+                        # Select the first row with a scenario_name
+                        selected_row = scenario_exists[0]
+                    else:
+                        # If no scenario_name, select the row with the lowest band_id
+                        selected_row = group_df.sort("band").head(1)[0]
+                else:
+                    # If the group has only one row, select that row
+                    selected_row = group_df[0]
+                results.append(
+                    {
+                        "name": group_name[0],
+                        "data_file_sc": selected_row["data_text"][0],
+                    }
+                )
+            datafiles_filtered = pl.DataFrame(results)
+            system_data = system_data.join(
+                datafiles_filtered, left_on="data_file_tag", right_on="name", how="left"
+            )
+            # replace system_Data["data_file"] with system_data["data_file_sc"]
+            system_data.drop_in_place("data_file")
+            system_data = system_data.rename({"data_file_sc": "data_file"})
+        else:
+            # NOTE: We might want to include this at the instead of each function call
+            system_data = system_data.with_columns(pl.lit(None).alias("data_file_sc"))
+        return system_data
 
     def _join_variable_data(self, system_data, variable_data):
         """Join system data with variable data."""
         # Filter Variables
         if variable_data is not None:
             results = []
-            # breakpoint()
             grouped = variable_data.group_by("name")
             for group_name, group_df in grouped:
                 if group_df.height > 1:
