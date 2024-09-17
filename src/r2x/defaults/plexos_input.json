@@ -1,5 +1,4 @@
 {
-  "device_name_inference_map": {},
   "plexos_device_map": {},
   "plexos_fuel_map": {},
   "plexos_property_map": {
@@ -45,5 +44,26 @@
     "VoRS": "vors",
     "Voltage": "base_voltage"
   },
-  "tech_fuel_pm_map": {}
+  "reserve_types": {
+    "1": {
+      "direction": "UP",
+      "type": "SPINNING"
+    },
+    "2": {
+      "direction": "DOWN",
+      "type": "SPINNING"
+    },
+    "3": {
+      "direction": "UP",
+      "type": "REGULATION"
+    },
+    "4": {
+      "direction": "DOWN",
+      "type": "REGULATION"
+    },
+    "default": {
+      "direction": "UP",
+      "type": "SPINNING"
+    }
+  }
 }
