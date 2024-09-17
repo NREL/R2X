@@ -127,6 +127,12 @@
   "reserve_region_properties": [
     "Load Risk"
   ],
+  "reserve_type_values": {
+    "Flexibility": 1,
+    "Regulation": 3,
+    "Spinning": 1,
+    "regulation_down": 4
+  },
   "reserve_types": {
     "1": {
       "direction": "up",
