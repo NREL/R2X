@@ -143,6 +143,7 @@ class PlexosParser(PCMParser):
         self.device_map = self.config.defaults["plexos_device_map"]
         self.fuel_map = self.config.defaults["plexos_fuel_map"]
         self.device_match_string = self.config.defaults["device_name_inference_map"]
+        self.generator_models = self.config.defaults["generator_models"]
 
         # TODO(pesap): Rename exceptions to include R2X
         # https://github.com/NREL/R2X/issues/5
@@ -305,7 +306,7 @@ class PlexosParser(PCMParser):
         we assume that it happens at the region level, which is a typical way
         of doing it.
         """
-        logger.debug("Creating load zone representation")
+        logger.info("Creating load zone representation")
         system_regions = (pl.col("child_class_name") == ClassEnum.Region.value) & (
             pl.col("parent_class_name") == ClassEnum.System.value
         )
@@ -324,7 +325,7 @@ class PlexosParser(PCMParser):
         return
 
     def _construct_buses(self, default_model=ACBus) -> None:
-        logger.debug("Creating buses representation")
+        logger.info("Creating buses representation")
         system_buses = (pl.col("child_class_name") == ClassEnum.Node.value) & (
             pl.col("parent_class_name") == ClassEnum.System.value
         )
@@ -361,7 +362,7 @@ class PlexosParser(PCMParser):
         return
 
     def _construct_reserves(self, default_model=Reserve):
-        logger.debug("Creating reserve representation")
+        logger.info("Creating reserve representation")
         system_reserves = (pl.col("child_class_name") == ClassEnum.Reserve.name) & (
             pl.col("parent_class_name") == ClassEnum.System.name
         )
@@ -403,7 +404,7 @@ class PlexosParser(PCMParser):
         return
 
     def _construct_branches(self, default_model=MonitoredLine):
-        logger.debug("Creating lines")
+        logger.info("Creating lines")
         system_lines = (pl.col("child_class_name") == ClassEnum.Line.value) & (
             pl.col("parent_class_name") == ClassEnum.System.value
         )
@@ -461,30 +462,58 @@ class PlexosParser(PCMParser):
                 return device_info
         return None
 
-    def _get_fuel_pmtype(self, generator_name, generator_fuel_map):
-        plexos_fuel_name = generator_fuel_map.get(generator_name)
-        logger.trace("Parsing generator = {} with fuel type = {}", generator_name, plexos_fuel_name)
+    def _get_fuel_pmtype(self, generator_name, fuel_name: str | None = None) -> dict[str, str]:
+        """Return fuel prime mover combo based on priority.
 
-        fuel_pmtype = (
+        This function will return first a match using the generator name, then
+        by fuel map and if not it will try to infer it using the generator name
+
+        Returns
+        -------
+        dict
+            Either an empty dictionary or a dictionary with fuel and prime mover type.
+        """
+        match_fuel_pmtype = (
             self.device_map.get(generator_name)
-            or self.fuel_map.get(plexos_fuel_name)
+            or self.fuel_map.get(fuel_name)
             or self._infer_model_type(generator_name)
         )
+        if not match_fuel_pmtype:
+            return {}
 
-        return fuel_pmtype, plexos_fuel_name
+        msg = (
+            "Mapping returned a different data structure. "
+            f"Returned {type(match_fuel_pmtype)} and expected type dict."
+        )
+        assert isinstance(match_fuel_pmtype, dict), msg
+        return match_fuel_pmtype
 
-    def _get_model_type(self, fuel_pmtype):
-        if fuel_pmtype is not None:
-            for model, conditions in self.config.defaults["generator_models"].items():
-                for cond in conditions:
-                    if (cond["fuel"] == fuel_pmtype["fuel"] or cond["fuel"] is None) and (
-                        cond["type"] == fuel_pmtype["type"] or cond["type"] is None
-                    ):
-                        return model
+    def _get_model_type(self, fuel_pmtype) -> str:
+        """Get model type for given pair of fuel and prime mover type.
+
+        Notes
+        -----
+        We return an empty string if not match found since it is used for the
+        getattr function. If you pass a None it does not work.
+
+        Returns
+        -------
+        str
+            Match found or Empty string if not match is found.
+        """
+        assert len(self.generator_models) < 1000, "Change the data structure. Fool."
+        if fuel_pmtype is None:
+            return ""
+        for model, conditions in self.generator_models.items():
+            for cond in conditions:
+                if (cond["fuel"] == fuel_pmtype["fuel"] or cond["fuel"] is None) and (
+                    cond["type"] == fuel_pmtype["type"] or cond["type"] is None
+                ):
+                    return model
         return ""
 
     def _construct_generators(self):
-        logger.debug("Creating generators")
+        logger.info("Creating generators")
         system_generators = (pl.col("child_class_name") == ClassEnum.Generator.name) & (
             pl.col("parent_class_name") == ClassEnum.System.name
         )
@@ -492,6 +521,7 @@ class PlexosParser(PCMParser):
         system_generators = self._get_model_data(system_generators)
         if getattr(self.config.feature_flags, "plexos-csv", None):
             system_generators.write_csv("generators.csv")
+
         # NOTE: The best way to identify the type of generator on Plexos is by reading the fuel
         fuel_query = f"""
         SELECT
@@ -511,19 +541,21 @@ class PlexosParser(PCMParser):
         generator_fuel_map = {key: value for key, value in generator_fuel}
         fuel_prices = self._get_fuel_prices()
 
-        # Iterate over properties for generator
+        # Iterate over properties to create generator object
         for generator_name, generator_data in system_generators.group_by("name"):
             generator_name = generator_name[0]
-            fuel_pmtype, plexos_fuel_name = self._get_fuel_pmtype(generator_name, generator_fuel_map)
-            model_map = self._get_model_type(fuel_pmtype)
-            if getattr(R2X_MODELS, model_map, None) is None:
-                logger.warning(
-                    "Model map not found for generator={} with fuel_type={}. Skipping it.",
-                    generator_name,
-                    plexos_fuel_name,
-                )
+
+            fuel_name = generator_fuel_map.get(generator_name)
+            logger.trace("Parsing generator = {} with fuel type = {}", generator_name, fuel_name)
+
+            fuel_pmtype = self._get_fuel_pmtype(generator_name, fuel_name=fuel_name)
+            if not fuel_pmtype:
+                msg = "Fuel mapping not found for {} with fuel_type={}"
+                logger.warning(msg, generator_name, fuel_name)
                 continue
-            fuel_type, pm_type = fuel_pmtype["fuel"], fuel_pmtype["type"]
+
+            # We assume that if we find the fuel, there is a model_map
+            model_map = self._get_model_type(fuel_pmtype)
             model_map = getattr(R2X_MODELS, model_map)
 
             property_records = generator_data[
@@ -546,14 +578,10 @@ class PlexosParser(PCMParser):
             # if multi_band_records:
             #     pass
 
-            # Add prime mover mapping
-            mapped_records["prime_mover_type"] = pm_type or self.config.plexos_fuel_map["default"].get("type")
+            # Get prime mover enum
+            mapped_records["prime_mover_type"] = fuel_pmtype["type"]
             mapped_records["prime_mover_type"] = PrimeMoversType[mapped_records["prime_mover_type"]]
-            mapped_records["fuel"] = fuel_type or self.config.prime_mover_map["default"].get("fuel")
-
-            # match model_map:
-            #     case HydroPumpedStorage():
-            #         mapped_records["prime_mover_type"] = PrimeMoversType.PS
+            mapped_records["fuel"] = fuel_pmtype["fuel"]
 
             # Pumped Storage generators are not required to have Max Capacity property
             if "max_active_power" not in mapped_records and "pump_load" in mapped_records:
@@ -561,6 +589,7 @@ class PlexosParser(PCMParser):
 
             mapped_records = self._set_unit_availability(mapped_records)
             if mapped_records is None:
+                logger.warning("Skipping generator {}. Could not set availability ", generator_name)
                 # When unit availability is not set, we skip the generator
                 continue
 
@@ -570,13 +599,15 @@ class PlexosParser(PCMParser):
             if not all(key in mapped_records for key in required_fields):
                 missing_fields = [key for key in required_fields if key not in mapped_records]
                 logger.warning(
-                    "Skipping Generator {}. Missing Required Fields: {}", generator_name, missing_fields
+                    "Skipping generator {}. Missing Required Fields: {}", generator_name, missing_fields
                 )
                 continue
 
             mapped_records["fuel_price"] = fuel_prices.get(generator_fuel_map.get(generator_name), 0)
             mapped_records = self._construct_operating_costs(mapped_records, generator_name, model_map)
 
+            # TODO(pesap): Remove base_mva once it is not required field on PowerSystems.jl
+            # https://github.com/NREL/R2X/issues/39
             mapped_records["base_mva"] = 1
 
             valid_fields, ext_data = field_filter(mapped_records, model_map.model_fields)
@@ -654,7 +685,7 @@ class PlexosParser(PCMParser):
         return
 
     def _construct_batteries(self):
-        logger.debug("Creating battery objects")
+        logger.info("Creating battery objects")
         system_batteries = self._get_model_data(
             (pl.col("child_class_name") == ClassEnum.Battery.name)
             & (pl.col("parent_class_name") == ClassEnum.System.name)
@@ -774,7 +805,7 @@ class PlexosParser(PCMParser):
 
     def _construct_interfaces(self, default_model=TransmissionInterface):
         """Construct Transmission Interface and Transmission Interface Map."""
-        logger.debug("Creating transmission interfaces")
+        logger.info("Creating transmission interfaces")
         system_interfaces_mask = (pl.col("child_class_name") == ClassEnum.Interface.name) & (
             pl.col("parent_class_name") == ClassEnum.System.name
         )
@@ -1124,13 +1155,10 @@ class PlexosParser(PCMParser):
             system_data = system_data.with_columns(
                 pl.lit(None).alias("variable"), pl.lit(None).alias("variable_name")
             )
-        system_data = system_data.join(
-            variables_filtered, left_on="variable_tag", right_on="name", how="left"
-        )
         return system_data
 
     def _construct_load_profiles(self):
-        logger.debug("Creating load profile representation")
+        logger.info("Creating load profile representation")
         system_regions = (pl.col("child_class_name") == ClassEnum.Region.name) & (
             pl.col("parent_class_name") == ClassEnum.System.name
         )
