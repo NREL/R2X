@@ -163,7 +163,6 @@ class SiennaExporter(BaseExporter):
                 "class_type": "branch_type",
                 "rating": "rate",
                 "b": "primary_shunt",
-                "ext": "ext",
             },
         )
         logger.info(f"File {fname} created.")

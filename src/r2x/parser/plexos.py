@@ -580,7 +580,6 @@ class PlexosParser(PCMParser):
             mapped_records = self._construct_operating_costs(mapped_records, generator_name, model_map)
 
             mapped_records["base_mva"] = 1
-
             valid_fields, ext_data = field_filter(mapped_records, model_map.model_fields)
 
             ts_fields = {k: v for k, v in mapped_records.items() if isinstance(v, SingleTimeSeries)}
