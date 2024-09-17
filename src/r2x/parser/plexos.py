@@ -589,7 +589,7 @@ class PlexosParser(PCMParser):
 
             mapped_records = self._set_unit_availability(mapped_records)
             if mapped_records is None:
-                logger.warning("Skipping generator {}. Could not set availability ", generator_name)
+                logger.debug("Skipping disabled generator {}", generator_name)
                 # When unit availability is not set, we skip the generator
                 continue
 
@@ -748,7 +748,7 @@ class PlexosParser(PCMParser):
     def _add_buses_to_batteries(self):
         batteries = [battery["name"] for battery in self.system.to_records(GenericBattery)]
         if not batteries:
-            msg = "No battery objects found on the system. Skipping adding membership to buses."
+            msg = "No battery objects found on the system. Skipping adding membership to buses"
             logger.warning(msg)
             return
         generator_memberships = self.db.get_memberships(

@@ -251,34 +251,6 @@
     "Regulation": 1200,
     "Spinning": 300
   },
-  "reserve_type_values": {
-    "Flexibility": 1,
-    "Regulation": 3,
-    "Spinning": 1,
-    "regulation_down": 4
-  },
-  "reserve_types": {
-    "1": {
-      "direction": "UP",
-      "type": "SPINNING"
-    },
-    "2": {
-      "direction": "DOWN",
-      "type": "SPINNING"
-    },
-    "3": {
-      "direction": "UP",
-      "type": "REGULATION"
-    },
-    "4": {
-      "direction": "DOWN",
-      "type": "REGULATION"
-    },
-    "default": {
-      "direction": "UP",
-      "type": "SPINNING"
-    }
-  },
   "reserve_vors": {
     "Flexibility": 390000,
     "Regulation": 410000,
