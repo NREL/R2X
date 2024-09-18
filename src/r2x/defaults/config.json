@@ -227,39 +227,39 @@
   "interface_max_ramp_up_multiplier": 0.1,
   "load_participation_factor": 1,
   "load_reserves": {
-    "Flexibility": 0.0,
-    "Regulation": 0.01,
-    "Spinning": 0.03
+    "FLEXIBILITY": 0.0,
+    "REGULATION": 0.01,
+    "SPINNING": 0.03
   },
   "load_scalar": 1,
   "max_volume_divisor": 1000.0,
   "min_soc": 0.1,
   "reserve_duration": {
-    "Flexibility": 3600,
-    "Regulation": 3600,
-    "Spinning": 3600
+    "FLEXIBILITY": 3600,
+    "REGULATION": 3600,
+    "SPINNING": 3600
   },
   "reserve_is_enabled": -1,
   "reserve_load_risk": {
-    "Flexibility": 0,
-    "Regulation": 1,
-    "Spinning": 3
+    "FLEXIBILITY": 0,
+    "REGULATION": 1,
+    "SPINNING": 3
   },
   "reserve_mutually_exclusive": 1,
   "reserve_time_frame": {
-    "Flexibility": 600,
-    "Regulation": 1200,
-    "Spinning": 300
+    "FLEXIBILITY": 600,
+    "REGULATION": 1200,
+    "SPINNING": 300
   },
   "reserve_vors": {
-    "Flexibility": 390000,
-    "Regulation": 410000,
-    "Spinning": 400000
+    "FLEXIBILITY": 390000,
+    "REGULATION": 410000,
+    "SPINNING": 400000
   },
   "solar_reserves": {
-    "Flexibility": 0.04,
-    "Regulation": 0.003,
-    "Spinning": 0
+    "FLEXIBLILITY": 0.04,
+    "REGULATION": 0.003,
+    "SPINNING": 0
   },
   "storage_mean_time_to_repair": 24,
   "tech_map": {},
@@ -287,8 +287,8 @@
   "wheeling_charge": 0.001,
   "wheeling_charge_back": 0.001,
   "wind_reserves": {
-    "Flexibility": 0.1,
-    "Regulation": 0.05,
-    "Spinning": 0
+    "FLEXIBILITY": 0.1,
+    "REGULATION": 0.05,
+    "SPINNING": 0
   }
 }

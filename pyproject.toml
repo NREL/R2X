@@ -29,7 +29,7 @@ dependencies = [
     "loguru~=0.7.2",
     "pandas~=2.2",
     "infrasys>=0.1.0",
-    "plexosdb>=0.0.3",
+    "plexosdb>=0.0.4",
     "polars~=1.1.0",
     "pyyaml~=6.0.1",
     "rich~=13.7.1",
@@ -139,6 +139,10 @@ docstring-code-line-length = "dynamic"
 [tool.pytest.ini_options]
 pythonpath = [
   "src"
+]
+markers = [
+    "exporters: Tests related to exporters",
+    "plexos: Tests related to plexos",
 ]
 
 [tool.coverage.run]
