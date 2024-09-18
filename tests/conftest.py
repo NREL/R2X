@@ -11,6 +11,7 @@ from _pytest.logging import LogCaptureFixture
 
 DATA_FOLDER = "tests/data"
 OUTPUT_FOLDER = "r2x_output"
+DEFAULT_SCENARIO = "PACIFIC"
 
 
 @pytest.fixture
@@ -22,6 +23,16 @@ def data_folder(pytestconfig):
 def tmp_folder(tmp_path_factory):
     tmp_path = tmp_path_factory.mktemp(OUTPUT_FOLDER)
     yield tmp_path
+
+
+@pytest.fixture
+def reeds_data_folder(pytestconfig):
+    return pytestconfig.rootpath.joinpath(DATA_FOLDER).joinpath(DEFAULT_SCENARIO)
+
+
+@pytest.fixture
+def default_scenario() -> str:
+    return DEFAULT_SCENARIO
 
 
 @pytest.fixture

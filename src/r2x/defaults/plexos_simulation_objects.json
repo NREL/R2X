@@ -313,7 +313,8 @@
           "notes": null
         }
       ],
-      "name": "MT Schedule"
+      "class_name": "MT Schedule",
+      "collection_name": "MT Schedule"
     },
     {
       "attributes": [
@@ -324,7 +325,8 @@
           "notes": null
         }
       ],
-      "name": "ST Schedule"
+      "class_name": "ST Schedule",
+      "collection_name": "ST Schedule"
     },
     {
       "attributes": [
@@ -335,7 +337,8 @@
           "notes": null
         }
       ],
-      "name": "Transmission"
+      "class_name": "Transmission",
+      "collection_name": "Transmission"
     },
     {
       "attributes": [
@@ -352,7 +355,8 @@
           "notes": null
         }
       ],
-      "name": "Production"
+      "class_name": "Production",
+      "collection_name": "Production"
     },
     {
       "attributes": [
@@ -363,7 +367,8 @@
           "notes": null
         }
       ],
-      "name": "PASA"
+      "class_name": "PASA",
+      "collection_name": "PASA"
     },
     {
       "attributes": [
@@ -374,7 +379,8 @@
           "notes": null
         }
       ],
-      "name": "Diagnostic"
+      "class_name": "Diagnostic",
+      "collection_name": "Diagnostics"
     },
     {
       "attributes": [
@@ -385,7 +391,8 @@
           "notes": null
         }
       ],
-      "name": "Report"
+      "class_name": "Report",
+      "collection_name": "Reports"
     },
     {
       "attributes": [
@@ -396,7 +403,8 @@
           "notes": null
         }
       ],
-      "name": "Performance"
+      "class_name": "Performance",
+      "collection_name": "Performance"
     }
   ]
 }
