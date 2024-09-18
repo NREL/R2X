@@ -11,7 +11,7 @@ from _pytest.logging import LogCaptureFixture
 
 DATA_FOLDER = "tests/data"
 OUTPUT_FOLDER = "r2x_output"
-DEFAULT_SCENARIO = "PACIFIC"
+DEFAULT_SCENARIO = "pacific"
 
 
 @pytest.fixture
