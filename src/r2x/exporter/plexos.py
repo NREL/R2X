@@ -1,5 +1,7 @@
 """Create PLEXOS model from translated ReEDS data."""
 
+from argparse import ArgumentParser
+from importlib.resources import files
 from typing import Any
 import uuid
 import string
@@ -37,6 +39,16 @@ from r2x.utils import custom_attrgetter, get_enum_from_string, read_json, get_pr
 
 NESTED_ATTRIBUTES = ["ext", "bus", "services"]
 TIME_SERIES_PROPERTIES = ["Min Provision", "Static Risk"]
+DEFAULT_XML_TEMPLATE = "master_9.2R6_btu.xml"
+
+
+def cli_arguments(parser: ArgumentParser):
+    """CLI arguments for the plugin."""
+    parser.add_argument(
+        "--master-file",
+        required=False,
+        help="Plexos master file to use as template.",
+    )
 
 
 class PlexosExporter(BaseExporter):
@@ -57,6 +69,9 @@ class PlexosExporter(BaseExporter):
         self.default_units = self.config.defaults["default_units"]
         self.reserve_types = self.config.defaults["reserve_types"]
 
+        if not xml_fname:
+            if not (xml_fname := getattr(self.config, "master_file", None)):
+                xml_fname = files("r2x.defaults").joinpath(DEFAULT_XML_TEMPLATE)  # type: ignore
         self._db_mgr = database_manager or PlexosSQLite(xml_fname=xml_fname)
         self.plexos_scenario_id = self._db_mgr.get_scenario_id(scenario_name=plexos_scenario)
 

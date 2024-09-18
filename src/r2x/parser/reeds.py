@@ -63,6 +63,8 @@ class ReEDSParser(BaseParser):
         super().__init__(*args, **kwargs)
         if not self.config.weather_year:
             raise AttributeError("Missing weather year from the configuration class.")
+        if not self.config.solve_year:
+            raise AttributeError("Missing solve year from the configuration class.")
         self.device_map = self.config.defaults["reeds_device_map"]
         self.weather_year: int = self.config.weather_year
 
