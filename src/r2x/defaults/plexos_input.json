@@ -65,5 +65,7 @@
       "direction": "UP",
       "type": "SPINNING"
     }
-  }
+  },
+  "wheeling_charge": 0.001,
+  "wheeling_charge_back": 0.001
 }

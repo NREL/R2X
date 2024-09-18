@@ -6,5 +6,6 @@
     "wind-ofs",
     "csp",
     "pvb"
-  ]
+  ],
+  "pcm_defaults_fpath": "r2x/defaults/pcm_defaults.json"
 }

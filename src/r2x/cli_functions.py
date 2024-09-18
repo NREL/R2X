@@ -41,19 +41,17 @@ def get_additional_arguments(
         plugin_list: List of plugins.
         folder: Folder that contains the plugin.
     """
-    plugin_files = [plugin for plugin in files(folder).rglob("*.py") if "__" not in plugin.name]  # type: ignore
-    for plugin in plugin_files:
-        plugin_module = importlib.import_module(f".{plugin.stem}", folder)
-        if hasattr(plugin_module, "cli_arguments"):
-            plugin_cli_group = parser.add_argument_group(f"Plugin {plugin.stem}")
-            plugin_module.cli_arguments(plugin_cli_group)
+    folders = ["r2x.plugins", "r2x.parser", "r2x.exporter"]
 
-    parser_files = [parser for parser in files("r2x.parser").rglob("*.py")]  # type: ignore
-    for parser_file in parser_files:
-        parser_module = importlib.import_module(f".{parser_file.stem}", "r2x.parser")
-        if hasattr(parser_module, "cli_arguments"):
-            parser_cli_group = parser.add_argument_group(f"Parser {parser_file.stem}")
-            parser_module.cli_arguments(parser_cli_group)
+    for folder in folders:
+        folder_files = [folder for folder in files(folder).rglob("*.py") if "__" not in folder.name]  # type: ignore
+        package_name = folder.split(".")[1]
+        for package in folder_files:
+            package_script = importlib.import_module(f".{package.stem}", folder)
+            if hasattr(package_script, "cli_arguments"):
+                script_cli_group = parser.add_argument_group(f"{package_name.upper()}: {package.stem}")
+                package_script.cli_arguments(script_cli_group)
+
     return parser
 
 
@@ -112,12 +110,6 @@ def base_cli() -> argparse.ArgumentParser:
         type=int,
         nargs="+",
         dest="solve_year",
-        help="Year to translate",
-    )
-    group_cli.add_argument(
-        "--weather-year",
-        type=int,
-        dest="weather_year",
         help="Year to translate",
     )
     group_cli.add_argument(

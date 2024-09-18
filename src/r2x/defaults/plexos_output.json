@@ -128,10 +128,10 @@
     "Load Risk"
   ],
   "reserve_type_values": {
-    "Flexibility": 1,
-    "Regulation": 3,
-    "Spinning": 1,
-    "regulation_down": 4
+    "FLEXIBILITY": 1,
+    "REGULATION": 3,
+    "REGULATION_UP": 4,
+    "SPINNING": 1
   },
   "reserve_types": {
     "1": {
