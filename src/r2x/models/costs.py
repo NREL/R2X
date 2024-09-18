@@ -17,29 +17,21 @@ class RenewableGenerationCost(OperationalCost):
 
 
 class HydroGenerationCost(OperationalCost):
-    fixed: Annotated[FuelPrice, Field(description="Cost of using fuel in $/MWh.")] = FuelPrice(0.0, "usd/MWh")
+    fixed: Annotated[float, Field(ge=0, description="Cost of using fuel in $.")] = 0.0
     variable: ProductionVariableCostCurve | None = None
 
 
 class ThermalGenerationCost(OperationalCost):
-    start_up: Annotated[FuelPrice, Field(description="Cost of using fuel in $/MWh.")] = FuelPrice(
-        0.0, "usd/MWh"
-    )
-    fixed: Annotated[FuelPrice, Field(description="Cost of using fuel in $/MWh.")] = FuelPrice(0.0, "usd/MWh")
-    shut_down: Annotated[FuelPrice, Field(description="Cost of using fuel in $/MWh.")] = FuelPrice(
-        0.0, "usd/MWh"
-    )
+    start_up: Annotated[float, Field(ge=0, description="Cost of using fuel in $.")] = 0.0
+    fixed: Annotated[float, Field(ge=0, description="Cost of using fuel in $.")] = 0.0
+    shut_down: Annotated[float, Field(ge=0, description="Cost of using fuel in $.")] = 0.0
     variable: ProductionVariableCostCurve | None = None
 
 
 class StorageCost(OperationalCost):
-    start_up: Annotated[FuelPrice, Field(description="Cost of using fuel in $/MWh.")] = FuelPrice(
-        0.0, "usd/MWh"
-    )
-    fixed: Annotated[FuelPrice, Field(description="Cost of using fuel in $/MWh.")] = FuelPrice(0.0, "usd/MWh")
-    shut_down: Annotated[FuelPrice, Field(description="Cost of using fuel in $/MWh.")] = FuelPrice(
-        0.0, "usd/MWh"
-    )
+    start_up: Annotated[float, Field(ge=0, description="Cost of using fuel in $.")] = 0.0
+    fixed: Annotated[float, Field(ge=0, description="Cost of using fuel in $.")] = 0.0
+    shut_down: Annotated[float, Field(ge=0, description="Cost of using fuel in $.")] = 0.0
     energy_surplus_cost: Annotated[FuelPrice, Field(description="Cost of using fuel in $/MWh.")] = FuelPrice(
         0.0, "usd/MWh"
     )

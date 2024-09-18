@@ -550,6 +550,7 @@ class PlexosParser(PCMParser):
             logger.trace("Parsing generator = {} with fuel type = {}", generator_name, fuel_name)
 
             fuel_pmtype = self._get_fuel_pmtype(generator_name, fuel_name=fuel_name)
+            # logger.debug("fuel_pmtype={}", fuel_pmtype)
             if not fuel_pmtype:
                 msg = "Fuel mapping not found for {} with fuel_type={}"
                 logger.warning(msg, generator_name, fuel_name)
@@ -884,6 +885,13 @@ class PlexosParser(PCMParser):
             heat_rate_base = mapped_records.get("Heat Rate Base", None)
             heat_rate_incr = mapped_records.get("Heat Rate Incr", None)
             heat_rate_incr2 = mapped_records.get("Heat Rate Incr2", None)
+
+            if heat_rate_incr and heat_rate_incr.units == "british_thermal_unit / kilowatt_hour":
+                heat_rate_incr = Quantity(heat_rate_incr.magnitude * 1e-3, "british_thermal_unit / watt_hour")
+
+            if heat_rate_avg and heat_rate_avg.units == "british_thermal_unit / kilowatt_hour":
+                heat_rate_avg = Quantity(heat_rate_avg.magnitude * 1e-3, "british_thermal_unit / watt_hour")
+
             if any(
                 isinstance(val, SingleTimeSeries) for val in [heat_rate_avg, heat_rate_base, heat_rate_incr]
             ):
@@ -929,7 +937,10 @@ class PlexosParser(PCMParser):
                 elif isinstance(fuel_cost, Quantity):
                     fuel_cost = fuel_cost.magnitude
                 fuel_curve = FuelCurve(value_curve=hr_curve, fuel_cost=fuel_cost)
-                mapped_records["operation_cost"] = ThermalGenerationCost(variable=fuel_curve)
+                mapped_records["operation_cost"] = ThermalGenerationCost(
+                    variable=fuel_curve,
+                    start_up=mapped_records.get("startup_cost", 0),
+                )
                 mapped_records.pop("hr_value_curve")
             else:
                 logger.warning("No heat rate curve found for generator={}", generator_name)
