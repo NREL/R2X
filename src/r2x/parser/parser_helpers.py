@@ -34,6 +34,10 @@ def prepare_ext_field(valid_fields, extra_fields):
     """Cleanses the extra fields by removing any timeseries data"""
     if extra_fields:
         # Implement any filtering of ext_data here
+        # logger.debug("Extra fields: {}", extra_fields)
+        # remove any non eligible datatypes from extra fields
+        eligible_datatypes = [str, int, float, bool]
+        extra_fields = {k: v for k, v in extra_fields.items() if type(v) in eligible_datatypes}
         valid_fields["ext"] = extra_fields
     else:
         valid_fields["ext"] = {}

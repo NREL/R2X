@@ -108,6 +108,7 @@ DEFAULT_QUERY_COLUMNS_SCHEMA = {  # NOTE: Order matters
     "timeslice_tag": pl.String,
     "timeslice": pl.String,
     "timeslice_value": pl.Float32,
+    "data_text": pl.String,
 }
 COLUMNS = [
     "name",
@@ -286,6 +287,7 @@ class PlexosParser(PCMParser):
                     "variable",
                     "action",
                     "variable_tag",
+                    "variable_default",
                     "timeslice",
                     "timeslice_value",
                 ]
@@ -421,7 +423,7 @@ class PlexosParser(PCMParser):
         )
         for line in lines_pivot.iter_rows(named=True):
             line_properties_mapped = {self.property_map.get(key, key): value for key, value in line.items()}
-            line_properties_mapped["rating"] = line_properties_mapped.pop("max_power_flow", None)
+            line_properties_mapped["rating"] = line_properties_mapped.get("max_power_flow", None)
             line_properties_mapped["rating_up"] = line_properties_mapped.pop("max_power_flow", None)
             line_properties_mapped["rating_down"] = line_properties_mapped.pop("min_power_flow", None)
 
@@ -517,7 +519,6 @@ class PlexosParser(PCMParser):
         system_generators = (pl.col("child_class_name") == ClassEnum.Generator.name) & (
             pl.col("parent_class_name") == ClassEnum.System.name
         )
-
         system_generators = self._get_model_data(system_generators)
         if getattr(self.config.feature_flags, "plexos-csv", None):
             system_generators.write_csv("generators.csv")
@@ -568,6 +569,7 @@ class PlexosParser(PCMParser):
                     "variable",
                     "action",
                     "variable_tag",
+                    "variable_default",
                     "timeslice",
                     "timeslice_value",
                 ]
@@ -609,7 +611,6 @@ class PlexosParser(PCMParser):
             # TODO(pesap): Remove base_mva once it is not required field on PowerSystems.jl
             # https://github.com/NREL/R2X/issues/39
             mapped_records["base_mva"] = 1
-
             valid_fields, ext_data = field_filter(mapped_records, model_map.model_fields)
 
             ts_fields = {k: v for k, v in mapped_records.items() if isinstance(v, SingleTimeSeries)}
@@ -681,7 +682,6 @@ class PlexosParser(PCMParser):
                         )
                         continue
                     reserve_map.mapping[reserve_object.name].append(generator.name)
-
         return
 
     def _construct_batteries(self):
@@ -708,6 +708,7 @@ class PlexosParser(PCMParser):
                     "variable",
                     "action",
                     "variable_tag",
+                    "variable_default",
                     "timeslice",
                     "timeslice_value",
                 ]
@@ -725,7 +726,6 @@ class PlexosParser(PCMParser):
             mapped_records["prime_mover_type"] = PrimeMoversType.BA
 
             valid_fields, ext_data = field_filter(mapped_records, GenericBattery.model_fields)
-
             valid_fields = self._set_unit_availability(valid_fields)
             if valid_fields is None:
                 continue
@@ -785,6 +785,7 @@ class PlexosParser(PCMParser):
             parent_class=ClassEnum.Reserve,
             collection=CollectionEnum.Batteries,
         )
+
         for battery in self.system.get_components(GenericBattery):
             reserves = [membership for membership in generator_memberships if membership[3] == battery.name]
             if reserves:
@@ -1103,7 +1104,7 @@ class PlexosParser(PCMParser):
         variable_filter = (
             (pl.col("child_class_name") == ClassEnum.Variable.name)
             & (pl.col("parent_class_name") == ClassEnum.System.name)
-            & (pl.col("data_file").is_not_null())
+            & (pl.col("property_name") != "Sampling Method")
         )
         variable_scenario_data = None
         if scenario_specific_data is not None and scenario_filter is not None:
@@ -1115,8 +1116,65 @@ class PlexosParser(PCMParser):
             variable_base_data = self.plexos_data.filter(variable_filter & base_case_filter)
         if variable_base_data is not None and variable_scenario_data is not None:
             variable_data = pl.concat([variable_scenario_data, variable_base_data])
+        system_data = self._join_variable_data(system_data, variable_data)
 
-        return self._join_variable_data(system_data, variable_data)
+        # Get System Data Files
+        # drop column named data_file and replace it with correct scenario-filtered datafile
+        # system_data.drop_in_place("data_file")
+        datafile_data = None
+        datafile_filter = (pl.col("child_class_name") == ClassEnum.DataFile.value) & (
+            pl.col("parent_class_name") == ClassEnum.System.name
+        )
+        datafile_scenario_data = None
+        if scenario_specific_data is not None and scenario_filter is not None:
+            datafile_scenario_data = self.plexos_data.filter(datafile_filter & scenario_filter)
+
+        if datafile_scenario_data is not None:
+            datafile_base_data = self.plexos_data.filter(datafile_filter & pl.col("scenario").is_null())
+        else:
+            datafile_base_data = self.plexos_data.filter(datafile_filter & base_case_filter)
+        if datafile_base_data is not None and datafile_scenario_data is not None:
+            datafile_data = pl.concat([datafile_scenario_data, datafile_base_data])
+        system_data = self._join_datafile_data(system_data, datafile_data)
+        return system_data
+
+    def _join_datafile_data(self, system_data, datafile_data):
+        """Join system data with datafile data."""
+        # Filter datafiles
+        if datafile_data.height > 0:
+            results = []
+            grouped = datafile_data.group_by("name")
+            for group_name, group_df in grouped:
+                if group_df.height > 1:
+                    # Check if any scenario_name exists
+                    scenario_exists = group_df.filter(pl.col("scenario").is_not_null())
+
+                    if scenario_exists.height > 0:
+                        # Select the first row with a scenario_name
+                        selected_row = scenario_exists[0]
+                    else:
+                        # If no scenario_name, select the row with the lowest band_id
+                        selected_row = group_df.sort("band").head(1)[0]
+                else:
+                    # If the group has only one row, select that row
+                    selected_row = group_df[0]
+                results.append(
+                    {
+                        "name": group_name[0],
+                        "data_file_sc": selected_row["data_text"][0],
+                    }
+                )
+            datafiles_filtered = pl.DataFrame(results)
+            system_data = system_data.join(
+                datafiles_filtered, left_on="data_file_tag", right_on="name", how="left"
+            )
+            # replace system_Data["data_file"] with system_data["data_file_sc"]
+            system_data.drop_in_place("data_file")
+            system_data = system_data.rename({"data_file_sc": "data_file"})
+        else:
+            # NOTE: We might want to include this at the instead of each function call
+            system_data = system_data.with_columns(pl.lit(None).alias("data_file_sc"))
+        return system_data
 
     def _join_variable_data(self, system_data, variable_data):
         """Join system data with variable data."""
@@ -1138,12 +1196,12 @@ class PlexosParser(PCMParser):
                 else:
                     # If the group has only one row, select that row
                     selected_row = group_df[0]
-
                 results.append(
                     {
                         "name": group_name[0],
                         "variable_name": selected_row["data_file_tag"][0],
                         "variable": selected_row["data_file"][0],
+                        "variable_default": selected_row["property_value"][0],
                     }
                 )
             variables_filtered = pl.DataFrame(results)
@@ -1415,9 +1473,12 @@ class PlexosParser(PCMParser):
         if data_file is None and record.get("data_file"):
             return None
 
+        var_default = record.get("variable_default")
         variable = (
             self._csv_file_handler(record.get("variable_tag"), record.get("variable"))
             if record.get("variable")
+            else var_default
+            if var_default != 0
             else None
         )
 
