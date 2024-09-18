@@ -115,12 +115,6 @@ def base_cli() -> argparse.ArgumentParser:
         help="Year to translate",
     )
     group_cli.add_argument(
-        "--weather-year",
-        type=int,
-        dest="weather_year",
-        help="Year to translate",
-    )
-    group_cli.add_argument(
         "--scenario",
         dest="scenario_name",
         help="Scenario to select from cases file",

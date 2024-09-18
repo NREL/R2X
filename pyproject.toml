@@ -140,6 +140,10 @@ docstring-code-line-length = "dynamic"
 pythonpath = [
   "src"
 ]
+markers = [
+    "exporters: Tests related to exporters",
+    "plexos: Tests related to plexos",
+]
 
 [tool.coverage.run]
 omit = [
