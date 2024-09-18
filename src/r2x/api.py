@@ -1,6 +1,7 @@
 """R2X API for data model."""
 
 import csv
+import json
 from collections.abc import Callable
 from os import PathLike
 from pathlib import Path
@@ -51,7 +52,7 @@ class System(ISSystem):
         # Get desired components to offload to csv
         components = map(
             lambda component: component.model_dump(
-                exclude={"ext"}, exclude_none=True, mode="json", context={"magnitude_only": True}
+                exclude={}, exclude_none=True, mode="json", context={"magnitude_only": True}
             ),
             self.get_components(component, filter_func=filter_func),
         )
@@ -163,7 +164,11 @@ class System(ISSystem):
             writer.writeheader()
             for row in data:
                 filter_row = {
-                    key: value if not isinstance(value, dict) else value.get(unnest_key)
+                    key: json.dumps(value)
+                    if key == "ext" and isinstance(value, dict)
+                    else value
+                    if not isinstance(value, dict)
+                    else value.get(unnest_key)
                     for key, value in row.items()
                 }
                 writer.writerow(filter_row)
