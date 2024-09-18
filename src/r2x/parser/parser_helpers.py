@@ -5,6 +5,8 @@ from loguru import logger
 import polars as pl
 import pandas as pd
 from datetime import datetime
+import numpy as np
+from scipy.optimize import minimize
 
 
 def pl_filter_year(df, year: int | None = None, year_columns=["t", "year"], **kwargs):
@@ -189,3 +191,65 @@ def resample_data_to_hourly(data_file: pl.DataFrame):
         )
         .select(["year", "month", "day", "hour", "value"])
     )
+
+
+def mse_loss(x_pwl, a, b, c, x_min, x_max, num_points=1000):
+    """
+    Calculates the mean squared error between the quadratic curve and the PWL curve.
+
+    Parameters:
+    x_tranches: the current guess for the x-values of the tranches
+    a, b, c: coefficients of the quadratic equation
+    x_min, x_max: the range of x-values
+    num_points: number of points for the fine x-values to evaluate the MSE
+
+    Returns:
+    mse: the mean squared error between the quadratic and PWL curves
+    """
+
+    # Calculate the fine x-values and y-values for the quadratic curve
+    x_pts = np.linspace(x_min, x_max, num_points)
+    y_quad = a * x_pts**2 + b * x_pts + c
+
+    # Calculate the y-values for the tranches (PWL points)
+    x_pwl = np.sort(x_pwl)
+    y_pwl = a * x_pwl**2 + b * x_pwl + c
+
+    # Interpolate the PWL curve at the fine x-values
+    y_pwl = np.interp(x_pts, x_pwl, y_pwl)
+
+    # Calculate the mean squared error between the quadratic curve and PWL curve
+    mse = np.mean((y_quad - y_pwl) ** 2)
+
+    return mse
+
+
+def construct_pwl_from_quadtratic(a, b, c, x_min, x_max, num_tranches):
+    """
+    Optimizes the placement of tranches to minimize MSE between the PWL curve and quadratic curve.
+
+    Parameters:
+    a, b, c: coefficients of the quadratic equation
+    x_min, x_max: the range of x-values
+    num_tranches: number of tranches (points) to place on the PWL curve
+
+    Returns:
+    x_optimal: the optimized x-values of the tranches
+    y_optimal: the corresponding y-values of the tranches
+    """
+    # Initial guess: evenly spaced x-values
+    x_initial = np.linspace(x_min, x_max, num_tranches)
+
+    # Bounds for the optimization (tranches must stay within x_min and x_max)
+    bounds = [(x_min, x_max) for _ in range(num_tranches)]
+
+    # Optimize the x-values of the tranches to minimize MSE
+    result = minimize(mse_loss, x_initial, args=(a, b, c, x_min, x_max), bounds=bounds)
+    x_optimal = np.sort(result.x)
+    y_optimal = quadratic_curve(a, b, c, x_optimal)
+
+    # Remove any duplicate x-values and cooresponding y-values
+    x_optimal = np.unique(x_optimal)
+    y_optimal = np.unique(y_optimal)
+
+    return x_optimal, y_optimal
