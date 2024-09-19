@@ -930,7 +930,8 @@ class PlexosParser(PCMParser):
                     constant_term=heat_rate_base.magnitude,
                 )
                 if self.config.feature_flags.get("quad2pwl", None):
-                    fn = construct_pwl_from_quadtratic(fn, mapped_records)
+                    n_tranches = self.config.feature_flags.get("quad2pwl", None)
+                    fn = construct_pwl_from_quadtratic(fn, mapped_records, n_tranches)
             elif not heat_rate_incr2 and heat_rate_incr:
                 fn = LinearFunctionData(
                     proportional_term=heat_rate_incr.magnitude, constant_term=heat_rate_base.magnitude

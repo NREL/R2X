@@ -251,10 +251,6 @@ def optimize_pwl_points(a, b, c, x_min, x_max, num_tranches):
     x_optimal = np.sort(result.x)
     y_optimal = a * x_optimal**2 + b * x_optimal + c
 
-    # Remove any duplicate x-values and cooresponding y-values
-    x_optimal = np.unique(x_optimal)
-    y_optimal = np.unique(y_optimal)
-
     return x_optimal.round(2), y_optimal.round(2)
 
 
