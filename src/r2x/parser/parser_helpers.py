@@ -201,7 +201,7 @@ def mse_loss(x_pwl, a, b, c, x_min, x_max, num_points=1000):
     Calculates the mean squared error between the quadratic curve and the PWL curve.
 
     Parameters:
-    x_tranches: the current guess for the x-values of the tranches
+    x_pwl: initalization for the x-values of the tranches
     a, b, c: coefficients of the quadratic equation
     x_min, x_max: the range of x-values
     num_points: number of points for the fine x-values to evaluate the MSE

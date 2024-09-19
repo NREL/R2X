@@ -322,6 +322,7 @@ class SiennaExporter(BaseExporter):
             "rating",
             "input_efficiency",
             "output_efficiency",
+            "initial_energy",
             "storage_capacity",
             "min_storage_capacity",
             "max_storage_capacity",

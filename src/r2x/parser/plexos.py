@@ -724,7 +724,6 @@ class PlexosParser(PCMParser):
 
             if "Capacity" in mapped_records:
                 mapped_records["storage_capacity"] = mapped_records["Capacity"]
-            # note: create field for initial storage charge level
             mapped_records["prime_mover_type"] = PrimeMoversType.BA
 
             valid_fields, ext_data = field_filter(mapped_records, GenericBattery.model_fields)
