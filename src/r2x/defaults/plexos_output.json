@@ -76,6 +76,7 @@
     "min_up_time": "Min Up Time"
   },
   "plexos_property_map": {
+    "active_power": "Max Capacity",
     "available": "Units",
     "base_power": "Max Capacity",
     "base_voltage": "Voltage",
@@ -135,24 +136,24 @@
   },
   "reserve_types": {
     "1": {
-      "direction": "up",
-      "type": "spinning"
+      "direction": "UP",
+      "type": "SPINNING"
     },
     "2": {
-      "direction": "down",
-      "type": "spinning"
+      "direction": "DOWN",
+      "type": "SPINNING"
     },
     "3": {
-      "direction": "up",
-      "type": "regulation"
+      "direction": "UP",
+      "type": "REGULATION"
     },
     "4": {
-      "direction": "down",
-      "type": "regulation"
+      "direction": "DOWN",
+      "type": "REGULATION"
     },
     "default": {
-      "direction": "up",
-      "type": "spinning"
+      "direction": "UP",
+      "type": "SPINNING"
     }
   },
   "spin_reserve_file_prefix": "Spin_reserve",

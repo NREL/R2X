@@ -174,6 +174,11 @@ class BaseExporter(ABC):
         ]
         for component in component_list_mapped:
             component_dict = {"name": component["name"]}  # We need the name to match it with the membership.
+            if ext_dict := component.get("ext"):
+                if ext_dict.get("heat_rate"):
+                    component["Heat Rate"] = ext_dict["heat_rate"]
+                if ext_dict.get("fuel_price"):
+                    component["Fuel Price"] = ext_dict["fuel_price"]
             for property_name, property_value in component.items():
                 if valid_properties is not None:
                     if property_name in valid_properties:

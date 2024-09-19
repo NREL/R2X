@@ -166,7 +166,7 @@ class PlexosExporter(BaseExporter):
         filter_func: Callable | None = None,
         scenario: str | None = None,
         records: list[dict] | None = None,
-        exclude_fields: list[str] = NESTED_ATTRIBUTES,
+        exclude_fields: list[str] | None = NESTED_ATTRIBUTES,
     ) -> None:
         """Bulk insert properties from selected component type."""
         logger.debug("Adding {} table properties...", component_type.__name__)
@@ -184,10 +184,10 @@ class PlexosExporter(BaseExporter):
         collection_properties = self._db_mgr.get_valid_properties(
             collection, parent_class=parent_class, child_class=child_class
         )
-        property_names = [key[0] for key in collection_properties]
+        # property_names = [key[0] for key in collection_properties]
         match component_type.__name__:
             case "GenericBattery":
-                custom_map = {"base_power": "Max Power", "storage_capacity": "Capacity"}
+                custom_map = {"active_power": "Max Power", "storage_capacity": "Capacity"}
             case _:
                 custom_map = {}
         property_map = self.property_map | custom_map
@@ -195,7 +195,7 @@ class PlexosExporter(BaseExporter):
             records,
             property_map,
             self.default_units,
-            valid_properties=property_names,
+            valid_properties=collection_properties,
         )
         self._db_mgr.add_property_from_records(
             valid_component_properties,
@@ -219,8 +219,9 @@ class PlexosExporter(BaseExporter):
         }
 
         existing_rank = self._db_mgr.get_category_max_id(class_enum)
+        class_id = self._db_mgr.get_class_id(class_enum)
         categories = [
-            (class_enum.value, rank, category or "")
+            (class_id, rank, category or "")
             for rank, category in enumerate(sorted(component_categories), start=existing_rank + 1)
         ]
 
@@ -594,6 +595,7 @@ class PlexosExporter(BaseExporter):
             parent_class=ClassEnum.System,
             collection=CollectionEnum.Generators,
             filter_func=exclude_battery,
+            exclude_fields=[],
         )
 
         # Add generator memberships
@@ -869,13 +871,12 @@ class PlexosExporter(BaseExporter):
         # collection_properties = self._db_mgr.query(
         #     f"select name, property_id from t_property where collection_id={collection}"
         # )
-        collection_properties = self._db_mgr.get_valid_properties(
+        valid_collection_properties = self._db_mgr.get_valid_properties(
             collection, parent_class=parent_class, child_class=child_class
         )
 
-        valid_properties = [key[0] for key in collection_properties]
         for property_name, property_value in component_dict_mapped.items():
-            if property_name in valid_properties:
+            if property_name in valid_collection_properties:
                 property_value = get_property_magnitude(property_value, to_unit=unit_map.get(property_name))
                 valid_component_properties[property_name] = property_value
         return valid_component_properties
