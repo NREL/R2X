@@ -521,7 +521,7 @@ class PlexosParser(PCMParser):
             pl.col("parent_class_name") == ClassEnum.System.name
         )
         system_generators = self._get_model_data(system_generators)
-        if getattr(self.config.feature_flags, "plexos-csv", None):
+        if self.config.feature_flags.get("plexos-csv", None):
             system_generators.write_csv("generators.csv")
 
         # NOTE: The best way to identify the type of generator on Plexos is by reading the fuel
@@ -890,23 +890,25 @@ class PlexosParser(PCMParser):
                 isinstance(val, SingleTimeSeries) for val in [heat_rate_avg, heat_rate_base, heat_rate_incr]
             ):
                 logger.warning(
-                    "Market-Bid Cost not implemented for generator={}. Using Avg Value", generator_name
+                    "Time-varying heat-rates not implemented for generator={}. Using Avg Value",
+                    generator_name,
                 )
-                heat_rate_avg = (
-                    Quantity(np.mean(heat_rate_avg.data), units=heat_rate_avg.units)
-                    if isinstance(heat_rate_avg, SingleTimeSeries)
-                    else heat_rate_avg
-                )
-                heat_rate_base = (
-                    Quantity(np.mean(heat_rate_base.data), units=heat_rate_base.units)
-                    if isinstance(heat_rate_base, SingleTimeSeries)
-                    else heat_rate_base
-                )
-                heat_rate_incr = (
-                    Quantity(np.mean(heat_rate_incr.data), units=heat_rate_incr.units)
-                    if isinstance(heat_rate_incr, SingleTimeSeries)
-                    else heat_rate_incr
-                )
+
+            heat_rate_avg = (
+                Quantity(np.mean(heat_rate_avg.data), units=heat_rate_avg.units)
+                if isinstance(heat_rate_avg, SingleTimeSeries)
+                else heat_rate_avg
+            )
+            heat_rate_base = (
+                Quantity(np.mean(heat_rate_base.data), units=heat_rate_base.units)
+                if isinstance(heat_rate_base, SingleTimeSeries)
+                else heat_rate_base
+            )
+            heat_rate_incr = (
+                Quantity(np.mean(heat_rate_incr.data), units=heat_rate_incr.units)
+                if isinstance(heat_rate_incr, SingleTimeSeries)
+                else heat_rate_incr
+            )
 
             if heat_rate_incr and heat_rate_incr.units == "british_thermal_unit / kilowatt_hour":
                 heat_rate_incr = Quantity(heat_rate_incr.magnitude * 1e-3, "british_thermal_unit / watt_hour")
@@ -927,6 +929,8 @@ class PlexosParser(PCMParser):
                     proportional_term=heat_rate_incr.magnitude,
                     constant_term=heat_rate_base.magnitude,
                 )
+                if self.config.feature_flags.get("quad2pwl", None):
+                    fn = construct_pwl_from_quadtratic(fn, mapped_records)
             elif not heat_rate_incr2 and heat_rate_incr:
                 fn = LinearFunctionData(
                     proportional_term=heat_rate_incr.magnitude, constant_term=heat_rate_base.magnitude
@@ -934,8 +938,11 @@ class PlexosParser(PCMParser):
             else:
                 logger.warning("Heat Rate type not implemented for generator={}", generator_name)
                 fn = None
+
+            # if mapped_records.get("Bid-Cost Mark-up"):
+            #     bid_cost_mark_up(fn, mapped_records)
+
             if not vc:
-                fn = construct_pwl_from_quadtratic(fn, mapped_records)
                 vc = InputOutputCurve(name=f"{generator_name}_HR", function_data=fn)
             mapped_records["hr_value_curve"] = vc
         return mapped_records
@@ -968,6 +975,8 @@ class PlexosParser(PCMParser):
             logger.warning(
                 "Operating Cost not implemented for generator={} model map={}", generator_name, model_map
             )
+
+        mapped_records["vom_price"] = mapped_records.get("vom_price", 0)
         return mapped_records
 
     def _select_model_name(self):

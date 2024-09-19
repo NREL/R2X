@@ -274,3 +274,12 @@ def construct_pwl_from_quadtratic(fn, mapped_records, num_tranches=6):
 
     pwl_fn = PiecewiseLinearData(points=[XYCoords(x, y) for x, y in zip(x_optimal, y_optimal)])
     return pwl_fn
+
+
+def bid_cost_mark_up(fn, mapped_records):
+    # TODO(ktehranchi): Implement bid-cost markup
+    # First we need to convert whichever type of function we have to a piecewise linear function
+    # This PWL function must have X values definted at the mark-up points
+    # We can easily modify the mark-up prices by changing the Y values of the PWL function
+    # Issue right now is we need to do this for time-varying data but market bid cost isnt implemented
+    pass
