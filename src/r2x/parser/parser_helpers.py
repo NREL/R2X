@@ -6,7 +6,6 @@ import polars as pl
 import pandas as pd
 from datetime import datetime
 import numpy as np
-from scipy.optimize import minimize
 from typing import NamedTuple, List
 
 from infrasys.function_data import LinearFunctionData, QuadraticFunctionData, PiecewiseLinearData, XYCoords
@@ -196,64 +195,6 @@ def resample_data_to_hourly(data_file: pl.DataFrame):
     )
 
 
-def mse_loss(x_pwl, a, b, c, x_min, x_max, num_points=1000):
-    """
-    Calculates the mean squared error between the quadratic curve and the PWL curve.
-
-    Parameters:
-    x_pwl: initalization for the x-values of the tranches
-    a, b, c: coefficients of the quadratic equation
-    x_min, x_max: the range of x-values
-    num_points: number of points for the fine x-values to evaluate the MSE
-
-    Returns:
-    mse: the mean squared error between the quadratic and PWL curves
-    """
-
-    # Calculate the fine x-values and y-values for the quadratic curve
-    x_pts = np.linspace(x_min, x_max, num_points)
-    y_quad = a * x_pts**2 + b * x_pts + c
-
-    # Calculate the y-values for the tranches (PWL points)
-    x_pwl = np.sort(x_pwl)
-    y_pwl = a * x_pwl**2 + b * x_pwl + c
-
-    # Interpolate the PWL curve at the fine x-values
-    y_pwl = np.interp(x_pts, x_pwl, y_pwl)
-
-    # Calculate the mean squared error between the quadratic curve and PWL curve
-    mse = np.mean((y_quad - y_pwl) ** 2)
-
-    return mse
-
-
-def optimize_pwl_points(a, b, c, x_min, x_max, num_tranches):
-    """
-    Optimizes the placement of tranches to minimize MSE between the PWL curve and quadratic curve.
-
-    Parameters:
-    a, b, c: coefficients of the quadratic equation
-    x_min, x_max: the range of x-values
-    num_tranches: number of tranches (points) to place on the PWL curve
-
-    Returns:
-    x_optimal: the optimized x-values of the tranches
-    y_optimal: the corresponding y-values of the tranches
-    """
-    # Initial guess: evenly spaced x-values
-    x_initial = np.linspace(x_min, x_max, num_tranches)
-
-    # Bounds for the optimization (tranches must stay within x_min and x_max)
-    bounds = [(x_min, x_max) for _ in range(num_tranches)]
-
-    # Optimize the x-values of the tranches to minimize MSE
-    result = minimize(mse_loss, x_initial, args=(a, b, c, x_min, x_max), bounds=bounds)
-    x_optimal = np.sort(result.x)
-    y_optimal = a * x_optimal**2 + b * x_optimal + c
-
-    return x_optimal.round(2), y_optimal.round(2)
-
-
 def construct_pwl_from_quadtratic(fn, mapped_records, num_tranches=6):
     """
     Given function data of quadratic curve, construct piecewise linear curve with num_tranches tranches.
@@ -266,9 +207,12 @@ def construct_pwl_from_quadtratic(fn, mapped_records, num_tranches=6):
     x_min = mapped_records["min_rated_capacity"].magnitude
     x_max = mapped_records["rating"].magnitude
 
-    x_optimal, y_optimal = optimize_pwl_points(a, b, c, x_min, x_max, num_tranches)
+    # Use evenly spaced X values for the tranches
+    # Future iteration should accept custom X values for Bid Cost Markup
+    x_vals = np.linspace(x_min, x_max, num_tranches)
+    y_vals = a * x_vals**2 + b * x_vals + c
 
-    pwl_fn = PiecewiseLinearData(points=[XYCoords(x, y) for x, y in zip(x_optimal, y_optimal)])
+    pwl_fn = PiecewiseLinearData(points=[XYCoords(x, y) for x, y in zip(x_vals, y_vals)])
     return pwl_fn
 
 
