@@ -7,6 +7,9 @@ import pandas as pd
 from datetime import datetime
 import numpy as np
 from scipy.optimize import minimize
+from typing import NamedTuple, List
+
+from infrasys.function_data import LinearFunctionData, QuadraticFunctionData, PiecewiseLinearData, XYCoords
 
 
 def pl_filter_year(df, year: int | None = None, year_columns=["t", "year"], **kwargs):
@@ -224,7 +227,7 @@ def mse_loss(x_pwl, a, b, c, x_min, x_max, num_points=1000):
     return mse
 
 
-def construct_pwl_from_quadtratic(a, b, c, x_min, x_max, num_tranches):
+def optimize_pwl_points(a, b, c, x_min, x_max, num_tranches):
     """
     Optimizes the placement of tranches to minimize MSE between the PWL curve and quadratic curve.
 
@@ -246,10 +249,28 @@ def construct_pwl_from_quadtratic(a, b, c, x_min, x_max, num_tranches):
     # Optimize the x-values of the tranches to minimize MSE
     result = minimize(mse_loss, x_initial, args=(a, b, c, x_min, x_max), bounds=bounds)
     x_optimal = np.sort(result.x)
-    y_optimal = quadratic_curve(a, b, c, x_optimal)
+    y_optimal = a * x_optimal**2 + b * x_optimal + c
 
     # Remove any duplicate x-values and cooresponding y-values
     x_optimal = np.unique(x_optimal)
     y_optimal = np.unique(y_optimal)
 
-    return x_optimal, y_optimal
+    return x_optimal.round(2), y_optimal.round(2)
+
+
+def construct_pwl_from_quadtratic(fn, mapped_records, num_tranches=6):
+    """
+    Given function data of quadratic curve, construct piecewise linear curve with num_tranches tranches.
+    """
+    assert isinstance(fn, QuadraticFunctionData), "Input function data must be of type QuadraticFunctionData"
+
+    a = fn.quadratic_term
+    b = fn.proportional_term
+    c = fn.constant_term
+    x_min = mapped_records["min_rated_capacity"].magnitude
+    x_max = mapped_records["rating"].magnitude
+
+    x_optimal, y_optimal = optimize_pwl_points(a, b, c, x_min, x_max, num_tranches)
+
+    pwl_fn = PiecewiseLinearData(points=[XYCoords(x, y) for x, y in zip(x_optimal, y_optimal)])
+    return pwl_fn

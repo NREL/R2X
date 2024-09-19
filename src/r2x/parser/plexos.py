@@ -54,6 +54,7 @@ from .parser_helpers import (
     filter_property_dates,
     field_filter,
     prepare_ext_field,
+    construct_pwl_from_quadtratic,
 )
 
 models = importlib.import_module("r2x.models")
@@ -592,7 +593,7 @@ class PlexosParser(PCMParser):
 
             mapped_records = self._set_unit_availability(mapped_records)
             if mapped_records is None:
-                logger.debug("Skipping disabled generator {}", generator_name)
+                logger.trace("Skipping disabled generator {}", generator_name)
                 # When unit availability is not set, we skip the generator
                 continue
 
@@ -723,7 +724,7 @@ class PlexosParser(PCMParser):
 
             if "Capacity" in mapped_records:
                 mapped_records["storage_capacity"] = mapped_records["Capacity"]
-
+            # note: create field for initial storage charge level
             mapped_records["prime_mover_type"] = PrimeMoversType.BA
 
             valid_fields, ext_data = field_filter(mapped_records, GenericBattery.model_fields)
@@ -886,17 +887,34 @@ class PlexosParser(PCMParser):
             heat_rate_incr = mapped_records.get("Heat Rate Incr", None)
             heat_rate_incr2 = mapped_records.get("Heat Rate Incr2", None)
 
+            if any(
+                isinstance(val, SingleTimeSeries) for val in [heat_rate_avg, heat_rate_base, heat_rate_incr]
+            ):
+                logger.warning(
+                    "Market-Bid Cost not implemented for generator={}. Using Avg Value", generator_name
+                )
+                heat_rate_avg = (
+                    Quantity(np.mean(heat_rate_avg.data), units=heat_rate_avg.units)
+                    if isinstance(heat_rate_avg, SingleTimeSeries)
+                    else heat_rate_avg
+                )
+                heat_rate_base = (
+                    Quantity(np.mean(heat_rate_base.data), units=heat_rate_base.units)
+                    if isinstance(heat_rate_base, SingleTimeSeries)
+                    else heat_rate_base
+                )
+                heat_rate_incr = (
+                    Quantity(np.mean(heat_rate_incr.data), units=heat_rate_incr.units)
+                    if isinstance(heat_rate_incr, SingleTimeSeries)
+                    else heat_rate_incr
+                )
+
             if heat_rate_incr and heat_rate_incr.units == "british_thermal_unit / kilowatt_hour":
                 heat_rate_incr = Quantity(heat_rate_incr.magnitude * 1e-3, "british_thermal_unit / watt_hour")
 
             if heat_rate_avg and heat_rate_avg.units == "british_thermal_unit / kilowatt_hour":
                 heat_rate_avg = Quantity(heat_rate_avg.magnitude * 1e-3, "british_thermal_unit / watt_hour")
 
-            if any(
-                isinstance(val, SingleTimeSeries) for val in [heat_rate_avg, heat_rate_base, heat_rate_incr]
-            ):
-                logger.warning("Market-Bid Cost not implemented for generator={}", generator_name)
-                return mapped_records
             if heat_rate_avg:
                 fn = LinearFunctionData(proportional_term=heat_rate_avg.magnitude, constant_term=0)
                 vc = AverageRateCurve(
@@ -918,6 +936,7 @@ class PlexosParser(PCMParser):
                 logger.warning("Heat Rate type not implemented for generator={}", generator_name)
                 fn = None
             if not vc:
+                fn = construct_pwl_from_quadtratic(fn, mapped_records)
                 vc = InputOutputCurve(name=f"{generator_name}_HR", function_data=fn)
             mapped_records["hr_value_curve"] = vc
         return mapped_records
