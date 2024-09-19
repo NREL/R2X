@@ -5,6 +5,9 @@ build-backend = "hatchling.build"
 [tool.hatch.version]
 path = "src/r2x/__version__.py"
 
+[tool.hatch.metadata]
+allow-direct-references=true
+
 [project]
 name = "r2x"
 dynamic = ["version"]
@@ -25,10 +28,10 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
+    "infrasys @ git+https://github.com/NREL/infrasys@ps/value_curves",
     "jsonschema~=4.23",
     "loguru~=0.7.2",
     "pandas~=2.2",
-    "infrasys>=0.1.0",
     "plexosdb>=0.0.4",
     "polars~=1.1.0",
     "pyyaml~=6.0.1",
