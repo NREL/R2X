@@ -85,7 +85,7 @@ class System(ISSystem):
                         "uuid" in cost_field_value.keys()
                     ), f"Operation cost field {cost_field_key} was assumed to be a component but is not."
                     variable_cost = self.get_component_by_uuid(uuid.UUID(cost_field_value["uuid"]))
-                    sub_dict["variable_cost"] = variable_cost.vom_units.function_data.proportional_term
+                    sub_dict["variable_cost"] = variable_cost.vom_cost.function_data.proportional_term
                     if "fuel_cost" in variable_cost.model_fields:
                         # Note: We multiply the fuel price by 1000 to offset the division
                         # done by Sienna when it parses .csv files
