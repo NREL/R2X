@@ -1,13 +1,15 @@
 """Cost related functions."""
 
-from infrasys import Component
+# from infrasys import Component
+from infrasys.models import InfraSysBaseModelWithIdentifers
+
 from typing import Annotated
 from pydantic import Field
 from infrasys.cost_curves import ProductionVariableCostCurve
 from r2x.units import Currency, FuelPrice
 
 
-class OperationalCost(Component):
+class OperationalCost(InfraSysBaseModelWithIdentifers):
     name: Annotated[str, Field(frozen=True)] = ""
 
 

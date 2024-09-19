@@ -8,15 +8,22 @@ from pathlib import Path
 from typing import Any
 
 import pint
+from pint import Quantity
 import pandas as pd
 import numpy as np
 import infrasys
 from loguru import logger
 from infrasys.base_quantity import BaseQuantity
+from infrasys.function_data import (
+    LinearFunctionData,
+    QuadraticFunctionData,
+)
+from infrasys.value_curves import InputOutputCurve, AverageRateCurve
 
 from r2x.api import System
 from r2x.config import Scenario
 from r2x.parser.handler import file_handler
+from r2x.models.costs import ThermalGenerationCost, RenewableGenerationCost, HydroGenerationCost
 
 OUTPUT_FNAME = "{self.weather_year}"
 
@@ -160,6 +167,35 @@ class BaseExporter(ABC):
 
         return
 
+    def parse_operation_cost(self, component):
+        """Parse Infrasys Operation Cost into Plexos Records."""
+        op_cost = component.get("operation_cost")
+        if isinstance(op_cost, ThermalGenerationCost):
+            fuel_curve = op_cost.variable
+            if fuel_curve:
+                hr_curve = fuel_curve.value_curve
+                if isinstance(hr_curve, AverageRateCurve):
+                    component["Heat Rate"] = Quantity(hr_curve.function_data.proportional_term)
+                elif isinstance(hr_curve, InputOutputCurve):
+                    fn = hr_curve.function_data
+                    if isinstance(fn, QuadraticFunctionData):
+                        component["Heat Rate Base"] = Quantity(fn.constant_term)
+                        component["Heat Rate Incr"] = Quantity(fn.proportional_term)
+                        component["Heat Rate Incr2"] = Quantity(fn.quadratic_term)
+                    elif isinstance(fn, LinearFunctionData):
+                        component["Heat Rate Base"] = Quantity(fn.constant_term)
+                        component["Heat Rate Incr"] = Quantity(fn.proportional_term)
+                fuel_cost = fuel_curve.fuel_cost
+                if fuel_cost:
+                    component["fuel_price"] = Quantity(fuel_cost)
+        elif isinstance(op_cost, RenewableGenerationCost):
+            logger.info(f"No fuel-related data for renewable generator={component.get("name")}")
+        elif isinstance(op_cost, HydroGenerationCost):
+            logger.info(f"No heat rate or fuel data for hydro generator={component.get("name")}")
+        else:
+            logger.warning(f"Missing operation cost for generator={component.get("name")}")
+        return component
+
     def get_valid_records_properties(
         self,
         component_list,
@@ -179,6 +215,8 @@ class BaseExporter(ABC):
                     component["Heat Rate"] = ext_dict["heat_rate"]
                 if ext_dict.get("fuel_price"):
                     component["Fuel Price"] = ext_dict["fuel_price"]
+            # if "operation_cost" in component:
+            #     component = self.parse_operation_cost(component)
             for property_name, property_value in component.items():
                 if valid_properties is not None:
                     if property_name in valid_properties:

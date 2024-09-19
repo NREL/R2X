@@ -1,7 +1,7 @@
 {
   "plexos_device_map": {},
   "plexos_fuel_map": {},
-  "plexos_property_map": {
+  "plexos_input_property_map": {
     "Charge Efficiency": "charge_efficiency",
     "Commit": "must_run",
     "Discharge Efficiency": "discharge_efficiency",

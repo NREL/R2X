@@ -79,7 +79,7 @@ class PlexosExporter(BaseExporter):
         """Run the exporter."""
         logger.info("Starting {}", self.__class__.__name__)
 
-        self.export_data_files()
+        # self.export_data_files()
 
         # If starting w/o a reference file we add our custom models and objects
         if new_database:
@@ -104,6 +104,10 @@ class PlexosExporter(BaseExporter):
     def _get_time_series_properties(self, component):  # noqa: C901
         """Add time series object to certain plexos properties."""
         if not self.system.has_time_series(component):
+            return
+
+        if len(self.system.list_time_series(component)) > 1:
+            # NOTE:@pedro this is a temporary fix for the multiple time series issue.
             return
 
         ts_metadata = self.system.get_time_series(component)
@@ -173,7 +177,7 @@ class PlexosExporter(BaseExporter):
         scenario = scenario or self.plexos_scenario
         if not records:
             records = [
-                component.model_dump(exclude_none=True, exclude=exclude_fields)
+                component.model_dump(exclude_none=True, exclude=exclude_fields, mode="python")
                 for component in self.system.get_components(component_type, filter_func=filter_func)
             ]
 
@@ -542,6 +546,8 @@ class PlexosExporter(BaseExporter):
                 exclude_none=True, exclude=[*NESTED_ATTRIBUTES, "max_requirement"]
             )
 
+            if not reserve.region:
+                return
             regions = self.system.get_components(
                 ACBus, filter_func=lambda x: x.load_zone.name == reserve.region.name
             )
