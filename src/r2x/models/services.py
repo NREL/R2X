@@ -2,24 +2,21 @@
 
 from typing import Annotated
 
-from pydantic import Field, NonNegativeFloat
+from pydantic import Field, NonNegativeFloat, PositiveFloat
 
 from r2x.enums import ReserveDirection, ReserveType
 from r2x.models.core import MinMax, Service
 from r2x.models.topology import LoadZone
-from r2x.units import EmissionRate, Time, ActivePower
+from r2x.units import EmissionRate
 
 
 class Reserve(Service):
     """Class representing a reserve contribution."""
 
-    time_frame: (
-        Annotated[
-            Time,
-            Field(ge=0, description="Timeframe in which the reserve is required in minutes."),
-        ]
-        | None
-    ) = None
+    time_frame: Annotated[
+        PositiveFloat,
+        Field(description="Timeframe in which the reserve is required in seconds"),
+    ] = 1e30
     region: (
         Annotated[
             LoadZone,
@@ -33,8 +30,8 @@ class Reserve(Service):
     ] = -1
     duration: (
         Annotated[
-            Time,
-            Field(ge=0, description="Time over which the required response must be maintained in seconds."),
+            PositiveFloat,
+            Field(description="Time over which the required response must be maintained in seconds."),
         ]
         | None
     ) = None
@@ -49,13 +46,7 @@ class Reserve(Service):
         | None
     ) = None
     # ramp_rate: float | None = None  # NOTE: Maybe we do not need this.
-    # max_requirement: float = 0  # Should we specify which variable is the time series for?
-    max_requirement: Annotated[
-        ActivePower,
-        Field(
-            description=("the maximum output of each device's output that can be assigned to the service."),
-        ),
-    ]
+    max_requirement: float = 0  # Should we specify which variable is the time series for?
     direction: ReserveDirection
 
     @classmethod
@@ -65,7 +56,6 @@ class Reserve(Service):
             region=LoadZone.example(),
             direction=ReserveDirection.UP,
             reserve_type=ReserveType.REGULATION,
-            max_requirement=ActivePower(100, "MW"),
         )
 
 

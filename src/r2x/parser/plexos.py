@@ -374,7 +374,16 @@ class PlexosParser(PCMParser):
             )  # Pass string so we do not need to convert the json mapping.
             mapped_records["reserve_type"] = ReserveType[plexos_reserve_map["type"]]
             mapped_records["direction"] = ReserveDirection[plexos_reserve_map["direction"]]
+
+            # Service model uses all floats
+            mapped_records["max_requirement"] = mapped_records.pop("max_requirement").magnitude
             mapped_records["vors"] = mapped_records.pop("vors").magnitude
+            mapped_records["duration"] = mapped_records["duration"].magnitude
+            if mapped_records["time_frame"].units == "second":
+                mapped_records["time_frame"] = mapped_records["time_frame"].magnitude / 60
+            else:
+                mapped_records["time_frame"] = mapped_records["time_frame"].magnitude
+
             valid_fields, ext_data = field_filter(mapped_records, default_model.model_fields)
             valid_fields = prepare_ext_field(valid_fields, ext_data)
             self.system.add_component(default_model(**valid_fields))
