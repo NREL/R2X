@@ -286,6 +286,11 @@ class SiennaExporter(BaseExporter):
                 output_dict = reserve
                 output_dict["direction"] = reserve["direction"].name
                 output_dict["eligible_device_categories"] = "(Generator,Storage)"
+                output_dict["requirement"] = reserve["max_requirement"].magnitude
+                if output_dict["time_frame"].units == "second":
+                    output_dict["time_frame"] = output_dict["time_frame"].magnitude / 60
+                else:
+                    output_dict["time_frame"] = output_dict["time_frame"].magnitude
                 contributing_devices = reserve_map.get(reserve["name"])
                 output_dict["contributing_devices"] = str(tuple(contributing_devices)).replace(  # type: ignore
                     "'", ""

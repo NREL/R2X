@@ -111,15 +111,18 @@ DEFAULT_QUERY_COLUMNS_SCHEMA = {  # NOTE: Order matters
     "timeslice_value": pl.Float32,
     "data_text": pl.String,
 }
-COLUMNS = [
-    "name",
+DEFAULT_PROPERTY_COLUMNS = [
+    "band",
     "property_name",
     "property_value",
-    "band",
-    "scenario",
-    "date_from",
-    "date_to",
-    "text",
+    "property_unit",
+    "data_file",
+    "variable",
+    "action",
+    "variable_tag",
+    "variable_default",
+    "timeslice",
+    "timeslice_value",
 ]
 DEFAULT_INDEX = ["object_id", "name", "category"]
 
@@ -274,32 +277,20 @@ class PlexosParser(PCMParser):
         system_fuels = (pl.col("child_class_name") == ClassEnum.Fuel.value) & (
             pl.col("parent_class_name") == ClassEnum.System.value
         )
+
         fuels = self._get_model_data(system_fuels)
+        fuels.write_csv("fuels.csv")
         fuel_prices = {}
         for fuel_name, fuel_data in fuels.group_by("name"):
             fuel_name = fuel_name[0]
-            property_records = fuel_data[
-                [
-                    "band",
-                    "property_name",
-                    "property_value",
-                    "property_unit",
-                    "data_file",
-                    "variable",
-                    "action",
-                    "variable_tag",
-                    "variable_default",
-                    "timeslice",
-                    "timeslice_value",
-                ]
-            ].to_dicts()
+            property_records = fuel_data[DEFAULT_PROPERTY_COLUMNS].to_dicts()
 
             for property in property_records:
                 property.update({"property_unit": "$/MMBtu"})
 
             mapped_records, multi_band_records = self._parse_property_data(property_records, fuel_name)
             mapped_records["name"] = fuel_name
-            fuel_prices[fuel_name] = mapped_records["Price"]
+            fuel_prices[fuel_name] = mapped_records.get("Price", 0)
         return fuel_prices
 
     def _construct_load_zones(self, default_model=LoadZone) -> None:
@@ -366,40 +357,26 @@ class PlexosParser(PCMParser):
 
     def _construct_reserves(self, default_model=Reserve):
         logger.info("Creating reserve representation")
-        system_reserves = (pl.col("child_class_name") == ClassEnum.Reserve.name) & (
-            pl.col("parent_class_name") == ClassEnum.System.name
+        system_reserves = self._get_model_data(
+            (pl.col("child_class_name") == ClassEnum.Reserve.name)
+            & (pl.col("parent_class_name") == ClassEnum.System.name)
         )
-        system_reserves = self._get_model_data(system_reserves)
 
-        reserve_pivot = system_reserves.pivot(  # noqa: PD010
-            index=DEFAULT_INDEX,
-            columns="property_name",
-            values="property_value",
-            aggregate_function="first",
-        )
-        for reserve in reserve_pivot.iter_rows(named=True):
-            mapped_reserve = {self.property_map.get(key, key): value for key, value in reserve.items()}
-            valid_fields, ext_data = field_filter(mapped_reserve, default_model.model_fields)
-
-            if ext_data:
-                # Add reserve type and direction based on Plexos type. If the
-                # key is not present, the assumed one is the default (Spinning.Up)
-                reserve_type = validate_string(ext_data.pop("Type", "default"))
-
-                # Mapping is integer, but parsing reads it as float.
-                if isinstance(reserve_type, float):
-                    reserve_type = int(reserve_type)
-
-                # If we do not support the reserve type yield the default one.
-                plexos_reserve_map = self.config.defaults["reserve_types"].get(
-                    str(reserve_type), self.config.defaults["reserve_types"]["default"]
-                )  # Pass string so we do not need to convert the json mapping.
-
-                valid_fields["reserve_type"] = ReserveType[plexos_reserve_map["type"]]
-                valid_fields["direction"] = ReserveDirection[plexos_reserve_map["direction"]]
-
-                valid_fields = prepare_ext_field(valid_fields, ext_data)
-
+        for reserve_name, reserve_data in system_reserves.group_by("name"):
+            reserve_name = reserve_name[0]
+            logger.trace("Parsing battery = {}", reserve_name)
+            property_records = reserve_data[DEFAULT_PROPERTY_COLUMNS].to_dicts()
+            mapped_records, _ = self._parse_property_data(property_records, reserve_name)
+            mapped_records["name"] = reserve_name
+            reserve_type = validate_string(mapped_records.pop("Type", "default"))
+            plexos_reserve_map = self.config.defaults["reserve_types"].get(
+                str(reserve_type), self.config.defaults["reserve_types"]["default"]
+            )  # Pass string so we do not need to convert the json mapping.
+            mapped_records["reserve_type"] = ReserveType[plexos_reserve_map["type"]]
+            mapped_records["direction"] = ReserveDirection[plexos_reserve_map["direction"]]
+            mapped_records["vors"] = mapped_records.pop("vors").magnitude
+            valid_fields, ext_data = field_filter(mapped_records, default_model.model_fields)
+            valid_fields = prepare_ext_field(valid_fields, ext_data)
             self.system.add_component(default_model(**valid_fields))
 
         reserve_map = ReserveMap(name="contributing_generators")
@@ -561,21 +538,7 @@ class PlexosParser(PCMParser):
             model_map = self._get_model_type(fuel_pmtype)
             model_map = getattr(R2X_MODELS, model_map)
 
-            property_records = generator_data[
-                [
-                    "band",
-                    "property_name",
-                    "property_value",
-                    "property_unit",
-                    "data_file",
-                    "variable",
-                    "action",
-                    "variable_tag",
-                    "variable_default",
-                    "timeslice",
-                    "timeslice_value",
-                ]
-            ].to_dicts()
+            property_records = generator_data[DEFAULT_PROPERTY_COLUMNS].to_dicts()
             mapped_records, multi_band_records = self._parse_property_data(property_records, generator_name)
             mapped_records["name"] = generator_name
 
@@ -616,9 +579,10 @@ class PlexosParser(PCMParser):
             valid_fields, ext_data = field_filter(mapped_records, model_map.model_fields)
 
             ts_fields = {k: v for k, v in mapped_records.items() if isinstance(v, SingleTimeSeries)}
+
             valid_fields.update(
                 {
-                    ts_name: np.mean(ts.data)
+                    ts_name: ts.data[0].as_py()  # np.mean(ts.data)
                     for ts_name, ts in ts_fields.items()
                     if ts_name in valid_fields.keys()
                 }
@@ -700,21 +664,7 @@ class PlexosParser(PCMParser):
         for battery_name, battery_data in system_batteries.group_by("name"):
             battery_name = battery_name[0]
             logger.trace("Parsing battery = {}", battery_name)
-            property_records = battery_data[
-                [
-                    "band",
-                    "property_name",
-                    "property_value",
-                    "property_unit",
-                    "data_file",
-                    "variable",
-                    "action",
-                    "variable_tag",
-                    "variable_default",
-                    "timeslice",
-                    "timeslice_value",
-                ]
-            ].to_dicts()
+            property_records = battery_data[DEFAULT_PROPERTY_COLUMNS].to_dicts()
 
             mapped_records, _ = self._parse_property_data(property_records, battery_name)
             mapped_records["name"] = battery_name
@@ -895,17 +845,26 @@ class PlexosParser(PCMParser):
                 )
 
             heat_rate_avg = (
-                Quantity(np.mean(heat_rate_avg.data), units=heat_rate_avg.units)
+                Quantity(
+                    heat_rate_avg.data[0].as_py(),  # np.mean(heat_rate_avg.data),
+                    units=heat_rate_avg.units,
+                )
                 if isinstance(heat_rate_avg, SingleTimeSeries)
                 else heat_rate_avg
             )
             heat_rate_base = (
-                Quantity(np.mean(heat_rate_base.data), units=heat_rate_base.units)
+                Quantity(
+                    heat_rate_base.data[0].as_py(),  # np.mean(heat_rate_base.data),
+                    units=heat_rate_base.units,
+                )
                 if isinstance(heat_rate_base, SingleTimeSeries)
                 else heat_rate_base
             )
             heat_rate_incr = (
-                Quantity(np.mean(heat_rate_incr.data), units=heat_rate_incr.units)
+                Quantity(
+                    heat_rate_incr.data[0].as_py(),  # np.mean(heat_rate_incr.data),
+                    units=heat_rate_incr.units,
+                )
                 if isinstance(heat_rate_incr, SingleTimeSeries)
                 else heat_rate_incr
             )
@@ -959,7 +918,7 @@ class PlexosParser(PCMParser):
             if hr_curve:
                 fuel_cost = mapped_records["fuel_price"]
                 if isinstance(fuel_cost, SingleTimeSeries):
-                    fuel_cost = np.mean(fuel_cost.data)
+                    fuel_cost = fuel_cost.data[0].as_py()  # np.mean(fuel_cost.data)
                 elif isinstance(fuel_cost, Quantity):
                     fuel_cost = fuel_cost.magnitude
                 fuel_curve = FuelCurve(value_curve=hr_curve, fuel_cost=fuel_cost)
@@ -1080,6 +1039,10 @@ class PlexosParser(PCMParser):
 
             if isinstance(val, SingleTimeSeries):
                 val.variable_name = "max_active_power"
+                max_ts_rating = np.max(
+                    val.data
+                )  # plexos allows dispatch above max rating. Increase rating to max dispatch value
+                rating = Quantity(max_ts_rating, rating.units)
                 self._apply_action(np.divide, val, rating.magnitude)
                 mapped_records["max_active_power"] = val
             mapped_records["active_power"] = rating
