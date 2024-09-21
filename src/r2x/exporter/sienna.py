@@ -217,6 +217,7 @@ class SiennaExporter(BaseExporter):
             "rating",
             "unit_type",
             "active_power",
+            "active_power_limits_max",
             "min_rated_capacity",
             "min_down_time",
             "min_up_time",

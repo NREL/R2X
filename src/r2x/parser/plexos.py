@@ -685,11 +685,11 @@ class PlexosParser(PCMParser):
                 mapped_records["storage_capacity"] = mapped_records["Capacity"]
             mapped_records["prime_mover_type"] = PrimeMoversType.BA
 
-            valid_fields, ext_data = field_filter(mapped_records, GenericBattery.model_fields)
-            valid_fields = self._set_unit_availability(valid_fields)
-            if valid_fields is None:
+            mapped_records = self._set_unit_availability(mapped_records)
+            if mapped_records is None:
                 continue
 
+            valid_fields, ext_data = field_filter(mapped_records, GenericBattery.model_fields)
             if not all(key in valid_fields for key in required_fields):
                 missing_fields = [key for key in required_fields if key not in valid_fields]
                 logger.warning(
@@ -1014,7 +1014,7 @@ class PlexosParser(PCMParser):
         """
         # TODO @ktehranchi: #35 Include date_from and date_to in the availability
         # https://github.com/NREL/R2X/issues/35
-
+        active_power_limits_max = None
         availability = mapped_records.get("available", None)
         if availability is not None and availability > 0:
             # Set availability, rating, storage_capacity as multiplier of availability/'units'
@@ -1051,10 +1051,12 @@ class PlexosParser(PCMParser):
                 max_ts_rating = np.max(
                     val.data
                 )  # plexos allows dispatch above max rating. Increase rating to max dispatch value
-                rating = Quantity(max_ts_rating, rating.units)
+                active_power_limits_max = Quantity(np.maximum(max_ts_rating, rating.magnitude), rating.units)
                 self._apply_action(np.divide, val, rating.magnitude)
                 mapped_records["max_active_power"] = val
+
             mapped_records["active_power"] = rating
+            mapped_records["active_power_limits_max"] = active_power_limits_max or rating
 
             if isinstance(rating_factor, SingleTimeSeries):
                 mapped_records.pop("Rating Factor")  # rm for ext exporter
