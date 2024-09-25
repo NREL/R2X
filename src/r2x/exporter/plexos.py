@@ -79,7 +79,7 @@ class PlexosExporter(BaseExporter):
         """Run the exporter."""
         logger.info("Starting {}", self.__class__.__name__)
 
-        # self.export_data_files()
+        self.export_data_files()
 
         # If starting w/o a reference file we add our custom models and objects
         if new_database:
