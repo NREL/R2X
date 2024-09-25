@@ -4,7 +4,7 @@ from collections import defaultdict, namedtuple
 
 from infrasys.component import Component
 from typing import Annotated
-from pydantic import Field, field_serializer
+from pydantic import Field, computed_field, field_serializer
 from r2x.units import ureg
 
 
@@ -16,6 +16,7 @@ class BaseComponent(Component):
     ext: dict = Field(default_factory=dict, description="Additional information of the component.")
 
     @property
+    @computed_field
     def class_type(self) -> str:
         """Create attribute that holds the class name."""
         return type(self).__name__

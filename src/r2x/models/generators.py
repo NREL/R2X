@@ -5,7 +5,7 @@ from typing import Annotated
 from pydantic import Field, NonNegativeFloat
 
 from r2x.models.core import Device
-from r2x.models.costs import HydroGenerationCost, RenewableGenerationCost, ThermalGenerationCost, StorageCost
+from r2x.models.costs import OperationalCost
 from r2x.models.topology import ACBus
 from r2x.models.load import PowerLoad
 from r2x.enums import PrimeMoversType
@@ -38,9 +38,7 @@ class Generator(Device):
             ),
         ),
     ]
-    operation_cost: (
-        ThermalGenerationCost | RenewableGenerationCost | HydroGenerationCost | StorageCost | None
-    ) = None
+    operation_cost: OperationalCost | None = None
     base_power: Annotated[
         ApparentPower | None,
         Field(

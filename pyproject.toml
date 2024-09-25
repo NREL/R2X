@@ -146,6 +146,7 @@ pythonpath = [
 markers = [
     "exporters: Tests related to exporters",
     "plexos: Tests related to plexos",
+    "utils: Util functions"
 ]
 
 [tool.coverage.run]

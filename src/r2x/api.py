@@ -7,13 +7,14 @@ from os import PathLike
 from pathlib import Path
 from itertools import chain
 from collections.abc import Iterable
+from types import NotImplementedType
 from loguru import logger
 
 from infrasys.component import Component
 from infrasys.system import System as ISSystem
+
+from r2x.utils import haskey
 from .__version__ import __data_model_version__
-import uuid
-import infrasys.cost_curves
 
 
 class System(ISSystem):
@@ -52,7 +53,11 @@ class System(ISSystem):
         # Get desired components to offload to csv
         components = map(
             lambda component: component.model_dump(
-                exclude={}, exclude_none=True, mode="json", context={"magnitude_only": True}
+                exclude={},
+                exclude_none=True,
+                mode="json",
+                context={"magnitude_only": True},
+                serialize_as_any=True,
             ),
             self.get_components(component, filter_func=filter_func),
         )
@@ -84,46 +89,58 @@ class System(ISSystem):
                     assert (
                         "uuid" in cost_field_value.keys()
                     ), f"Operation cost field {cost_field_key} was assumed to be a component but is not."
-                    variable_cost = self.get_component_by_uuid(uuid.UUID(cost_field_value["uuid"]))
-                    sub_dict["variable_cost"] = variable_cost.vom_cost.function_data.proportional_term
-                    if "fuel_cost" in variable_cost.model_fields:
+                    variable_cost = (
+                        cost_field_value  # self.get_component_by_uuid(uuid.UUID(cost_field_value["uuid"]))
+                    )
+                    if haskey(variable_cost, ["vom_cost", "function_data"]):
+                        sub_dict["variable_cost"] = variable_cost["vom_cost"]["function_data"][
+                            "proportional_term"
+                        ]
+
+                    if "fuel_cost" in variable_cost.keys():
+                        assert variable_cost["fuel_cost"] is not None
                         # Note: We multiply the fuel price by 1000 to offset the division
                         # done by Sienna when it parses .csv files
-                        sub_dict["fuel_price"] = variable_cost.fuel_cost * 1000
+                        sub_dict["fuel_price"] = variable_cost["fuel_cost"] * 1000
                         operation_cost_fields.add("fuel_price")
 
-                    function_data = variable_cost.value_curve.function_data
-                    if "constant_term" in function_data.model_fields:
-                        sub_dict["heat_rate_a0"] = function_data.constant_term
-                        operation_cost_fields.add("heat_rate_a0")
-                    if "proportional_term" in function_data.model_fields:
-                        sub_dict["heat_rate_a1"] = function_data.proportional_term
-                        operation_cost_fields.add("heat_rate_a1")
-                    if "quadratic_term" in function_data.model_fields:
-                        sub_dict["heat_rate_a2"] = function_data.quadratic_term
-                        operation_cost_fields.add("heat_rate_a2")
-                    if "x_coords" in function_data.model_fields:
-                        x_y_coords = dict(zip(function_data.x_coords, function_data.y_coords))
-                        match type(variable_cost):
-                            case infrasys.cost_curves.CostCurve:
-                                for i, (x_coord, y_coord) in enumerate(x_y_coords.items()):
-                                    output_point_col = f"output_point_{i}"
-                                    sub_dict[output_point_col] = x_coord
-                                    operation_cost_fields.add(output_point_col)
+                    if haskey(variable_cost, ["value_curve", "function_data"]):
+                        function_data = variable_cost["value_curve"]["function_data"]
+                        if "constant_term" in function_data.keys():
+                            sub_dict["heat_rate_a0"] = function_data["constant_term"]
+                            operation_cost_fields.add("heat_rate_a0")
+                        if "proportional_term" in function_data.keys():
+                            sub_dict["heat_rate_a1"] = function_data["proportional_term"]
+                            operation_cost_fields.add("heat_rate_a1")
+                        if "quadratic_term" in function_data.keys():
+                            sub_dict["heat_rate_a2"] = function_data["quadratic_term"]
+                            operation_cost_fields.add("heat_rate_a2")
+                        if "x_coords" in function_data.keys():
+                            x_y_coords = dict(zip(function_data.x_coords, function_data.y_coords))
+                            match variable_cost["variable_type"]:
+                                case "CostCurve":
+                                    for i, (x_coord, y_coord) in enumerate(x_y_coords.items()):
+                                        output_point_col = f"output_point_{i}"
+                                        sub_dict[output_point_col] = x_coord
+                                        operation_cost_fields.add(output_point_col)
 
-                                    cost_point_col = f"cost_point_{i}"
-                                    sub_dict[cost_point_col] = y_coord
-                                    operation_cost_fields.add(cost_point_col)
+                                        cost_point_col = f"cost_point_{i}"
+                                        sub_dict[cost_point_col] = y_coord
+                                        operation_cost_fields.add(cost_point_col)
 
-                            case infrasys.cost_curves.FuelCurve:
-                                for i, (x_coord, y_coord) in enumerate(x_y_coords.items()):
-                                    output_point_col = f"output_point_{i}"
-                                    sub_dict[output_point_col] = x_coord
-                                    operation_cost_fields.add(output_point_col)
+                                case "FuelCurve":
+                                    for i, (x_coord, y_coord) in enumerate(x_y_coords.items()):
+                                        output_point_col = f"output_point_{i}"
+                                        sub_dict[output_point_col] = x_coord
+                                        operation_cost_fields.add(output_point_col)
 
-                                    heat_rate_col = "heat_rate_avg_0" if i == 0 else f"heat_rate_incr_{i}"
-                                    sub_dict[heat_rate_col] = y_coord
-                                    operation_cost_fields.add(heat_rate_col)
+                                        heat_rate_col = "heat_rate_avg_0" if i == 0 else f"heat_rate_incr_{i}"
+                                        sub_dict[heat_rate_col] = y_coord
+                                        operation_cost_fields.add(heat_rate_col)
+                                case _:
+                                    raise NotImplementedType(
+                                        f"Type {variable_cost['variable_type']} variable curve not supported"
+                                    )
                 elif cost_field_key not in sub_dict.keys():
                     sub_dict[cost_field_key] = cost_field_value
                     operation_cost_fields.add(cost_field_key)

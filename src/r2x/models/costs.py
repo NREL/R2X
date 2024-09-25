@@ -1,16 +1,26 @@
 """Cost related functions."""
 
-# from infrasys import Component
-from infrasys.models import InfraSysBaseModelWithIdentifers
-
 from typing import Annotated
-from pydantic import Field
+from infrasys.models import InfraSysBaseModelWithIdentifers
+from pydantic import Field, computed_field
 from infrasys.cost_curves import ProductionVariableCostCurve
 from r2x.units import Currency, FuelPrice
 
 
 class OperationalCost(InfraSysBaseModelWithIdentifers):
-    name: Annotated[str, Field(frozen=True)] = ""
+    @property
+    @computed_field
+    def class_type(self) -> str:
+        """Create attribute that holds the class name."""
+        return type(self).__name__
+
+    @property
+    @computed_field
+    def variable_type(self) -> str | None:
+        """Create attribute that holds the class name."""
+        if not getattr(self, "variable"):
+            return None
+        return type(getattr(self, "variable")).__name__
 
 
 class RenewableGenerationCost(OperationalCost):
