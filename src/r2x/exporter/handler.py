@@ -189,11 +189,11 @@ class BaseExporter(ABC):
                 if fuel_cost:
                     component["fuel_price"] = Quantity(fuel_cost)
         elif isinstance(op_cost, RenewableGenerationCost):
-            logger.info(f"No fuel-related data for renewable generator={component.get("name")}")
+            logger.info(f"No fuel-related data for renewable generator={component.get('name')}")
         elif isinstance(op_cost, HydroGenerationCost):
-            logger.info(f"No heat rate or fuel data for hydro generator={component.get("name")}")
+            logger.info(f"No heat rate or fuel data for hydro generator={component.get('name')}")
         else:
-            logger.warning(f"Missing operation cost for generator={component.get("name")}")
+            logger.warning(f"Missing operation cost for generator={component.get('name')}")
         return component
 
     def get_valid_records_properties(
