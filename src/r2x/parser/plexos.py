@@ -357,6 +357,7 @@ class PlexosParser(PCMParser):
 
     def _construct_reserves(self, default_model=Reserve):
         logger.info("Creating reserve representation")
+
         system_reserves = self._get_model_data(
             (pl.col("child_class_name") == ClassEnum.Reserve.name)
             & (pl.col("parent_class_name") == ClassEnum.System.name)
@@ -537,7 +538,7 @@ class PlexosParser(PCMParser):
             logger.trace("Parsing generator = {} with fuel type = {}", generator_name, fuel_name)
 
             fuel_pmtype = self._get_fuel_pmtype(generator_name, fuel_name=fuel_name)
-            # logger.debug("fuel_pmtype={}", fuel_pmtype)
+
             if not fuel_pmtype:
                 msg = "Fuel mapping not found for {} with fuel_type={}"
                 logger.warning(msg, generator_name, fuel_name)
@@ -548,6 +549,7 @@ class PlexosParser(PCMParser):
             model_map = getattr(R2X_MODELS, model_map)
 
             property_records = generator_data[DEFAULT_PROPERTY_COLUMNS].to_dicts()
+
             mapped_records, multi_band_records = self._parse_property_data(property_records, generator_name)
             mapped_records["name"] = generator_name
 
@@ -673,6 +675,7 @@ class PlexosParser(PCMParser):
         for battery_name, battery_data in system_batteries.group_by("name"):
             battery_name = battery_name[0]
             logger.trace("Parsing battery = {}", battery_name)
+
             property_records = battery_data[DEFAULT_PROPERTY_COLUMNS].to_dicts()
 
             mapped_records, _ = self._parse_property_data(property_records, battery_name)
@@ -690,6 +693,7 @@ class PlexosParser(PCMParser):
                 continue
 
             valid_fields, ext_data = field_filter(mapped_records, GenericBattery.model_fields)
+
             if not all(key in valid_fields for key in required_fields):
                 missing_fields = [key for key in required_fields if key not in valid_fields]
                 logger.warning(
@@ -1015,6 +1019,7 @@ class PlexosParser(PCMParser):
         # TODO @ktehranchi: #35 Include date_from and date_to in the availability
         # https://github.com/NREL/R2X/issues/35
         active_power_limits_max = None
+
         availability = mapped_records.get("available", None)
         if availability is not None and availability > 0:
             # Set availability, rating, storage_capacity as multiplier of availability/'units'
