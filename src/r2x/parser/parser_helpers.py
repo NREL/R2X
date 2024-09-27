@@ -6,6 +6,7 @@ import polars as pl
 import pandas as pd
 from datetime import datetime
 import numpy as np
+import cvxpy as cp
 from typing import NamedTuple, List
 
 from infrasys.function_data import LinearFunctionData, QuadraticFunctionData, PiecewiseLinearData, XYCoords
@@ -209,11 +210,43 @@ def construct_pwl_from_quadtratic(fn, mapped_records, num_tranches=6):
 
     # Use evenly spaced X values for the tranches
     # Future iteration should accept custom X values for Bid Cost Markup
-    x_vals = np.linspace(x_min, x_max, num_tranches)
-    y_vals = a * x_vals**2 + b * x_vals + c
+    x_vals, y_vals = optimize_pwl(a, b, c, x_min, x_max, n_tranches=6)
 
     pwl_fn = PiecewiseLinearData(points=[XYCoords(x, y) for x, y in zip(x_vals, y_vals)])
+
+    # # Plot the results
+    # import matplotlib.pyplot as plt
+    # plt.figure(figsize=(8, 6))
+    # # Plot the quadratic function
+    # x_plot = np.linspace(x_min, x_max, 100)
+    # y_quad = a * x_plot**2 + b * x_plot + c
+    # plt.plot(x_plot, y_quad, label='Quadratic Function', color='blue', lw=2)
+    # plt.plot(x_vals, y_vals, label='Optimized PWL Function', color='red', linestyle='--', marker='o')
+    # plt.xlabel('MW')
+    # plt.ylabel('MMbtu/hr')
+    # plt.title(f'Generator {mapped_records.get("name")} PWL to Quadratic Cost Functions')
+    # plt.legend()
+    # plt.grid(True)
+    # plt.savefig(f'pwl_curves/pwl_optimization_{mapped_records.get("name")}.png')
+    # plt.close()
+
     return pwl_fn
+
+
+def optimize_pwl(a, b, c, min, max, n_tranches=6):
+    y = cp.Variable(n_tranches)
+    x_target = np.linspace(min, max, n_tranches)
+    y_quad = a * x_target**2 + b * x_target + c
+    mse = cp.sum_squares(y - y_quad)
+
+    # Monotonicity constraints
+    constraints = [y[i] <= y[i + 1] for i in range(n_tranches - 1)]
+
+    objective = cp.Minimize(mse)
+    problem = cp.Problem(objective, constraints)
+    problem.solve()
+
+    return x_target, y.value
 
 
 def bid_cost_mark_up(fn, mapped_records):
