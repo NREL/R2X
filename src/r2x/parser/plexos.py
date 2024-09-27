@@ -54,6 +54,7 @@ from .parser_helpers import (
     filter_property_dates,
     field_filter,
     prepare_ext_field,
+    construct_pwl_from_quadtratic,
 )
 
 models = importlib.import_module("r2x.models")
@@ -110,15 +111,18 @@ DEFAULT_QUERY_COLUMNS_SCHEMA = {  # NOTE: Order matters
     "timeslice_value": pl.Float32,
     "data_text": pl.String,
 }
-COLUMNS = [
-    "name",
+DEFAULT_PROPERTY_COLUMNS = [
+    "band",
     "property_name",
     "property_value",
-    "band",
-    "scenario",
-    "date_from",
-    "date_to",
-    "text",
+    "property_unit",
+    "data_file",
+    "variable",
+    "action",
+    "variable_tag",
+    "variable_default",
+    "timeslice",
+    "timeslice_value",
 ]
 DEFAULT_INDEX = ["object_id", "name", "category"]
 
@@ -273,32 +277,20 @@ class PlexosParser(PCMParser):
         system_fuels = (pl.col("child_class_name") == ClassEnum.Fuel.value) & (
             pl.col("parent_class_name") == ClassEnum.System.value
         )
+
         fuels = self._get_model_data(system_fuels)
+        fuels.write_csv("fuels.csv")
         fuel_prices = {}
         for fuel_name, fuel_data in fuels.group_by("name"):
             fuel_name = fuel_name[0]
-            property_records = fuel_data[
-                [
-                    "band",
-                    "property_name",
-                    "property_value",
-                    "property_unit",
-                    "data_file",
-                    "variable",
-                    "action",
-                    "variable_tag",
-                    "variable_default",
-                    "timeslice",
-                    "timeslice_value",
-                ]
-            ].to_dicts()
+            property_records = fuel_data[DEFAULT_PROPERTY_COLUMNS].to_dicts()
 
             for property in property_records:
                 property.update({"property_unit": "$/MMBtu"})
 
             mapped_records, multi_band_records = self._parse_property_data(property_records, fuel_name)
             mapped_records["name"] = fuel_name
-            fuel_prices[fuel_name] = mapped_records["Price"]
+            fuel_prices[fuel_name] = mapped_records.get("Price", 0)
         return fuel_prices
 
     def _construct_load_zones(self, default_model=LoadZone) -> None:
@@ -365,40 +357,36 @@ class PlexosParser(PCMParser):
 
     def _construct_reserves(self, default_model=Reserve):
         logger.info("Creating reserve representation")
-        system_reserves = (pl.col("child_class_name") == ClassEnum.Reserve.name) & (
-            pl.col("parent_class_name") == ClassEnum.System.name
+
+        system_reserves = self._get_model_data(
+            (pl.col("child_class_name") == ClassEnum.Reserve.name)
+            & (pl.col("parent_class_name") == ClassEnum.System.name)
         )
-        system_reserves = self._get_model_data(system_reserves)
 
-        reserve_pivot = system_reserves.pivot(  # noqa: PD010
-            index=DEFAULT_INDEX,
-            columns="property_name",
-            values="property_value",
-            aggregate_function="first",
-        )
-        for reserve in reserve_pivot.iter_rows(named=True):
-            mapped_reserve = {self.property_map.get(key, key): value for key, value in reserve.items()}
-            valid_fields, ext_data = field_filter(mapped_reserve, default_model.model_fields)
+        for reserve_name, reserve_data in system_reserves.group_by("name"):
+            reserve_name = reserve_name[0]
+            logger.trace("Parsing battery = {}", reserve_name)
+            property_records = reserve_data[DEFAULT_PROPERTY_COLUMNS].to_dicts()
+            mapped_records, _ = self._parse_property_data(property_records, reserve_name)
+            mapped_records["name"] = reserve_name
+            reserve_type = validate_string(mapped_records.pop("Type", "default"))
+            plexos_reserve_map = self.config.defaults["reserve_types"].get(
+                str(reserve_type), self.config.defaults["reserve_types"]["default"]
+            )  # Pass string so we do not need to convert the json mapping.
+            mapped_records["reserve_type"] = ReserveType[plexos_reserve_map["type"]]
+            mapped_records["direction"] = ReserveDirection[plexos_reserve_map["direction"]]
 
-            if ext_data:
-                # Add reserve type and direction based on Plexos type. If the
-                # key is not present, the assumed one is the default (Spinning.Up)
-                reserve_type = validate_string(ext_data.pop("Type", "default"))
+            # Service model uses all floats
+            mapped_records["max_requirement"] = mapped_records.pop("max_requirement").magnitude
+            mapped_records["vors"] = mapped_records.pop("vors").magnitude
+            mapped_records["duration"] = mapped_records["duration"].magnitude
+            if mapped_records["time_frame"].units == "second":
+                mapped_records["time_frame"] = mapped_records["time_frame"].magnitude / 60
+            else:
+                mapped_records["time_frame"] = mapped_records["time_frame"].magnitude
 
-                # Mapping is integer, but parsing reads it as float.
-                if isinstance(reserve_type, float):
-                    reserve_type = int(reserve_type)
-
-                # If we do not support the reserve type yield the default one.
-                plexos_reserve_map = self.config.defaults["reserve_types"].get(
-                    str(reserve_type), self.config.defaults["reserve_types"]["default"]
-                )  # Pass string so we do not need to convert the json mapping.
-
-                valid_fields["reserve_type"] = ReserveType[plexos_reserve_map["type"]]
-                valid_fields["direction"] = ReserveDirection[plexos_reserve_map["direction"]]
-
-                valid_fields = prepare_ext_field(valid_fields, ext_data)
-
+            valid_fields, ext_data = field_filter(mapped_records, default_model.model_fields)
+            valid_fields = prepare_ext_field(valid_fields, ext_data)
             self.system.add_component(default_model(**valid_fields))
 
         reserve_map = ReserveMap(name="contributing_generators")
@@ -520,7 +508,7 @@ class PlexosParser(PCMParser):
             pl.col("parent_class_name") == ClassEnum.System.name
         )
         system_generators = self._get_model_data(system_generators)
-        if getattr(self.config.feature_flags, "plexos-csv", None):
+        if self.config.feature_flags.get("plexos-csv", None):
             system_generators.write_csv("generators.csv")
 
         # NOTE: The best way to identify the type of generator on Plexos is by reading the fuel
@@ -550,6 +538,7 @@ class PlexosParser(PCMParser):
             logger.trace("Parsing generator = {} with fuel type = {}", generator_name, fuel_name)
 
             fuel_pmtype = self._get_fuel_pmtype(generator_name, fuel_name=fuel_name)
+
             if not fuel_pmtype:
                 msg = "Fuel mapping not found for {} with fuel_type={}"
                 logger.warning(msg, generator_name, fuel_name)
@@ -559,21 +548,8 @@ class PlexosParser(PCMParser):
             model_map = self._get_model_type(fuel_pmtype)
             model_map = getattr(R2X_MODELS, model_map)
 
-            property_records = generator_data[
-                [
-                    "band",
-                    "property_name",
-                    "property_value",
-                    "property_unit",
-                    "data_file",
-                    "variable",
-                    "action",
-                    "variable_tag",
-                    "variable_default",
-                    "timeslice",
-                    "timeslice_value",
-                ]
-            ].to_dicts()
+            property_records = generator_data[DEFAULT_PROPERTY_COLUMNS].to_dicts()
+
             mapped_records, multi_band_records = self._parse_property_data(property_records, generator_name)
             mapped_records["name"] = generator_name
 
@@ -591,7 +567,7 @@ class PlexosParser(PCMParser):
 
             mapped_records = self._set_unit_availability(mapped_records)
             if mapped_records is None:
-                logger.debug("Skipping disabled generator {}", generator_name)
+                logger.trace("Skipping disabled generator {}", generator_name)
                 # When unit availability is not set, we skip the generator
                 continue
 
@@ -614,9 +590,10 @@ class PlexosParser(PCMParser):
             valid_fields, ext_data = field_filter(mapped_records, model_map.model_fields)
 
             ts_fields = {k: v for k, v in mapped_records.items() if isinstance(v, SingleTimeSeries)}
+
             valid_fields.update(
                 {
-                    ts_name: np.mean(ts.data)
+                    ts_name: ts.data[0].as_py()  # np.mean(ts.data)
                     for ts_name, ts in ts_fields.items()
                     if ts_name in valid_fields.keys()
                 }
@@ -698,21 +675,8 @@ class PlexosParser(PCMParser):
         for battery_name, battery_data in system_batteries.group_by("name"):
             battery_name = battery_name[0]
             logger.trace("Parsing battery = {}", battery_name)
-            property_records = battery_data[
-                [
-                    "band",
-                    "property_name",
-                    "property_value",
-                    "property_unit",
-                    "data_file",
-                    "variable",
-                    "action",
-                    "variable_tag",
-                    "variable_default",
-                    "timeslice",
-                    "timeslice_value",
-                ]
-            ].to_dicts()
+
+            property_records = battery_data[DEFAULT_PROPERTY_COLUMNS].to_dicts()
 
             mapped_records, _ = self._parse_property_data(property_records, battery_name)
             mapped_records["name"] = battery_name
@@ -722,13 +686,13 @@ class PlexosParser(PCMParser):
 
             if "Capacity" in mapped_records:
                 mapped_records["storage_capacity"] = mapped_records["Capacity"]
-
             mapped_records["prime_mover_type"] = PrimeMoversType.BA
 
-            valid_fields, ext_data = field_filter(mapped_records, GenericBattery.model_fields)
-            valid_fields = self._set_unit_availability(valid_fields)
-            if valid_fields is None:
+            mapped_records = self._set_unit_availability(mapped_records)
+            if mapped_records is None:
                 continue
+
+            valid_fields, ext_data = field_filter(mapped_records, GenericBattery.model_fields)
 
             if not all(key in valid_fields for key in required_fields):
                 missing_fields = [key for key in required_fields if key not in valid_fields]
@@ -884,11 +848,46 @@ class PlexosParser(PCMParser):
             heat_rate_base = mapped_records.get("Heat Rate Base", None)
             heat_rate_incr = mapped_records.get("Heat Rate Incr", None)
             heat_rate_incr2 = mapped_records.get("Heat Rate Incr2", None)
+
             if any(
                 isinstance(val, SingleTimeSeries) for val in [heat_rate_avg, heat_rate_base, heat_rate_incr]
             ):
-                logger.warning("Market-Bid Cost not implemented for generator={}", generator_name)
-                return mapped_records
+                logger.warning(
+                    "Time-varying heat-rates not implemented for generator={}. Using Avg Value",
+                    generator_name,
+                )
+
+            heat_rate_avg = (
+                Quantity(
+                    heat_rate_avg.data[0].as_py(),  # np.mean(heat_rate_avg.data),
+                    units=heat_rate_avg.units,
+                )
+                if isinstance(heat_rate_avg, SingleTimeSeries)
+                else heat_rate_avg
+            )
+            heat_rate_base = (
+                Quantity(
+                    heat_rate_base.data[0].as_py(),  # np.mean(heat_rate_base.data),
+                    units=heat_rate_base.units,
+                )
+                if isinstance(heat_rate_base, SingleTimeSeries)
+                else heat_rate_base
+            )
+            heat_rate_incr = (
+                Quantity(
+                    heat_rate_incr.data[0].as_py(),  # np.mean(heat_rate_incr.data),
+                    units=heat_rate_incr.units,
+                )
+                if isinstance(heat_rate_incr, SingleTimeSeries)
+                else heat_rate_incr
+            )
+
+            if heat_rate_incr and heat_rate_incr.units == "british_thermal_unit / kilowatt_hour":
+                heat_rate_incr = Quantity(heat_rate_incr.magnitude * 1e-3, "british_thermal_unit / watt_hour")
+
+            if heat_rate_avg and heat_rate_avg.units == "british_thermal_unit / kilowatt_hour":
+                heat_rate_avg = Quantity(heat_rate_avg.magnitude * 1e-3, "british_thermal_unit / watt_hour")
+
             if heat_rate_avg:
                 fn = LinearFunctionData(proportional_term=heat_rate_avg.magnitude, constant_term=0)
                 vc = AverageRateCurve(
@@ -902,6 +901,9 @@ class PlexosParser(PCMParser):
                     proportional_term=heat_rate_incr.magnitude,
                     constant_term=heat_rate_base.magnitude,
                 )
+                if self.config.feature_flags.get("quad2pwl", None):
+                    n_tranches = self.config.feature_flags.get("quad2pwl", None)
+                    fn = construct_pwl_from_quadtratic(fn, mapped_records, n_tranches)
             elif not heat_rate_incr2 and heat_rate_incr:
                 fn = LinearFunctionData(
                     proportional_term=heat_rate_incr.magnitude, constant_term=heat_rate_base.magnitude
@@ -909,6 +911,10 @@ class PlexosParser(PCMParser):
             else:
                 logger.warning("Heat Rate type not implemented for generator={}", generator_name)
                 fn = None
+
+            # if mapped_records.get("Bid-Cost Mark-up"):
+            #     bid_cost_mark_up(fn, mapped_records)
+
             if not vc:
                 vc = InputOutputCurve(name=f"{generator_name}_HR", function_data=fn)
             mapped_records["hr_value_curve"] = vc
@@ -925,11 +931,14 @@ class PlexosParser(PCMParser):
             if hr_curve:
                 fuel_cost = mapped_records["fuel_price"]
                 if isinstance(fuel_cost, SingleTimeSeries):
-                    fuel_cost = np.mean(fuel_cost.data)
+                    fuel_cost = fuel_cost.data[0].as_py()  # np.mean(fuel_cost.data)
                 elif isinstance(fuel_cost, Quantity):
                     fuel_cost = fuel_cost.magnitude
                 fuel_curve = FuelCurve(value_curve=hr_curve, fuel_cost=fuel_cost)
-                mapped_records["operation_cost"] = ThermalGenerationCost(variable=fuel_curve)
+                mapped_records["operation_cost"] = ThermalGenerationCost(
+                    variable=fuel_curve,
+                    start_up=mapped_records.get("startup_cost", 0),
+                )
                 mapped_records.pop("hr_value_curve")
             else:
                 logger.warning("No heat rate curve found for generator={}", generator_name)
@@ -939,6 +948,8 @@ class PlexosParser(PCMParser):
             logger.warning(
                 "Operating Cost not implemented for generator={} model map={}", generator_name, model_map
             )
+
+        mapped_records["vom_price"] = mapped_records.get("vom_price", 0)
         return mapped_records
 
     def _select_model_name(self):
@@ -1007,6 +1018,7 @@ class PlexosParser(PCMParser):
         """
         # TODO @ktehranchi: #35 Include date_from and date_to in the availability
         # https://github.com/NREL/R2X/issues/35
+        active_power_limits_max = None
 
         availability = mapped_records.get("available", None)
         if availability is not None and availability > 0:
@@ -1041,9 +1053,15 @@ class PlexosParser(PCMParser):
 
             if isinstance(val, SingleTimeSeries):
                 val.variable_name = "max_active_power"
+                max_ts_rating = np.max(
+                    val.data
+                )  # plexos allows dispatch above max rating. Increase rating to max dispatch value
+                active_power_limits_max = Quantity(np.maximum(max_ts_rating, rating.magnitude), rating.units)
                 self._apply_action(np.divide, val, rating.magnitude)
                 mapped_records["max_active_power"] = val
+
             mapped_records["active_power"] = rating
+            mapped_records["active_power_limits_max"] = active_power_limits_max or rating
 
             if isinstance(rating_factor, SingleTimeSeries):
                 mapped_records.pop("Rating Factor")  # rm for ext exporter

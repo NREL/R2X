@@ -74,6 +74,7 @@ class System(ISSystem):
         fields: list | None = None,
     ):
         operation_cost_fields = set()
+        x_y_coords = None
         for sub_dict in data:
             if "operation_cost" not in sub_dict.keys():
                 continue
@@ -104,6 +105,9 @@ class System(ISSystem):
                         operation_cost_fields.add("heat_rate_a2")
                     if "x_coords" in function_data.model_fields:
                         x_y_coords = dict(zip(function_data.x_coords, function_data.y_coords))
+                    if "points" in function_data.model_fields:
+                        x_y_coords = dict((xyCoord.x, xyCoord.y) for xyCoord in function_data.points)
+                    if x_y_coords:
                         match type(variable_cost):
                             case infrasys.cost_curves.CostCurve:
                                 for i, (x_coord, y_coord) in enumerate(x_y_coords.items()):
