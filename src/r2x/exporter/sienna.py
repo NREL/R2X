@@ -1,6 +1,7 @@
 """R2X Sienna system exporter."""
 
 # System packages
+from functools import partial
 import json
 import os
 from typing import Any
@@ -9,7 +10,8 @@ from typing import Any
 from loguru import logger
 
 # Local imports
-from r2x.exporter.handler import BaseExporter
+from r2x.exporter.handler import BaseExporter, get_export_records
+from r2x.exporter.utils import apply_pint_deconstruction, apply_property_map
 from r2x.models import (
     ACBranch,
     Bus,
@@ -53,6 +55,7 @@ class SiennaExporter(BaseExporter):
         super().__init__(*args, **kwargs)
         self.output_data = {}
         self.property_map = self.config.defaults.get("sienna_property_map", {})
+        self.unit_map = self.config.defaults.get("sienna_unit_map", {})
 
     def run(self, *args, path=None, **kwargs) -> "SiennaExporter":
         """Run sienna exporter workflow.
@@ -217,7 +220,6 @@ class SiennaExporter(BaseExporter):
             "rating",
             "unit_type",
             "active_power",
-            "active_power_limits_max",
             "min_rated_capacity",
             "min_down_time",
             "min_up_time",
@@ -287,7 +289,6 @@ class SiennaExporter(BaseExporter):
                 output_dict = reserve
                 output_dict["direction"] = reserve["direction"].name
                 output_dict["eligible_device_categories"] = "(Generator,Storage)"
-                output_dict["requirement"] = reserve["max_requirement"]
                 contributing_devices = reserve_map.get(reserve["name"])
                 output_dict["contributing_devices"] = str(tuple(contributing_devices)).replace(  # type: ignore
                     "'", ""
@@ -324,7 +325,6 @@ class SiennaExporter(BaseExporter):
             "rating",
             "input_efficiency",
             "output_efficiency",
-            "initial_energy",
             "storage_capacity",
             "min_storage_capacity",
             "max_storage_capacity",
@@ -334,11 +334,11 @@ class SiennaExporter(BaseExporter):
             "unit_type",
         ]
 
-        generic_storage = self.get_valid_records_properties(
-            self.system.to_records(Storage),
-            property_map=self.config.defaults["sienna_property_map"],
-            unit_map=self.config.defaults["sienna_unit_map"],
-            # valid_properties=output_fields,
+        generic_storage = get_export_records(
+            list(self.system.to_records(Storage)),
+            partial(apply_property_map, property_map=self.property_map),
+            partial(apply_pint_deconstruction, unit_map=self.unit_map),
+            # partial(apply_valid_properties, valid_properties=output_fields),
         )
         hydro_pump = list(self.system.to_records(HydroPumpedStorage))
         storage_list = generic_storage + hydro_pump

@@ -14,7 +14,7 @@ from loguru import logger
 
 from r2x.api import System
 from r2x.config import Scenario
-from r2x.exporter.utils import get_property_magnitude, modify_components
+from r2x.exporter.utils import modify_components
 from r2x.parser.handler import file_handler
 
 OUTPUT_FNAME = "{self.weather_year}"
@@ -158,39 +158,6 @@ class BaseExporter(ABC):
             )
 
         return
-
-    def get_valid_records_properties(
-        self,
-        component_list,
-        property_map: dict[str, str],
-        unit_map: dict[str, str],
-        valid_properties: list | None = None,
-    ):
-        """Return a validadted list of properties to the given property_map."""
-        result = []
-        for component in component_list:
-            component_dict = {"name": component["name"]}  # We need the name to match it with the membership.
-            if ext_dict := component.get("ext"):
-                if ext_dict.get("heat_rate"):
-                    component["Heat Rate"] = ext_dict["heat_rate"]
-                if ext_dict.get("fuel_price"):
-                    component["Fuel Price"] = ext_dict["fuel_price"]
-            if "operation_cost" in component:
-                pass
-            for property_name, property_value in component.items():
-                if valid_properties is not None:
-                    if property_name in valid_properties:
-                        property_value = get_property_magnitude(
-                            property_value, to_unit=unit_map.get(property_name)
-                        )
-                        component_dict[property_name] = property_value
-                else:
-                    property_value = get_property_magnitude(
-                        property_value, to_unit=unit_map.get(property_name)
-                    )
-                    component_dict[property_name] = property_value
-            result.append(component_dict)
-        return result
 
 
 def get_export_records(component_list: list[dict[str, Any]], *update_funcs: Callable) -> list[dict[str, Any]]:

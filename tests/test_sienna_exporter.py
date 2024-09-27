@@ -26,10 +26,12 @@ def sienna_exporter(scenario_instance, infrasys_test_system, tmp_folder):
     return SiennaExporter(config=scenario_instance, system=infrasys_test_system, output_folder=tmp_folder)
 
 
+@pytest.mark.sienna
 def test_sienna_exporter_instance(sienna_exporter):
     assert isinstance(sienna_exporter, SiennaExporter)
 
 
+@pytest.mark.sienna
 def test_sienna_exporter_run(sienna_exporter, tmp_folder):
     exporter = sienna_exporter.run()
 
