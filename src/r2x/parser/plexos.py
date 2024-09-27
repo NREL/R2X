@@ -784,7 +784,7 @@ class PlexosParser(PCMParser):
 
         interface_property_map = {
             v: k
-            for k, v in self.config.defaults["plexos_property_map"].items()
+            for k, v in self.config.defaults["plexos_input_property_map"].items()
             if k in default_model.model_fields
         }
 
