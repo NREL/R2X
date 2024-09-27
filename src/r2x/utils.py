@@ -5,6 +5,7 @@ import io
 import json
 import ast
 from operator import attrgetter
+import functools
 
 # Standard packages
 import os
@@ -708,6 +709,15 @@ def get_property_magnitude(property_value, to_unit: str | None = None) -> float:
         unit = to_unit.replace("$", "usd")  # Dollars are named usd on pint
         property_value = property_value.to(unit)
     return property_value.magnitude
+
+
+def haskey(base_dict: dict, path: list[str]) -> bool:
+    """Return True if the dictionary has the key for the given path."""
+    try:
+        functools.reduce(lambda x, y: x[y], path, base_dict)
+        return True
+    except (KeyError, TypeError):
+        return False
 
 
 DEFAULT_COLUMN_MAP = read_json("r2x/defaults/config.json").get("default_column_mapping")

@@ -7,6 +7,9 @@ from itertools import repeat
 from operator import attrgetter
 from argparse import ArgumentParser
 
+from infrasys.cost_curves import CostCurve, FuelCurve
+from infrasys.function_data import LinearFunctionData
+from infrasys.value_curves import AverageRateCurve, LinearCurve
 import numpy as np
 import polars as pl
 import pyarrow as pa
@@ -35,6 +38,8 @@ from r2x.models import (
     TransmissionInterfaceMap,
 )
 from r2x.models.core import MinMax
+from r2x.models.costs import HydroGenerationCost, ThermalGenerationCost
+from r2x.models.generators import RenewableGen, ThermalGen
 from r2x.parser.handler import BaseParser
 from r2x.units import ActivePower, EmissionRate, Energy, Percentage, Time, ureg
 from r2x.utils import match_category, read_csv
@@ -419,6 +424,32 @@ class ReEDSParser(BaseParser):
                 reserve_map = self.system.get_component(ReserveMap, name="reserve_map")
                 for reserve_type in row["services"]:
                     reserve_map.mapping[reserve_type.name].append(row["name"])
+
+            # Add operational cost data
+            # ReEDS model all the thermal generators assuming an average heat rate
+            if issubclass(gen_model, RenewableGen):
+                row["operation_cost"] = None
+            if issubclass(gen_model, ThermalGen):
+                if heat_rate := row.get("heat_rate"):
+                    heat_rate_curve = AverageRateCurve(
+                        function_data=LinearFunctionData(
+                            proportional_term=heat_rate,
+                            constant_term=0,
+                        ),
+                        initial_input=heat_rate.magnitude,
+                    )
+                    fuel_curve = FuelCurve(
+                        value_curve=heat_rate_curve,
+                        vom_cost=LinearCurve(row.get("vom_price", None)),
+                        fuel_cost=row.get("fuel_price", None),
+                    )
+                    row["operation_cost"] = ThermalGenerationCost(
+                        variable=fuel_curve,
+                    )
+            if issubclass(gen_model, HydroGen):
+                row["operation_cost"] = HydroGenerationCost(
+                    variable=CostCurve(value_curve=LinearCurve(row.get("vom_price", None)))
+                )
 
             valid_fields = {
                 key: value for key, value in row.items() if key in gen_model.model_fields if value is not None

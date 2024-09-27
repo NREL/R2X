@@ -65,6 +65,10 @@ class PowerRate(BaseQuantity):
     __base_unit__ = "MW/min"
 
 
+class Currency(BaseQuantity):
+    __base_unit__ = "usd"
+
+
 def get_magnitude(field) -> float | int:
     """Get reference base power of the component."""
     return field.magnitude if isinstance(field, BaseQuantity) else field

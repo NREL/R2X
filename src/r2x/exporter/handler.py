@@ -7,15 +7,14 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-import pint
 import pandas as pd
 import numpy as np
 import infrasys
 from loguru import logger
-from infrasys.base_quantity import BaseQuantity
 
 from r2x.api import System
 from r2x.config import Scenario
+from r2x.exporter.utils import modify_components
 from r2x.parser.handler import file_handler
 
 OUTPUT_FNAME = "{self.weather_year}"
@@ -160,53 +159,71 @@ class BaseExporter(ABC):
 
         return
 
-    def get_valid_records_properties(
-        self,
-        component_list,
-        property_map: dict[str, str],
-        unit_map: dict[str, str],
-        valid_properties: list | None = None,
-    ):
-        """Return a validadted list of properties to the given property_map."""
-        result = []
-        component_list_mapped = [
-            {property_map.get(key, key): value for key, value in d.items()} for d in component_list
-        ]
-        for component in component_list_mapped:
-            component_dict = {"name": component["name"]}  # We need the name to match it with the membership.
-            for property_name, property_value in component.items():
-                if valid_properties is not None:
-                    if property_name in valid_properties:
-                        property_value = self.get_property_magnitude(
-                            property_value, to_unit=unit_map.get(property_name)
-                        )
-                        component_dict[property_name] = property_value
-                else:
-                    property_value = self.get_property_magnitude(
-                        property_value, to_unit=unit_map.get(property_name)
-                    )
-                    component_dict[property_name] = property_value
-            result.append(component_dict)
-        return result
 
-    def get_property_magnitude(self, property_value, to_unit: str | None = None) -> float:
-        """Return magnitude with the given units for a pint Quantity.
+def get_export_records(component_list: list[dict[str, Any]], *update_funcs: Callable) -> list[dict[str, Any]]:
+    """Apply update functions to a list of components and return the modified list.
 
-        Parameters
-        ----------
-        property_name
+    Parameters
+    ----------
+    component_list : list[dict[str, Any]]
+        A list of dictionaries representing components to be updated.
+    *update_funcs : Callable
+        Variable number of update functions to be applied to each component.
 
-        property_value
-            pint.Quantity to extract magnitude from
-        to_unit
-            String that contains the unit conversion desired. Unit must be compatible.
-        """
-        if not isinstance(property_value, pint.Quantity | BaseQuantity):
-            return property_value
-        if to_unit:
-            unit = to_unit.replace("$", "usd")  # Dollars are named usd on pint
-            property_value = property_value.to(unit)
-        return property_value.magnitude
+    Returns
+    -------
+    list[dict[str, Any]]
+        A list of updated component dictionaries.
+
+    Examples
+    --------
+    >>> def update_name(component):
+    ...     component["name"] = component["name"].upper()
+    ...     return component
+    >>> def add_prefix(component):
+    ...     component["id"] = f"PREFIX_{component['id']}"
+    ...     return component
+    >>> components = [{"id": "001", "name": "Component A"}, {"id": "002", "name": "Component B"}]
+    >>> updated_components = get_export_records(components, update_name, add_prefix)
+    >>> updated_components
+    [{'id': 'PREFIX_001', 'name': 'COMPONENT A'}, {'id': 'PREFIX_002', 'name': 'COMPONENT B'}]
+    """
+    update_functions = modify_components(*update_funcs)
+    return [update_functions(component) for component in component_list]
+
+
+def get_export_properties(component, *update_funcs: Callable) -> dict[str, Any]:
+    """Apply update functions to a single component and return the modified component.
+
+    Parameters
+    ----------
+    component : dict[str, Any]
+        A dictionary representing a component to be updated.
+    *update_funcs : Callable
+        Variable number of update functions to be applied to the component.
+
+    Returns
+    -------
+    dict[str, Any]
+        The updated component dictionary.
+
+    Examples
+    --------
+    >>> def update_status(component):
+    ...     component["status"] = "active"
+    ...     return component
+    >>> def add_timestamp(component):
+    ...     from datetime import datetime
+    ...
+    ...     component["last_updated"] = datetime.now().isoformat()
+    ...     return component
+    >>> component = {"id": "003", "name": "Component C"}
+    >>> updated_component = get_export_properties(component, update_status, add_timestamp)
+    >>> updated_component
+    {'id': '003', 'name': 'Component C', 'status': 'active', 'last_updated': '2024-09-27T10:30'}
+    """
+    update_functions = modify_components(*update_funcs)
+    return update_functions(component)
 
 
 def get_exporter(

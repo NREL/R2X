@@ -144,7 +144,7 @@ class PlexosParser(PCMParser):
         assert self.config.run_folder
         self.run_folder = Path(self.config.run_folder)
         self.system = System(name=self.config.name, auto_add_composed_components=True)
-        self.property_map = self.config.defaults["plexos_property_map"]
+        self.property_map = self.config.defaults["plexos_input_property_map"]
         self.device_map = self.config.defaults["plexos_device_map"]
         self.fuel_map = self.config.defaults["plexos_fuel_map"]
         self.device_match_string = self.config.defaults["device_name_inference_map"]
@@ -891,7 +891,7 @@ class PlexosParser(PCMParser):
             if heat_rate_avg:
                 fn = LinearFunctionData(proportional_term=heat_rate_avg.magnitude, constant_term=0)
                 vc = AverageRateCurve(
-                    name=f"{generator_name}_HR",
+                    # name=f"{generator_name}_HR",
                     function_data=fn,
                     initial_input=heat_rate_avg.magnitude,
                 )
@@ -916,7 +916,10 @@ class PlexosParser(PCMParser):
             #     bid_cost_mark_up(fn, mapped_records)
 
             if not vc:
-                vc = InputOutputCurve(name=f"{generator_name}_HR", function_data=fn)
+                vc = InputOutputCurve(
+                    # name=f"{generator_name}_HR",
+                    function_data=fn
+                )
             mapped_records["hr_value_curve"] = vc
         return mapped_records
 

@@ -1,20 +1,27 @@
 """Create PLEXOS model from translated ReEDS data."""
 
 from argparse import ArgumentParser
+from functools import partial
 from importlib.resources import files
 from typing import Any
 import uuid
 import string
 from collections.abc import Callable
 
+
 from infrasys.component import Component
 from loguru import logger
 
 from r2x.enums import ReserveType
-from r2x.exporter.handler import BaseExporter
+from r2x.exporter.handler import BaseExporter, get_export_properties, get_export_records
 from plexosdb import PlexosSQLite
 from plexosdb.enums import ClassEnum, CollectionEnum
-from r2x.exporter.utils import get_reserve_type
+from r2x.exporter.utils import (
+    apply_pint_deconstruction,
+    apply_property_map,
+    apply_valid_properties,
+    get_reserve_type,
+)
 from r2x.models import (
     ACBus,
     Emission,
@@ -35,7 +42,7 @@ from r2x.models import (
     TransmissionInterface,
 )
 from r2x.units import get_magnitude
-from r2x.utils import custom_attrgetter, get_enum_from_string, read_json, get_property_magnitude
+from r2x.utils import custom_attrgetter, get_enum_from_string, read_json
 
 NESTED_ATTRIBUTES = ["ext", "bus", "services"]
 TIME_SERIES_PROPERTIES = ["Min Provision", "Static Risk"]
@@ -106,6 +113,10 @@ class PlexosExporter(BaseExporter):
         if not self.system.has_time_series(component):
             return
 
+        if len(self.system.list_time_series(component)) > 1:
+            # NOTE:@pedro this is a temporary fix for the multiple time series issue.
+            return
+
         ts_metadata = self.system.get_time_series(component)
 
         config_dict = self.config.__dict__
@@ -166,14 +177,16 @@ class PlexosExporter(BaseExporter):
         filter_func: Callable | None = None,
         scenario: str | None = None,
         records: list[dict] | None = None,
-        exclude_fields: list[str] = NESTED_ATTRIBUTES,
+        exclude_fields: list[str] | None = NESTED_ATTRIBUTES,
     ) -> None:
         """Bulk insert properties from selected component type."""
         logger.debug("Adding {} table properties...", component_type.__name__)
         scenario = scenario or self.plexos_scenario
         if not records:
             records = [
-                component.model_dump(exclude_none=True, exclude=exclude_fields)
+                component.model_dump(
+                    exclude_none=True, exclude=exclude_fields, mode="python", serialize_as_any=True
+                )
                 for component in self.system.get_components(component_type, filter_func=filter_func)
             ]
 
@@ -184,21 +197,23 @@ class PlexosExporter(BaseExporter):
         collection_properties = self._db_mgr.get_valid_properties(
             collection, parent_class=parent_class, child_class=child_class
         )
-        property_names = [key[0] for key in collection_properties]
+        # property_names = [key[0] for key in collection_properties]
         match component_type.__name__:
             case "GenericBattery":
-                custom_map = {"base_power": "Max Power", "storage_capacity": "Capacity"}
+                custom_map = {"active_power": "Max Power", "storage_capacity": "Capacity"}
             case _:
                 custom_map = {}
         property_map = self.property_map | custom_map
-        valid_component_properties = self.get_valid_records_properties(
+
+        export_records = get_export_records(
             records,
-            property_map,
-            self.default_units,
-            valid_properties=property_names,
+            partial(apply_operation_cost),
+            partial(apply_property_map, property_map=property_map),
+            partial(apply_pint_deconstruction, unit_map=self.default_units),
+            partial(apply_valid_properties, valid_properties=collection_properties, add_name=True),
         )
         self._db_mgr.add_property_from_records(
-            valid_component_properties,
+            export_records,
             parent_class=parent_class,
             parent_object_name=parent_object_name,
             collection=collection,
@@ -219,8 +234,9 @@ class PlexosExporter(BaseExporter):
         }
 
         existing_rank = self._db_mgr.get_category_max_id(class_enum)
+        class_id = self._db_mgr.get_class_id(class_enum)
         categories = [
-            (class_enum.value, rank, category or "")
+            (class_id, rank, category or "")
             for rank, category in enumerate(sorted(component_categories), start=existing_rank + 1)
         ]
 
@@ -396,14 +412,16 @@ class PlexosExporter(BaseExporter):
             MonitoredLine, parent_class=ClassEnum.System, collection=CollectionEnum.Lines
         )
 
-        for line in self.system.get_components(MonitoredLine):
-            properties = self.get_valid_component_properties(
+        # Add additional properties if any and membersips
+        collection_properties = self._db_mgr.get_valid_properties(
+            collection=CollectionEnum.Lines, parent_class=ClassEnum.System, child_class=ClassEnum.Line
+        )
+        for line in self.system.get_components(MonitoredLine, filter_func=lambda x: getattr(x, "ext", False)):
+            properties = get_export_properties(
                 line.ext,
-                property_map=self.property_map,
-                unit_map=self.default_units,
-                collection=CollectionEnum.Lines,
-                parent_class=ClassEnum.System,
-                child_class=ClassEnum.Line,
+                partial(apply_property_map, property_map=self.property_map),
+                partial(apply_pint_deconstruction, unit_map=self.default_units),
+                partial(apply_valid_properties, valid_properties=collection_properties),
             )
             for property_name, property_value in properties.items():
                 self._db_mgr.add_property(
@@ -541,10 +559,17 @@ class PlexosExporter(BaseExporter):
                 exclude_none=True, exclude=[*NESTED_ATTRIBUTES, "max_requirement"]
             )
 
+            if not reserve.region:
+                return
             regions = self.system.get_components(
                 ACBus, filter_func=lambda x: x.load_zone.name == reserve.region.name
             )
 
+            collection_properties = self._db_mgr.get_valid_properties(
+                collection=CollectionEnum.Regions,
+                parent_class=ClassEnum.Reserve,
+                child_class=ClassEnum.Region,
+            )
             for region in regions:
                 self._db_mgr.add_membership(
                     reserve.name,
@@ -553,13 +578,11 @@ class PlexosExporter(BaseExporter):
                     child_class=ClassEnum.Region,
                     collection=CollectionEnum.Regions,
                 )
-                properties = self.get_valid_component_properties(
+                properties = get_export_properties(
                     component_dict,
-                    property_map=self.property_map,
-                    unit_map=self.default_units,
-                    collection=CollectionEnum.Regions,
-                    parent_class=ClassEnum.Reserve,
-                    child_class=ClassEnum.Region,
+                    partial(apply_property_map, property_map=self.property_map),
+                    partial(apply_pint_deconstruction, unit_map=self.default_units),
+                    partial(apply_valid_properties, valid_properties=collection_properties),
                 )
                 if properties:
                     for property_name, property_value in properties.items():
@@ -594,6 +617,7 @@ class PlexosExporter(BaseExporter):
             parent_class=ClassEnum.System,
             collection=CollectionEnum.Generators,
             filter_func=exclude_battery,
+            exclude_fields=[],
         )
 
         # Add generator memberships
@@ -854,28 +878,41 @@ class PlexosExporter(BaseExporter):
             return categories_ids[default_category]
         return categories_ids[category_to_get]
 
-    def get_valid_component_properties(
-        self,
-        component_dict: dict,
-        property_map: dict[str, str],
-        unit_map: dict[str, str],
-        collection: CollectionEnum,
-        parent_class: ClassEnum | None = None,
-        child_class: ClassEnum | None = None,
-    ):
-        """Validate single component properties."""
-        valid_component_properties = {}
-        component_dict_mapped = {property_map.get(key, key): value for key, value in component_dict.items()}
-        # collection_properties = self._db_mgr.query(
-        #     f"select name, property_id from t_property where collection_id={collection}"
-        # )
-        collection_properties = self._db_mgr.get_valid_properties(
-            collection, parent_class=parent_class, child_class=child_class
-        )
 
-        valid_properties = [key[0] for key in collection_properties]
-        for property_name, property_value in component_dict_mapped.items():
-            if property_name in valid_properties:
-                property_value = get_property_magnitude(property_value, to_unit=unit_map.get(property_name))
-                valid_component_properties[property_name] = property_value
-        return valid_component_properties
+def apply_operation_cost(component: dict) -> dict[str, Any]:
+    """Parse Infrasys Operation Cost into Plexos Records."""
+    if not (cost := component.get("operation_cost")):
+        return component
+    match cost["class_type"]:
+        case "ThermalGenerationCost":
+            if shut_down := cost.get("start_up"):
+                component["Start Cost"] = shut_down
+            if shut_down := cost.get("shut_down"):
+                component["Shutdown Cost"] = shut_down
+
+            if cost.get("variable"):
+                component = _variable_type_parsing(component, cost)
+        case _:
+            pass
+    return component
+
+
+def _variable_type_parsing(component: dict, cost_dict: dict[str, Any]) -> dict[str, Any]:
+    fuel_curve = cost_dict["variable"]
+    value_curve_type = cost_dict["value_curve_type"]
+    variable_type = cost_dict["variable_type"]
+    function_data = fuel_curve["value_curve"]["function_data"]
+    match variable_type:
+        case "FuelCurve":
+            match value_curve_type:
+                case "AverageRateCurve":
+                    component["Heat Rate"] = function_data["proportional_term"]
+                case "InputOutputCurve":
+                    raise NotImplementedError("`InputOutputCurve` not yet implemented on Plexos exporter.")
+            if fuel_cost := fuel_curve.get("fuel_cost"):
+                component["Fuel Price"] = fuel_cost
+            if vom_cost := fuel_curve.get("vom_cost"):
+                component["VO&M Charge"] = vom_cost["function_data"]["proportional_term"]
+        case "CostCurve":
+            raise NotImplementedError("`CostCurve` operational cost not yet implemented on Plexos exporter.")
+    return component
