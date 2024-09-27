@@ -28,3 +28,7 @@ class MultipleFilesError(Exception):
 
 class ParserError(Exception):
     pass
+
+
+class FieldRemovalError(Exception):
+    pass

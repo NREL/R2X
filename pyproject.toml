@@ -145,6 +145,7 @@ pythonpath = [
 ]
 markers = [
     "exporters: Tests related to exporters",
+    "exporter_utils: Tests related to exporters utils",
     "plexos: Tests related to plexos",
     "utils: Util functions"
 ]

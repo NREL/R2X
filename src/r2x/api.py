@@ -57,7 +57,7 @@ class System(ISSystem):
                 exclude_none=True,
                 mode="json",
                 context={"magnitude_only": True},
-                serialize_as_any=True,
+                # serialize_as_any=True,
             ),
             self.get_components(component, filter_func=filter_func),
         )

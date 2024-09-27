@@ -8,14 +8,14 @@ from r2x.units import Currency, FuelPrice
 
 
 class OperationalCost(InfraSysBaseModelWithIdentifers):
+    @computed_field  # type: ignore[prop-decorator]
     @property
-    @computed_field
     def class_type(self) -> str:
         """Create attribute that holds the class name."""
         return type(self).__name__
 
+    @computed_field  # type: ignore[prop-decorator]
     @property
-    @computed_field
     def variable_type(self) -> str | None:
         """Create attribute that holds the class name."""
         if not getattr(self, "variable"):

@@ -7,23 +7,15 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-import pint
-from pint import Quantity
 import pandas as pd
 import numpy as np
 import infrasys
 from loguru import logger
-from infrasys.base_quantity import BaseQuantity
-from infrasys.function_data import (
-    LinearFunctionData,
-    QuadraticFunctionData,
-)
-from infrasys.value_curves import InputOutputCurve, AverageRateCurve
 
 from r2x.api import System
 from r2x.config import Scenario
+from r2x.exporter.utils import get_property_magnitude, modify_components
 from r2x.parser.handler import file_handler
-from r2x.models.costs import ThermalGenerationCost, RenewableGenerationCost, HydroGenerationCost
 
 OUTPUT_FNAME = "{self.weather_year}"
 
@@ -167,35 +159,6 @@ class BaseExporter(ABC):
 
         return
 
-    def parse_operation_cost(self, component):
-        """Parse Infrasys Operation Cost into Plexos Records."""
-        op_cost = component.get("operation_cost")
-        if isinstance(op_cost, ThermalGenerationCost):
-            fuel_curve = op_cost.variable
-            if fuel_curve:
-                hr_curve = fuel_curve.value_curve
-                if isinstance(hr_curve, AverageRateCurve):
-                    component["Heat Rate"] = Quantity(hr_curve.function_data.proportional_term)
-                elif isinstance(hr_curve, InputOutputCurve):
-                    fn = hr_curve.function_data
-                    if isinstance(fn, QuadraticFunctionData):
-                        component["Heat Rate Base"] = Quantity(fn.constant_term)
-                        component["Heat Rate Incr"] = Quantity(fn.proportional_term)
-                        component["Heat Rate Incr2"] = Quantity(fn.quadratic_term)
-                    elif isinstance(fn, LinearFunctionData):
-                        component["Heat Rate Base"] = Quantity(fn.constant_term)
-                        component["Heat Rate Incr"] = Quantity(fn.proportional_term)
-                fuel_cost = fuel_curve.fuel_cost
-                if fuel_cost:
-                    component["fuel_price"] = Quantity(fuel_cost)
-        elif isinstance(op_cost, RenewableGenerationCost):
-            logger.info(f"No fuel-related data for renewable generator={component.get('name')}")
-        elif isinstance(op_cost, HydroGenerationCost):
-            logger.info(f"No heat rate or fuel data for hydro generator={component.get('name')}")
-        else:
-            logger.warning(f"Missing operation cost for generator={component.get('name')}")
-        return component
-
     def get_valid_records_properties(
         self,
         component_list,
@@ -205,51 +168,95 @@ class BaseExporter(ABC):
     ):
         """Return a validadted list of properties to the given property_map."""
         result = []
-        component_list_mapped = [
-            {property_map.get(key, key): value for key, value in d.items()} for d in component_list
-        ]
-        for component in component_list_mapped:
+        for component in component_list:
             component_dict = {"name": component["name"]}  # We need the name to match it with the membership.
             if ext_dict := component.get("ext"):
                 if ext_dict.get("heat_rate"):
                     component["Heat Rate"] = ext_dict["heat_rate"]
                 if ext_dict.get("fuel_price"):
                     component["Fuel Price"] = ext_dict["fuel_price"]
-            # if "operation_cost" in component:
-            #     component = self.parse_operation_cost(component)
+            if "operation_cost" in component:
+                pass
             for property_name, property_value in component.items():
                 if valid_properties is not None:
                     if property_name in valid_properties:
-                        property_value = self.get_property_magnitude(
+                        property_value = get_property_magnitude(
                             property_value, to_unit=unit_map.get(property_name)
                         )
                         component_dict[property_name] = property_value
                 else:
-                    property_value = self.get_property_magnitude(
+                    property_value = get_property_magnitude(
                         property_value, to_unit=unit_map.get(property_name)
                     )
                     component_dict[property_name] = property_value
             result.append(component_dict)
         return result
 
-    def get_property_magnitude(self, property_value, to_unit: str | None = None) -> float:
-        """Return magnitude with the given units for a pint Quantity.
 
-        Parameters
-        ----------
-        property_name
+def get_export_records(component_list: list[dict[str, Any]], *update_funcs: Callable) -> list[dict[str, Any]]:
+    """Apply update functions to a list of components and return the modified list.
 
-        property_value
-            pint.Quantity to extract magnitude from
-        to_unit
-            String that contains the unit conversion desired. Unit must be compatible.
-        """
-        if not isinstance(property_value, pint.Quantity | BaseQuantity):
-            return property_value
-        if to_unit:
-            unit = to_unit.replace("$", "usd")  # Dollars are named usd on pint
-            property_value = property_value.to(unit)
-        return property_value.magnitude
+    Parameters
+    ----------
+    component_list : list[dict[str, Any]]
+        A list of dictionaries representing components to be updated.
+    *update_funcs : Callable
+        Variable number of update functions to be applied to each component.
+
+    Returns
+    -------
+    list[dict[str, Any]]
+        A list of updated component dictionaries.
+
+    Examples
+    --------
+    >>> def update_name(component):
+    ...     component["name"] = component["name"].upper()
+    ...     return component
+    >>> def add_prefix(component):
+    ...     component["id"] = f"PREFIX_{component['id']}"
+    ...     return component
+    >>> components = [{"id": "001", "name": "Component A"}, {"id": "002", "name": "Component B"}]
+    >>> updated_components = get_export_records(components, update_name, add_prefix)
+    >>> updated_components
+    [{'id': 'PREFIX_001', 'name': 'COMPONENT A'}, {'id': 'PREFIX_002', 'name': 'COMPONENT B'}]
+    """
+    update_functions = modify_components(*update_funcs)
+    return [update_functions(component) for component in component_list]
+
+
+def get_export_properties(component, *update_funcs: Callable) -> dict[str, Any]:
+    """Apply update functions to a single component and return the modified component.
+
+    Parameters
+    ----------
+    component : dict[str, Any]
+        A dictionary representing a component to be updated.
+    *update_funcs : Callable
+        Variable number of update functions to be applied to the component.
+
+    Returns
+    -------
+    dict[str, Any]
+        The updated component dictionary.
+
+    Examples
+    --------
+    >>> def update_status(component):
+    ...     component["status"] = "active"
+    ...     return component
+    >>> def add_timestamp(component):
+    ...     from datetime import datetime
+    ...
+    ...     component["last_updated"] = datetime.now().isoformat()
+    ...     return component
+    >>> component = {"id": "003", "name": "Component C"}
+    >>> updated_component = get_export_properties(component, update_status, add_timestamp)
+    >>> updated_component
+    {'id': '003', 'name': 'Component C', 'status': 'active', 'last_updated': '2024-09-27T10:30'}
+    """
+    update_functions = modify_components(*update_funcs)
+    return update_functions(component)
 
 
 def get_exporter(

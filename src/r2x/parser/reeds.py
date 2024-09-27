@@ -433,7 +433,7 @@ class ReEDSParser(BaseParser):
                 if heat_rate := row.get("heat_rate"):
                     heat_rate_curve = AverageRateCurve(
                         function_data=LinearFunctionData(
-                            proportional_term=heat_rate.magnitude,
+                            proportional_term=heat_rate,
                             constant_term=0,
                         ),
                         initial_input=heat_rate.magnitude,
@@ -464,8 +464,6 @@ class ReEDSParser(BaseParser):
                     "reeds_tech": row["tech"],
                     "reeds_vintage": row["tech_vintage"],
                     "Commit": commit,
-                    "heat_rate": row.get("heat_rate"),
-                    "fuel_price": row.get("fuel_price"),
                 }
             )
 
