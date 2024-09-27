@@ -210,7 +210,7 @@ def construct_pwl_from_quadtratic(fn, mapped_records, num_tranches=6):
 
     # Use evenly spaced X values for the tranches
     # Future iteration should accept custom X values for Bid Cost Markup
-    x_vals, y_vals = optimize_pwl(a, b, c, x_min, x_max, n_tranches=6)
+    x_vals, y_vals = optimize_pwl(a, b, c, x_min, x_max, num_tranches)
 
     pwl_fn = PiecewiseLinearData(points=[XYCoords(x, y) for x, y in zip(x_vals, y_vals)])
 

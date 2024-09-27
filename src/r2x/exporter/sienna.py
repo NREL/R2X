@@ -523,18 +523,17 @@ def apply_operation_table_data(
             component["heat_rate_a1"] = function_data["proportional_term"]
         if "quadratic_term" in function_data.keys():
             component["heat_rate_a2"] = function_data["quadratic_term"]
-        if "x_coords" in function_data.keys():
+        if "points" in function_data.keys():
             component = _variable_type_parsing(component, operation_cost)
     return component
 
 
 def _variable_type_parsing(component: dict, cost_dict: dict[str, Any]) -> dict[str, Any]:
     variable_curve = cost_dict["variable"]
-    function_data = variable_curve["value_curve"]["function_data"]
-    x_y_coords = dict(zip(function_data["x_coords"], function_data["y_coords"]))
+    x_y_coords = variable_curve["value_curve"]["function_data"]["points"]
     match cost_dict["variable_type"]:
         case "CostCurve":
-            for i, (x_coord, y_coord) in enumerate(x_y_coords.items()):
+            for i, (x_coord, y_coord) in enumerate(x_y_coords):
                 output_point_col = f"output_point_{i}"
                 component[output_point_col] = x_coord
 
@@ -542,7 +541,7 @@ def _variable_type_parsing(component: dict, cost_dict: dict[str, Any]) -> dict[s
                 component[cost_point_col] = y_coord
 
         case "FuelCurve":
-            for i, (x_coord, y_coord) in enumerate(x_y_coords.items()):
+            for i, (x_coord, y_coord) in enumerate(x_y_coords):
                 output_point_col = f"output_point_{i}"
                 component[output_point_col] = x_coord
 
