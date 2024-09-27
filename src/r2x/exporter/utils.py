@@ -167,6 +167,53 @@ def apply_valid_properties(
     return {key: value for key, value in component.items() if key in valid_properties}
 
 
+def apply_unnest_key(component: dict[str, Any], key_map: dict[str, Any]) -> dict[str, Any]:
+    """Unnest specific nested dictionary values based on a provided key map.
+
+    This function processes a dictionary, potentially containing nested dictionaries,
+    and unnests specific values based on a provided key map. For each key in the input
+    dictionary that has a corresponding entry in the key map, if the value is a dictionary,
+    it extracts the value using the mapped key.
+
+    Parameters
+    ----------
+    component : dict[str, Any]
+        The input dictionary to process.
+    key_map : dict[str, Any]
+        A dictionary mapping keys in the input dictionary to keys in nested dictionaries.
+
+    Returns
+    -------
+    dict[str, Any]
+        A new dictionary with unnested values based on the key map.
+
+    Examples
+    --------
+    >>> component = {
+    ...     "name": "Example",
+    ...     "config": {"type": "A", "value": 10},
+    ...     "data": {"content": "Some data"},
+    ... }
+    >>> key_map = {"config": "type", "data": "content"}
+    >>> apply_unnest_key(component, key_map)
+    {'name': 'Example', 'config': 'A', 'data': 'Some data'}
+
+    Notes
+    -----
+    - If a key in the input dictionary is not in the key map, its value remains unchanged.
+    - If a key is in the key map but the corresponding value in the input dictionary
+      is not a dictionary, the value remains unchanged.
+    - If a key is in the key map and the corresponding value is a dictionary, but the
+      mapped key is not in this nested dictionary, the result for this key will be None.
+    """
+    if not key_map:
+        return component
+    return {
+        key: value if not isinstance(value, dict) else value.get(key_map.get(key), value)
+        for key, value in component.items()
+    }
+
+
 def get_property_magnitude(property_value, to_unit: str | None = None) -> Any:
     """Return magnitude with the given units for a pint Quantity.
 

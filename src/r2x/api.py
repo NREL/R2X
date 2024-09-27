@@ -1,19 +1,16 @@
 """R2X API for data model."""
 
 import csv
-import json
 from collections.abc import Callable
 from os import PathLike
 from pathlib import Path
-from itertools import chain
 from collections.abc import Iterable
-from types import NotImplementedType
 from loguru import logger
 
+import inspect
 from infrasys.component import Component
 from infrasys.system import System as ISSystem
 
-from r2x.utils import haskey
 from .__version__ import __data_model_version__
 
 
@@ -73,123 +70,27 @@ class System(ISSystem):
             **dict_writer_kwargs,
         )
 
-    def _add_operation_cost_data(  # noqa: C901
-        self,
-        data: Iterable[dict],
-        fields: list | None = None,
-    ):
-        operation_cost_fields = set()
-        x_y_coords = None
-        for sub_dict in data:
-            if "operation_cost" not in sub_dict.keys():
-                continue
-
-            operation_cost = sub_dict["operation_cost"]
-            for cost_field_key, cost_field_value in operation_cost.items():
-                if isinstance(cost_field_value, dict):
-                    assert (
-                        "uuid" in cost_field_value.keys()
-                    ), f"Operation cost field {cost_field_key} was assumed to be a component but is not."
-                    variable_cost = (
-                        cost_field_value  # self.get_component_by_uuid(uuid.UUID(cost_field_value["uuid"]))
-                    )
-                    if haskey(variable_cost, ["vom_cost", "function_data"]):
-                        sub_dict["variable_cost"] = variable_cost["vom_cost"]["function_data"][
-                            "proportional_term"
-                        ]
-
-                    if "fuel_cost" in variable_cost.keys():
-                        assert variable_cost["fuel_cost"] is not None
-                        # Note: We multiply the fuel price by 1000 to offset the division
-                        # done by Sienna when it parses .csv files
-                        sub_dict["fuel_price"] = variable_cost["fuel_cost"] * 1000
-                        operation_cost_fields.add("fuel_price")
-
-                    if haskey(variable_cost, ["value_curve", "function_data"]):
-                        function_data = variable_cost["value_curve"]["function_data"]
-                        if "constant_term" in function_data.keys():
-                            sub_dict["heat_rate_a0"] = function_data["constant_term"]
-                            operation_cost_fields.add("heat_rate_a0")
-                        if "proportional_term" in function_data.keys():
-                            sub_dict["heat_rate_a1"] = function_data["proportional_term"]
-                            operation_cost_fields.add("heat_rate_a1")
-                        if "quadratic_term" in function_data.keys():
-                            sub_dict["heat_rate_a2"] = function_data["quadratic_term"]
-                            operation_cost_fields.add("heat_rate_a2")
-                        if "x_coords" in function_data.keys():
-                            x_y_coords = dict(zip(function_data.x_coords, function_data.y_coords))
-                            match variable_cost["variable_type"]:
-                                case "CostCurve":
-                                    for i, (x_coord, y_coord) in enumerate(x_y_coords.items()):
-                                        output_point_col = f"output_point_{i}"
-                                        sub_dict[output_point_col] = x_coord
-                                        operation_cost_fields.add(output_point_col)
-
-                                        cost_point_col = f"cost_point_{i}"
-                                        sub_dict[cost_point_col] = y_coord
-                                        operation_cost_fields.add(cost_point_col)
-
-                                case "FuelCurve":
-                                    for i, (x_coord, y_coord) in enumerate(x_y_coords.items()):
-                                        output_point_col = f"output_point_{i}"
-                                        sub_dict[output_point_col] = x_coord
-                                        operation_cost_fields.add(output_point_col)
-
-                                        heat_rate_col = "heat_rate_avg_0" if i == 0 else f"heat_rate_incr_{i}"
-                                        sub_dict[heat_rate_col] = y_coord
-                                        operation_cost_fields.add(heat_rate_col)
-                                case _:
-                                    raise NotImplementedType(
-                                        f"Type {variable_cost['variable_type']} variable curve not supported"
-                                    )
-                elif cost_field_key not in sub_dict.keys():
-                    sub_dict[cost_field_key] = cost_field_value
-                    operation_cost_fields.add(cost_field_key)
-                else:
-                    pass
-
-        fields.remove("operation_cost")  # type: ignore
-        fields.extend(list(operation_cost_fields))  # type: ignore
-
-        return data, fields
-
     def _export_dict_to_csv(
         self,
         data: Iterable[dict],
         fpath: PathLike,
         fields: list | None = None,
-        key_mapping: dict | None = None,
-        unnest_key: str = "name",
+        # key_mapping: dict | None = None,
+        # unnest_key: str = "name",
         **dict_writer_kwargs,
     ):
-        # Remaping keys
-        # NOTE: It does not work recursively for nested components
-        if key_mapping:
-            data = [
-                {key_mapping.get(key, key): value for key, value in sub_dict.items()} for sub_dict in data
-            ]
-            if fields:
-                fields = list(map(lambda key: key_mapping.get(key, key), fields))
-
-        if fields is None:
-            fields = list(set(chain.from_iterable(data)))
-
-        if "operation_cost" in fields:
-            data, fields = self._add_operation_cost_data(data, fields)
+        dict_writer_kwargs = {
+            key: value
+            for key, value in dict_writer_kwargs.items()
+            if key in inspect.getfullargspec(csv.DictWriter).args
+        }
 
         with open(str(fpath), "w", newline="") as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=fields, extrasaction="ignore", **dict_writer_kwargs)  # type: ignore
             writer.writeheader()
             for row in data:
-                filter_row = {
-                    key: json.dumps(value)
-                    if key == "ext" and isinstance(value, dict)
-                    else value
-                    if not isinstance(value, dict)
-                    else value.get(unnest_key)
-                    for key, value in row.items()
-                }
-                writer.writerow(filter_row)
+                writer.writerow(row)
+        return
 
 
 if __name__ == "__main__":

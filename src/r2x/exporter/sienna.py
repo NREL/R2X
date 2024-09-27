@@ -1,17 +1,18 @@
 """R2X Sienna system exporter."""
 
 # System packages
-from functools import partial
 import json
 import os
+from functools import partial
 from typing import Any
+from urllib.request import urlopen
 
 # Third-party packages
 from loguru import logger
 
 # Local imports
 from r2x.exporter.handler import BaseExporter, get_export_records
-from r2x.exporter.utils import apply_pint_deconstruction, apply_property_map
+from r2x.exporter.utils import apply_pint_deconstruction, apply_property_map, apply_unnest_key
 from r2x.models import (
     ACBranch,
     Bus,
@@ -23,6 +24,10 @@ from r2x.models import (
     ReserveMap,
     Storage,
 )
+from r2x.utils import haskey
+
+PSY_URL = "https://raw.githubusercontent.com/NREL-Sienna/PowerSystems.jl/refs/heads/main/"
+TABLE_DATA_SPEC = "src/descriptors/power_system_inputs.json"
 
 
 class SiennaExporter(BaseExporter):
@@ -56,6 +61,12 @@ class SiennaExporter(BaseExporter):
         self.output_data = {}
         self.property_map = self.config.defaults.get("sienna_property_map", {})
         self.unit_map = self.config.defaults.get("sienna_unit_map", {})
+        self.output_fields = self.config.defaults["table_data"]
+
+    def _get_table_data_fields(self) -> dict[str, Any]:
+        request = urlopen(PSY_URL + TABLE_DATA_SPEC)
+        descriptor = json.load(request)
+        return descriptor
 
     def run(self, *args, path=None, **kwargs) -> "SiennaExporter":
         """Run sienna exporter workflow.
@@ -210,38 +221,23 @@ class SiennaExporter(BaseExporter):
         fname : str
             Name of the file to be created
         """
-        output_fields = [
-            "name",
-            "available",
-            "prime_mover_type",
-            "bus_id",
-            "fuel",
-            "base_mva",
-            "rating",
-            "unit_type",
-            "active_power",
-            "min_rated_capacity",
-            "min_down_time",
-            "min_up_time",
-            "mean_time_to_repair",
-            "forced_outage_rate",
-            "planned_outage_rate",
-            "ramp_up",
-            "ramp_down",
-            "category",
-            "must_run",
-            "pump_load",
-            "vom_price",
-            "operation_cost",
-        ]
-
         key_mapping = {"bus": "bus_id"}
-        self.system.export_component_to_csv(
-            Generator,
+
+        records = [
+            component.model_dump(exclude_none=True, mode="python", serialize_as_any=True)
+            for component in self.system.get_components(Generator)
+        ]
+        export_records = get_export_records(
+            records,
+            partial(apply_operation_table_data),
+            partial(apply_property_map, property_map=self.property_map | key_mapping),
+            partial(apply_pint_deconstruction, unit_map=self.unit_map),
+            partial(apply_unnest_key, key_map={"bus_id": "number"}),
+        )
+        self.system._export_dict_to_csv(
+            export_records,
             fpath=self.output_folder / fname,
-            fields=output_fields,
-            key_mapping=key_mapping,
-            unnest_key="number",
+            fields=self.output_fields["generator"],
             restval="NA",
         )
         logger.info(f"File {fname} created.")
@@ -432,3 +428,127 @@ class SiennaExporter(BaseExporter):
         # First export all time series objects
         self.export_data_files()
         logger.info("Saving time series data.")
+
+
+def apply_operation_table_data(
+    component: dict[str, Any],
+) -> dict[str, Any]:
+    """Process and apply operation cost data for `PSY.power_system_table_data.jl`.
+
+    This function extracts operation cost data from a component dictionary and adds
+    various cost-related fields to it. It handles different types of cost data,
+    including variable costs, fuel costs, heat rates, and cost/fuel curves.
+
+    Parameters
+    ----------
+    component : dict[str, Any]
+        A dictionary containing component data, potentially including operation cost information.
+
+    Returns
+    -------
+    dict[str, Any]
+        The input component dictionary, potentially modified with additional operation cost fields.
+
+    Notes
+    -----
+    This function modifies the input dictionary in-place and returns it.
+
+    The function processes the following types of operation costs:
+    - Variable costs (vom_cost)
+    - Fuel costs
+    - Heat rate coefficients (a0, a1, a2)
+    - Cost curves
+    - Fuel curves
+
+    Raises
+    ------
+    AssertionError
+        If the fuel_cost is None when present in the variable cost data.
+    NotImplementedError
+        If an unsupported variable curve type is encountered.
+
+    Examples
+    --------
+    >>> component = {
+    ...     "operation_cost": {
+    ...         "variable": {
+    ...             "vom_cost": {"function_data": {"proportional_term": 10}},
+    ...             "fuel_cost": 0.05,
+    ...             "value_curve": {
+    ...                 "function_data": {
+    ...                     "constant_term": 100,
+    ...                     "proportional_term": 20,
+    ...                     "quadratic_term": 0.5,
+    ...                     "x_coords": [0, 50, 100],
+    ...                     "y_coords": [0, 1000, 2500],
+    ...                 }
+    ...             },
+    ...         },
+    ...         "variable_type": "CostCurve",
+    ...     }
+    ... }
+    >>> updated_component = apply_operation_table_data(component)
+    >>> updated_component["variable_cost"]
+    10
+    >>> updated_component["fuel_price"]
+    50.0
+    >>> updated_component["heat_rate_a0"]
+    100
+    >>> updated_component["output_point_1"]
+    50
+    >>> updated_component["cost_point_1"]
+    1000
+    """
+    if not component.get("operation_cost", False):
+        return component
+
+    operation_cost = component["operation_cost"]
+
+    if not (variable := operation_cost.get("variable")):
+        return component
+
+    if haskey(variable, ["vom_cost", "function_data"]):
+        component["variable_cost"] = variable["vom_cost"]["function_data"]["proportional_term"]
+
+    if "fuel_cost" in variable.keys():
+        assert variable["fuel_cost"] is not None
+        # Note: We multiply the fuel price by 1000 to offset the division
+        # done by Sienna when it parses .csv files
+        component["fuel_price"] = variable["fuel_cost"] * 1000
+    if haskey(variable, ["value_curve", "function_data"]):
+        function_data = variable["value_curve"]["function_data"]
+        if "constant_term" in function_data.keys():
+            component["heat_rate_a0"] = function_data["constant_term"]
+        if "proportional_term" in function_data.keys():
+            component["heat_rate_a1"] = function_data["proportional_term"]
+        if "quadratic_term" in function_data.keys():
+            component["heat_rate_a2"] = function_data["quadratic_term"]
+        if "x_coords" in function_data.keys():
+            component = _variable_type_parsing(component, operation_cost)
+    return component
+
+
+def _variable_type_parsing(component: dict, cost_dict: dict[str, Any]) -> dict[str, Any]:
+    variable_curve = cost_dict["variable"]
+    function_data = variable_curve["value_curve"]["function_data"]
+    x_y_coords = dict(zip(function_data["x_coords"], function_data["y_coords"]))
+    match cost_dict["variable_type"]:
+        case "CostCurve":
+            for i, (x_coord, y_coord) in enumerate(x_y_coords.items()):
+                output_point_col = f"output_point_{i}"
+                component[output_point_col] = x_coord
+
+                cost_point_col = f"cost_point_{i}"
+                component[cost_point_col] = y_coord
+
+        case "FuelCurve":
+            for i, (x_coord, y_coord) in enumerate(x_y_coords.items()):
+                output_point_col = f"output_point_{i}"
+                component[output_point_col] = x_coord
+
+                heat_rate_col = "heat_rate_avg_0" if i == 0 else f"heat_rate_incr_{i}"
+                component[heat_rate_col] = y_coord
+        case _:
+            msg = f"Type {cost_dict['variable_type']} variable curve not supported"
+            raise NotImplementedError(msg)
+    return component

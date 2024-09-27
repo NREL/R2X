@@ -2,6 +2,7 @@ import pytest
 from pint import Quantity
 from r2x.exporter.utils import (
     apply_property_map,
+    apply_unnest_key,
     apply_valid_properties,
     apply_pint_deconstruction,
     get_property_magnitude,
@@ -74,3 +75,56 @@ def test_get_property_magnitude():
 
     assert get_property_magnitude(q3) == 200  # No conversion for a non-Quantity
     assert get_property_magnitude(q1) == 100  # Magnitude of Quantity without conversion
+
+
+def test_apply_unnest_key_basic_functionality():
+    # Test basic functionality
+    component = {"name": "Example", "config": {"type": "A", "value": 10}, "data": {"content": "Some data"}}
+    key_map = {"config": "type", "data": "content"}
+    result = apply_unnest_key(component, key_map)
+
+    assert result == {"name": "Example", "config": "A", "data": "Some data"}
+
+    # Test no change when key is not in key_map
+    component = {"name": "Example", "value": 42}
+    key_map = {"config": "type"}
+    result = apply_unnest_key(component, key_map)
+    assert result == component
+
+    # Test nested dictionary with no corresponding key in key_map
+    component = {"name": "Example", "config": {"type": "A", "value": 10}}
+    key_map = {"name": "type"}
+    result = apply_unnest_key(component, key_map)
+    assert result == component
+
+
+def test_apply_unnest_key_edge_cases():
+    # Test missing nested key
+    component = {"config": {"value": 10}, "data": {"content": "Some data"}}
+    key_map = {"config": "type", "data": "content"}
+    result = apply_unnest_key(component, key_map)
+    assert result == {"config": {"value": 10}, "data": "Some data"}
+
+    # Test empty input
+    assert apply_unnest_key({}, {"config": "type"}) == {}
+
+    # Test empty key_map
+    component = {"name": "Example", "config": {"type": "A", "value": 10}}
+    assert apply_unnest_key(component, {}) == component
+
+
+# Parameterized tests
+@pytest.mark.parametrize(
+    "component,key_map,expected",
+    [
+        ({"a": {"x": 1, "y": 2}, "b": {"z": 3}}, {"a": "x", "b": "z"}, {"a": 1, "b": 3}),
+        (
+            {"a": 1, "b": {"x": 2, "y": 3}, "c": "test"},
+            {"b": "y", "c": "nonexistent"},
+            {"a": 1, "b": 3, "c": "test"},
+        ),
+        ({"a": {"x": {"nested": "value"}}, "b": 2}, {"a": "x", "b": "y"}, {"a": {"nested": "value"}, "b": 2}),
+    ],
+)
+def parameterized_test(component, key_map, expected):
+    assert apply_unnest_key(component, key_map) == expected

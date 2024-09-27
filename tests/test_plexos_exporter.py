@@ -52,3 +52,7 @@ def test_plexos_exporter_run(plexos_exporter, default_scenario, tmp_folder):
     # Check that time series was created correctly
     ts_directory = tmp_folder / exporter.ts_directory
     assert any(ts_directory.iterdir())
+
+
+@pytest.mark.plexos
+def test_plexos_operational_cost(reeds_system, plexos_exporter): ...

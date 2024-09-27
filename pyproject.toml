@@ -147,6 +147,7 @@ markers = [
     "exporters: Tests related to exporters",
     "exporter_utils: Tests related to exporters utils",
     "plexos: Tests related to plexos",
+    "sienna: Tests related to sienna",
     "utils: Util functions"
 ]
 

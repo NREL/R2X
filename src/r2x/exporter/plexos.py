@@ -899,11 +899,12 @@ def apply_operation_cost(component: dict) -> dict[str, Any]:
 
 def _variable_type_parsing(component: dict, cost_dict: dict[str, Any]) -> dict[str, Any]:
     fuel_curve = cost_dict["variable"]
+    value_curve_type = cost_dict["value_curve_type"]
     variable_type = cost_dict["variable_type"]
     function_data = fuel_curve["value_curve"]["function_data"]
     match variable_type:
         case "FuelCurve":
-            match fuel_curve["value_curve_type"]:
+            match value_curve_type:
                 case "AverageRateCurve":
                     component["Heat Rate"] = function_data["proportional_term"]
                 case "InputOutputCurve":
