@@ -5,6 +5,7 @@ from infrasys.models import InfraSysBaseModelWithIdentifers
 from pydantic import Field, computed_field
 from infrasys.cost_curves import ProductionVariableCostCurve
 from r2x.units import Currency, FuelPrice
+from operator import attrgetter
 
 
 class OperationalCost(InfraSysBaseModelWithIdentifers):
@@ -21,6 +22,14 @@ class OperationalCost(InfraSysBaseModelWithIdentifers):
         if not getattr(self, "variable"):
             return None
         return type(getattr(self, "variable")).__name__
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def value_curve_type(self) -> str | None:
+        """Create attribute that holds the class name."""
+        if not attrgetter("variable.value_curve")(self):
+            return None
+        return type(attrgetter("variable.value_curve")(self)).__name__
 
 
 class RenewableGenerationCost(OperationalCost):
