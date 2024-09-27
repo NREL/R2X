@@ -5,6 +5,10 @@ from loguru import logger
 import polars as pl
 import pandas as pd
 from datetime import datetime
+import numpy as np
+from typing import NamedTuple, List
+
+from infrasys.function_data import LinearFunctionData, QuadraticFunctionData, PiecewiseLinearData, XYCoords
 
 
 def pl_filter_year(df, year: int | None = None, year_columns=["t", "year"], **kwargs):
@@ -189,3 +193,33 @@ def resample_data_to_hourly(data_file: pl.DataFrame):
         )
         .select(["year", "month", "day", "hour", "value"])
     )
+
+
+def construct_pwl_from_quadtratic(fn, mapped_records, num_tranches=6):
+    """
+    Given function data of quadratic curve, construct piecewise linear curve with num_tranches tranches.
+    """
+    assert isinstance(fn, QuadraticFunctionData), "Input function data must be of type QuadraticFunctionData"
+
+    a = fn.quadratic_term
+    b = fn.proportional_term
+    c = fn.constant_term
+    x_min = mapped_records["min_rated_capacity"].magnitude
+    x_max = mapped_records["rating"].magnitude
+
+    # Use evenly spaced X values for the tranches
+    # Future iteration should accept custom X values for Bid Cost Markup
+    x_vals = np.linspace(x_min, x_max, num_tranches)
+    y_vals = a * x_vals**2 + b * x_vals + c
+
+    pwl_fn = PiecewiseLinearData(points=[XYCoords(x, y) for x, y in zip(x_vals, y_vals)])
+    return pwl_fn
+
+
+def bid_cost_mark_up(fn, mapped_records):
+    # TODO(ktehranchi): Implement bid-cost markup
+    # First we need to convert whichever type of function we have to a piecewise linear function
+    # This PWL function must have X values definted at the mark-up points
+    # We can easily modify the mark-up prices by changing the Y values of the PWL function
+    # Issue right now is we need to do this for time-varying data but market bid cost isnt implemented
+    pass

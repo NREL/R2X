@@ -79,6 +79,7 @@ class System(ISSystem):
         fields: list | None = None,
     ):
         operation_cost_fields = set()
+        x_y_coords = None
         for sub_dict in data:
             if "operation_cost" not in sub_dict.keys():
                 continue

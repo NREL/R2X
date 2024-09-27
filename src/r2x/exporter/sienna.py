@@ -217,6 +217,7 @@ class SiennaExporter(BaseExporter):
             "rating",
             "unit_type",
             "active_power",
+            "active_power_limits_max",
             "min_rated_capacity",
             "min_down_time",
             "min_up_time",
@@ -286,6 +287,7 @@ class SiennaExporter(BaseExporter):
                 output_dict = reserve
                 output_dict["direction"] = reserve["direction"].name
                 output_dict["eligible_device_categories"] = "(Generator,Storage)"
+                output_dict["requirement"] = reserve["max_requirement"]
                 contributing_devices = reserve_map.get(reserve["name"])
                 output_dict["contributing_devices"] = str(tuple(contributing_devices)).replace(  # type: ignore
                     "'", ""
@@ -322,6 +324,7 @@ class SiennaExporter(BaseExporter):
             "rating",
             "input_efficiency",
             "output_efficiency",
+            "initial_energy",
             "storage_capacity",
             "min_storage_capacity",
             "max_storage_capacity",

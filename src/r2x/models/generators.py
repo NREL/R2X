@@ -114,6 +114,9 @@ class Generator(Device):
     shutdown_cost: (
         Annotated[NonNegativeFloat, Field(description="Cost in $ of shuting down a unit.")] | None
     ) = None
+    active_power_limits_max: Annotated[
+        ApparentPower | None, Field(ge=0, description="Maximum output power rating of the unit (MVA).")
+    ] = None
 
 
 class RenewableGen(Generator):
