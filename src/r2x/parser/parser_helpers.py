@@ -206,7 +206,7 @@ def construct_pwl_from_quadtratic(fn, mapped_records, num_tranches=6):
     b = fn.proportional_term
     c = fn.constant_term
     x_min = mapped_records["min_rated_capacity"].magnitude
-    x_max = mapped_records["rating"].magnitude
+    x_max = mapped_records["active_power_limits_max"].magnitude
 
     # Use evenly spaced X values for the tranches
     # Future iteration should accept custom X values for Bid Cost Markup
