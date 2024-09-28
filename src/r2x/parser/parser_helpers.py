@@ -201,6 +201,8 @@ def construct_pwl_from_quadtratic(fn, mapped_records, num_tranches=6):
     Given function data of quadratic curve, construct piecewise linear curve with num_tranches tranches.
     """
     assert isinstance(fn, QuadraticFunctionData), "Input function data must be of type QuadraticFunctionData"
+    if isinstance(num_tranches, str):
+        num_tranches = int(num_tranches)
 
     a = fn.quadratic_term
     b = fn.proportional_term

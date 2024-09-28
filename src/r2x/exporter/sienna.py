@@ -158,7 +158,7 @@ class SiennaExporter(BaseExporter):
             "connection_points_to",
             "r",
             "x",
-            "b",
+            "primary_shunt",
             "rate",
             "branch_type",
             "rating_up",
@@ -166,18 +166,32 @@ class SiennaExporter(BaseExporter):
             "ext",
         ]
 
-        self.system.export_component_to_csv(
-            ACBranch,
+        key_mapping = {
+            "from_bus": "connection_points_from",
+            "to_bus": "connection_points_to",
+            "class_type": "branch_type",
+            "rating": "rate",
+            "b": "primary_shunt",
+        }
+
+        records = [
+            component.model_dump(exclude_none=True, mode="python", serialize_as_any=True)
+            for component in self.system.get_components(ACBranch)
+        ]
+        export_records = get_export_records(
+            records,
+            partial(apply_property_map, property_map=self.property_map | key_mapping),
+            partial(apply_pint_deconstruction, unit_map=self.unit_map),
+            partial(
+                apply_unnest_key,
+                key_map={"connection_points_from": "number", "connection_points_to": "number"},
+            ),
+        )
+        self.system._export_dict_to_csv(
+            export_records,
             fpath=self.output_folder / fname,
             fields=output_fields,
-            unnest_key="number",
-            key_mapping={
-                "from_bus": "connection_points_from",
-                "to_bus": "connection_points_to",
-                "class_type": "branch_type",
-                "rating": "rate",
-                "b": "primary_shunt",
-            },
+            restval="NA",
         )
         logger.info(f"File {fname} created.")
 
@@ -221,7 +235,12 @@ class SiennaExporter(BaseExporter):
         fname : str
             Name of the file to be created
         """
-        key_mapping = {"bus": "bus_id"}
+        # reactive power cant be export
+
+        key_mapping = {
+            "bus": "bus_id",
+            "prime_mover_type": "unit_type",
+        }
 
         records = [
             component.model_dump(exclude_none=True, mode="python", serialize_as_any=True)
@@ -292,12 +311,17 @@ class SiennaExporter(BaseExporter):
                 output_data.append(output_dict)
 
         key_mapping = {"region": "eligible_region", "max_requirement": "requirement"} | self.property_map
-        self.system._export_dict_to_csv(
+
+        export_records = get_export_records(
             output_data,
+            partial(apply_property_map, property_map=self.property_map | key_mapping),
+            partial(apply_pint_deconstruction, unit_map=self.unit_map),
+            partial(apply_unnest_key, key_map={"eligible_region": "name"}),
+        )
+        self.system._export_dict_to_csv(
+            export_records,
             fpath=self.output_folder / fname,
             fields=output_fields,
-            key_mapping=key_mapping,
-            unnest_key="name",
             restval="NA",
         )
         logger.info(f"File {fname} created.")
