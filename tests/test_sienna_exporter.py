@@ -65,8 +65,7 @@ def sample_component():
                         "constant_term": 100,
                         "proportional_term": 20,
                         "quadratic_term": 0.5,
-                        "x_coords": [0, 50, 100],
-                        "y_coords": [0, 1000, 2500],
+                        "points": [(0, 0), (50, 1000), (100, 2500)],
                     }
                 },
             },
@@ -109,9 +108,7 @@ def test_apply_operation_table_data_cost_curve(sample_component):
 def test_apply_operation_table_data_fuel_curve():
     fuel_curve_component = {
         "operation_cost": {
-            "variable": {
-                "value_curve": {"function_data": {"x_coords": [0, 50, 100], "y_coords": [0, 10, 25]}}
-            },
+            "variable": {"value_curve": {"function_data": {"points": [(0, 0), (50, 10), (100, 25)]}}},
             "variable_type": "FuelCurve",
         }
     }
@@ -140,9 +137,7 @@ def test_apply_operation_table_data_no_variable():
 def test_apply_operation_table_data_unsupported_curve():
     component = {
         "operation_cost": {
-            "variable": {
-                "value_curve": {"function_data": {"x_coords": [0, 50, 100], "y_coords": [0, 1000, 2500]}}
-            },
+            "variable": {"value_curve": {"function_data": {"points": [(0, 0), (50, 10), (100, 25)]}}},
             "variable_type": "UnsupportedCurve",
         }
     }

@@ -579,7 +579,6 @@ def _variable_type_parsing(component: dict, cost_dict: dict[str, Any]) -> dict[s
 
                 cost_point_col = f"cost_point_{i}"
                 component[cost_point_col] = y_coord
-
         case "FuelCurve":
             for i, (x_coord, y_coord) in enumerate(x_y_coords):
                 output_point_col = f"output_point_{i}"
