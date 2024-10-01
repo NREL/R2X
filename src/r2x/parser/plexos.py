@@ -66,7 +66,7 @@ PROPERTY_SV_COLUMNS_BASIC = ["name", "value"]
 PROPERTY_SV_COLUMNS_NAMEYEAR = ["name", "year", "month", "day", "period", "value"]
 PROPERTY_TS_COLUMNS_BASIC = ["year", "month", "day", "period", "value"]
 PROPERTY_TS_COLUMNS_MULTIZONE = ["year", "month", "day", "period"]
-PROPERTY_TS_COLUMNS_PIVOT = ["year", "month", "day"]
+PROPERTY_TS_COLUMNS_PIVOT = ["name", "year", "month", "day", "value"]
 PROPERTY_TS_COLUMNS_YM = ["year", "month"]
 PROPERTY_TS_COLUMNS_MDP = ["month", "day", "period"]
 PROPERTY_TS_COLUMNS_MONTH_PIVOT = [
@@ -120,7 +120,7 @@ DEFAULT_PROPERTY_COLUMNS = [
     "variable",
     "action",
     "variable_tag",
-    "variable_default",
+    # "variable_default",
     "timeslice",
     "timeslice_value",
 ]
@@ -144,11 +144,12 @@ class PlexosParser(PCMParser):
         assert self.config.run_folder
         self.run_folder = Path(self.config.run_folder)
         self.system = System(name=self.config.name, auto_add_composed_components=True)
-        self.property_map = self.config.defaults["plexos_input_property_map"]
-        self.device_map = self.config.defaults["plexos_device_map"]
-        self.fuel_map = self.config.defaults["plexos_fuel_map"]
-        self.device_match_string = self.config.defaults["device_name_inference_map"]
-        self.generator_models = self.config.defaults["generator_models"]
+        self.property_map = self.config.defaults["plexos_input_property_map"] or {}
+        self.device_map = self.config.defaults["plexos_device_map"] or {}
+        self.fuel_map = self.config.defaults["plexos_fuel_map"] or {}
+        self.category_map = self.config.defaults["plexos_category_map"] or {}
+        self.device_match_string = self.config.defaults["device_name_inference_map"] or {}
+        self.generator_models = self.config.defaults["generator_models"] or {}
 
         # TODO(pesap): Rename exceptions to include R2X
         # https://github.com/NREL/R2X/issues/5
@@ -452,7 +453,9 @@ class PlexosParser(PCMParser):
                 return device_info
         return None
 
-    def _get_fuel_pmtype(self, generator_name, fuel_name: str | None = None) -> dict[str, str]:
+    def _get_fuel_pmtype(
+        self, generator_name, fuel_name: str | None = None, category: str | None = None
+    ) -> dict[str, str]:
         """Return fuel prime mover combo based on priority.
 
         This function will return first a match using the generator name, then
@@ -464,7 +467,8 @@ class PlexosParser(PCMParser):
             Either an empty dictionary or a dictionary with fuel and prime mover type.
         """
         match_fuel_pmtype = (
-            self.device_map.get(generator_name)
+            self.category_map.get(category)
+            or self.device_map.get(generator_name)
             or self.fuel_map.get(fuel_name)
             or self._infer_model_type(generator_name)
         )
@@ -528,16 +532,23 @@ class PlexosParser(PCMParser):
         """
         generator_fuel = self.db.query(fuel_query)
         generator_fuel_map = {key: value for key, value in generator_fuel}
+
         fuel_prices = self._get_fuel_prices()
 
         # Iterate over properties to create generator object
         for generator_name, generator_data in system_generators.group_by("name"):
             generator_name = generator_name[0]
 
+            category = generator_data["category"].unique()
+            if len(category) > 1:
+                msg = "Generator has more then one category. Check the dataset"
+                logger.debug(msg)
+            category = category[0]
+
             fuel_name = generator_fuel_map.get(generator_name)
             logger.trace("Parsing generator = {} with fuel type = {}", generator_name, fuel_name)
 
-            fuel_pmtype = self._get_fuel_pmtype(generator_name, fuel_name=fuel_name)
+            fuel_pmtype = self._get_fuel_pmtype(generator_name, fuel_name=fuel_name, category=category)
 
             if not fuel_pmtype:
                 msg = "Fuel mapping not found for {} with fuel_type={}"
@@ -989,7 +1000,19 @@ class PlexosParser(PCMParser):
         # self.db = PlexosSQLite(xml_fname=xml_fpath)
 
         logger.trace("Getting object_id for model={}", model_name)
-        model_id = self.db.query("select object_id from t_object where name = ?", params=(model_name,))
+        model_id_query = """
+        SELECT
+            object_id
+        FROM
+            t_object
+        LEFT JOIN
+            t_class on t_class.class_id = t_object.class_id
+        WHERE t_object.name = ? and t_class.name = ?
+        """
+        model_id = self.db.query(
+            model_id_query,
+            params=(model_name, ClassEnum.Model),
+        )
         if len(model_id) > 1:
             msg = f"Multiple models with the same {model_name} returned. Check database or spelling."
             logger.debug(model_id)
@@ -1024,7 +1047,8 @@ class PlexosParser(PCMParser):
         active_power_limits_max = None
 
         availability = mapped_records.get("available", None)
-        if availability is not None and availability > 0:
+        rating = mapped_records.get("rating", None)
+        if availability is not None and availability > 0 and rating is not None:
             # Set availability, rating, storage_capacity as multiplier of availability/'units'
             if mapped_records.get("storage_capacity") is not None:
                 mapped_records["storage_capacity"] *= mapped_records.get("available")
@@ -1162,6 +1186,8 @@ class PlexosParser(PCMParser):
     def _join_datafile_data(self, system_data, datafile_data):
         """Join system data with datafile data."""
         # Filter datafiles
+        if datafile_data is None:
+            return system_data
         if datafile_data.height > 0:
             results = []
             grouped = datafile_data.group_by("name")
@@ -1277,7 +1303,7 @@ class PlexosParser(PCMParser):
                 self.system.add_time_series(ts, load, **ts_dict)
         return
 
-    def _csv_file_handler(self, property_name, property_data):
+    def _csv_file_handler(self, property_name, property_data, csv_file_encoding="utf8"):
         fpath_text = property_data
         if "\\" in fpath_text:
             relative_path = PureWindowsPath(fpath_text)
@@ -1286,13 +1312,22 @@ class PlexosParser(PCMParser):
         assert relative_path
         assert self.config.run_folder
         fpath = self.config.run_folder / relative_path
+        logger.trace("Attempting reading {}", fpath)
+
+        if encoding := self.config.feature_flags.get("csv_file_encoding"):
+            csv_file_encoding = encoding
         try:
             data_file = pl.read_csv(
-                fpath.as_posix(), infer_schema_length=10000
+                fpath.as_posix(),
+                infer_schema_length=10_000_000,
+                encoding=csv_file_encoding,
             )  # This might not work on Windows machines
         except FileNotFoundError:
             logger.warning("File {} not found. Skipping it.", relative_path)
             return
+        except pl.exceptions.ComputeError:
+            logger.warning("File {} could not be parse due to dtype problems. See error.", relative_path)
+            raise
 
         # Lowercase files
         data_file = data_file.with_columns(pl.col(pl.String).str.to_lowercase()).rename(

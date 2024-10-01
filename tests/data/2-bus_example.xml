@@ -36,6 +36,14 @@
     <lang_id>18</lang_id>
     <description>Fuel for a thermal generating unit</description>
   </t_class>
+  <t_class>
+    <class_id>80</class_id>
+    <name>Model</name>
+    <class_group_id>12</class_group_id>
+    <is_enabled>true</is_enabled>
+    <lang_id>36</lang_id>
+    <description>Collection of data scenarios that define a model to be evaluated</description>
+  </t_class>
   <t_data>
     <data_id>1</data_id>
     <membership_id>43</membership_id>

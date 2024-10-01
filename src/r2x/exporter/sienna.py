@@ -108,11 +108,23 @@ class SiennaExporter(BaseExporter):
             "base_voltage",
             "bus_type",
         ]
-        self.system.export_component_to_csv(
-            Bus,
+
+        records = [
+            component.model_dump(exclude_none=True, mode="python", serialize_as_any=True)
+            for component in self.system.get_components(Bus)
+        ]
+
+        key_mapping = {"number": "bus_id", "load_zone": "zone"}
+        export_records = get_export_records(
+            records,
+            partial(apply_property_map, property_map=self.property_map | key_mapping),
+            partial(apply_pint_deconstruction, unit_map=self.unit_map),
+            partial(apply_unnest_key, key_map={"zone": "name"}),
+        )
+        self.system._export_dict_to_csv(
+            export_records,
             fpath=self.output_folder / fname,
             fields=output_fields,
-            key_mapping={"number": "bus_id", "load_zone": "zone"},
             restval="NA",
         )
 
@@ -378,7 +390,11 @@ class SiennaExporter(BaseExporter):
             output_dict["input_active_power_limit_min"] = 0  # output_dict["active_power"]
             output_dict["output_active_power_limit_min"] = 0  # output_dict["active_power"]
             output_dict["active_power"] = output_dict["active_power"]
-            output_dict["bus_id"] = getattr(self.system.get_component_by_label(output_dict["bus"]), "number")
+            output_dict["bus_id"] = (
+                getattr(self.system.get_component_by_label(output_dict["bus"]), "number", None)
+                if output_dict["bus"]
+                else None
+            )
             output_dict["rating"] = output_dict["rating"]
 
             # NOTE: For pumped hydro storage we create a head and a tail
