@@ -63,6 +63,11 @@ class SiennaExporter(BaseExporter):
         self.unit_map = self.config.defaults.get("sienna_unit_map", {})
         self.output_fields = self.config.defaults["table_data"]
 
+        if not isinstance(self.config.solve_year, int):
+            msg = "Multiple solve years are not supported yet."
+            raise NotImplementedError(msg)
+        self.year: int = self.config.solve_year
+
     def _get_table_data_fields(self) -> dict[str, Any]:
         request = urlopen(PSY_URL + TABLE_DATA_SPEC)
         descriptor = json.load(request)
@@ -433,9 +438,7 @@ class SiennaExporter(BaseExporter):
         ts_pointers_list = []
 
         for component_type, time_series in self.time_series_objects.items():
-            csv_fpath = self.ts_directory / (
-                f"{component_type}_{self.config.name}_{self.config.weather_year}.csv"
-            )
+            csv_fpath = self.ts_directory / (f"{component_type}_{self.config.name}_{self.year}.csv")
             for i in range(len(time_series)):
                 component_name = self.time_series_name_by_type[component_type][i]
                 ts_instance = time_series[i]
@@ -466,7 +469,7 @@ class SiennaExporter(BaseExporter):
         logger.debug("Saving Sienna data and timeseries files.")
 
         # First export all time series objects
-        self.export_data_files()
+        self.export_data_files(year=self.year)
         logger.info("Saving time series data.")
 
 
@@ -519,8 +522,7 @@ def apply_operation_table_data(
     ...                     "constant_term": 100,
     ...                     "proportional_term": 20,
     ...                     "quadratic_term": 0.5,
-    ...                     "x_coords": [0, 50, 100],
-    ...                     "y_coords": [0, 1000, 2500],
+    ...                     "points": [(0, 0), (50, 1000), (100, 2500)],
     ...                 }
     ...             },
     ...         },

@@ -17,7 +17,7 @@ def scenario_instance(data_folder, tmp_folder):
         output_folder=tmp_folder,
         input_model="infrasys",
         output_model="sienna",
-        weather_year=2010,
+        solve_year=2010,
     )
 
 

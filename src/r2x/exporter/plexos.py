@@ -76,6 +76,16 @@ class PlexosExporter(BaseExporter):
         self.default_units = self.config.defaults["default_units"]
         self.reserve_types = self.config.defaults["reserve_types"]
 
+        if not isinstance(self.config.solve_year, int):
+            msg = "Multiple solve years are not supported yet."
+            raise NotImplementedError(msg)
+        self.year: int = self.config.solve_year
+
+        if not isinstance(self.config.weather_year, int):
+            msg = "Multiple solve years are not supported yet."
+            raise NotImplementedError(msg)
+        self.weather_year: int = self.config.weather_year
+
         if not xml_fname:
             if not (xml_fname := getattr(self.config, "master_file", None)):
                 xml_fname = files("r2x.defaults").joinpath(DEFAULT_XML_TEMPLATE)  # type: ignore
@@ -86,7 +96,7 @@ class PlexosExporter(BaseExporter):
         """Run the exporter."""
         logger.info("Starting {}", self.__class__.__name__)
 
-        self.export_data_files()
+        self.export_data_files(year=self.weather_year)
 
         # If starting w/o a reference file we add our custom models and objects
         if new_database:
