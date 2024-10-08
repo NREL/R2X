@@ -303,7 +303,7 @@
       "value": "planned_outage_rate"
     },
     "description": "Planned outages per technology.",
-    "fname": "outage_planned.csv",
+    "fname": "planned_outage.csv",
     "input": true,
     "optional": true,
     "units": "%"
