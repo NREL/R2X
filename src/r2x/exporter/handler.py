@@ -99,7 +99,7 @@ class BaseExporter(ABC):
                 data = func(data, **kwargs)
         return data
 
-    def export_data_files(self, time_series_folder: str = "Data") -> None:
+    def export_data_files(self, year: int, time_series_folder: str = "Data") -> None:
         """Export all time series objects attached to components.
 
         This method assumes that `self.config.weather_year and `self.output_folder` exist.
@@ -109,6 +109,7 @@ class BaseExporter(ABC):
         time_series_folder: str
             Folder name to save time series data
         """
+        assert year is not None
         config_dict = self.config.__dict__
         for component in self.system.iter_all_components():
             if self.system.has_time_series(component):
@@ -119,10 +120,9 @@ class BaseExporter(ABC):
                     )
                     self.time_series_name_by_type[ts_component_name].append(component.name)
 
-        assert self.config.weather_year is not None
         date_time_column = pd.date_range(
-            start=f"1/1/{self.config.weather_year}",
-            end=f"1/1/{self.config.weather_year + 1}",
+            start=f"1/1/{year}",
+            end=f"1/1/{year + 1}",
             freq="1h",
             inclusive="left",
         )
