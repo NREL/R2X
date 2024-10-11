@@ -115,9 +115,12 @@ class BaseExporter(ABC):
             if self.system.has_time_series(component):
                 for ts_metadata in self.system.time_series.list_time_series_metadata(component):
                     ts_component_name = f"{component.__class__.__name__}_{ts_metadata.variable_name}"
-                    self.time_series_objects[ts_component_name].append(
-                        self.system.get_time_series(component, variable_name=ts_metadata.variable_name)
-                    )
+                    try:
+                        self.time_series_objects[ts_component_name].append(
+                            self.system.get_time_series(component, variable_name=ts_metadata.variable_name)
+                        )
+                    except:  # noqa: E722
+                        continue
                     self.time_series_name_by_type[ts_component_name].append(component.name)
 
         date_time_column = pd.date_range(

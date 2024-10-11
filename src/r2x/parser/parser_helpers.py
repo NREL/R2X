@@ -1,15 +1,21 @@
 # ruff: noqa
 """Set of helper functions for parsers."""
 
+from enum import Enum
+from functools import singledispatch
+from os import PathLike
+from pathlib import Path, PureWindowsPath
 from loguru import logger
 import polars as pl
 import pandas as pd
 from datetime import datetime
 import numpy as np
 import cvxpy as cp
-from typing import NamedTuple, List
+from typing import Literal, NamedTuple, List
 
 from infrasys.function_data import LinearFunctionData, QuadraticFunctionData, PiecewiseLinearData, XYCoords
+
+PLEXOS_OUTPUT_COLUMNS = ["year", "month", "day", "hour", "value"]
 
 
 def pl_filter_year(df, year: int | None = None, year_columns=["t", "year"], **kwargs):
@@ -23,7 +29,7 @@ def pl_filter_year(df, year: int | None = None, year_columns=["t", "year"], **kw
         return df
 
     if len(matching_names) > 1:
-        return KeyError(f"More than one column identified as year. {matching_names=}")
+        raise KeyError(f"More than one column identified as year. {matching_names=}")
     logger.trace("Filtering data for year {}", year)
     return df.filter(pl.col(matching_names[0]) == year)
 
@@ -123,44 +129,21 @@ def handle_leap_year_adjustment(data_file: pl.DataFrame):
     return pl.concat([before_feb_29, feb_28, after_feb_29])
 
 
-def fill_missing_timestamps(data_file: pl.DataFrame, date_time_column: list[str]):
-    """Add missing timestamps to data and forward fill nulls"""
-    data_file = data_file.with_columns(
-        (
-            pl.col("year").cast(pl.Int32).cast(pl.Utf8)
-            + "-"
-            + pl.col("month").cast(pl.Int32).cast(pl.Utf8).str.zfill(2)
-            + "-"
-            + pl.col("day").cast(pl.Int32).cast(pl.Utf8).str.zfill(2)
-            + " "
-            + pl.col("hour").cast(pl.Int32).cast(pl.Utf8).str.zfill(2)
-            + ":00:00"
+def fill_missing_timestamps(data_file: pl.DataFrame, hourly_time_index: pl.DataFrame):
+    """Add missing timestamps to data and forward fill nulls to complete a year"""
+
+    if "hour" in data_file.columns:
+        data_file = data_file.with_columns(
+            pl.datetime(pl.col("year"), pl.col("month"), pl.col("day"), pl.col("hour"))
         )
-        .str.strptime(pl.Datetime, "%Y-%m-%d %H:%M:%S")
-        .alias("timestamp")
-    ).with_columns(pl.col("timestamp").dt.cast_time_unit("ns"))
+    if len(data_file) <= 13:
+        data_file = data_file.with_columns(pl.datetime(pl.col("year"), pl.col("month"), pl.col("day")))
+    else:
+        data_file = data_file.with_columns(pl.datetime(pl.col("year"), pl.col("month"), pl.col("day")))
 
-    data_file = data_file.with_columns(
-        pl.col("year").cast(pl.Int32),
-        pl.col("month").cast(pl.Int8),
-        pl.col("day").cast(pl.Int8),
-        pl.col("hour").cast(pl.Int8),
-    )
-
-    complete_timestamps = pl.from_pandas(pd.DataFrame({"timestamp": date_time_column}))
-    missing_timestamps = complete_timestamps.join(data_file, on="timestamp", how="anti")
-
-    missing_timestamps = missing_timestamps.with_columns(
-        pl.col("timestamp").dt.year().alias("year"),
-        pl.col("timestamp").dt.month().alias("month"),
-        pl.col("timestamp").dt.day().alias("day"),
-        pl.col("timestamp").dt.hour().alias("hour"),
-        pl.lit(None).alias("value"),
-    ).select(["year", "month", "day", "hour", "value", "timestamp"])
-
-    complete_df = pl.concat([data_file, missing_timestamps]).sort("timestamp").fill_null(strategy="forward")
-    complete_df.drop_in_place("timestamp")
-    return complete_df
+    upsample_data = hourly_time_index.join(data_file, on="datetime", how="left")
+    upsample_data = upsample_data.fill_null(strategy="forward")
+    return upsample_data
 
 
 def resample_data_to_hourly(data_file: pl.DataFrame):
@@ -258,3 +241,229 @@ def bid_cost_mark_up(fn, mapped_records):
     # We can easily modify the mark-up prices by changing the Y values of the PWL function
     # Issue right now is we need to do this for time-varying data but market bid cost isnt implemented
     pass
+
+
+def csv_handler(fpath: Path, csv_file_encoding="utf8", **kwargs) -> pl.DataFrame:
+    """Parse CSV files and return a Polars DataFrame with all column names in lowercase.
+
+    Parameters
+    ----------
+    fpath : str
+        The file path of the CSV file to read.
+    csv_file_encoding : str, optional
+        The encoding format of the CSV file, by default "utf8".
+    **kwargs : dict, optional
+        Additional keyword arguments passed to the `pl.read_csv` function.
+
+    Returns
+    -------
+    pl.DataFrame or None
+        The parsed CSV file as a Polars DataFrame with lowercase column names if successful,
+        or `None` if the file was not found.
+
+    Raises
+    ------
+    pl.exceptions.ComputeError
+        Raised if there are issues with the data types in the CSV file.
+    FileNotFoundError
+        Raised if the file is not found.
+
+    See Also
+    --------
+    pl_lowercase : Function to convert all column names of a Polars DataFrame to lowercase.
+
+    Example
+    -------
+    >>> df = csv_handler("data/example.csv")
+    >>> print(df)
+    shape: (2, 3)
+    ┌─────┬────────┬──────┐
+    │ id  │ name   │ age  │
+    │ --- │ ---    │ ---  │
+    │ i64 │ str    │ i64  │
+    ╞═════╪════════╪══════╡
+    │ 1   │ Alice  │ 30   │
+    │ 2   │ Bob    │ 24   │
+    └─────┴────────┴──────┘
+    """
+    logger.trace("Attempting reading file {}", fpath)
+    logger.trace("Parsing file {}", fpath)
+    try:
+        data_file = pl.read_csv(
+            fpath.as_posix(),
+            infer_schema_length=10_000_000,
+            encoding=csv_file_encoding,
+        )
+    except FileNotFoundError:
+        msg = f"File {fpath} not found."
+        logger.error(msg)
+        raise FileNotFoundError(msg)
+    except pl.exceptions.PolarsError:
+        logger.warning("File {} could not be parse due to dtype problems. See error.", fpath)
+        raise
+
+    data_file = pl_lowercase(data_file)
+
+    return data_file
+
+
+class DATA_FILE_COLUMNS(Enum):
+    BASIC = ["name", "value"]
+    TS_NPV = ["name", "pattern", "value"]
+    TS_NYV = ["name", "year", "value"]
+    TS_NDV = ["name", "DateTime", "value"]
+    TS_YMDP = ["year", "month", "day", "period"]
+    TS_YMDPV = ["year", "month", "day", "period", "value"]
+    TS_NYMDV = ["name", "year", "month", "day", "value"]
+    TS_YM = ["year", "month"]
+    TS_MDP = ["month", "day", "period"]
+    TS_NYMDH = [
+        "name",
+        "year",
+        "month",
+        "day",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "17",
+        "18",
+        "19",
+        "20",
+        "21",
+        "22",
+        "23",
+        "24",
+    ]
+    TS_NMDH = [
+        "name",
+        "month",
+        "day",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "17",
+        "18",
+        "19",
+        "20",
+        "21",
+        "22",
+        "23",
+        "24",
+    ]
+    TS_NM = [
+        "name",
+        "m01",
+        "m02",
+        "m03",
+        "m04",
+        "m05",
+        "m06",
+        "m07",
+        "m08",
+        "m09",
+        "m10",
+        "m11",
+        "m12",
+    ]
+
+
+def get_column_enum(columns: List[str]) -> DATA_FILE_COLUMNS | None:
+    """Identify the corresponding PropertyColumns enum based on the given columns.
+
+    Parameters
+    ----------
+    columns : List[str]
+        The list of columns to inspect.
+
+    Returns
+    -------
+    Optional[PropertyColumns]
+        The corresponding enum if a match is found; otherwise, None.
+    """
+    for property_type in DATA_FILE_COLUMNS:
+        if set(property_type.value) == set(columns):
+            return property_type
+    return None
+
+
+def create_date_range(year: int, interval: str = "1h"):
+    dt = pl.datetime_range(
+        datetime(year, 1, 1), datetime(year + 1, 1, 1), interval, eager=True, closed="left"
+    ).alias("datetime")
+    date_df = pl.DataFrame({"datetime": dt})
+    date_df = date_df.with_columns(
+        [
+            date_df["datetime"].dt.year().alias("year").cast(pl.Int64),
+            date_df["datetime"].dt.month().alias("month").cast(pl.Int64),
+            date_df["datetime"].dt.day().alias("day").cast(pl.Int64),
+            date_df["datetime"].dt.hour().alias("hour").cast(pl.Int64),
+        ]
+    )
+    return date_df
+
+
+def parse_data_file(column_type: DATA_FILE_COLUMNS, data_file):
+    match column_type:
+        case column_type.BASIC:
+            data_file = parse_basic(data_file)
+        case column_type.TS_NYMDV:
+            data_file = parse_ts_nymdv(data_file)
+        case column_type.TS_NMDH:
+            data_file = parse_ts_nmdh(data_file)
+        case column_type.TS_NYMDH:
+            data_file = parse_ts_nymdh(data_file)
+        case _:
+            raise NotImplementedError
+    return data_file
+
+
+def parse_basic(data_file):
+    data_file = data_file.with_columns(
+        month=pl.col("pattern").str.extract(r"(\d{2})$").cast(pl.Int8)
+    )  # If other patterns exist, this will need to change.
+    data_file = date_df.join(data_file.select("month", "value"), on="month", how="inner").select(
+        output_columns
+    )
+    return data_file
+
+
+def parse_ts_nymdv(data_file):
+    return data_file
+
+
+def parse_ts_nmdh(data_file):
+    data_file = data_file.melt(id_vars=["name", "month", "day"], variable_name="hour")
+    data_file = data_file.with_columns(pl.col("hour").cast(pl.Int8))
+    return data_file
+
+
+def parse_ts_nymdh(data_file):
+    data_file = data_file.melt(id_vars=["name", "year", "month", "day"], variable_name="hour")
+    data_file = data_file.with_columns(pl.col("hour").cast(pl.Int8))
+    return data_file
