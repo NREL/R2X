@@ -5,7 +5,6 @@ import importlib
 from importlib.resources import files
 from pathlib import Path, PureWindowsPath
 from argparse import ArgumentParser
-import pandas as pd
 import re
 
 from pint import UndefinedUnitError, Quantity
@@ -14,7 +13,7 @@ import numpy as np
 from loguru import logger
 from infrasys.exceptions import ISNotStored
 from infrasys.time_series_models import SingleTimeSeries
-from infrasys.value_curves import InputOutputCurve, AverageRateCurve
+from infrasys.value_curves import AverageRateCurve
 from infrasys.cost_curves import FuelCurve
 from infrasys.function_data import (
     LinearFunctionData,
@@ -48,8 +47,12 @@ from r2x.utils import validate_string
 
 from .handler import PCMParser
 from .parser_helpers import (
+    csv_handler,
+    get_column_enum,
     handle_leap_year_adjustment,
     fill_missing_timestamps,
+    parse_data_file,
+    pl_filter_year,
     resample_data_to_hourly,
     filter_property_dates,
     field_filter,
@@ -62,57 +65,6 @@ models = importlib.import_module("r2x.models")
 R2X_MODELS = importlib.import_module("r2x.models")
 BASE_WEATHER_YEAR = 2007
 XML_FILE_KEY = "xml_file"
-PROPERTY_SV_COLUMNS_BASIC = ["name", "value"]
-PROPERTY_SV_COLUMNS_NAMEYEAR = ["name", "year", "month", "day", "period", "value"]
-PROPERTY_TS_COLUMNS_BASIC = ["year", "month", "day", "period", "value"]
-PROPERTY_TS_COLUMNS_MULTIZONE = ["year", "month", "day", "period"]
-PROPERTY_TS_COLUMNS_PIVOT = ["name", "year", "month", "day", "value"]
-PROPERTY_TS_COLUMNS_YM = ["year", "month"]
-PROPERTY_TS_COLUMNS_MDP = ["month", "day", "period"]
-PROPERTY_TS_COLUMNS_MDH = [
-    "name",
-    "month",
-    "day",
-    "1",
-    "2",
-    "3",
-    "4",
-    "5",
-    "6",
-    "7",
-    "8",
-    "9",
-    "10",
-    "11",
-    "12",
-    "13",
-    "14",
-    "15",
-    "16",
-    "17",
-    "18",
-    "19",
-    "20",
-    "21",
-    "22",
-    "23",
-    "24",
-]
-PROPERTY_TS_COLUMNS_MONTH_PIVOT = [
-    "name",
-    "m01",
-    "m02",
-    "m03",
-    "m04",
-    "m05",
-    "m06",
-    "m07",
-    "m08",
-    "m09",
-    "m10",
-    "m11",
-    "m12",
-]
 DEFAULT_QUERY_COLUMNS_SCHEMA = {  # NOTE: Order matters
     "membership_id": pl.Int64,
     "parent_object_id": pl.Int32,
@@ -148,12 +100,34 @@ DEFAULT_PROPERTY_COLUMNS = [
     "data_file",
     "variable",
     "action",
-    "variable_tag",
+    # "variable_tag",
     # "variable_default",
-    "timeslice",
-    "timeslice_value",
+    # "timeslice",
+    # "timeslice_value",
 ]
 DEFAULT_INDEX = ["object_id", "name", "category"]
+SIMPLE_QUERY_COLUMNS_SCHEMA = {
+    "parent_class_name": pl.String,
+    "child_class_name": pl.String,
+    "parent_object_id": pl.Int32,
+    "object_id": pl.Int32,
+    "name": pl.String,
+    "category": pl.String,
+    "property_name": pl.String,
+    "property_unit": pl.String,
+    "property_value": pl.Float64,
+    "band": pl.Int32,
+    "date_from": pl.String,
+    "date_to": pl.String,
+    "text": pl.String,
+    "text_class_name": pl.String,
+    "tag_data_id": pl.Int32,
+    "tag_object_name": pl.String,
+    "tag_object_id": pl.Int32,
+    "tag_class_name": pl.String,
+    "action": pl.String,
+    "scenario": pl.String,
+}
 
 
 def cli_arguments(parser: ArgumentParser):
@@ -210,6 +184,10 @@ class PlexosParser(PCMParser):
             date_from = self._collect_horizon_data(model_name=model_name).get("Date From")
             if date_from is not None:
                 self.year = int((date_from / 365.25) + 1900)
+
+        self.hourly_time_index = pl.datetime_range(
+            datetime(self.year, 1, 1), datetime(self.year + 1, 1, 1), interval="1h", eager=True, closed="left"
+        ).to_frame("datetime")
 
         return
 
@@ -275,13 +253,8 @@ class PlexosParser(PCMParser):
         Adjust timesseries data to match the study year datetime
         index, such as removing or adding leap-year data.
         """
-        date_time_column = pd.date_range(
-            start=f"1/1/{self.year}",
-            end=f"1/1/{self.year + 1}",
-            freq="1h",
-            inclusive="left",
-        )
-        leap_year = len(date_time_column) == 8784
+        assert not self.hourly_time_index.is_empty()
+        leap_year = len(self.hourly_time_index) == 8784
 
         if data_file.height in [8784, 8760]:
             if data_file.height == 8784 and not leap_year:
@@ -293,7 +266,7 @@ class PlexosParser(PCMParser):
             return data_file
 
         if data_file.height <= 8760:
-            return fill_missing_timestamps(data_file, date_time_column)
+            return fill_missing_timestamps(data_file, self.hourly_time_index)
 
         if data_file.height in [17568, 17520]:
             return resample_data_to_hourly(data_file)
@@ -394,7 +367,7 @@ class PlexosParser(PCMParser):
         for reserve_name, reserve_data in system_reserves.group_by("name"):
             reserve_name = reserve_name[0]
             logger.trace("Parsing battery = {}", reserve_name)
-            property_records = reserve_data[DEFAULT_PROPERTY_COLUMNS].to_dicts()
+            property_records = reserve_data.to_dicts()
             mapped_records, _ = self._parse_property_data(property_records, reserve_name)
             mapped_records["name"] = reserve_name
             reserve_type = validate_string(mapped_records.pop("Type", "default"))
@@ -586,7 +559,8 @@ class PlexosParser(PCMParser):
             model_map = self._get_model_type(fuel_pmtype)
             model_map = getattr(R2X_MODELS, model_map)
 
-            property_records = generator_data[DEFAULT_PROPERTY_COLUMNS].to_dicts()
+            # property_records = generator_data[DEFAULT_PROPERTY_COLUMNS].to_dicts()
+            property_records = generator_data.to_dicts()
 
             mapped_records, multi_band_records = self._parse_property_data(property_records, generator_name)
             mapped_records["name"] = generator_name
@@ -714,7 +688,7 @@ class PlexosParser(PCMParser):
             battery_name = battery_name[0]
             logger.trace("Parsing battery = {}", battery_name)
 
-            property_records = battery_data[DEFAULT_PROPERTY_COLUMNS].to_dicts()
+            property_records = battery_data.to_dicts()
 
             mapped_records, _ = self._parse_property_data(property_records, battery_name)
             mapped_records["name"] = battery_name
@@ -929,7 +903,6 @@ class PlexosParser(PCMParser):
             if heat_rate_avg:
                 fn = LinearFunctionData(proportional_term=heat_rate_avg.magnitude, constant_term=0)
                 vc = AverageRateCurve(
-                    # name=f"{generator_name}_HR",
                     function_data=fn,
                     initial_input=heat_rate_avg.magnitude,
                 )
@@ -954,10 +927,8 @@ class PlexosParser(PCMParser):
             #     bid_cost_mark_up(fn, mapped_records)
 
             if not vc:
-                vc = InputOutputCurve(
-                    # name=f"{generator_name}_HR",
-                    function_data=fn
-                )
+                # vc = InputOutputCurve(function_data=fn)
+                vc = None
             mapped_records["hr_value_curve"] = vc
         return mapped_records
 
@@ -1065,6 +1036,7 @@ class PlexosParser(PCMParser):
         return None
 
     def _set_unit_availability(self, mapped_records):
+        # NOTE(pesap): We should refactor this.
         """
         Set availability and active power limit TS for generators.
         Note: variables use infrasys naming scheme, rating != plexos rating.
@@ -1075,63 +1047,72 @@ class PlexosParser(PCMParser):
 
         availability = mapped_records.get("available", None)
         rating = mapped_records.get("rating", None)
-        if availability is not None and availability > 0 and rating is not None:
-            # Set availability, rating, storage_capacity as multiplier of availability/'units'
-            if mapped_records.get("storage_capacity") is not None:
-                mapped_records["storage_capacity"] *= mapped_records.get("available")
+
+        if availability is None and rating is not None:
+            return
+
+        # Set availability, rating, storage_capacity as multiplier of availability/'units'
+        if mapped_records.get("storage_capacity") is not None:
+            mapped_records["storage_capacity"] *= mapped_records.get("available")
+
+        if not isinstance(mapped_records.get("rating"), SingleTimeSeries):
             mapped_records["rating"] = mapped_records.get("rating") * mapped_records.get("available")
-            mapped_records["available"] = 1
+        mapped_records["available"] = 1
 
-            # Set active power limits
-            rating_factor = mapped_records.get("Rating Factor", 100)
-            rating_factor = self._apply_action(np.divide, rating_factor, 100)
-            rating = mapped_records.get("rating", None)
-            max_active_power = mapped_records.get("max_active_power", None)
-            min_energy_hour = mapped_records.get("Min Energy Hour", None)
+        # Set active power limits
+        rating_factor = mapped_records.get("Rating Factor", 100)
+        rating_factor = self._apply_action(np.divide, rating_factor, 100)
+        rating = mapped_records.get("rating", None)
+        max_active_power = mapped_records.get("max_active_power", None)
+        min_energy_hour = mapped_records.get("Min Energy Hour", None)
 
-            if isinstance(max_active_power, dict):
-                max_active_power = self._time_slice_handler("max_active_power", max_active_power)
+        if isinstance(max_active_power, dict):
+            max_active_power = self._time_slice_handler("max_active_power", max_active_power)
 
-            if max_active_power is not None:
-                units = max_active_power.units
-                val = self._apply_action(np.multiply, rating_factor, max_active_power)
-            elif rating is not None:
-                units = rating.units
-                val = self._apply_action(np.multiply, rating_factor, rating.magnitude)
-            else:
-                return mapped_records
-            val = self._apply_unit(val, units)
+        if max_active_power is not None:
+            units = max_active_power.units
+            val = self._apply_action(np.multiply, rating_factor, max_active_power)
+        elif rating is not None and isinstance(rating, SingleTimeSeries):
+            units = rating.units
+            val = self._apply_action(np.multiply, rating_factor, rating)
+        else:
+            return mapped_records
+        val = self._apply_unit(val, units)
 
-            if min_energy_hour is not None:
-                mapped_records["min_active_power"] = mapped_records.pop("Min Energy Hour")
+        if min_energy_hour is not None:
+            mapped_records["min_active_power"] = mapped_records.pop("Min Energy Hour")
 
-            if isinstance(val, SingleTimeSeries):
-                val.variable_name = "max_active_power"
-                max_ts_rating = np.max(
-                    val.data
-                )  # plexos allows dispatch above max rating. Increase rating to max dispatch value
-                active_power_limits_max = Quantity(np.maximum(max_ts_rating, rating.magnitude), rating.units)
-                self._apply_action(np.divide, val, rating.magnitude)
-                mapped_records["max_active_power"] = val
+        # if isinstance(val, SingleTimeSeries):
+        #     val.variable_name = "max_active_power"
+        #     max_ts_rating = np.max(
+        #         val.data
+        #     )  # plexos allows dispatch above max rating. Increase rating to max dispatch value
+        #     active_power_limits_max = Quantity(np.maximum(max_ts_rating, rating), rating.units)
+        #     self._apply_action(np.divide, val, rating.magnitude)
+        #     mapped_records["max_active_power"] = val
 
-            mapped_records["active_power"] = rating
-            mapped_records["active_power_limits_max"] = active_power_limits_max or rating
+        mapped_records["active_power"] = rating
+        mapped_records["active_power_limits_max"] = active_power_limits_max or rating
 
-            if isinstance(rating_factor, SingleTimeSeries):
-                mapped_records.pop("Rating Factor")  # rm for ext exporter
+        if isinstance(rating_factor, SingleTimeSeries):
+            mapped_records.pop("Rating Factor")  # rm for ext exporter
 
-        else:  # if unit field not activated in model, skip generator
-            mapped_records = None
         return mapped_records
 
     def _plexos_table_data(self) -> list[tuple]:
         # Get objects table/membership table
-        sql_query = files("plexosdb.queries").joinpath("object_query.sql").read_text()
+        sql_query = files("plexosdb.queries").joinpath("simple_object_query.sql").read_text()
         object_data = self.db.query(sql_query)
         return object_data
 
     def _polarize_data(self, object_data: list[tuple]) -> pl.DataFrame:
-        return pl.from_records(object_data, schema=DEFAULT_QUERY_COLUMNS_SCHEMA)
+        data = pl.from_records(object_data, schema=SIMPLE_QUERY_COLUMNS_SCHEMA)
+
+        # Create a lookup map to find nested objects easily
+        object_map = data.select(["object_id", "tag_object_name", "tag_object_id"]).to_dict(as_series=False)
+        self.id_to_name = dict(zip(object_map["object_id"], object_map["tag_object_name"]))
+        self.id_to_tag_id = dict(zip(object_map["object_id"], object_map["tag_object_id"]))
+        return data
 
     def _get_model_data(self, data_filter) -> pl.DataFrame:
         """Filter plexos data for a given class and all scenarios in a model."""
@@ -1304,8 +1285,8 @@ class PlexosParser(PCMParser):
                 )
                 logger.warning(msg, region)
 
-            ts = self._csv_file_handler(
-                property_name="max_active_power", property_data=region_data["variable"][0]
+            ts = self._file_handler(
+                region, property_name="max_active_power", fpath_str=region_data["variable"][0]
             )
             max_load = np.max(ts.data.to_numpy())
             ts = self._apply_action(np.divide, ts, max_load)
@@ -1331,168 +1312,74 @@ class PlexosParser(PCMParser):
                 self.system.add_time_series(ts, load, **ts_dict)
         return
 
-    def _csv_file_handler(self, property_name, property_data, csv_file_encoding="utf8"):
-        fpath_text = property_data
-        if "\\" in fpath_text:
-            relative_path = PureWindowsPath(fpath_text)
-        else:
-            relative_path = Path(fpath_text)
-        assert relative_path
-        assert self.config.run_folder
-        fpath = self.config.run_folder / relative_path
-        logger.trace("Attempting reading {}", fpath)
+    def _file_handler(self, record_name, property_name, fpath_str, csv_file_encoding="utf8"):  # noqa: C901
+        """Read time varying data from properties."""
+        assert isinstance(self.year, int)
+
+        if not fpath_str:
+            return
 
         if encoding := self.config.feature_flags.get("csv_file_encoding"):
             csv_file_encoding = encoding
 
-        logger.debug("Parsing file {}", fpath)
-        try:
-            data_file = pl.read_csv(
-                fpath.as_posix(),
-                infer_schema_length=10_000_000,
-                encoding=csv_file_encoding,
-            )  # This might not work on Windows machines
-        except FileNotFoundError:
-            logger.warning("File {} not found. Skipping it.", relative_path)
-            return
-        except pl.exceptions.ComputeError:
-            logger.warning("File {} could not be parse due to dtype problems. See error.", relative_path)
-            raise
+        # Adjust for Windows type of paths
+        if "\\" in fpath_str:
+            path = self.run_folder / PureWindowsPath(fpath_str)
+        else:
+            path = self.run_folder / Path(fpath_str)
 
-        # Lowercase files
-        data_file = data_file.with_columns(pl.col(pl.String).str.to_lowercase()).rename(
-            {column: column.lower() for column in data_file.columns}
+        data_file = csv_handler(path, csv_file_encoding=csv_file_encoding)
+
+        data_file_column_type = get_column_enum(data_file.columns)
+        if data_file_column_type is None:
+            msg = f"Time series format {data_file.columns=} not yet supported."
+            raise NotImplementedError(msg)
+
+        parsed_file = parse_data_file(data_file_column_type, data_file)
+        parsed_file = pl_filter_year(parsed_file, year=self.year)
+
+        if "name" in data_file:
+            parsed_file = parsed_file.filter(pl.col("name") == record_name.lower())
+
+        if property_name in data_file.columns:
+            parsed_file = parsed_file[property_name]
+
+        if len(parsed_file) == 1 and property_name in parsed_file.columns:
+            return parsed_file[property_name.lower()][0]
+
+        if _ := self.config.feature_flags.get("simplify-heat-rate") and property_name == "Heat Rate":
+            logger.debug("Simplified time series heat rate for {}", record_name)
+            return parsed_file["value"].median()
+
+        if "year" not in parsed_file.columns:
+            parsed_file = parsed_file.with_columns(year=self.year)
+
+        # NOTE: Some files might have duplicated data. If so, we warn the user and drop the duplicates.
+        columns_to_check = [
+            column
+            for column in data_file_column_type.value
+            if column in ["name", "pattern", "year", "DateTime", "month", "day", "period", "hour"]
+        ]
+        if not parsed_file.filter(parsed_file.select(columns_to_check).is_duplicated()).is_empty():
+            logger.warning("File {} has duplicated rows. Removing duplicates.", path)
+            parsed_file = parsed_file.unique(subset=columns_to_check).sort(pl.all())
+
+        # parsed_file = parsed_file.sort(by=["month", "day", "hour"])
+
+        resolution = timedelta(hours=1)
+        # first_row = parsed_file.row(0)
+        start = datetime(year=self.year, month=1, day=1)
+        parsed_file = self._reconcile_timeseries(parsed_file)
+        logger.debug("{}:{}", property_name, self.property_map.get(property_name))
+        if not self.property_map.get(property_name):
+            pass
+        return SingleTimeSeries.from_array(
+            data=parsed_file["value"].cast(pl.Float64),
+            resolution=resolution,
+            initial_time=start,
+            variable_name=self.property_map.get(property_name, property_name),
+            # Maybe change this to be the property name rather than the object name?
         )
-
-        single_value_data = self._retrieve_single_value_data(property_name, data_file)
-        if single_value_data is not None:
-            return single_value_data
-
-        time_series_data = self._retrieve_time_series_data(property_name, data_file)
-        if time_series_data is not None:
-            return time_series_data
-        logger.debug("Skipped file {}", relative_path)
-
-    def _retrieve_single_value_data(self, property_name, data_file):
-        if (
-            all(column in data_file.columns for column in [property_name.lower(), "year"])
-            and "month" not in data_file.columns
-        ):
-            data_file = data_file.filter(pl.col("year") == self.year)
-            return data_file[property_name.lower()][0]
-
-        if data_file.columns[:2] == PROPERTY_SV_COLUMNS_BASIC:
-            return data_file.filter(pl.col("name") == property_name.lower())["value"][0]
-
-        if data_file.columns == PROPERTY_SV_COLUMNS_NAMEYEAR:  # double check this case
-            filter_condition = (pl.col("year") == self.year) & (pl.col("name") == property_name.lower())
-            try:
-                return data_file.filter(filter_condition)["value"][0]
-            except IndexError:
-                logger.warning("Property {} missing data_file data. Skipping it.", property_name)
-                return
-        return
-
-    def _retrieve_time_series_data(self, property_name, data_file):  # noqa: C901
-        output_columns = ["year", "month", "day", "hour", "value"]
-
-        if all(column in data_file.columns for column in PROPERTY_TS_COLUMNS_MONTH_PIVOT):
-            # Convert these types to ["pattern", "value"]
-            data_file = data_file.filter(pl.col("name") == property_name.lower())
-            data_file = data_file.melt(id_vars=["name"], variable_name="pattern")
-            data_file = data_file.select(["pattern", "value"])
-
-        match data_file.columns:
-            case ["pattern", "value"]:
-                dt = pl.datetime_range(
-                    datetime(self.year, 1, 1), datetime(self.year, 12, 31), "1h", eager=True
-                ).alias("datetime")
-                date_df = pl.DataFrame({"datetime": dt})
-                date_df = date_df.with_columns(
-                    [
-                        date_df["datetime"].dt.year().alias("year"),
-                        date_df["datetime"].dt.month().alias("month"),
-                        date_df["datetime"].dt.day().alias("day"),
-                        date_df["datetime"].dt.hour().alias("hour"),
-                    ]
-                )
-
-                data_file = data_file.with_columns(
-                    month=pl.col("pattern").str.extract(r"(\d{2})$").cast(pl.Int8)
-                )  # If other patterns exist, this will need to change.
-                data_file = date_df.join(data_file.select("month", "value"), on="month", how="inner").select(
-                    output_columns
-                )
-
-            case ["month", "day", "period", "value"]:
-                data_file = data_file.rename({"period": "hour"})
-                data_file = data_file.with_columns(pl.lit(self.year).alias("year"))
-                columns = ["year"] + [col for col in data_file.columns if col != "year"]
-                data_file = data_file.select(columns)
-
-            case columns if all(
-                column in columns for column in [*PROPERTY_TS_COLUMNS_MDP, property_name.lower()]
-            ):
-                data_file = data_file.with_columns(pl.lit(self.year).alias("year"))
-                data_file = data_file.rename({property_name.lower(): "value"})
-                data_file = data_file.rename({"period": "hour"})
-                data_file = data_file.select(output_columns)
-
-            case columns if all(
-                column in columns for column in [*PROPERTY_TS_COLUMNS_YM, property_name.lower()]
-            ):
-                data_file = data_file.filter(pl.col("year") == self.year)
-                data_file = data_file.rename({property_name.lower(): "value"})
-                data_file = data_file.with_columns(day=pl.lit(1), hour=pl.lit(0))
-                data_file = data_file.select(output_columns)
-
-            case columns if all(column in columns for column in PROPERTY_TS_COLUMNS_BASIC):
-                data_file = data_file.rename({"period": "hour"})
-                data_file = data_file.filter(pl.col("year") == self.year)
-
-            # case columns if all(column in columns for column in PROPERTY_TS_COLUMNS_MULTIZONE):
-            #     # Need to test these file types still
-            #     # Drop all columns that are not datetime columns or the region name
-            #     data_file = data_file.filter(pl.col("year") == self.study_year)
-            #     data_file = data_file.drop(
-            #         *[col for col in data_file.columns if col not in DATETIME_COLUMNS_MULTIZONE + [region]]
-            #     )
-            #     # Rename region name to hour
-            #     data_file = data_file.rename({region: "value"})
-
-            case columns if all(column in columns for column in PROPERTY_TS_COLUMNS_PIVOT):
-                data_file = data_file.filter(pl.col("year") == self.year)
-                data_file = data_file.melt(id_vars=PROPERTY_TS_COLUMNS_PIVOT, variable_name="hour")
-                data_file = data_file.with_columns(pl.col("hour").cast(pl.Int8))
-
-            case columns if all(column in columns for column in PROPERTY_TS_COLUMNS_MDH):
-                data_file = data_file.melt(id_vars=["name", "month", "day"], variable_name="hour")
-                data_file = data_file.with_columns(pl.col("hour").cast(pl.Int8))
-            case _:
-                logger.warning("Data file columns not supported. Skipping it.")
-                logger.warning("Datafile Columns: {}", data_file.columns)
-                return
-
-        if data_file.is_empty():
-            logger.debug("Weather year doesn't exist in {}. Skipping it.", property_name)
-            return
-
-        # Format to SingleTimeSeries
-        if data_file.columns == output_columns:
-            data_file = data_file.sort(["year", "month", "day", "hour"])
-            resolution = timedelta(hours=1)
-            first_row = data_file.row(0)
-            start = datetime(year=first_row[0], month=first_row[1], day=first_row[2])
-            variable_name = property_name  # Change with property mapping
-            data_file = self._reconcile_timeseries(data_file)
-            return SingleTimeSeries.from_array(
-                data=data_file["value"].cast(pl.Float64),
-                resolution=resolution,
-                initial_time=start,
-                variable_name=variable_name,
-                # Maybe change this to be the property name rather than the object name?
-            )
-        return
 
     def _time_slice_handler(self, property_name, property_data):
         """Deconstructs dict of timeslices into SingleTimeSeries objects."""
@@ -1555,60 +1442,69 @@ class PlexosParser(PCMParser):
             return val_b
         return results
 
-    def _get_value(self, prop_value, unit, record, record_name):
-        """Parse Property value from record csv, timeslice, and datafiles."""
-        data_file = (
-            self._csv_file_handler(record_name, record.get("data_file")) if record.get("data_file") else None
-        )
-        if data_file is None and record.get("data_file"):
-            return None
+    def _get_single_time_series(self): ...
 
-        var_default = record.get("variable_default")
-        variable = (
-            self._csv_file_handler(record.get("variable_tag"), record.get("variable"))
-            if record.get("variable")
-            else var_default
-            if var_default != 0
-            else None
-        )
+    def _get_variable_data(self): ...
 
-        actions = {
-            "×": np.multiply,  # noqa
-            "+": np.add,
-            "-": np.subtract,
-            "/": np.divide,
-            "=": lambda x, y: y,
-        }
-        action = actions[record.get("action")] if record.get("action") else None
-        timeslice_value = record.get("timeslice_value")
+    # def _get_property_valge(
+    #     self, record_name: str, record: dict[str, Any], property_name, property_value, unit
+    # ):
+    #     """Parse Property value from record csv, timeslice, and datafiles."""
+    #     # If we do not have a data file or a variable, we simply return the property_value with a unit
+    #     if record.get("data_file") is None and property_value != 0 and record.get("variable") is None:
+    #         return self._apply_unit(property_value, unit)
+    #
+    #     fpath = record["data_file"]
+    #     data_file = self._file_handler(record_name, property_name, fpath)
+    #     var_default = record.get("variable_default")
+    #     variable_data_file = (
+    #         self._file_handler(record.get("variable_tag"), record.get("variable"))
+    #         if record.get("variable")
+    #         else var_default
+    #         if var_default != 0
+    #         else None
+    #     )
+    #
+    #     actions = {
+    #         "×": np.multiply,  # noqa
+    #         "+": np.add,
+    #         "-": np.subtract,
+    #         "/": np.divide,
+    #         "=": lambda x, y: y,
+    #     }
+    #     action = actions[record.get("action")] if record.get("action") else None
+    #     timeslice_value = record.get("timeslice_value")
+    #
+    #     if variable_data_file is not None:
+    #         if record.get("action") == "=":
+    #             return self._apply_unit(variable_data_file, unit)
+    #         if data_file is not None:
+    #             return self._apply_unit(self._apply_action(action, variable_data_file, data_file), unit)
+    #         if property_value is not None:
+    #             return self._apply_unit(self._apply_action(action,
+    #             variable_data_file, property_value), unit)
+    #         return self._apply_unit(variable_data_file, unit)
+    #
+    #     if data_file is not None:
+    #         if timeslice_value is not None and timeslice_value != -1:
+    #             return self._apply_unit(self._apply_action(action, data_file, timeslice_value), unit)
+    #         return self._apply_unit(data_file, unit)
+    #
+    #     if timeslice_value is not None and timeslice_value != -1:
+    #         return self._apply_unit(timeslice_value, unit)
+    #
+    #     return self._apply_unit(property_value, unit)
 
-        if variable is not None:
-            if record.get("action") == "=":
-                return self._apply_unit(variable, unit)
-            if data_file is not None:
-                return self._apply_unit(self._apply_action(action, variable, data_file), unit)
-            if prop_value is not None:
-                return self._apply_unit(self._apply_action(action, variable, prop_value), unit)
-            return self._apply_unit(variable, unit)
-
-        if data_file is not None:
-            if timeslice_value is not None and timeslice_value != -1:
-                return self._apply_unit(self._apply_action(action, data_file, timeslice_value), unit)
-            return self._apply_unit(data_file, unit)
-
-        if timeslice_value is not None and timeslice_value != -1:
-            return self._apply_unit(timeslice_value, unit)
-
-        return self._apply_unit(prop_value, unit)
-
-    def _parse_property_data(self, record_data, record_name):
+    def _parse_property_data(self, record_data, record_name):  # noqa: C901
+        # NOTE: refaactor to reduce complexity
         mapped_properties = {}
         property_counts = {}
         multi_band_properties = set()
 
         for record in record_data:
             band = record["band"]
-            timeslice = record["timeslice"]
+            # timeslice = record["timeslice"]
+            record_name = record["name"]
             prop_name = record["property_name"]
             prop_value = record["property_value"]
             unit = record["property_unit"].replace("$", "usd")
@@ -1621,44 +1517,102 @@ class PlexosParser(PCMParser):
                 except UndefinedUnitError:
                     unit = None
 
-            value = self._get_value(prop_value, unit, record, record_name)
-            if value is None:
-                logger.warning("Property {} missing record data for {}. Skipping it.", prop_name, record_name)
-                continue
+            # If we have a nested object and it is variable or a data file, we
+            # need to recurse to find the text of the data file object
+            if record["tag_object_name"]:
+                assert record["tag_object_id"]
+                nested_object_id = self._resolve_object_id(record["tag_object_id"])
+                nested_object_data = self._filter_by_object_id(nested_object_id)
+                nested_object_records = nested_object_data.to_dicts()
+                if len(nested_object_records) > 1:
+                    logger.warning("Multiple nested objects")
 
-            if timeslice is not None:
-                # Timeslice Properties
-                if mapped_property_name not in property_counts:
-                    # First Time reading timeslice
-                    nested_dict = {}
-                    nested_dict[timeslice] = value
-                    mapped_properties[mapped_property_name] = nested_dict
-                    property_counts[mapped_property_name] = {timeslice}
-                elif timeslice not in property_counts[mapped_property_name]:
-                    mapped_properties[mapped_property_name][timeslice] = value
-                    property_counts[mapped_property_name].add(timeslice)
-                    multi_band_properties.add(mapped_property_name)
+                nested_object_record = nested_object_records[0]  # Get the only element of the list
+
+                if not nested_object_record["child_class_name"] == ClassEnum.DataFile:
+                    logger.warning("Text object is not a datafile")
+
+                record["text"] = nested_object_record["text"]
+                record["text_class_name"] = nested_object_record["child_class_name"]
+
+            match record:
+                case {"text": None, "tag_object_name": None}:
+                    logger.trace("Parsing standard property")
+                    value = self._apply_unit(prop_value, unit)
+                case {"text": str(), "text_class_name": ClassEnum.DataFile}:
+                    logger.trace("Parsing property with time series")
+                    data_file = self._file_handler(record["name"], prop_name, record["text"])
+                    value = self._apply_unit(data_file, unit)
+                case {"text": str(), "text_class_name": ClassEnum.Timeslice}:
+                    logger.trace("Parsing property with time slice")
+                    value = self._apply_unit(prop_value, unit)
+                case {
+                    "text": str(),
+                    "text_class_name": ClassEnum.DataFile,
+                    "tag_object_name": ClassEnum.Variable,
+                }:
+                    logger.trace("Parsing property with Variable time slice")
+                    value = self._apply_unit(prop_value, unit)
+                case _:
+                    msg = f"Record format class not yet supported. {record=}"
+                    raise NotImplementedError(msg)
+            if mapped_property_name not in property_counts:
+                mapped_properties[mapped_property_name] = value
+                property_counts[mapped_property_name] = {band}
             else:
-                # Standard Properties
-                if mapped_property_name not in property_counts:
-                    # First time reading basic property
-                    mapped_properties[mapped_property_name] = value
-                    property_counts[mapped_property_name] = {band}
+                if band not in property_counts[mapped_property_name]:
+                    new_prop_name = f"{mapped_property_name}_{band}"
+                    mapped_properties[new_prop_name] = value
+                    property_counts[mapped_property_name].add(band)
+                    multi_band_properties.add(mapped_property_name)
                 else:
-                    # Multi-band properties
-                    if band not in property_counts[mapped_property_name]:
-                        new_prop_name = f"{mapped_property_name}_{band}"
-                        mapped_properties[new_prop_name] = value
-                        property_counts[mapped_property_name].add(band)
-                        multi_band_properties.add(mapped_property_name)
-                    else:
-                        logger.warning(
-                            "Property {} for {} has multiple values specified. Using the last one.",
-                            mapped_property_name,
-                            record_name,
-                        )
-                        mapped_properties[mapped_property_name] = value
+                    logger.warning(
+                        "Property {} for {} has multiple values specified. Using the last one.",
+                        mapped_property_name,
+                        record_name,
+                    )
+                    mapped_properties[mapped_property_name] = value
         return mapped_properties, multi_band_properties
+
+    def _resolve_object_id(self, object_id: int) -> int:
+        """
+        Recursively resolve the object ID by following the tag_object_id when tag_object_name is defined.
+
+        Parameters
+        ----------
+        object_id : int
+            The initial object ID to resolve.
+
+        Returns
+        -------
+        int
+            The resolved object ID that does not have a tag_object_name.
+        """
+        assert self.id_to_name
+        assert self.id_to_tag_id
+        while True:
+            tag_object_name = self.id_to_name.get(object_id)
+            if tag_object_name is None:
+                return object_id
+
+            object_id = self.id_to_tag_id[object_id]
+
+    def _filter_by_object_id(self, object_id: int) -> pl.DataFrame:
+        """
+        Filter the DataFrame to return rows that match the specified object_id.
+
+        Parameters
+        ----------
+        object_id : int
+            The object ID to filter the DataFrame by.
+
+        Returns
+        -------
+        pl.DataFrame
+            A filtered DataFrame containing only rows where the object_id matches.
+        """
+        assert hasattr(self, "plexos_data"), "plexos data not processed yet"
+        return self.plexos_data.filter(pl.col("object_id") == object_id)
 
 
 if __name__ == "__main__":
