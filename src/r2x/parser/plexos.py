@@ -155,6 +155,7 @@ class PlexosParser(PCMParser):
         self.device_match_string = self.config.defaults["device_name_inference_map"] or {}
         self.generator_models = self.config.defaults["generator_models"] or {}
         self.year = self.config.solve_year
+        assert self.year
         assert isinstance(self.year, int)
 
         # TODO(pesap): Rename exceptions to include R2X
@@ -1503,7 +1504,6 @@ class PlexosParser(PCMParser):
 
         for record in record_data:
             band = record["band"]
-            # timeslice = record["timeslice"]
             record_name = record["name"]
             prop_name = record["property_name"]
             prop_value = record["property_value"]
@@ -1544,6 +1544,7 @@ class PlexosParser(PCMParser):
                     data_file = self._file_handler(record["name"], prop_name, record["text"])
                     value = self._apply_unit(data_file, unit)
                 case {"text": str(), "text_class_name": ClassEnum.Timeslice}:
+                    # NOTE: Add time slice logic here
                     logger.trace("Parsing property with time slice")
                     value = self._apply_unit(prop_value, unit)
                 case {
@@ -1551,6 +1552,7 @@ class PlexosParser(PCMParser):
                     "text_class_name": ClassEnum.DataFile,
                     "tag_object_name": ClassEnum.Variable,
                 }:
+                    # NOTE: Add variable logic here
                     logger.trace("Parsing property with Variable time slice")
                     value = self._apply_unit(prop_value, unit)
                 case _:
