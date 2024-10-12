@@ -134,13 +134,27 @@ class SiennaExporter(BaseExporter):
             "max_reeactive_power",
             "active_power",
         ]
-        self.system.export_component_to_csv(
-            PowerLoad,
+
+        key_mapping = {
+            "bus": "bus_id",
+        }
+
+        records = [
+            component.model_dump(exclude_none=True, mode="python", serialize_as_any=True)
+            for component in self.system.get_components(PowerLoad)
+        ]
+        export_records = get_export_records(
+            records,
+            partial(apply_operation_table_data),
+            partial(apply_property_map, property_map=self.property_map | key_mapping),
+            partial(apply_pint_deconstruction, unit_map=self.unit_map),
+            partial(apply_unnest_key, key_map={"bus_id": "number"}),
+        )
+        self.system._export_dict_to_csv(
+            export_records,
             fpath=self.output_folder / fname,
             fields=output_fields,
-            unnest_key="number",
-            key_mapping={"bus": "bus_id"},
-            restval="0.0",
+            restval="NA",
         )
         logger.info(f"File {fname} created.")
 
