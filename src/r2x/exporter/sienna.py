@@ -154,7 +154,7 @@ class SiennaExporter(BaseExporter):
             export_records,
             fpath=self.output_folder / fname,
             fields=output_fields,
-            restval="NA",
+            restval="0.0",
         )
         logger.info(f"File {fname} created.")
 
