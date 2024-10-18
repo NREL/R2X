@@ -1059,10 +1059,10 @@ class PlexosParser(PCMParser):
         -----
         At this point of the code, all the properties should be either a single value, or a `SingleTimeSeries`
         """
-        record["active_power_limits"] = self._get_active_power_limits(record)
         if not (availability := record.get("available")):
             logger.warning("Unit {} is not activated on the model.", record["name"])
             return
+        record["active_power_limits"] = self._get_active_power_limits(record)
 
         # Set availability, rating, storage_capacity as multiplier of availability/'units'
         if (
@@ -1108,7 +1108,7 @@ class PlexosParser(PCMParser):
         return record
 
     def _get_active_power_limits(self, record) -> MinMax:
-        assert record["base_power"]
+        assert record["base_power"] is not None
         if active_power_min := record.get("min_rated_capacity"):
             if isinstance(active_power_min, SingleTimeSeries):
                 active_power_min = np.min(active_power_min.data)
@@ -1259,6 +1259,12 @@ class PlexosParser(PCMParser):
             logger.debug("Simplified time series heat rate for {}", record_name)
             return parsed_file["value"].median()
 
+        # PATCH: It is not common to have a Max Capacity time series. But if it is the case, we just get the
+        # median as well
+        if property_name == "Max Capacity":
+            logger.trace("Simplified Max Capacity time series for {}", record_name)
+            return parsed_file["value"].median()
+
         if "year" not in parsed_file.columns:
             parsed_file = parsed_file.with_columns(year=self.year)
 
@@ -1293,6 +1299,9 @@ class PlexosParser(PCMParser):
 
         if "year" in parsed_file.columns:
             parsed_file = pl_filter_year(parsed_file, year=self.year)
+
+            if parsed_file.is_empty():
+                logger.warning("No time series data specified for year filter. Year passed {}", self.year)
 
         if "name" in parsed_file.columns:
             cols = [col.lower() for col in [record_name, property_name, variable_name] if col]
@@ -1364,7 +1373,7 @@ class PlexosParser(PCMParser):
             prop_name = record["property_name"]
             prop_value = record["property_value"]
             timeslice = record["tag_timeslice"]
-            unit = record["property_unit"].replace("$", "usd")
+            unit = record["property_unit"].replace("$", "usd") if record["property_unit"] else None
             mapped_property_name = self.property_map.get(prop_name, prop_name)
             unit = get_pint_unit(unit)
             property_unit_map[mapped_property_name] = unit
@@ -1446,9 +1455,9 @@ class PlexosParser(PCMParser):
                 logger.trace("Parsing standard property")
                 value = self._parse_value(prop_value, unit=unit)
             case {"text": str(), "text_class_name": ClassEnum.DataFile}:
-                data_file_value = (
-                    self._data_file_handler(record["name"], prop_name, record["text"]) or prop_value
-                )
+                data_file_value = self._data_file_handler(record["name"], prop_name, record["text"])
+                if data_file_value is None:
+                    data_file_value = prop_value
                 value = self._parse_value(
                     value=data_file_value, variable_name=mapped_property_name, unit=unit
                 )
@@ -1489,10 +1498,12 @@ class PlexosParser(PCMParser):
                 value = self._parse_value(value, variable_name=mapped_property_name, unit=unit)
             case {"tag_datafile": str()}:
                 record["text"] = self._get_nested_object_data(record["tag_datafile_object_id"])
-                data_file = self._data_file_handler(record["name"], prop_name, fpath_str=str(record["text"]))
-                if data_file is None:
-                    data_file = prop_value
-                value = self._parse_value(data_file, variable_name=mapped_property_name, unit=unit)
+                data_file_value = self._data_file_handler(
+                    record["name"], prop_name, fpath_str=str(record["text"])
+                )
+                if data_file_value is None:
+                    data_file_value = prop_value
+                value = self._parse_value(data_file_value, variable_name=mapped_property_name, unit=unit)
             case {"tag_timeslice": str()}:
                 value = self._parse_value(prop_value, variable_name=mapped_property_name, unit=unit)
             case _:

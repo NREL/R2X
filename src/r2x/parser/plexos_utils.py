@@ -213,6 +213,8 @@ def parse_data_file(column_type: DATAFILE_COLUMNS, data_file):
             data_file = parse_ts_nm(data_file)
         case column_type.TS_YM:
             data_file = parse_ts_ym(data_file)
+        case column_type.TS_YMDPV:
+            data_file = parse_ts_ymdpv(data_file)
         case column_type.TS_YMDH:
             data_file = parse_ts_ymdh(data_file)
         case column_type.TS_NYMDV:
@@ -268,6 +270,12 @@ def parse_ts_nmdh(data_file):
 
 def parse_ts_ym(data_file):
     data_file = data_file.melt(id_vars=["year", "month"], variable_name="name")
+    return data_file
+
+
+def parse_ts_ymdpv(data_file):
+    data_file = data_file.with_columns(hour=pl.col("period"))
+    data_file = data_file.with_columns(pl.col("hour").cast(pl.Int8))
     return data_file
 
 
