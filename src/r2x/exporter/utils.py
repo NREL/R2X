@@ -264,8 +264,13 @@ def apply_flatten_key(d: dict[str, Any], keys_to_flatten: set[str]) -> dict[str,
     >>> flatten_selected_keys(d, ["y"])
     {'x': {'min': 1, 'max': 2}, 'y_min': 5, 'y_max': 10, 'z': 42}
     """
-    return {
-        f"{key}_{sub_key}" if key in keys_to_flatten and isinstance(val, dict) else key: sub_val
-        for key, val in d.items()
-        for sub_key, sub_val in (val.items() if isinstance(val, dict) else [(key, val)])
-    }
+    flattened_dict = {}
+
+    for key, val in d.items():
+        if key in keys_to_flatten and isinstance(val, dict):
+            for sub_key, sub_val in val.items():
+                flattened_dict[f"{key}_{sub_key}"] = sub_val
+        else:
+            flattened_dict[key] = val
+
+    return flattened_dict

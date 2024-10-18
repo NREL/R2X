@@ -3,7 +3,7 @@ import polars as pl
 from pathlib import Path
 from polars.testing import assert_frame_equal
 from tempfile import NamedTemporaryFile
-from r2x.parser.parser_helpers import csv_handler
+from r2x.parser.handler import csv_handler
 
 
 @pytest.fixture
@@ -17,7 +17,7 @@ def temp_csv_file(sample_csv_basic):
     with NamedTemporaryFile(mode="w", delete=False, suffix=".csv") as temp_file:
         temp_file.write(sample_csv_basic)
         temp_file.flush()
-        return temp_file.name
+        return Path(temp_file.name)
 
 
 def test_csv_handler_basic(temp_csv_file):

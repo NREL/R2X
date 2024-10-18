@@ -99,7 +99,7 @@ class ReEDSParser(BaseParser):
     # NOTE: Rename to create topology
     def _construct_buses(self):
         logger.info("Creating bus objects.")
-        bus_data = self.get_data("hierarchy").collect()
+        bus_data = self.get_data("hierarchy")
 
         zones = bus_data["transmission_region"].unique()
         for zone in zones:
@@ -122,7 +122,7 @@ class ReEDSParser(BaseParser):
 
     def _construct_reserves(self):
         logger.info("Creating reserves objects.")
-        bus_data = self.get_data("hierarchy").collect()
+        bus_data = self.get_data("hierarchy")
 
         reserves = bus_data["transmission_region"].unique()
         for reserve in reserves:
@@ -247,7 +247,7 @@ class ReEDSParser(BaseParser):
     def _construct_emissions(self) -> None:
         """Construct emission objects."""
         logger.info("Creating emission objects")
-        emit_rates = self.get_data("emission_rates").collect()
+        emit_rates = self.get_data("emission_rates")
 
         emit_rates = emit_rates.with_columns(
             pl.concat_str([pl.col("tech"), pl.col("tech_vintage"), pl.col("region")], separator="_").alias(
@@ -472,7 +472,7 @@ class ReEDSParser(BaseParser):
     def _construct_load(self):
         logger.info("Adding load time series.")
 
-        bus_data = self.get_data("hierarchy").collect()
+        bus_data = self.get_data("hierarchy")
         load_df = self.get_data("load").collect()
         start = datetime(year=self.weather_year, month=1, day=1)
         resolution = timedelta(hours=1)
@@ -492,8 +492,8 @@ class ReEDSParser(BaseParser):
                 resolution=resolution,
             )
             user_dict = {"solve_year": self.config.weather_year}
-            max_load = np.max(ts.data.to_numpy())
-            load = PowerLoad(name=f"{bus.name}", bus=bus, max_active_power=max_load * ureg.MW)
+            max_load = np.max(ts.data)
+            load = PowerLoad(name=f"{bus.name}", bus=bus, max_active_power=max_load)
             self.system.add_component(load)
             self.system.add_time_series(ts, load, **user_dict)
 
@@ -503,11 +503,11 @@ class ReEDSParser(BaseParser):
             raise AttributeError("Missing weather year from the configuration class.")
 
         cf_data = self.get_data("cf").collect()
-        cf_adjustment = self.get_data("cf_adjustment").collect()
+        cf_adjustment = self.get_data("cf_adjustment")
         # NOTE: We take the median of  the seasonal adjustment since we
         # aggregate the generators by technology vintage
         cf_adjustment = cf_adjustment.group_by("tech").agg(pl.col("cf_adj").median())
-        ilr = self.get_data("ilr").collect()
+        ilr = self.get_data("ilr")
         ilr = dict(
             ilr.group_by("tech").agg(pl.col("ilr").sum()).iter_rows()
         )  # Dict is more useful here than series
@@ -669,10 +669,11 @@ class ReEDSParser(BaseParser):
         hydro_cf = hydro_cf.with_columns(
             month=pl.col("month").map_elements(lambda row: month_map.get(row, row), return_dtype=pl.String)
         )
-        hydro_cap_adj = self.get_data("hydro_cap_adj")
-        hydro_cap_adj = hydro_cap_adj.with_columns(
-            season=pl.col("season").map_elements(lambda row: season_map.get(row, row), return_dtype=pl.String)
-        )
+        # hydro_cap_adj = self.get_data("hydro_cap_adj")
+        # hydro_cap_adj = hydro_cap_adj.with_columns(
+        #     season=pl.col("season").map_elements(lambda row: season_map.get(row, row),
+        #     return_dtype=pl.String)
+        # )
         hydro_minload = self.get_data("hydro_min_gen")
         hydro_minload = hydro_minload.with_columns(
             season=pl.col("season").map_elements(lambda row: season_map.get(row, row), return_dtype=pl.String)

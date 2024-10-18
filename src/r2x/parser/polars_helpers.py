@@ -5,6 +5,7 @@ from typing import Any
 
 import polars as pl
 from loguru import logger
+from polars.lazyframe import LazyFrame
 
 from r2x.parser.plexos_utils import DATAFILE_COLUMNS
 
@@ -133,7 +134,7 @@ def pl_rename(
     )
 
 
-def pl_left_multi_join(l_df: pl.LazyFrame, *r_dfs: pl.LazyFrame, **kwargs):
+def pl_left_multi_join(l_df: pl.LazyFrame, *r_dfs: pl.DataFrame, **kwargs):
     """Perform a left join on multiple DataFrames.
 
     Parameters
@@ -164,11 +165,16 @@ def pl_left_multi_join(l_df: pl.LazyFrame, *r_dfs: pl.LazyFrame, **kwargs):
     for r_df in r_dfs:
         current_keys = set(r_df.collect_schema().names())
         current_keys = original_keys.intersection(current_keys)
+        if isinstance(r_df, LazyFrame):
+            r_df = r_df.collect()
         output_df = output_df.join(r_df, on=list(current_keys), how="left", coalesce=True)
 
-    output_df = output_df.collect()
+    if isinstance(output_df, pl.LazyFrame):
+        output_df = output_df.collect()
+
+    l_df_shape = l_df.collect().shape[0] if isinstance(l_df, pl.LazyFrame) else l_df.shape[0]
     assert (
-        output_df.shape[0] == l_df.collect().shape[0]
+        output_df.shape[0] == l_df_shape
     ), f"Merge resulted in less rows. Check the shared keys. {original_keys=} vs {current_keys=}"
     return output_df
 

@@ -130,7 +130,8 @@ class Generator(Device):
 
     @field_serializer("active_power_limits")
     def serialize_address(self, min_max: MinMax) -> dict[str, Any]:
-        return {"min": min_max.min, "max": min_max.max}
+        if min_max is not None:
+            return {"min": min_max.min, "max": min_max.max}
 
 
 class RenewableGen(Generator):
