@@ -1,6 +1,7 @@
 import pytest
 from pint import Quantity
 from r2x.exporter.utils import (
+    apply_flatten_key,
     apply_property_map,
     apply_unnest_key,
     apply_valid_properties,
@@ -128,3 +129,22 @@ def test_apply_unnest_key_edge_cases():
 )
 def parameterized_test(component, key_map, expected):
     assert apply_unnest_key(component, key_map) == expected
+
+
+def test_flatten_selected_keys():
+    d1 = {"x": {"min": 1, "max": 2}, "y": {"min": 5, "max": 10}, "z": 42}
+    result1 = apply_flatten_key(d1, {"x"})
+    expected1 = {"x_min": 1, "x_max": 2, "y": {"min": 5, "max": 10}, "z": 42}
+    assert result1 == expected1
+
+    result2 = apply_flatten_key(d1, {"y"})
+    expected2 = {"x": {"min": 1, "max": 2}, "y_min": 5, "y_max": 10, "z": 42}
+    assert result2 == expected2
+
+    result3 = apply_flatten_key(d1, set())
+    expected3 = d1
+    assert result3 == expected3
+
+    result4 = apply_flatten_key(d1, {"x", "y"})
+    expected4 = {"x_min": 1, "x_max": 2, "y_min": 5, "y_max": 10, "z": 42}
+    assert result4 == expected4
