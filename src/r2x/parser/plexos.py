@@ -1,68 +1,68 @@
 """Plexos parser class."""
 
-from datetime import datetime, timedelta
 import importlib
+from argparse import ArgumentParser
+from collections.abc import Sequence
+from datetime import datetime, timedelta
 from importlib.resources import files
 from pathlib import Path, PureWindowsPath
-from argparse import ArgumentParser
 from typing import Any
-from collections.abc import Sequence
 
-from pint import Quantity
-import polars as pl
 import numpy as np
-from loguru import logger
+import polars as pl
+from infrasys.cost_curves import CostCurve, FuelCurve
 from infrasys.exceptions import ISNotStored
-from infrasys.time_series_models import SingleTimeSeries
-from infrasys.value_curves import AverageRateCurve, InputOutputCurve
-from infrasys.cost_curves import FuelCurve
 from infrasys.function_data import (
     LinearFunctionData,
     QuadraticFunctionData,
 )
-
-from r2x.api import System
-from r2x.models.load import PowerLoad
-from r2x.units import ureg
-from r2x.config import Scenario
-from r2x.enums import ACBusTypes, ReserveDirection, ReserveType, PrimeMoversType
-from r2x.exceptions import ModelError, ParserError
+from infrasys.time_series_models import SingleTimeSeries
+from infrasys.value_curves import AverageRateCurve, InputOutputCurve, LinearCurve
+from loguru import logger
+from pint import Quantity
 from plexosdb import PlexosSQLite
 from plexosdb.enums import ClassEnum, CollectionEnum
-from r2x.models.core import MinMax
-from r2x.models.costs import ThermalGenerationCost, RenewableGenerationCost, HydroGenerationCost
+
+from r2x.api import System
+from r2x.config import Scenario
+from r2x.enums import ACBusTypes, PrimeMoversType, ReserveDirection, ReserveType
+from r2x.exceptions import ModelError, ParserError
 from r2x.models import (
     ACBus,
     Generator,
     GenericBattery,
-    MonitoredLine,
-    Reserve,
+    HydroDispatch,
     LoadZone,
+    MonitoredLine,
+    RenewableGen,
+    Reserve,
     ReserveMap,
+    ThermalGen,
     TransmissionInterface,
     TransmissionInterfaceMap,
-    RenewableGen,
-    ThermalGen,
-    HydroDispatch,
 )
+from r2x.models.core import MinMax
+from r2x.models.costs import HydroGenerationCost, RenewableGenerationCost, ThermalGenerationCost
+from r2x.models.load import PowerLoad
+from r2x.units import ureg
 from r2x.utils import get_pint_unit, validate_string
 
-from .handler import csv_handler, PCMParser
-from .polars_helpers import pl_filter_year
+from .handler import PCMParser, csv_handler
+from .parser_helpers import (
+    construct_pwl_from_quadtratic,
+    field_filter,
+    prepare_ext_field,
+    reconcile_timeseries,
+)
 from .plexos_utils import (
     DATAFILE_COLUMNS,
     PLEXOS_ACTION_MAP,
+    filter_property_dates,
     get_column_enum,
     parse_data_file,
-    filter_property_dates,
     time_slice_handler,
 )
-from .parser_helpers import (
-    reconcile_timeseries,
-    field_filter,
-    prepare_ext_field,
-    construct_pwl_from_quadtratic,
-)
+from .polars_helpers import pl_filter_year
 
 models = importlib.import_module("r2x.models")
 
@@ -834,109 +834,103 @@ class PlexosParser(PCMParser):
         self.system.add_component(tx_interface_map)
         return
 
-    def _construct_value_curves(self, mapped_records, generator_name):
+    def _construct_value_curves(self, record, generator_name):  # noqa: C901
         """Construct value curves for generators."""
-        if any("Heat Rate" in key or "heat_rate" in key for key in mapped_records.keys()):
-            vc = None
-            heat_rate_avg = mapped_records.get("heat_rate", None)
-            heat_rate_base = mapped_records.get("Heat Rate Base", None)
-            heat_rate_incr = mapped_records.get("Heat Rate Incr", None)
-            heat_rate_incr2 = mapped_records.get("Heat Rate Incr2", None)
+        if not any("Heat Rate" in key or "heat_rate" in key for key in record.keys()):
+            return None
+        vc = None
+        heat_rate_avg = record.get("heat_rate", None)
+        heat_rate_base = record.get("Heat Rate Base", None)
+        heat_rate_incr = record.get("Heat Rate Incr", None)
+        heat_rate_incr2 = record.get("Heat Rate Incr2", None)
 
-            if any(
-                isinstance(val, SingleTimeSeries) for val in [heat_rate_avg, heat_rate_base, heat_rate_incr]
-            ):
-                logger.warning(
-                    "Time-varying heat-rates not implemented for generator={}. Using median value instead",
-                    generator_name,
-                )
-
-            heat_rate_avg = (
-                Quantity(
-                    np.median(heat_rate_avg.data),
-                    units=heat_rate_avg.units,
-                )
-                if isinstance(heat_rate_avg, SingleTimeSeries)
-                else heat_rate_avg
-            )
-            heat_rate_base = (
-                Quantity(
-                    np.median(heat_rate_base.data),
-                    units=heat_rate_base.units,
-                )
-                if isinstance(heat_rate_base, SingleTimeSeries)
-                else heat_rate_base
-            )
-            heat_rate_incr = (
-                Quantity(
-                    np.median(heat_rate_incr.data),
-                    units=heat_rate_incr.units,
-                )
-                if isinstance(heat_rate_incr, SingleTimeSeries)
-                else heat_rate_incr
+        if any(isinstance(val, SingleTimeSeries) for val in [heat_rate_avg, heat_rate_base, heat_rate_incr]):
+            logger.warning(
+                "Time-varying heat-rates not implemented for generator={}. Using median value instead",
+                generator_name,
             )
 
-            if heat_rate_incr and heat_rate_incr.units == "british_thermal_unit / kilowatt_hour":
-                heat_rate_incr = Quantity(heat_rate_incr.magnitude * 1e-3, "british_thermal_unit / watt_hour")
+        heat_rate_avg = (
+            Quantity(
+                np.median(heat_rate_avg.data),
+                units=heat_rate_avg.units,
+            )
+            if isinstance(heat_rate_avg, SingleTimeSeries)
+            else heat_rate_avg
+        )
+        heat_rate_base = (
+            Quantity(
+                np.median(heat_rate_base.data),
+                units=heat_rate_base.units,
+            )
+            if isinstance(heat_rate_base, SingleTimeSeries)
+            else heat_rate_base
+        )
+        heat_rate_incr = (
+            Quantity(
+                np.median(heat_rate_incr.data),
+                units=heat_rate_incr.units,
+            )
+            if isinstance(heat_rate_incr, SingleTimeSeries)
+            else heat_rate_incr
+        )
 
-            if heat_rate_avg and heat_rate_avg.units == "british_thermal_unit / kilowatt_hour":
-                heat_rate_avg = Quantity(heat_rate_avg.magnitude * 1e-3, "british_thermal_unit / watt_hour")
+        if heat_rate_incr and heat_rate_incr.units == "british_thermal_unit / kilowatt_hour":
+            heat_rate_incr = Quantity(heat_rate_incr.magnitude * 1e-3, "british_thermal_unit / watt_hour")
 
-            if heat_rate_avg:
-                fn = LinearFunctionData(proportional_term=heat_rate_avg.magnitude, constant_term=0)
-                vc = AverageRateCurve(
-                    function_data=fn,
-                    initial_input=heat_rate_avg.magnitude,
-                )
-            elif heat_rate_incr2 and "** 2" in str(heat_rate_incr2.units):
-                fn = QuadraticFunctionData(
-                    quadratic_term=heat_rate_incr2.magnitude,
-                    proportional_term=heat_rate_incr.magnitude,
-                    constant_term=heat_rate_base.magnitude,
-                )
-                if self.config.feature_flags.get("quad2pwl", None):
-                    n_tranches = self.config.feature_flags.get("quad2pwl", None)
-                    fn = construct_pwl_from_quadtratic(fn, mapped_records, n_tranches)
-            elif not heat_rate_incr2 and heat_rate_incr:
-                fn = LinearFunctionData(
-                    proportional_term=heat_rate_incr.magnitude, constant_term=heat_rate_base.magnitude
-                )
-            else:
-                logger.warning("Heat Rate type not implemented for generator={}", generator_name)
-                fn = None
+        if heat_rate_avg and heat_rate_avg.units == "british_thermal_unit / kilowatt_hour":
+            heat_rate_avg = Quantity(heat_rate_avg.magnitude * 1e-3, "british_thermal_unit / watt_hour")
 
-            # if mapped_records.get("Bid-Cost Mark-up"):
-            #     bid_cost_mark_up(fn, mapped_records)
+        if heat_rate_avg:
+            fn = LinearFunctionData(proportional_term=heat_rate_avg.magnitude, constant_term=0)
+            vc = AverageRateCurve(
+                function_data=fn,
+                initial_input=heat_rate_avg.magnitude,
+            )
+        elif heat_rate_incr2 and "** 2" in str(heat_rate_incr2.units):
+            fn = QuadraticFunctionData(
+                quadratic_term=heat_rate_incr2.magnitude,
+                proportional_term=heat_rate_incr.magnitude,
+                constant_term=heat_rate_base.magnitude,
+            )
+            if self.config.feature_flags.get("quad2pwl", None):
+                n_tranches = self.config.feature_flags.get("quad2pwl", None)
+                fn = construct_pwl_from_quadtratic(fn, record, n_tranches)
+        elif not heat_rate_incr2 and heat_rate_incr:
+            fn = LinearFunctionData(
+                proportional_term=heat_rate_incr.magnitude, constant_term=heat_rate_base.magnitude
+            )
+        else:
+            logger.warning("Heat Rate type not implemented for generator={}", generator_name)
+            fn = None
 
-            if not vc:
-                vc = InputOutputCurve(function_data=fn)
-                # vc = None
-            mapped_records["hr_value_curve"] = vc
-        return mapped_records
+        if not vc and fn:
+            vc = InputOutputCurve(function_data=fn)
+        if not vc and fn is None:
+            vc = LinearCurve(0)
+        return vc
 
     def _construct_operating_costs(self, mapped_records, generator_name, model_map):
         """Construct operating costs from Value Curves and Operating Costs."""
-        mapped_records = self._construct_value_curves(mapped_records, generator_name)
-        hr_curve = mapped_records.get("hr_value_curve")
+        vom_cost = mapped_records.get("vom_price", 0.0)
 
         if issubclass(model_map, RenewableGen):
             mapped_records["operation_cost"] = RenewableGenerationCost()
         elif issubclass(model_map, ThermalGen):
-            if hr_curve:
-                fuel_cost = mapped_records["fuel_price"]
-                if isinstance(fuel_cost, SingleTimeSeries):
-                    fuel_cost = np.mean(fuel_cost.data)
-                    # fuel_cost = fuel_cost.data[0].as_py()  # np.mean(fuel_cost.data)
-                elif isinstance(fuel_cost, Quantity):
-                    fuel_cost = fuel_cost.magnitude
-                fuel_curve = FuelCurve(value_curve=hr_curve, fuel_cost=fuel_cost)
-                mapped_records["operation_cost"] = ThermalGenerationCost(
-                    variable=fuel_curve,
-                    start_up=mapped_records.get("startup_cost", 0),
-                )
-                mapped_records.pop("hr_value_curve")
+            heat_rate_curve = self._construct_value_curves(mapped_records, generator_name)
+            fuel_cost = mapped_records.get("fuel_price", 0)
+            if isinstance(fuel_cost, SingleTimeSeries):
+                fuel_cost = np.mean(fuel_cost.data)
+            elif isinstance(fuel_cost, Quantity):
+                fuel_cost = fuel_cost.magnitude
+            if heat_rate_curve:
+                cost_curve = FuelCurve(value_curve=heat_rate_curve, fuel_cost=fuel_cost)
             else:
-                logger.warning("No heat rate curve found for generator={}", generator_name)
+                cost_curve = CostCurve(value_curve=LinearCurve(0), vom_cost=LinearCurve(vom_cost))
+            mapped_records["operation_cost"] = ThermalGenerationCost(
+                variable=cost_curve,
+                start_up=mapped_records.get("startup_cost", 0),
+            )
         elif issubclass(model_map, HydroDispatch):
             mapped_records["operation_cost"] = HydroGenerationCost()
         else:
