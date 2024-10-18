@@ -30,8 +30,10 @@ import yaml
 from jsonschema import validate
 from loguru import logger
 import pint
+from pint import UndefinedUnitError
 from infrasys.base_quantity import BaseQuantity
 from r2x.models import Generator
+from r2x.units import ureg
 
 
 DEFAULT_OUTPUT_FOLDER: str = "r2x_export"
@@ -710,6 +712,19 @@ def get_property_magnitude(property_value, to_unit: str | None = None) -> float:
         unit = to_unit.replace("$", "usd")  # Dollars are named usd on pint
         property_value = property_value.to(unit)
     return property_value.magnitude
+
+
+def get_pint_unit(unit: str | None):
+    """Parse and convert unit, handling unsupported or empty units."""
+    if unit is None:
+        return
+    unit = unit.replace("$", "usd")
+    if unit != "-":
+        try:
+            return getattr(ureg[unit], "units")
+        except UndefinedUnitError:
+            return None
+    return None
 
 
 def haskey(base_dict: dict, path: list[str]) -> bool:

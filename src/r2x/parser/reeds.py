@@ -44,7 +44,7 @@ from r2x.parser.handler import BaseParser
 from r2x.units import ActivePower, EmissionRate, Energy, Percentage, Time, ureg
 from r2x.utils import match_category, read_csv
 
-from .parser_helpers import pl_left_multi_join
+from .polars_helpers import pl_left_multi_join
 
 R2X_MODELS = importlib.import_module("r2x.models")
 UNITS = importlib.import_module("r2x.units")

@@ -237,3 +237,35 @@ def get_property_magnitude(property_value, to_unit: str | None = None) -> Any:
         unit = to_unit.replace("$", "usd")  # Dollars are named usd on pint
         property_value = property_value.to(unit)
     return property_value.magnitude
+
+
+def apply_flatten_key(d: dict[str, Any], keys_to_flatten: set[str]) -> dict[str, Any]:
+    """Flatten the specified keys in a dictionary by merging their sub-keys into the main dictionary
+    with the key's name prefixed to each sub-key.
+
+    Parameters
+    ----------
+    d : dict
+        The input dictionary, where some values are dictionaries to be flattened.
+    keys_to_flatten : list of str
+        The keys in the dictionary `d` to be flattened if they contain sub-keys.
+
+    Returns
+    -------
+    dict
+        A new dictionary with the selected keys flattened. Other keys remain unchanged.
+
+    Examples
+    --------
+    >>> d = {"x": {"min": 1, "max": 2}, "y": {"min": 5, "max": 10}, "z": 42}
+    >>> flatten_selected_keys(d, ["x"])
+    {'x_min': 1, 'x_max': 2, 'y': {'min': 5, 'max': 10}, 'z': 42}
+
+    >>> flatten_selected_keys(d, ["y"])
+    {'x': {'min': 1, 'max': 2}, 'y_min': 5, 'y_max': 10, 'z': 42}
+    """
+    return {
+        f"{key}_{sub_key}" if key in keys_to_flatten and isinstance(val, dict) else key: sub_val
+        for key, val in d.items()
+        for sub_key, sub_val in (val.items() if isinstance(val, dict) else [(key, val)])
+    }

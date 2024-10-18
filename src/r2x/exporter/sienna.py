@@ -12,7 +12,12 @@ from loguru import logger
 
 # Local imports
 from r2x.exporter.handler import BaseExporter, get_export_records
-from r2x.exporter.utils import apply_pint_deconstruction, apply_property_map, apply_unnest_key
+from r2x.exporter.utils import (
+    apply_flatten_key,
+    apply_pint_deconstruction,
+    apply_property_map,
+    apply_unnest_key,
+)
 from r2x.models import (
     ACBranch,
     Bus,
@@ -266,6 +271,7 @@ class SiennaExporter(BaseExporter):
         export_records = get_export_records(
             records,
             partial(apply_operation_table_data),
+            partial(apply_flatten_key, keys_to_flatten={"active_power_limits"}),
             partial(apply_property_map, property_map=self.property_map | key_mapping),
             partial(apply_pint_deconstruction, unit_map=self.unit_map),
             partial(apply_unnest_key, key_map={"bus_id": "number"}),
