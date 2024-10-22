@@ -123,30 +123,48 @@ class BaseExporter(ABC):
                         continue
                     self.time_series_name_by_type[ts_component_name].append(component.name)
 
-        date_time_column = pd.date_range(
-            start=f"1/1/{year}",
-            end=f"1/1/{year + 1}",
-            freq="1h",
-            inclusive="left",
-        )
-        date_time_column = np.datetime_as_string(date_time_column, unit="m")
-        # Remove leap day to match ReEDS convention
-        # date_time_column = date_time_column[~((date_time_column.month == 2) & (date_time_column.day == 29))]
-        if self.input_model == "reeds-US":
-            date_time_column = date_time_column[:-24]
+        component_lengths = {
+            component_type: {ts.length}
+            for component_type, time_series in self.time_series_objects.items()
+            for ts in time_series
+        }
 
+        inconsistent_lengths = [
+            (component_type, length_set)
+            for component_type, length_set in component_lengths.items()
+            if len(length_set) != 1
+        ]
+        if inconsistent_lengths:
+            raise ValueError(f"Multiple lengths found for components time series: {inconsistent_lengths}")
+
+        datetime_arrays = {
+            component_type: (
+                np.datetime_as_string(
+                    pd.date_range(
+                        start=f"1/1/{year}",
+                        periods=ts.length,
+                        freq=f"{int(ts.resolution.total_seconds() / 60)}min",  # Convert resolution to minutes
+                    ),
+                    unit="m",
+                ),
+                time_series,
+            )
+            for component_type, time_series in self.time_series_objects.items()
+            for ts in time_series
+        }
         csv_fpath = self.output_folder / time_series_folder
 
         # Use string substitution to dynamically change the output csv fnames
         csv_fname = config_dict.get("time_series_fname", "${component_type}_${name}_${weather_year}.csv")
+        logger.trace("Using {} as time_series name", csv_fname)
         string_template = string.Template(csv_fname)
 
-        for component_type, time_series in self.time_series_objects.items():
+        for component_type, (datetime_array, time_series) in datetime_arrays.items():
             time_series_arrays = list(map(lambda x: x.data.to_numpy(), time_series))
 
             config_dict["component_type"] = component_type
             csv_fname = string_template.safe_substitute(config_dict)
-            csv_table = np.column_stack([date_time_column, *time_series_arrays])
+            csv_table = np.column_stack([datetime_array, *time_series_arrays])
             header = '"DateTime",' + ",".join(
                 [f'"{name}"' for name in self.time_series_name_by_type[component_type]]
             )

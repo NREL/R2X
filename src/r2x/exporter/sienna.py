@@ -35,6 +35,13 @@ PSY_URL = "https://raw.githubusercontent.com/NREL-Sienna/PowerSystems.jl/refs/he
 TABLE_DATA_SPEC = "src/descriptors/power_system_inputs.json"
 
 
+def get_psy_fields() -> dict[str, Any]:
+    """Get PSY JSON schema."""
+    request = urlopen(PSY_URL + TABLE_DATA_SPEC)
+    descriptor = json.load(request)
+    return descriptor
+
+
 class SiennaExporter(BaseExporter):
     """Sienna exporter class.
 
@@ -72,11 +79,6 @@ class SiennaExporter(BaseExporter):
             msg = "Multiple solve years are not supported yet."
             raise NotImplementedError(msg)
         self.year: int = self.config.solve_year
-
-    def _get_table_data_fields(self) -> dict[str, Any]:
-        request = urlopen(PSY_URL + TABLE_DATA_SPEC)
-        descriptor = json.load(request)
-        return descriptor
 
     def run(self, *args, path=None, **kwargs) -> "SiennaExporter":
         """Run sienna exporter workflow.
@@ -386,7 +388,7 @@ class SiennaExporter(BaseExporter):
         hydro_pump = list(self.system.to_records(HydroPumpedStorage))
         storage_list = generic_storage + hydro_pump
 
-        if storage_list is None:
+        if not storage_list:
             logger.warning("No storage devices found")
             return
 

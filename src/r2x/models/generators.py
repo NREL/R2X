@@ -129,7 +129,7 @@ class Generator(Device):
     ] = None
 
     @field_serializer("active_power_limits")
-    def serialize_address(self, min_max: MinMax) -> dict[str, Any]:
+    def serialize_active_power_limits(self, min_max: MinMax) -> dict[str, Any]:
         if min_max is not None:
             return {"min": min_max.min, "max": min_max.max}
 

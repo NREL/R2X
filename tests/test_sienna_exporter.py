@@ -1,12 +1,13 @@
 import pytest
+
 from r2x.config import Scenario
-from r2x.exporter.sienna import SiennaExporter, apply_operation_table_data
-from .models import ieee5bus
+from r2x.exporter.sienna import SiennaExporter, apply_operation_table_data, get_psy_fields
+from tests.models.pjm import pjm_2area
 
 
 @pytest.fixture
 def infrasys_test_system():
-    return ieee5bus()
+    return pjm_2area()
 
 
 @pytest.fixture
@@ -39,8 +40,8 @@ def test_sienna_exporter_run(sienna_exporter, tmp_folder):
         "gen.csv",
         "bus.csv",
         "timeseries_pointers.json",
-        "storage.csv",
-        # "reserves.csv",  # Reserve could be optional
+        # "storage.csv",  # Storage is also optional
+        "reserves.csv",  # Reserve could be optional
         "dc_branch.csv",
         "branch.csv",
     ]
@@ -51,6 +52,11 @@ def test_sienna_exporter_run(sienna_exporter, tmp_folder):
     # Check that time series was created correctly
     ts_directory = tmp_folder / exporter.ts_directory
     assert any(ts_directory.iterdir())
+
+
+def test_sienna_exporter_empty_storage(caplog, sienna_exporter):
+    sienna_exporter.process_storage_data()
+    assert "No storage devices found" in caplog.text
 
 
 @pytest.fixture
@@ -72,6 +78,11 @@ def sample_component():
             "variable_type": "CostCurve",
         }
     }
+
+
+def test_get_psy_fields():
+    fields = get_psy_fields()
+    assert isinstance(fields, dict)
 
 
 def test_apply_operation_table_data_basic(sample_component):

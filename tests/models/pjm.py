@@ -1,14 +1,17 @@
 """Script that creates simple 2-area pjm systems for testing."""
 
-from datetime import datetime, timedelta
 import pathlib
+from datetime import datetime, timedelta
 
 from infrasys.time_series_models import SingleTimeSeries
+
 from r2x.api import System
-from r2x.enums import ACBusTypes, PrimeMoversType
+from r2x.enums import ACBusTypes, PrimeMoversType, ReserveDirection, ReserveType
 from r2x.models.branch import AreaInterchange, Line, MonitoredLine
+from r2x.models.core import ReserveMap
 from r2x.models.generators import RenewableDispatch, ThermalStandard
 from r2x.models.load import PowerLoad
+from r2x.models.services import Reserve
 from r2x.models.topology import ACBus, Area, LoadZone
 from r2x.units import ActivePower, Percentage, Time, Voltage, ureg
 from r2x.utils import read_json
@@ -161,4 +164,21 @@ def pjm_2area() -> System:
         )
         system.add_component(load_component)
         system.add_time_series(ld_ts, load_component)
+
+    # Create reserve
+    reserve_map = ReserveMap(name="pjm_reserve_map")
+    reserve = Reserve(
+        name="SpinUp-pjm",
+        region=system.get_component(LoadZone, "LoadZone1"),
+        reserve_type=ReserveType.SPINNING,
+        vors=0.05,
+        duration=3600.0,
+        load_risk=0.5,
+        time_frame=3600,
+        direction=ReserveDirection.UP,
+    )
+    reserve_map.mapping[ReserveType.SPINNING.name].append(wind_01.name)
+    reserve_map.mapping[ReserveType.SPINNING.name].append(solar_pv_01.name)
+    system.add_components(reserve, reserve_map)
+
     return system

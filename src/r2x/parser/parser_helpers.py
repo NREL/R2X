@@ -1,6 +1,7 @@
 """Set of helper functions for parsers."""
 # ruff: noqa
 
+from typing import Any
 import polars as pl
 import numpy as np
 import cvxpy as cp
@@ -8,19 +9,68 @@ import cvxpy as cp
 from infrasys.function_data import QuadraticFunctionData, PiecewiseLinearData, XYCoords
 
 
-def field_filter(property_fields, eligible_fields):
+def field_filter(
+    property_fields: dict[str, Any], eligible_fields: set[str]
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Filters a dictionary of property fields into valid and extra fields based on eligibility.
+
+    Parameters
+    ----------
+    property_fields : dict
+        Dictionary of property fields where keys are field names and values are field values.
+    eligible_fields : set
+        Set of field names that are considered valid (eligible).
+
+    Returns
+    -------
+    tuple of dict
+        A tuple of two dictionaries:
+        - valid : dict
+            Contains fields that are both in `property_fields` and `eligible_fields`, and are not `None`.
+        - extra : dict
+            Contains fields that are in `property_fields` but not in `eligible_fields`, and are not `None`.
+
+    Examples
+    --------
+    >>> property_fields = {"field1": 10, "field2": None, "field3": "hello"}
+    >>> eligible_fields = {"field1", "field2"}
+    >>> valid, extra = field_filter(property_fields, eligible_fields)
+    >>> valid
+    {'field1': 10}
+    >>> extra
+    {'field3': 'hello'}
+    """
     valid = {k: v for k, v in property_fields.items() if k in eligible_fields if v is not None}
     extra = {k: v for k, v in property_fields.items() if k not in eligible_fields if v is not None}
 
     return valid, extra
 
 
-def prepare_ext_field(valid_fields, extra_fields):
-    """Cleanses the extra fields by removing any timeseries data."""
+def prepare_ext_field(valid_fields: dict[str, Any], extra_fields: dict[str, Any]) -> dict[str, Any]:
+    """Clean the extra fields by removing any time series data and adds the cleaned extra fields to `valid_fields`.
+
+    Parameters
+    ----------
+    valid_fields : dict
+        Dictionary containing valid fields.
+    extra_fields : dict
+        Dictionary containing extra fields that may include data types not needed.
+
+    Returns
+    -------
+    dict
+        Updated valid_fields with cleansed extra fields under the "ext" key.
+
+    Examples
+    --------
+    >>> valid_fields = {"field1": 10, "field2": "hello"}
+    >>> extra_fields = {"field3": [1, 2, 3], "field4": 42}
+    >>> result = prepare_ext_field(valid_fields, extra_fields)
+    >>> result
+    {'field1': 10, 'field2': 'hello', 'ext': {'field4': 42}}
+    """
     if extra_fields:
-        # Implement any filtering of ext_data here
-        # logger.debug("Extra fields: {}", extra_fields)
-        # remove any non eligible datatypes from extra fields
+        # Filter to only include eligible data types
         eligible_datatypes = [str, int, float, bool]
         extra_fields = {k: v for k, v in extra_fields.items() if type(v) in eligible_datatypes}
         valid_fields["ext"] = extra_fields
@@ -30,7 +80,23 @@ def prepare_ext_field(valid_fields, extra_fields):
 
 
 def handle_leap_year_adjustment(data_file: pl.DataFrame) -> pl.DataFrame:
-    """Duplicate feb 28th to feb 29th for leap years."""
+    """Duplicate February 28th to February 29th for leap years.
+
+    Parameters
+    ----------
+    data_file : pl.DataFrame
+        DataFrame containing timeseries data.
+
+    Returns
+    -------
+    pl.DataFrame
+        DataFrame adjusted for leap years.
+
+    Examples
+    --------
+    >>> df = pl.DataFrame({"date": ["2020-02-28"], "value": [1]})
+    >>> handle_leap_year_adjustment(df)
+    """
     feb_28 = data_file.slice(1392, 24)
     before_feb_29 = data_file.slice(0, 1416)
     after_feb_29 = data_file.slice(1416, len(data_file) - 1440)
@@ -38,7 +104,26 @@ def handle_leap_year_adjustment(data_file: pl.DataFrame) -> pl.DataFrame:
 
 
 def fill_missing_timestamps(data_file: pl.DataFrame, hourly_time_index: pl.DataFrame) -> pl.DataFrame:
-    """Add missing timestamps to data and forward fill nulls to complete a year."""
+    """Add missing timestamps to data and forward fill nulls to complete a year.
+
+    Parameters
+    ----------
+    data_file : pl.DataFrame
+        DataFrame containing timeseries data.
+    hourly_time_index : pl.DataFrame
+        DataFrame containing the hourly time index for the study year.
+
+    Returns
+    -------
+    pl.DataFrame
+        DataFrame with missing timestamps filled.
+
+    Examples
+    --------
+    >>> df = pl.DataFrame({"year": [2020], "month": [2], "day": [28], "hour": [0], "value": [1]})
+    >>> hourly_index = pl.DataFrame({"datetime": pl.date_range("2020-01-01", "2020-12-31", freq="1H")})
+    >>> fill_missing_timestamps(df, hourly_index)
+    """
     if "hour" in data_file.columns:
         data_file = data_file.with_columns(
             pl.datetime(pl.col("year"), pl.col("month"), pl.col("day"), pl.col("hour"))
@@ -54,27 +139,49 @@ def fill_missing_timestamps(data_file: pl.DataFrame, hourly_time_index: pl.DataF
 
 
 def resample_data_to_hourly(data_file: pl.DataFrame) -> pl.DataFrame:
-    """Resample data to hourly frequency from 30 minute data."""
-    data_file = data_file.with_columns((pl.col("hour") % 48).alias("hour"))
-    data_file = (
-        data_file.with_columns(
-            (
-                pl.datetime(
-                    data_file["year"],
-                    data_file["month"],
-                    data_file["day"],
-                    hour=data_file["hour"] // 2,
-                    minute=(data_file["hour"] % 2) * 30,
-                )
-            ).alias("timestamp")
-        )
-        .sort("timestamp")
-        .filter(pl.col("timestamp").is_not_null())
+    """Resample data to hourly frequency from minute data.
+
+    Parameters
+    ----------
+    data_file : pl.DataFrame
+        DataFrame containing timeseries data with minute intervals.
+
+    Returns
+    -------
+    pl.DataFrame
+        DataFrame resampled to hourly frequency.
+
+    Examples
+    --------
+    >>> df = pl.DataFrame(
+    ...     {
+    ...         "year": [2020, 2020, 2020, 2020],
+    ...         "month": [2, 2, 2, 2],
+    ...         "day": [28, 28, 28, 28],
+    ...         "hour": [0, 0, 1, 1],
+    ...         "minute": [0, 30, 0, 30],  # Minute-level data
+    ...         "value": [1, 2, 3, 4],
+    ...     }
+    ... )
+    >>> resampled_data = resample_data_to_hourly(df)
+    >>> resampled_data.shape[0]
+    # Expecting two rows: one for hour 0 and one for hour 1
+    """
+    # Create a timestamp from year, month, day, hour, and minute
+    data_file = data_file.with_columns(
+        pl.datetime(
+            data_file["year"],
+            data_file["month"],
+            data_file["day"],
+            hour=data_file["hour"],
+            minute=data_file["minute"],
+        ).alias("timestamp")
     )
 
+    # Group by the hour and aggregate the values
     return (
         data_file.group_by_dynamic("timestamp", every="1h")
-        .agg([pl.col("value").mean().alias("value")])
+        .agg([pl.col("value").mean().alias("value")])  # Average of values for the hour
         .with_columns(
             pl.col("timestamp").dt.year().alias("year"),
             pl.col("timestamp").dt.month().alias("month"),
