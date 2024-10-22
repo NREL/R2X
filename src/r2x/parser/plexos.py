@@ -1054,7 +1054,7 @@ class PlexosParser(PCMParser):
         At this point of the code, all the properties should be either a single value, or a `SingleTimeSeries`
         """
         if not (availability := record.get("available")):
-            logger.warning("Unit {} is not activated on the model.", record["name"])
+            logger.warning("Unit `{}` is not activated on the model.", record["name"])
             return
         record["active_power_limits"] = self._get_active_power_limits(record)
 
@@ -1473,6 +1473,36 @@ class PlexosParser(PCMParser):
                 if action:
                     value = self._apply_action(action, prop_value, value)
                 value = self._parse_value(value, variable_name=mapped_property_name, unit=unit)
+
+            # This case covers when the variable is used to scale a property that is nested on a data file
+            case {"tag_datafile": str(), "tag_variable": str()}:
+                nested_object_id = self.db.get_object_id(
+                    record["tag_variable"], class_name=ClassEnum.Variable
+                )
+                nested_object_data = self._get_nested_object_data(nested_object_id)
+                if isinstance(nested_object_data, str):
+                    nested_object_data = self._data_file_handler(
+                        record_name=record["name"],
+                        property_name=prop_name,
+                        fpath_str=nested_object_data,
+                        variable_name=record["tag_variable"],
+                    )
+                record["text"] = self._get_nested_object_data(record["tag_datafile_object_id"])
+                data_file_value = self._data_file_handler(
+                    record["name"], prop_name, fpath_str=str(record["text"])
+                )
+                if data_file_value is None:
+                    data_file_value = prop_value
+                value = self._apply_action(action, data_file_value, nested_object_data)
+                value = self._parse_value(value, variable_name=mapped_property_name, unit=unit)
+            case {"tag_datafile": str()}:
+                record["text"] = self._get_nested_object_data(record["tag_datafile_object_id"])
+                data_file_value = self._data_file_handler(
+                    record["name"], prop_name, fpath_str=str(record["text"])
+                )
+                if data_file_value is None:
+                    data_file_value = prop_value
+                value = self._parse_value(data_file_value, variable_name=mapped_property_name, unit=unit)
             case {"tag_variable": str()}:
                 nested_object_id = self.db.get_object_id(
                     record["tag_variable"], class_name=ClassEnum.Variable
@@ -1490,14 +1520,6 @@ class PlexosParser(PCMParser):
                 if action:
                     value = self._apply_action(action, prop_value, value)
                 value = self._parse_value(value, variable_name=mapped_property_name, unit=unit)
-            case {"tag_datafile": str()}:
-                record["text"] = self._get_nested_object_data(record["tag_datafile_object_id"])
-                data_file_value = self._data_file_handler(
-                    record["name"], prop_name, fpath_str=str(record["text"])
-                )
-                if data_file_value is None:
-                    data_file_value = prop_value
-                value = self._parse_value(data_file_value, variable_name=mapped_property_name, unit=unit)
             case {"tag_timeslice": str()}:
                 value = self._parse_value(prop_value, variable_name=mapped_property_name, unit=unit)
             case _:
