@@ -1074,8 +1074,8 @@ class PlexosParser(PCMParser):
                 if rating.units == "percent":
                     rating = rating.to("")
                 # We override the max active power to the max rating
-                record["max_active_power"] = np.max(rating.data)
-                record["active_power_limits_max"] = np.max(rating.data)
+                record["max_active_power"] = np.max(rating)
+                record["active_power_limits_max"] = np.max(rating)
             else:
                 record["max_active_power"] = rating * availability
                 record["active_power_limits_max"] = rating * availability
@@ -1337,7 +1337,6 @@ class PlexosParser(PCMParser):
             variable_name=variable_name,
             initial_time=initial_time,
             resolution=resolution,
-            units=str(unit),
         )
 
     def _apply_action(self, action, val_a, val_b):

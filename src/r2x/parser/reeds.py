@@ -440,15 +440,15 @@ class ReEDSParser(BaseParser):
                     )
                     fuel_curve = FuelCurve(
                         value_curve=heat_rate_curve,
-                        vom_cost=LinearCurve(row.get("vom_price", None)),
-                        fuel_cost=row.get("fuel_price", None),
+                        vom_cost=LinearCurve(row.get("vom_price", None) or 0.0),
+                        fuel_cost=row.get("fuel_price", None) or 0.0,
                     )
                     row["operation_cost"] = ThermalGenerationCost(
                         variable=fuel_curve,
                     )
             if issubclass(gen_model, HydroGen):
                 row["operation_cost"] = HydroGenerationCost(
-                    variable=CostCurve(value_curve=LinearCurve(row.get("vom_price", None)))
+                    variable=CostCurve(value_curve=LinearCurve(row.get("vom_price", None) or 0.0))
                 )
 
             valid_fields = {
