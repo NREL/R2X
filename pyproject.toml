@@ -17,7 +17,7 @@ authors = [
     { name = "Vivienne Liu", email = "vivienne.liu@nrel.gov"},
 ]
 description = "ReEDS to X parser"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.13"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -32,7 +32,7 @@ dependencies = [
     "jsonschema~=4.23",
     "loguru~=0.7.2",
     "pandas~=2.2",
-    "plexosdb @ git+https://github.com/NREL/plexosdb@ps/query",
+    "plexosdb ~=0.0.5",
     "polars~=1.1.0",
     "pyyaml~=6.0.1",
     "rich~=13.7.1",
