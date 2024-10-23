@@ -1,7 +1,14 @@
 import pytest
 import polars as pl
+from datetime import datetime
 
-from r2x.parser.parser_helpers import field_filter, prepare_ext_field, resample_data_to_hourly
+from r2x.parser.parser_helpers import (
+    field_filter,
+    fill_missing_timestamps,
+    prepare_ext_field,
+    reconcile_timeseries,
+    resample_data_to_hourly,
+)
 
 
 @pytest.mark.parametrize(
@@ -98,3 +105,103 @@ def test_resample_data_to_hourly():
     # Check the result length and values
     assert len(result_2) == 2  # Expecting 2 hourly values
     assert result_2["value"].to_list() == [1.0, 3.0]  # Expected filled values
+
+
+@pytest.fixture
+def hourly_leap_year():
+    year = 2020
+    return pl.datetime_range(
+        datetime(year, 1, 1), datetime(year + 1, 1, 1), interval="1h", eager=True, closed="left"
+    ).to_frame("datetime")
+
+
+@pytest.fixture
+def hourly_non_leap_year():
+    year = 2021
+    return pl.datetime_range(
+        datetime(year, 1, 1), datetime(year + 1, 1, 1), interval="1h", eager=True, closed="left"
+    ).to_frame("datetime")
+
+
+def test_fill_missing_timestamps():
+    """Test filling missing timestamps and forward filling nulls."""
+    year = 2020
+    data_file = pl.DataFrame(
+        {
+            "year": [2020, 2020],
+            "month": [1, 1],
+            "day": [1, 1],
+            "hour": [0, 1],  # Missing hour 1
+            "value": [1, 3],
+        }
+    )
+
+    hourly_time_index = pl.datetime_range(
+        datetime(year, 1, 1), datetime(year, 1, 2), interval="1h", eager=True, closed="left"
+    ).to_frame("datetime")
+
+    # Call the function
+    result = fill_missing_timestamps(data_file, hourly_time_index)
+
+    # Assert that the result contains 24 rows (for each hour of the day)
+    assert len(result) == 24
+
+    data_file = pl.DataFrame({"year": [2020], "value": [1]})
+    with pytest.raises(ValueError):
+        _ = fill_missing_timestamps(data_file, hourly_time_index)
+
+
+def test_reconcile_timeseries_non_leap_year(hourly_non_leap_year, hourly_leap_year):
+    # Extract year, month, day, and hour from the datetime column
+    data_file = hourly_leap_year.with_columns(
+        [
+            pl.col("datetime").dt.year().alias("year"),
+            pl.col("datetime").dt.month().alias("month"),
+            pl.col("datetime").dt.day().alias("day"),
+            pl.col("datetime").dt.hour().alias("hour"),
+            (pl.arange(0, hourly_leap_year.height)).alias("value"),  # Sequential values
+        ]
+    )
+
+    # Adjust data
+    result = reconcile_timeseries(data_file, hourly_non_leap_year)
+
+    # Expected result should remove Feb 29 data (1416 to 1440)
+    assert result.height == 8760
+    assert (result["value"] == list(range(1416)) + list(range(1440, 8784))).all()
+
+
+def test_reconcile_timeseries_leap_year(hourly_non_leap_year, hourly_leap_year):
+    # Data file with non-leap year length (8760 hours), leap year hourly_time_index
+    data_file = pl.DataFrame(
+        {
+            "year": [2021] * 8760,
+            "month": [2] * 8760,
+            "day": [28] * 8760,
+            "hour": list(range(8760)),
+            "value": list(range(8760)),
+        }
+    )
+
+    # Leap year hourly_time_index (8784 hours)
+    hourly_time_index = pl.datetime_range(
+        datetime(2020, 1, 1), datetime(2021, 1, 1), interval="1h", eager=True, closed="left"
+    ).to_frame("datetime")
+
+    # Adjust data
+    result = reconcile_timeseries(data_file, hourly_time_index)
+
+    # Check that the result has added Feb 29th data
+    assert result.height == 8784
+
+
+def test_reconcile_timeseries_raises_assertion():
+    # Empty hourly_time_index
+    hourly_time_index = pl.DataFrame()
+
+    # Data file with arbitrary data
+    data_file = pl.DataFrame({"year": [2021], "month": [2], "day": [28], "hour": [0], "value": [1]})
+
+    # Check that AssertionError is raised
+    with pytest.raises(AssertionError):
+        reconcile_timeseries(data_file, hourly_time_index)

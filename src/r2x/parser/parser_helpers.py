@@ -1,6 +1,7 @@
 """Set of helper functions for parsers."""
 # ruff: noqa
 
+from datetime import timedelta
 from typing import Any
 import polars as pl
 import numpy as np
@@ -94,13 +95,21 @@ def handle_leap_year_adjustment(data_file: pl.DataFrame) -> pl.DataFrame:
 
     Examples
     --------
-    >>> df = pl.DataFrame({"date": ["2020-02-28"], "value": [1]})
-    >>> handle_leap_year_adjustment(df)
     """
-    feb_28 = data_file.slice(1392, 24)
-    before_feb_29 = data_file.slice(0, 1416)
-    after_feb_29 = data_file.slice(1416, len(data_file) - 1440)
-    return pl.concat([before_feb_29, feb_28, after_feb_29])
+    if len(data_file) != 8760:
+        raise ValueError("Data must contain 8760 rows for a non-leap year.")
+
+    # Get the index positions for February 28th
+    feb_28_start_index = 1392  # Start of February 28th (hour 0)
+    feb_28_end_index = 1416  # End of February 28th (hour 24)
+
+    # Slice February 28th data
+    feb_28_data = data_file[feb_28_start_index:feb_28_end_index]
+
+    # Create a new DataFrame with February 29th duplicated
+    adjusted_data = pl.concat([data_file, feb_28_data])
+
+    return adjusted_data
 
 
 def fill_missing_timestamps(data_file: pl.DataFrame, hourly_time_index: pl.DataFrame) -> pl.DataFrame:
@@ -118,24 +127,47 @@ def fill_missing_timestamps(data_file: pl.DataFrame, hourly_time_index: pl.DataF
     pl.DataFrame
         DataFrame with missing timestamps filled.
 
+    Raises
+    ------
+    ValueError
+        If the required columns are missing from the data_file.
+
     Examples
     --------
-    >>> df = pl.DataFrame({"year": [2020], "month": [2], "day": [28], "hour": [0], "value": [1]})
-    >>> hourly_index = pl.DataFrame({"datetime": pl.date_range("2020-01-01", "2020-12-31", freq="1H")})
-    >>> fill_missing_timestamps(df, hourly_index)
+    >>> import polars as pl
+    >>> from datetime import datetime
+    >>> df = pl.DataFrame(
+    ...     {"year": [2020, 2020], "month": [1, 1], "day": [1, 1], "hour": [0, 1], "value": [1, 2]}
+    ... )
+    >>> hourly_time_index = pl.datetime_range(
+    ...     datetime(2020, 1, 1), datetime(2020, 1, 2), interval="1h", eager=True, closed="left"
+    ... ).to_frame("datetime")
+    >>> fill_missing_timestamps(df, hourly_time_index)
     """
-    if "hour" in data_file.columns:
-        data_file = data_file.with_columns(
-            pl.datetime(pl.col("year"), pl.col("month"), pl.col("day"), pl.col("hour"))
-        )
-    if "day" not in data_file.columns:
-        data_file = data_file.with_columns(pl.datetime(pl.col("year"), pl.col("month"), 1))  # First day
-    else:
-        data_file = data_file.with_columns(pl.datetime(pl.col("year"), pl.col("month"), pl.col("day")))
+    # Match case based on available columns
+    match data_file.columns:
+        # Case when "year", "month", "day", and "hour" are all present
+        case ["year", "month", "day", "hour", *_]:
+            data_file = data_file.with_columns(
+                pl.datetime(pl.col("year"), pl.col("month"), pl.col("day"), pl.col("hour"))
+            )
+            upsample_data = hourly_time_index.join(data_file, on="datetime", how="left")
+            return upsample_data.fill_null(strategy="forward")
 
-    upsample_data = hourly_time_index.join(data_file, on="datetime", how="left")
-    upsample_data = upsample_data.fill_null(strategy="forward")
-    return upsample_data
+        # Case when "year", "month", and "day" are present but "hour" is missing
+        case ["year", "month", "day", *_]:
+            data_file = data_file.with_columns(pl.datetime(pl.col("year"), pl.col("month"), pl.col("day")))
+            upsample_data = hourly_time_index.join(data_file, on="datetime", how="left")
+            return upsample_data.fill_null(strategy="forward")
+
+        # Case when "day" is missing, but "year" and "month" are present
+        case ["year", "month", *_] if "day" not in data_file.columns:
+            data_file = data_file.with_columns(pl.datetime(pl.col("year"), pl.col("month"), 1))  # First day
+            upsample_data = hourly_time_index.join(data_file, on="datetime", how="left")
+            return upsample_data.fill_null(strategy="forward")
+
+        case _:
+            raise ValueError("The data_file must have at least 'year' and 'month' columns.")
 
 
 def resample_data_to_hourly(data_file: pl.DataFrame) -> pl.DataFrame:
