@@ -525,10 +525,9 @@ class ReEDSParser(BaseParser):
         # BA instead of attaching one per generator. We would need to invert
         # the order of the loop and just use that to attach it to the different
         for generator in self.system.get_components(RenewableDispatch, RenewableNonDispatch):
-            if "|" in generator.name:
-                profile_name = "|".join(generator.name.rsplit("_", 1))
-            else:
-                profile_name = generator.name  # .rsplit("_", 1)[0]
+            profile_name = generator.name  # .rsplit("_", 1)[0]
+            if "|" in cf_data.columns[1]:
+                profile_name = "|".join(profile_name.rsplit("_", 1))
             if profile_name not in cf_data.columns:
                 msg = (
                     f"{generator.__class__.__name__}:{generator.name} do not "
