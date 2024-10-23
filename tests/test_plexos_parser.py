@@ -58,3 +58,8 @@ def test_raise_if_no_map_provided(tmp_path, data_folder):
     )
     with pytest.raises(ParserError):
         _ = get_parser_data(scenario, parser_class=PlexosParser)
+
+
+def test_parser_system(plexos_parser_instance):
+    ...
+    # plexos_parser = plexos_parser_instance.build_system()

@@ -28,8 +28,6 @@ class OperationalCost(InfraSysBaseModelWithIdentifers):
     def value_curve_type(self) -> str | None:
         """Create attribute that holds the class name."""
         try:
-            if not attrgetter("variable.value_curve")(self):
-                return None
             return type(attrgetter("variable.value_curve")(self)).__name__
         except AttributeError:
             return None

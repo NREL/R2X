@@ -390,6 +390,9 @@ class PlexosParser(PCMParser):
             values="property_value",
             aggregate_function="first",
         )
+        if lines_pivot.is_empty():
+            logger.warning("No line objects found on the system.")
+            return
 
         lines_pivot_memberships = self.db.get_memberships(
             *lines_pivot["name"].to_list(), object_class=ClassEnum.Line
@@ -808,6 +811,8 @@ class PlexosParser(PCMParser):
 
         # Add lines memberships
         lines = [line["name"] for line in self.system.to_records(MonitoredLine)]
+        if not lines:
+            return
         lines_memberships = self.db.get_memberships(
             *lines,
             object_class=ClassEnum.Line,

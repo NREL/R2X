@@ -1,15 +1,17 @@
 """Compilation of functions used on the PLEXOS parser."""
-
 # ruff: noqa
+
+from datetime import datetime
 import re
-from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any
+from collections.abc import Sequence
 
+from numpy._typing import NDArray
+import pint
 import polars as pl
 import numpy as np
 from loguru import logger
-from infrasys import SingleTimeSeries
 
 PLEXOS_ACTION_MAP = {
     "×": np.multiply,  # noqa
@@ -20,23 +22,23 @@ PLEXOS_ACTION_MAP = {
 }
 
 
-class DATAFILE_COLUMNS(Enum):
+class DATAFILE_COLUMNS(Enum):  # noqa: N801
     """Enum of possible Data file columns in Plexos."""
 
-    NV = ["name", "value"]
-    Y = ["year"]
-    PV = ["pattern", "value"]
-    TS_NPV = ["name", "pattern", "value"]
-    TS_NYV = ["name", "year", "value"]
-    TS_NDV = ["name", "DateTime", "value"]
-    TS_YMDP = ["year", "month", "day", "period"]
-    TS_YMDPV = ["year", "month", "day", "period", "value"]
-    TS_NYMDV = ["name", "year", "month", "day", "value"]
-    TS_NYMDPV = ["name", "year", "month", "day", "period", "value"]
-    TS_YM = ["year", "month"]
-    TS_MDP = ["month", "day", "period"]
-    TS_NMDP = ["name", "month", "day", "period"]
-    TS_YMDH = [
+    NV = ("name", "value")
+    Y = "year"
+    PV = ("pattern", "value")
+    TS_NPV = ("name", "pattern", "value")
+    TS_NYV = ("name", "year", "value")
+    TS_NDV = ("name", "DateTime", "value")
+    TS_YMDP = ("year", "month", "day", "period")
+    TS_YMDPV = ("year", "month", "day", "period", "value")
+    TS_NYMDV = ("name", "year", "month", "day", "value")
+    TS_NYMDPV = ("name", "year", "month", "day", "period", "value")
+    TS_YM = ("year", "month")
+    TS_MDP = ("month", "day", "period")
+    TS_NMDP = ("name", "month", "day", "period")
+    TS_YMDH = (
         "year",
         "month",
         "day",
@@ -64,8 +66,8 @@ class DATAFILE_COLUMNS(Enum):
         "22",
         "23",
         "24",
-    ]
-    TS_NYMDH = [
+    )
+    TS_NYMDH = (
         "name",
         "year",
         "month",
@@ -94,8 +96,8 @@ class DATAFILE_COLUMNS(Enum):
         "22",
         "23",
         "24",
-    ]
-    TS_NMDH = [
+    )
+    TS_NMDH = (
         "name",
         "month",
         "day",
@@ -123,8 +125,8 @@ class DATAFILE_COLUMNS(Enum):
         "22",
         "23",
         "24",
-    ]
-    TS_NM = [
+    )
+    TS_NM = (
         "name",
         "m01",
         "m02",
@@ -138,7 +140,7 @@ class DATAFILE_COLUMNS(Enum):
         "m10",
         "m11",
         "m12",
-    ]
+    )
 
 
 def get_column_enum(columns: list[str]) -> DATAFILE_COLUMNS | None:
@@ -314,32 +316,80 @@ def parse_ts_nymdh(data_file):
     return data_file
 
 
-def parse_patterns(key):
+def parse_patterns(key: str) -> list[tuple[str, list[int]]]:
+    """Parse a key for time slice patterns (e.g., 'M1-3', 'H1-6') and return a list of tuples.
+
+    Parameters
+    ----------
+    key : str
+        A string pattern representing time slices, such as months ('M1-12'), hours ('H1-24'),
+        weekdays ('W1-7'), and days of the month ('D1-31').
+
+    Returns
+    -------
+    List[tuple[str, List[int]]]
+        A list of tuples where the first element is the time slice type (e.g., 'M', 'H', 'W', 'D'),
+        and the second element is the list of integers representing the range of values for that time slice.
+
+    Raises
+    ------
+    TypeError
+        If the input is not a string.
+    ValueError
+        If the ranges are invalid (e.g., 'M13', 'H25').
+
+    Examples
+    --------
+    >>> parse_patterns("M1-3")
+    [('M', [1, 2, 3])]
+
+    >>> parse_patterns("H1-6,H18-24")
+    [('H', [1, 2, 3, 4, 5, 6]), ('H', [18, 19, 20, 21, 22, 23, 24])]
+
+    >>> parse_patterns("W1,H1-6")
+    [('W', [1]), ('H', [1, 2, 3, 4, 5, 6])]
+
+    """
+    if not isinstance(key, str):
+        raise TypeError(f"Expected 'key' to be a str, got {type(key).__name__}")
+
     ranges = key.split(";")
-    month_list = []
+    pattern_list = []
+
     for rng in ranges:
-        # Match ranges like 'M5-10' and single months like 'M1'
-        match = re.match(r"M(\d+)(?:-(\d+))?", rng)
-        if match:
-            start_month = int(match.group(1))
-            end_month = int(match.group(2)) if match.group(2) else start_month
-            # Generate the list of months from the range
-            month_list.extend(range(start_month, end_month + 1))
-    return month_list
+        time_slice_matches = re.finditer(r"([MWHD])(\d+)(?:-(\d+))?", rng)
+        for match in time_slice_matches:
+            time_slice_type = match.group(1)
+            start_value = int(match.group(2))
+            end_value = int(match.group(3)) if match.group(3) else start_value
+
+            # Validating ranges based on time slice type
+            if time_slice_type == "M" and not (1 <= start_value <= 12 and 1 <= end_value <= 12):
+                raise ValueError(f"Invalid month range: {start_value}-{end_value}")
+            if time_slice_type == "H" and not (1 <= start_value <= 24 and 1 <= end_value <= 24):
+                raise ValueError(f"Invalid hour range: {start_value}-{end_value}")
+            if time_slice_type == "W" and not (1 <= start_value <= 7 and 1 <= end_value <= 7):
+                raise ValueError(f"Invalid weekday range: {start_value}-{end_value}")
+            if time_slice_type == "D" and not (1 <= start_value <= 31 and 1 <= end_value <= 31):
+                raise ValueError(f"Invalid day of month range: {start_value}-{end_value}")
+
+            pattern_list.append((time_slice_type, list(range(start_value, end_value + 1))))
+
+    return pattern_list
 
 
 def time_slice_handler(
     records: list[dict[str, Any]],
-    hourly_time_index: pl.DataFrame,
+    hourly_time_index: pl.DataFrame | NDArray[np.datetime64] | Sequence[datetime],
     pattern_key: str = "pattern",
 ) -> np.ndarray:
     """Deconstruct a dict of time slices and return a NumPy array representing a time series.
 
     Parameters
     ----------
-    records : List[dict[str, Any]]
+    records : dist[str, Any]
         A list of dictionaries containing timeslice records.
-    hourly_time_index : pl.DataFrame
+    hourly_time_index : pl.DataFrame | NDArray[np.datetime64] | Sequence[datetime]
         Dataframe containing a 'datetime' column for hourly time index.
     pattern_key : str, optional
         Key used to extract patterns from records (default is 'pattern').
@@ -360,35 +410,41 @@ def time_slice_handler(
 
     Examples
     --------
-    >>> records = [{"pattern": "M1-2", "value": np.array([5])}, {"pattern": "M3", "value": np.array([10])}]
-    >>> datetime_values = [datetime(2024, 1, 1), datetime(2024, 2, 1), datetime(2024, 3, 1)]
-    >>> hourly_time_index = pl.DataFrame({"datetime": datetime_values})
-    >>> time_slice_handler(records, hourly_time_index)
-    array([5., 5., 10.])
-
-    >>> hourly_time_index = pl.DataFrame({"wrong_column": [1, 2, 3]})  # Raises ValueError
+    >>> from datetime import datetime, timedelta
+    >>> records = [{"pattern": "M1-2", "value": 200}, {"pattern": "M3-12", "value": 100}]
+    >>> start = datetime(year, 1, 1)
+    >>> end = datetime(year + 1, 1, 1)
+    >>> delta = timedelta(hours=1)
+    >>> datetime_index = tuple(start + i * delta for i in range((end - start) // delta))
+    >>> time_slice_handler(records, datetime_index)
     """
-    if not isinstance(hourly_time_index, pl.DataFrame):
-        raise TypeError(
-            f"Expected 'hourly_time_index' to be a polars DataFrame, got {type(hourly_time_index).__name__}"
-        )
+    if isinstance(hourly_time_index, pl.DataFrame):
+        hourly_time_index = hourly_time_index.to_numpy()
+
     if not all(isinstance(record, dict) for record in records):
         raise TypeError("All records must be dictionaries")
 
     if not all(record[pattern_key].startswith("M") for record in records if pattern_key in record):
         raise NotImplementedError("All records must contain valid month patterns starting with 'M'")
 
-    if "datetime" not in hourly_time_index.columns:
-        raise ValueError("Hourly time index does not have 'datetime' column")
-
-    hourly_time_index = hourly_time_index["datetime"]
+    if isinstance(hourly_time_index, np.ndarray):
+        hourly_time_index = hourly_time_index.astype(datetime).flatten().tolist()
 
     months = np.array([dt.month for dt in hourly_time_index])
+    # hours = np.array([dt.hour for dt in hourly_time_index])
     month_datetime_series = np.zeros(len(hourly_time_index), dtype=float)
 
     for record in records:
-        months_in_key = parse_patterns(record[pattern_key])
-        for month in months_in_key:
-            month_datetime_series[months == month] = record["value"].magnitude
+        patterns = parse_patterns(record[pattern_key])
+        for pattern in patterns:
+            match pattern[0]:
+                case "M":
+                    month_datetime_series[np.isin(months, pattern[1])] = (
+                        record["value"].magnitude
+                        if isinstance(record["value"], pint.Quantity)
+                        else record["value"]
+                    )
+                case _:
+                    raise NotImplementedError
 
     return month_datetime_series
