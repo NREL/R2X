@@ -108,6 +108,30 @@
     "report_summary": true
   },
   {
+    "child_class": "Line",
+    "collection": "Lines",
+    "object_name": "base_report",
+    "parent_class": "System",
+    "phase_id": 4,
+    "property": "Flow",
+    "report_period": true,
+    "report_samples": false,
+    "report_statistics": false,
+    "report_summary": true
+  },
+  {
+    "child_class": "Line",
+    "collection": "Lines",
+    "object_name": "base_report",
+    "parent_class": "System",
+    "phase_id": 4,
+    "property": "Wheeling Cost",
+    "report_period": true,
+    "report_samples": false,
+    "report_statistics": false,
+    "report_summary": true
+  },
+  {
     "child_class": "Region",
     "collection": "Regions",
     "object_name": "base_report",
