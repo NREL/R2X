@@ -167,7 +167,12 @@ class PlexosParser(PCMParser):
         # TODO(pesap): Rename exceptions to include R2X
         # https://github.com/NREL/R2X/issues/5
         # R2X needs at least one of this maps defined to correctly work.
-        if not self.fuel_map and not self.device_map and not self.device_match_string:
+        if (
+            not self.fuel_map
+            and not self.device_map
+            and not self.device_match_string
+            and not self.category_map
+        ):
             msg = (
                 "Neither `plexos_fuel_map` or `plexos_device_map` or `device_match_string` was provided. "
                 "To fix, provide any of the mappings."
@@ -858,7 +863,7 @@ class PlexosParser(PCMParser):
         heat_rate_avg = (
             Quantity(
                 np.median(heat_rate_avg.data),
-                units=heat_rate_avg.units,
+                units=heat_rate_avg.data.units,
             )
             if isinstance(heat_rate_avg, SingleTimeSeries)
             else heat_rate_avg
@@ -866,7 +871,7 @@ class PlexosParser(PCMParser):
         heat_rate_base = (
             Quantity(
                 np.median(heat_rate_base.data),
-                units=heat_rate_base.units,
+                units=heat_rate_base.data.units,
             )
             if isinstance(heat_rate_base, SingleTimeSeries)
             else heat_rate_base
@@ -874,7 +879,7 @@ class PlexosParser(PCMParser):
         heat_rate_incr = (
             Quantity(
                 np.median(heat_rate_incr.data),
-                units=heat_rate_incr.units,
+                units=heat_rate_incr.data.units,
             )
             if isinstance(heat_rate_incr, SingleTimeSeries)
             else heat_rate_incr
@@ -1091,7 +1096,7 @@ class PlexosParser(PCMParser):
         if rating_factor := record.get("Rating Factor"):
             if isinstance(rating_factor, SingleTimeSeries):
                 rating_factor_data = rating_factor.data
-                if rating_factor.units == "percent":
+                if rating_factor_data.units == "percent":
                     rating_factor_data = rating_factor_data.to("")
                 if not (max_active_power := record.get("max_active_power")):
                     # Order of the operation matters
@@ -1195,7 +1200,7 @@ class PlexosParser(PCMParser):
 
             if max_active_power := mapped_records.get("max_active_power"):
                 max_load = (
-                    np.max(max_active_power.data)
+                    np.nanmax(max_active_power.data)
                     if isinstance(max_active_power, SingleTimeSeries)
                     else max_active_power
                 )

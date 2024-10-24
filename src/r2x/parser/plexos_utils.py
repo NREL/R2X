@@ -26,7 +26,7 @@ class DATAFILE_COLUMNS(Enum):  # noqa: N801
     """Enum of possible Data file columns in Plexos."""
 
     NV = ("name", "value")
-    Y = "year"
+    Y = ("year",)
     PV = ("pattern", "value")
     TS_NPV = ("name", "pattern", "value")
     TS_NYV = ("name", "year", "value")

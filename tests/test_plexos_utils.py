@@ -6,7 +6,9 @@ from r2x.parser.plexos_utils import DATAFILE_COLUMNS, get_column_enum, time_slic
 
 def test_get_column_enum():
     """Test multiple cases for get_column_enum function."""
-    # Case 1: Exact match for NV
+    columns = ["year", "random_column", "random_column_2"]
+    assert get_column_enum(columns) == DATAFILE_COLUMNS.Y
+
     columns = ["name", "value"]
     assert get_column_enum(columns) == DATAFILE_COLUMNS.NV
 

@@ -146,6 +146,9 @@ def test_fill_missing_timestamps():
     # Assert that the result contains 24 rows (for each hour of the day)
     assert len(result) == 24
 
+    data_file = pl.DataFrame({"name": ["testname"], "year": [2020], "month": [1], "value": [1]})
+    result = fill_missing_timestamps(data_file, hourly_time_index)
+
     data_file = pl.DataFrame({"year": [2020], "value": [1]})
     with pytest.raises(ValueError):
         _ = fill_missing_timestamps(data_file, hourly_time_index)

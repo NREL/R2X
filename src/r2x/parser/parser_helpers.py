@@ -144,10 +144,10 @@ def fill_missing_timestamps(data_file: pl.DataFrame, hourly_time_index: pl.DataF
     ... ).to_frame("datetime")
     >>> fill_missing_timestamps(df, hourly_time_index)
     """
-    # Match case based on available columns
-    match data_file.columns:
+    column_set = set(data_file.columns)
+    match column_set:
         # Case when "year", "month", "day", and "hour" are all present
-        case ["year", "month", "day", "hour", *_]:
+        case s if s.issuperset({"year", "month", "day", "hour"}):
             data_file = data_file.with_columns(
                 pl.datetime(pl.col("year"), pl.col("month"), pl.col("day"), pl.col("hour"))
             )
@@ -155,13 +155,13 @@ def fill_missing_timestamps(data_file: pl.DataFrame, hourly_time_index: pl.DataF
             return upsample_data.fill_null(strategy="forward")
 
         # Case when "year", "month", and "day" are present but "hour" is missing
-        case ["year", "month", "day", *_]:
+        case s if s.issuperset({"year", "month", "day"}):
             data_file = data_file.with_columns(pl.datetime(pl.col("year"), pl.col("month"), pl.col("day")))
             upsample_data = hourly_time_index.join(data_file, on="datetime", how="left")
             return upsample_data.fill_null(strategy="forward")
 
         # Case when "day" is missing, but "year" and "month" are present
-        case ["year", "month", *_] if "day" not in data_file.columns:
+        case s if s.issuperset({"year", "month"}):
             data_file = data_file.with_columns(pl.datetime(pl.col("year"), pl.col("month"), 1))  # First day
             upsample_data = hourly_time_index.join(data_file, on="datetime", how="left")
             return upsample_data.fill_null(strategy="forward")
@@ -200,15 +200,19 @@ def resample_data_to_hourly(data_file: pl.DataFrame) -> pl.DataFrame:
     # Expecting two rows: one for hour 0 and one for hour 1
     """
     # Create a timestamp from year, month, day, hour, and minute
+    if max(data_file["period"]) == 48.0:  # sub-hourly data
+        data_file = data_file.with_columns(((pl.col("period") - 1) / 2).cast(pl.Int32).alias("hour"))
     data_file = data_file.with_columns(
         pl.datetime(
             data_file["year"],
             data_file["month"],
             data_file["day"],
             hour=data_file["hour"],
-            minute=data_file["minute"],
+            # minute=data_file["minute"],
         ).alias("timestamp")
     )
+
+    data_file = data_file.drop_nulls().sort("timestamp")
 
     # Group by the hour and aggregate the values
     return (

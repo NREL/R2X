@@ -30,7 +30,8 @@ def pjm_2area() -> System:
     # Add topology elements
     system.add_component(Area(name="init"))
     system.add_component(Area(name="Area2"))
-    system.add_component(LoadZone(name="LoadZone1"))
+    system.add_component(LoadZone(name="init"))
+    system.add_component(LoadZone(name="Area2"))
 
     for bus in pjm_2area_components["bus"]:
         system.add_component(
@@ -40,6 +41,7 @@ def pjm_2area() -> System:
                 bus_type=ACBusTypes(bus["bustype"]),
                 base_voltage=Voltage(bus["base_voltage"], "kV"),
                 area=system.get_component(Area, bus["area"]),
+                load_zone=system.get_component(LoadZone, bus["area"]),
                 magnitude=bus["magnitude"],
             )
         )
@@ -68,7 +70,7 @@ def pjm_2area() -> System:
         x=0.03,
         to_bus=bust,
         rating_up=1000 * ureg.MW,
-        rating=1000 * ureg.MW,
+        rating_down=-1000 * ureg.MW,
     )
     system.add_component(branch_monitored)
 
@@ -97,14 +99,15 @@ def pjm_2area() -> System:
                 startup_cost=gen["StartupCost"] * ureg.Unit("usd"),
                 shutdown_cost=gen["ShutDnCost"] * ureg.Unit("usd"),
                 vom_price=gen["VOM"] * ureg.Unit("usd/MWh"),
-                min_down_time=gen["MinTimeDn"],
-                min_up_time=gen["MinTimeUp"],
+                min_down_time=Time(gen["MinTimeDn"], "hour"),
+                min_up_time=Time(gen["MinTimeUp"], "hour"),
                 mean_time_to_repair=Time(10.0, "hour"),
                 forced_outage_rate=Percentage(0.0),
                 planned_outage_rate=Percentage(0.0),
                 ramp_up=gen["RampLimitsUp"],
                 ramp_down=gen["RampLimitsDn"],
                 bus=system.get_component(ACBus, gen["BusName"]),
+                category="thermal",
             )
         )
 
@@ -169,7 +172,7 @@ def pjm_2area() -> System:
     reserve_map = ReserveMap(name="pjm_reserve_map")
     reserve = Reserve(
         name="SpinUp-pjm",
-        region=system.get_component(LoadZone, "LoadZone1"),
+        region=system.get_component(LoadZone, "init"),
         reserve_type=ReserveType.SPINNING,
         vors=0.05,
         duration=3600.0,
