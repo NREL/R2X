@@ -2,8 +2,9 @@
 
 from typing import Annotated
 from infrasys.models import InfraSysBaseModelWithIdentifers
+from infrasys.value_curves import LinearCurve
 from pydantic import Field, computed_field
-from infrasys.cost_curves import ProductionVariableCostCurve
+from infrasys.cost_curves import FuelCurve, ProductionVariableCostCurve
 from r2x.units import Currency, FuelPrice
 from operator import attrgetter
 
@@ -27,9 +28,10 @@ class OperationalCost(InfraSysBaseModelWithIdentifers):
     @property
     def value_curve_type(self) -> str | None:
         """Create attribute that holds the class name."""
-        if not attrgetter("variable.value_curve")(self):
+        try:
+            return type(attrgetter("variable.value_curve")(self)).__name__
+        except AttributeError:
             return None
-        return type(attrgetter("variable.value_curve")(self)).__name__
 
 
 class RenewableGenerationCost(OperationalCost):
@@ -57,6 +59,15 @@ class ThermalGenerationCost(OperationalCost):
     )
     start_up: Annotated[Currency | None, Field(description="Cost to start the unit.")] = Currency(0, "usd")
     variable: ProductionVariableCostCurve | None = None
+
+    @classmethod
+    def example(cls) -> "ThermalGenerationCost":
+        return ThermalGenerationCost(
+            fixed=FuelPrice(0, "usd/MWh"),
+            shut_down=Currency(100, "usd"),
+            start_up=Currency(100, "usd"),
+            variable=FuelCurve(value_curve=LinearCurve(10)),  # type: ignore
+        )
 
 
 class StorageCost(OperationalCost):

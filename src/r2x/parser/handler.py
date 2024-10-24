@@ -21,7 +21,7 @@ import pandas as pd
 from r2x.api import System
 from r2x.config import Scenario
 from plexosdb import XMLHandler
-from .parser_helpers import pl_filter_year, pl_lowercase, pl_rename
+from .polars_helpers import pl_filter_year, pl_lowercase, pl_rename
 from ..utils import check_file_exists
 
 
@@ -132,7 +132,7 @@ class PCMParser(BaseParser):
 
 def file_handler(
     fpath: Path | str, optional: bool = False, **kwargs
-) -> pl.LazyFrame | Sequence | XMLHandler | None:
+) -> pl.LazyFrame | pl.DataFrame | Sequence | XMLHandler | None:
     """Return FileHandler based on file extension.
 
     Raises
@@ -156,7 +156,7 @@ def file_handler(
     match fpath.suffix:
         case ".csv":
             logger.trace("Reading {}", fpath)
-            return pl.scan_csv(fpath)
+            return csv_handler(fpath, **kwargs)
         case ".h5":
             logger.trace("Reading {}", fpath)
             return pl.LazyFrame(pd.read_hdf(fpath).reset_index())  # type: ignore
@@ -167,6 +167,70 @@ def file_handler(
             return XMLHandler.parse(fpath=fpath, **class_kwargs)
         case _:
             raise NotImplementedError(f"File {fpath.suffix = } not yet supported.")
+
+
+def csv_handler(fpath: Path, csv_file_encoding="utf8", **kwargs) -> pl.DataFrame:
+    """Parse CSV files and return a Polars DataFrame with all column names in lowercase.
+
+    Parameters
+    ----------
+    fpath : str
+        The file path of the CSV file to read.
+    csv_file_encoding : str, optional
+        The encoding format of the CSV file, by default "utf8".
+    **kwargs : dict, optional
+        Additional keyword arguments passed to the `pl.read_csv` function.
+
+    Returns
+    -------
+    pl.DataFrame or None
+        The parsed CSV file as a Polars DataFrame with lowercase column names if successful,
+        or `None` if the file was not found.
+
+    Raises
+    ------
+    pl.exceptions.ComputeError
+        Raised if there are issues with the data types in the CSV file.
+    FileNotFoundError
+        Raised if the file is not found.
+
+    See Also
+    --------
+    pl_lowercase : Function to convert all column names of a Polars DataFrame to lowercase.
+
+    Example
+    -------
+    >>> df = csv_handler("data/example.csv")
+    >>> print(df)
+    shape: (2, 3)
+    ┌─────┬────────┬──────┐
+    │ id  │ name   │ age  │
+    │ --- │ ---    │ ---  │
+    │ i64 │ str    │ i64  │
+    ╞═════╪════════╪══════╡
+    │ 1   │ Alice  │ 30   │
+    │ 2   │ Bob    │ 24   │
+    └─────┴────────┴──────┘
+    """
+    logger.trace("Attempting reading file {}", fpath)
+    logger.trace("Parsing file {}", fpath)
+    try:
+        data_file = pl.read_csv(
+            fpath.as_posix(),
+            infer_schema_length=10_000_000,
+            encoding=csv_file_encoding,
+        )
+    except FileNotFoundError:
+        msg = f"File {fpath} not found."
+        logger.error(msg)
+        raise FileNotFoundError(msg)
+    except pl.exceptions.PolarsError:
+        logger.warning("File {} could not be parse due to dtype problems. See error.", fpath)
+        raise
+
+    data_file = pl_lowercase(data_file)
+
+    return data_file
 
 
 ParserClass = TypeVar("ParserClass", bound=BaseParser)

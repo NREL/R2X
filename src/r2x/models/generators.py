@@ -1,10 +1,10 @@
 """Models for generator devices."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
-from pydantic import Field, NonNegativeFloat
+from pydantic import Field, NonNegativeFloat, field_serializer
 
-from r2x.models.core import Device
+from r2x.models.core import Device, MinMax
 from r2x.models.costs import OperationalCost
 from r2x.models.topology import ACBus
 from r2x.models.load import PowerLoad
@@ -28,7 +28,7 @@ class Generator(Device):
     rating: Annotated[
         ApparentPower | None,
         Field(ge=0, description="Maximum output power rating of the unit (MVA)."),
-    ] = None
+    ] = ApparentPower(1, "MVA")
     active_power: Annotated[
         ActivePower,
         Field(
@@ -37,8 +37,18 @@ class Generator(Device):
                 "state operating point of the system."
             ),
         ),
-    ]
+    ] = ActivePower(0, "MW")
+    reactive_power: Annotated[
+        ApparentPower | None,
+        Field(
+            description=(
+                "Reactive power set point of the unit in MW. For power flow, this is the steady "
+                "state operating point of the system."
+            ),
+        ),
+    ] = ApparentPower(0, "MVA")
     operation_cost: OperationalCost | None = None
+    base_mva: float = 1
     base_power: Annotated[
         ApparentPower | None,
         Field(
@@ -114,9 +124,14 @@ class Generator(Device):
     shutdown_cost: (
         Annotated[NonNegativeFloat, Field(description="Cost in $ of shuting down a unit.")] | None
     ) = None
-    active_power_limits_max: Annotated[
-        ApparentPower | None, Field(ge=0, description="Maximum output power rating of the unit (MVA).")
+    active_power_limits: Annotated[
+        MinMax | None, Field(description="Maximum output power rating of the unit (MVA).")
     ] = None
+
+    @field_serializer("active_power_limits")
+    def serialize_active_power_limits(self, min_max: MinMax) -> dict[str, Any]:
+        if min_max is not None:
+            return {"min": min_max.min, "max": min_max.max}
 
 
 class RenewableGen(Generator):

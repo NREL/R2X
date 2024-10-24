@@ -1,5 +1,6 @@
 from r2x.enums import PrimeMoversType
 from r2x.models import Generator, ACBus, Emission, HydroPumpedStorage, ThermalStandard
+from r2x.models import MinMax
 from r2x.units import EmissionRate, ureg
 
 
@@ -36,3 +37,14 @@ def test_pumped_hydro_generator():
     assert isinstance(pumped_storage.bus, ACBus)
     assert isinstance(pumped_storage.prime_mover_type, PrimeMoversType)
     assert pumped_storage.prime_mover_type == PrimeMoversType.PS
+
+
+def test_serialize_active_power_limits():
+    active_power_limits = MinMax(min=0, max=100)
+    generator = Generator(name="TestGEN", active_power_limits=active_power_limits)
+
+    output = generator.model_dump()
+    assert output["active_power_limits"] == {"min": 0, "max": 100}
+
+    output = generator.serialize_active_power_limits(active_power_limits)
+    assert output == {"min": 0, "max": 100}

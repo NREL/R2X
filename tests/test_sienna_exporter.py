@@ -1,12 +1,13 @@
 import pytest
+
 from r2x.config import Scenario
-from r2x.exporter.sienna import SiennaExporter, apply_operation_table_data
-from .models import ieee5bus
+from r2x.exporter.sienna import SiennaExporter, apply_operation_table_data, get_psy_fields
+from tests.models.pjm import pjm_2area
 
 
 @pytest.fixture
 def infrasys_test_system():
-    return ieee5bus()
+    return pjm_2area()
 
 
 @pytest.fixture
@@ -17,7 +18,7 @@ def scenario_instance(data_folder, tmp_folder):
         output_folder=tmp_folder,
         input_model="infrasys",
         output_model="sienna",
-        weather_year=2010,
+        solve_year=2010,
     )
 
 
@@ -39,8 +40,8 @@ def test_sienna_exporter_run(sienna_exporter, tmp_folder):
         "gen.csv",
         "bus.csv",
         "timeseries_pointers.json",
-        "storage.csv",
-        # "reserves.csv",  # Reserve could be optional
+        # "storage.csv",  # Storage is also optional
+        "reserves.csv",  # Reserve could be optional
         "dc_branch.csv",
         "branch.csv",
     ]
@@ -51,6 +52,11 @@ def test_sienna_exporter_run(sienna_exporter, tmp_folder):
     # Check that time series was created correctly
     ts_directory = tmp_folder / exporter.ts_directory
     assert any(ts_directory.iterdir())
+
+
+def test_sienna_exporter_empty_storage(caplog, sienna_exporter):
+    sienna_exporter.process_storage_data()
+    assert "No storage devices found" in caplog.text
 
 
 @pytest.fixture
@@ -65,14 +71,18 @@ def sample_component():
                         "constant_term": 100,
                         "proportional_term": 20,
                         "quadratic_term": 0.5,
-                        "x_coords": [0, 50, 100],
-                        "y_coords": [0, 1000, 2500],
+                        "points": [(0, 0), (50, 1000), (100, 2500)],
                     }
                 },
             },
             "variable_type": "CostCurve",
         }
     }
+
+
+def test_get_psy_fields():
+    fields = get_psy_fields()
+    assert isinstance(fields, dict)
 
 
 def test_apply_operation_table_data_basic(sample_component):
@@ -109,9 +119,7 @@ def test_apply_operation_table_data_cost_curve(sample_component):
 def test_apply_operation_table_data_fuel_curve():
     fuel_curve_component = {
         "operation_cost": {
-            "variable": {
-                "value_curve": {"function_data": {"x_coords": [0, 50, 100], "y_coords": [0, 10, 25]}}
-            },
+            "variable": {"value_curve": {"function_data": {"points": [(0, 0), (50, 10), (100, 25)]}}},
             "variable_type": "FuelCurve",
         }
     }
@@ -140,9 +148,7 @@ def test_apply_operation_table_data_no_variable():
 def test_apply_operation_table_data_unsupported_curve():
     component = {
         "operation_cost": {
-            "variable": {
-                "value_curve": {"function_data": {"x_coords": [0, 50, 100], "y_coords": [0, 1000, 2500]}}
-            },
+            "variable": {"value_curve": {"function_data": {"points": [(0, 0), (50, 10), (100, 25)]}}},
             "variable_type": "UnsupportedCurve",
         }
     }

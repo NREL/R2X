@@ -110,7 +110,6 @@
     "ramp_down": "Max Ramp Down",
     "ramp_up": "Max Ramp Up",
     "rate": "Production Rate",
-    "rating": "Rating",
     "rating_down": "Min Flow",
     "rating_up": "Max Flow",
     "reactance": "Reactance",
