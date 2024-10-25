@@ -13,6 +13,7 @@ from loguru import logger
 # Local imports
 from r2x.exporter.handler import BaseExporter, get_export_records
 from r2x.exporter.utils import (
+    apply_default_value,
     apply_flatten_key,
     apply_pint_deconstruction,
     apply_property_map,
@@ -131,7 +132,7 @@ class SiennaExporter(BaseExporter):
             records,
             partial(apply_property_map, property_map=self.property_map | key_mapping),
             partial(apply_pint_deconstruction, unit_map=self.unit_map),
-            partial(apply_unnest_key, key_map={"zone": "name"}),
+            partial(apply_unnest_key, key_map={"zone": "name", "area": "name"}),
         )
         self.system._export_dict_to_csv(
             export_records,
@@ -158,12 +159,23 @@ class SiennaExporter(BaseExporter):
             "max_reeactive_power",
             "active_power",
         ]
-        self.system.export_component_to_csv(
-            PowerLoad,
+        records = [
+            component.model_dump(exclude_none=True, mode="python", serialize_as_any=True)
+            for component in self.system.get_components(PowerLoad)
+        ]
+        key_mapping = {
+            "bus": "bus_id",
+        }
+        export_records = get_export_records(
+            records,
+            partial(apply_property_map, property_map=self.property_map | key_mapping),
+            partial(apply_pint_deconstruction, unit_map=self.unit_map),
+            partial(apply_unnest_key, key_map={"bus_id": "number"}),
+        )
+        self.system._export_dict_to_csv(
+            export_records,
             fpath=self.output_folder / fname,
             fields=output_fields,
-            unnest_key="number",
-            key_mapping={"bus": "bus_id"},
             restval="0.0",
         )
         logger.info(f"File {fname} created.")
@@ -277,6 +289,10 @@ class SiennaExporter(BaseExporter):
             partial(apply_property_map, property_map=self.property_map | key_mapping),
             partial(apply_pint_deconstruction, unit_map=self.unit_map),
             partial(apply_unnest_key, key_map={"bus_id": "number"}),
+            partial(
+                apply_default_value,
+                default_value_map={"fuel_price": 0.0, "power_factor": 1.0, "startup_cost": 0.0},
+            ),
         )
         self.system._export_dict_to_csv(
             export_records,

@@ -81,7 +81,7 @@ def test_resample_data_to_hourly():
             "month": [2, 2],
             "day": [28, 28],
             "hour": [0, 0],
-            "minute": [0, 30],
+            "period": [0, 1],
             "value": [1, 2],
         }
     )
@@ -91,20 +91,19 @@ def test_resample_data_to_hourly():
 
     input_data_2 = pl.DataFrame(
         {
-            "year": [2020, 2020, 2020],
-            "month": [2, 2, 2],
-            "day": [28, 28, 28],
-            "hour": [0, 1, 1],
-            "minute": [0, 0, 30],
-            "value": [1, None, 3],
+            "year": [2024] * 48,  # Single day, multiple periods
+            "month": [10] * 48,
+            "day": [24] * 48,
+            "period": list(range(1, 49)),  # 1-48 represents 30-minute intervals
+            "value": [10] * 48,  # Example values for each period
         }
     )
 
     result_2 = resample_data_to_hourly(input_data_2)
 
     # Check the result length and values
-    assert len(result_2) == 2  # Expecting 2 hourly values
-    assert result_2["value"].to_list() == [1.0, 3.0]  # Expected filled values
+    assert len(result_2) == 24  # Expecting 24 hourly values
+    assert result_2["value"].to_list() == [10] * 24  # Expected filled values
 
 
 @pytest.fixture

@@ -214,6 +214,50 @@ def apply_unnest_key(component: dict[str, Any], key_map: dict[str, Any]) -> dict
     }
 
 
+def apply_default_value(component: dict[str, Any], default_value_map: dict[str, Any]) -> dict[str, Any]:
+    """Unnest specific nested dictionary values based on a provided key map.
+
+    This function iterates over a dictionary (`component`) and applies default values
+    to its missing or `None` values using a `default_value_map`. For each key in
+    `default_value_map`, if the key is not present in `component` or has a `None` value,
+    it will be assigned the corresponding default value from `default_value_map`.
+
+    Parameters
+    ----------
+    component : dict[str, Any]
+        The input dictionary to process.
+    default_value_map : dict[str, Any]
+        A dictionary specifying default values. Each key in this dictionary corresponds
+        to a key in `component`, and the associated value is the default value to apply
+        if the key is missing or `None` in `component`.
+
+    Returns
+    -------
+    dict[str, Any]
+        A new dictionary with unnested values based on the key map.
+
+    Examples
+    --------
+    >>> component = {"name": "example", "year": None}
+    >>> default_value_map = {"year": 2024, "month": "M10"}
+    >>> apply_default_value(component, default_value_map)
+    {'name': 'example', 'year': 2024, 'month': 'M10'}
+
+    >>> component = {"name": "example", "year": 2023}
+    >>> default_value_map = {"year": 2024, "month": "M10"}
+    >>> apply_default_value(component, default_value_map)
+    {'name': 'example', 'year': 2023, 'month': 'M10'}
+    """
+    if not default_value_map:
+        return component
+    for key in default_value_map:
+        if key not in component:
+            component[key] = default_value_map[key]
+        if component.get(key, None) is None:
+            component[key] = default_value_map[key]
+    return component
+
+
 def get_property_magnitude(property_value, to_unit: str | None = None) -> Any:
     """Return magnitude with the given units for a pint Quantity.
 

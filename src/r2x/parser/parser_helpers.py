@@ -166,6 +166,9 @@ def fill_missing_timestamps(data_file: pl.DataFrame, hourly_time_index: pl.DataF
             upsample_data = hourly_time_index.join(data_file, on="datetime", how="left")
             return upsample_data.fill_null(strategy="forward")
 
+        case s if s.issuperset({"year", "datetime"}):
+            upsample_data = hourly_time_index.join(data_file, on="datetime", how="left")
+            return upsample_data.fill_null(strategy="forward")
         case _:
             raise ValueError("The data_file must have at least 'year' and 'month' columns.")
 

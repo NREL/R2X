@@ -1,6 +1,7 @@
 import pytest
 from pint import Quantity
 from r2x.exporter.utils import (
+    apply_default_value,
     apply_flatten_key,
     apply_property_map,
     apply_unnest_key,
@@ -148,3 +149,30 @@ def test_flatten_selected_keys():
     result4 = apply_flatten_key(d1, {"x", "y"})
     expected4 = {"x_min": 1, "x_max": 2, "y_min": 5, "y_max": 10, "z": 42}
     assert result4 == expected4
+
+
+def test_apply_default_value():
+    component = {"name": "example", "year": None}
+    default_value_map = {"year": 2024, "month": "October"}
+    result = apply_default_value(component, default_value_map)
+    assert result == {"name": "example", "year": 2024, "month": "October"}
+
+    component = {"name": "example"}
+    default_value_map = {"year": 2024, "month": "October"}
+    result = apply_default_value(component, default_value_map)
+    assert result == {"name": "example", "year": 2024, "month": "October"}
+
+    component = {"name": "example", "year": 2023}
+    default_value_map = {"year": 2024, "month": "October"}
+    result = apply_default_value(component, default_value_map)
+    assert result == {"name": "example", "year": 2023, "month": "October"}
+
+    component = {"name": "example", "year": 2023}
+    default_value_map = {}
+    result = apply_default_value(component, default_value_map)
+    assert result == {"name": "example", "year": 2023}
+
+    component = {}
+    default_value_map = {"year": 2024, "month": "October"}
+    result = apply_default_value(component, default_value_map)
+    assert result == {"year": 2024, "month": "October"}

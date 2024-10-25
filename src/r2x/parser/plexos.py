@@ -367,7 +367,11 @@ class PlexosParser(PCMParser):
             mapped_records["direction"] = ReserveDirection[plexos_reserve_map["direction"]]
 
             # Service model uses all floats
-            mapped_records["max_requirement"] = mapped_records.pop("max_requirement").magnitude
+            mapped_records["max_requirement"] = (
+                mapped_records.pop("max_requirement").magnitude
+                if mapped_records.get("max_requirement")
+                else None
+            )
             mapped_records["vors"] = mapped_records.pop("vors").magnitude
             mapped_records["duration"] = mapped_records["duration"].magnitude
             if mapped_records["time_frame"].units == "second":
@@ -1276,7 +1280,7 @@ class PlexosParser(PCMParser):
         columns_to_check = [
             column
             for column in column_type.value
-            if column in ["name", "pattern", "year", "DateTime", "month", "day", "period", "hour"]
+            if column in ["name", "pattern", "year", "datetime", "month", "day", "period", "hour"]
         ]
         if not parsed_file.filter(parsed_file.select(columns_to_check).is_duplicated()).is_empty():
             logger.warning("File {} has duplicated rows. Removing duplicates.", path)
