@@ -408,9 +408,13 @@ class PlexosParser(PCMParser):
         )
         for line in lines_pivot.iter_rows(named=True):
             line_properties_mapped = {self.property_map.get(key, key): value for key, value in line.items()}
-            line_properties_mapped["rating"] = line_properties_mapped.get("max_power_flow", None)
-            line_properties_mapped["rating_up"] = line_properties_mapped.pop("max_power_flow", None)
-            line_properties_mapped["rating_down"] = line_properties_mapped.pop("min_power_flow", None)
+            line_properties_mapped["rating"] = line_properties_mapped.get("max_power_flow", 0.0)
+            line_properties_mapped["rating_up"] = line_properties_mapped.pop("max_power_flow", 0.0)
+            line_properties_mapped["rating_down"] = line_properties_mapped.pop("min_power_flow", 0.0)
+
+            if line_properties_mapped["rating"] is None:
+                logger.warning("Skipping disabled line {}", line)
+                continue
 
             valid_fields, ext_data = field_filter(line_properties_mapped, default_model.model_fields)
 
@@ -1088,8 +1092,8 @@ class PlexosParser(PCMParser):
                 if rating.units == "percent":
                     rating = rating.to("")
                 # We override the max active power to the max rating
-                record["max_active_power"] = np.max(rating)
-                record["active_power_limits_max"] = np.max(rating)
+                record["max_active_power"] = np.nanmax(rating)
+                record["active_power_limits_max"] = np.nanmax(rating)
             else:
                 record["max_active_power"] = rating * availability
                 record["active_power_limits_max"] = rating * availability
@@ -1119,12 +1123,12 @@ class PlexosParser(PCMParser):
         assert record["base_power"] is not None
         if active_power_min := record.get("min_rated_capacity"):
             if isinstance(active_power_min, SingleTimeSeries):
-                active_power_min = np.min(active_power_min.data)
+                active_power_min = np.nanmin(active_power_min.data)
         active_power_limits_min = active_power_min or 0.0
 
         if active_power_max := record.get("max_active_power"):
             if isinstance(active_power_max, SingleTimeSeries):
-                active_power_max = np.max(active_power_max.data)
+                active_power_max = np.nanmax(active_power_max.data)
         active_power_limits_max = active_power_max or record["base_power"]
         return MinMax(active_power_limits_min, active_power_limits_max)
 
