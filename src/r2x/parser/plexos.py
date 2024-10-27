@@ -41,6 +41,7 @@ from r2x.models import (
     TransmissionInterface,
     TransmissionInterfaceMap,
 )
+from r2x.models.branch import Transformer2W
 from r2x.models.core import MinMax
 from r2x.models.costs import HydroGenerationCost, RenewableGenerationCost, ThermalGenerationCost
 from r2x.models.load import PowerLoad
@@ -215,6 +216,7 @@ class PlexosParser(PCMParser):
         self._construct_load_zones()
         self._construct_buses()
         self._construct_branches()
+        self._construct_transformers()
         self._construct_interfaces()
         self._construct_reserves()
 
@@ -318,31 +320,60 @@ class PlexosParser(PCMParser):
         )
         system_buses = self._get_model_data(system_buses)
         buses_region = self._get_model_data(region_buses)
-        buses = system_buses.pivot(  # noqa: PD010
-            index=DEFAULT_INDEX,
-            on="property_name",
-            values="property_value",
-            aggregate_function="first",
-        )
-        for idx, bus in enumerate(buses.iter_rows(named=True)):
-            mapped_bus = {self.property_map.get(key, key): value for key, value in bus.items()}
+        for idx, (bus_name, bus_data) in enumerate(system_buses.group_by("name")):
+            bus_name = bus_name[0]
+            logger.trace("Parsing bus = {}", bus_name)
 
-            valid_fields, ext_data = field_filter(mapped_bus, default_model.model_fields)
+            property_records = bus_data.to_dicts()
+            mapped_records, _ = self._parse_property_data(property_records)
+            mapped_records["name"] = bus_name
+            # mapped_records, _ = self._parse_property_data(property_records)
+
+            valid_fields, ext_data = field_filter(mapped_records, default_model.model_fields)
 
             # Get region from buses region memberships
-            region_name = buses_region.filter(pl.col("parent_object_id") == bus["object_id"])["name"].item()
+            region_name = buses_region.filter(pl.col("parent_object_id") == bus_data["object_id"].unique())[
+                "name"
+            ].item()
 
             valid_fields["load_zone"] = self.system.get_component(LoadZone, name=region_name)
 
-            # NOTE: We do not parser differenet kind of buses from Plexos
+            # We parse all the buses as PV unless in the model someone specify a bus is a slack.
+            # Plexos defines the True value of a Slack bus assigning it -1. Possible values are only 0
+            # (False), -1 (True).
             valid_fields["bus_type"] = ACBusTypes.PV
+            if mapped_records.get("Is Slack Bus") == -1:
+                valid_fields["bus_type"] = ACBusTypes.SLACK
 
             valid_fields["base_voltage"] = (
                 230.0 if not valid_fields.get("base_voltage") else valid_fields["base_voltage"]
             )
 
             valid_fields = prepare_ext_field(valid_fields, ext_data)
-            self.system.add_component(default_model(number=idx + 1, **valid_fields))
+            bus = default_model(number=idx + 1, **valid_fields)
+            self.system.add_component(bus)
+
+            if max_active_power := mapped_records.pop("max_active_power", False):
+                max_load = (
+                    np.nanmax(max_active_power.data)
+                    if isinstance(max_active_power, SingleTimeSeries)
+                    else max_active_power
+                )
+                # We only add the load if it is bigger than zero.
+                if max_load > 0:
+                    load = PowerLoad(name=f"{bus_name}", bus=bus, max_active_power=max_load)
+                    self.system.add_component(load)
+                    ts_dict = {"solve_year": self.year}
+                    if isinstance(max_active_power, SingleTimeSeries):
+                        self.system.add_time_series(max_active_power, load, **ts_dict)
+
+            ts_fields = {k: v for k, v in mapped_records.items() if isinstance(v, SingleTimeSeries)}
+            if ts_fields:
+                generator = self.system.get_component_by_label(f"{default_model.__name__}.{bus_name}")
+                ts_dict = {"solve_year": self.year}
+                for ts_name, ts in ts_fields.items():
+                    ts.variable_name = ts_name
+                    self.system.add_time_series(ts, generator, **ts_dict)
         return
 
     def _construct_reserves(self, default_model=Reserve):
@@ -434,6 +465,72 @@ class PlexosParser(PCMParser):
                 if (
                     membership[2] == line["name"]
                     and membership[5] == ClassEnum.Line.name
+                    and membership[6].replace(" ", "") == CollectionEnum.NodeTo.name
+                )
+            )[3]
+            to_bus = self.system.get_component(ACBus, to_bus_name)
+            valid_fields["from_bus"] = from_bus
+            valid_fields["to_bus"] = to_bus
+
+            valid_fields = prepare_ext_field(valid_fields, ext_data)
+            self.system.add_component(default_model(**valid_fields))
+        return
+
+    def _construct_transformers(self, default_model=Transformer2W):
+        logger.info("Creating transformers")
+        system_transformers = (pl.col("child_class_name") == ClassEnum.Transformer.value) & (
+            pl.col("parent_class_name") == ClassEnum.System.value
+        )
+        system_transformers = self._get_model_data(system_transformers)
+        transformer_pivot = system_transformers.pivot(  # noqa: PD010
+            index=DEFAULT_INDEX,
+            on="property_name",
+            values="property_value",
+            aggregate_function="first",
+        )
+        if transformer_pivot.is_empty():
+            logger.warning("No transformer objects found on the system.")
+            return
+
+        lines_pivot_memberships = self.db.get_memberships(
+            *transformer_pivot["name"].to_list(), object_class=ClassEnum.Transformer
+        )
+        for transformer in transformer_pivot.iter_rows(named=True):
+            transformer_properties_mapped = {
+                self.property_map.get(key, key): value for key, value in transformer.items()
+            }
+            transformer_properties_mapped["rating"] = transformer_properties_mapped.get(
+                "max_active_power", 0.0
+            )
+            transformer_properties_mapped["rating_up"] = transformer_properties_mapped.pop(
+                "max_power_flow", 0.0
+            )
+            transformer_properties_mapped["rating_down"] = transformer_properties_mapped.pop(
+                "min_power_flow", 0.0
+            )
+
+            if transformer_properties_mapped["rating"] is None:
+                logger.warning("Skipping disabled transformer {}", transformer)
+                continue
+
+            valid_fields, ext_data = field_filter(transformer_properties_mapped, default_model.model_fields)
+
+            from_bus_name = next(
+                membership
+                for membership in lines_pivot_memberships
+                if (
+                    membership[2] == transformer["name"]
+                    and membership[5] == ClassEnum.Transformer.name
+                    and membership[6].replace(" ", "") == CollectionEnum.NodeFrom.name
+                )
+            )[3]
+            from_bus = self.system.get_component(ACBus, from_bus_name)
+            to_bus_name = next(
+                membership
+                for membership in lines_pivot_memberships
+                if (
+                    membership[2] == transformer["name"]
+                    and membership[5] == ClassEnum.Transformer.name
                     and membership[6].replace(" ", "") == CollectionEnum.NodeTo.name
                 )
             )[3]
@@ -750,7 +847,7 @@ class PlexosParser(PCMParser):
         reserve_map = self.system.get_component(ReserveMap, name="contributing_generators")
         batteries = [battery["name"] for battery in self.system.to_records(GenericBattery)]
         if not batteries:
-            msg = "No battery objects found on the system. Skipping adding membership to buses."
+            msg = "No battery objects found on the system. Skipping adding reserve memberships"
             logger.warning(msg)
             return
         generator_memberships = self.db.get_memberships(
@@ -1331,6 +1428,10 @@ class PlexosParser(PCMParser):
         """Return a single value from the parsed file if it matches certain conditions."""
         if not len(parsed_file) == 1:
             return None
+
+        # Return if there is only a value column specified
+        if "value" in parsed_file.columns:
+            return parsed_file["value"][0]
 
         if property_name.lower() in parsed_file.columns:
             return parsed_file[property_name.lower()][0]

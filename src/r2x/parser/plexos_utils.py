@@ -27,6 +27,7 @@ class DATAFILE_COLUMNS(Enum):  # noqa: N801
 
     NV = ("name", "value")
     Y = ("year",)
+    YV = ("year", "value")
     TS_Datetime = ("datetime",)
     PV = ("pattern", "value")
     TS_NPV = ("name", "pattern", "value")
@@ -204,6 +205,8 @@ def parse_data_file(column_type: DATAFILE_COLUMNS, data_file):
     match column_type:
         case column_type.Y:
             data_file = parse_y(data_file)
+        case column_type.YV:
+            data_file = parse_yv(data_file)
         case column_type.TS_Datetime:
             data_file = parse_ts_datetime(data_file)
         case column_type.PV:
@@ -238,6 +241,10 @@ def parse_data_file(column_type: DATAFILE_COLUMNS, data_file):
 
 def parse_y(data_file):
     data_file = data_file.melt(id_vars="year", variable_name="name")
+    return data_file
+
+
+def parse_yv(data_file):
     return data_file
 
 

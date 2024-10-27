@@ -30,6 +30,7 @@ from r2x.models import (
     ReserveMap,
     Storage,
 )
+from r2x.models.branch import Transformer2W
 from r2x.utils import haskey
 
 PSY_URL = "https://raw.githubusercontent.com/NREL-Sienna/PowerSystems.jl/refs/heads/main/"
@@ -157,7 +158,6 @@ class SiennaExporter(BaseExporter):
             "reactive_power",
             "max_active_power",
             "max_reeactive_power",
-            "active_power",
         ]
         records = [
             component.model_dump(exclude_none=True, mode="python", serialize_as_any=True)
@@ -196,9 +196,10 @@ class SiennaExporter(BaseExporter):
             "x",
             "primary_shunt",
             "rate",
-            "branch_type",
             "rating_up",
             "rating_down",
+            "tap",
+            "is_transformer",
             "ext",
         ]
 
@@ -222,6 +223,12 @@ class SiennaExporter(BaseExporter):
                 apply_unnest_key,
                 key_map={"connection_points_from": "number", "connection_points_to": "number"},
             ),
+            partial(
+                lambda component, key, func: component.update({key: func(component)}) or component,
+                key="is_transformer",
+                func=lambda d: True if d["branch_type"] == Transformer2W.__name__ else False,
+            ),
+            partial(apply_default_value, default_value_map={"tap": 1.0}),
         )
         self.system._export_dict_to_csv(
             export_records,

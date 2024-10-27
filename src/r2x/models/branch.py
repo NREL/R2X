@@ -63,13 +63,11 @@ class Line(ACBranch):
 class Transformer2W(ACBranch):
     """Class representing a 2-W transformer."""
 
-    rate: Annotated[NonNegativeFloat, Field(description="Rating of the transformer.")]
-
     @classmethod
     def example(cls) -> "Transformer2W":
         return Transformer2W(
             name="Example2WTransformer",
-            rate=100,
+            rating=ActivePower(100, "MW"),
             from_bus=ACBus.example(),
             to_bus=ACBus.example(),
         )
