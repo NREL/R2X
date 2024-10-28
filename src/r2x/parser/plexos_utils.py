@@ -323,6 +323,7 @@ def parse_ts_mdp(data_file):
 def parse_ts_ymdh(data_file):
     data_file = data_file.melt(id_vars=["year", "month", "day"], variable_name="hour")
     data_file = data_file.with_columns(pl.col("hour").cast(pl.Int8))
+    data_file = data_file.sort(["year", "month", "day", "hour"])
     return data_file
 
 
