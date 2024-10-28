@@ -1300,13 +1300,6 @@ class PlexosParser(PCMParser):
         )
         regions = self._get_model_data(system_regions)
         for region, region_data in regions.group_by("name"):
-            if not len(region_data) == 1:
-                msg = (
-                    "load data has more than one row for {}. Selecting the first match. "
-                    "Check filtering of properties"
-                )
-                logger.warning(msg, region)
-
             property_records = region_data.to_dicts()
             mapped_records, _ = self._parse_property_data(property_records)
 
@@ -1384,12 +1377,8 @@ class PlexosParser(PCMParser):
         if "year" not in parsed_file.columns:
             parsed_file = parsed_file.with_columns(year=self.year)
 
-        # NOTE: Some files might have duplicated data. If so, we warn the user and drop the duplicates.
-        columns_to_check = [
-            column
-            for column in column_type.value
-            if column in ["name", "pattern", "year", "datetime", "month", "day", "period", "hour"]
-        ]
+        columns_to_check = self._create_columns_to_check(column_type)
+
         if not parsed_file.filter(parsed_file.select(columns_to_check).is_duplicated()).is_empty():
             logger.warning("File {} has duplicated rows. Removing duplicates.", path)
             parsed_file = parsed_file.unique(subset=columns_to_check).sort(pl.all())
@@ -1400,6 +1389,19 @@ class PlexosParser(PCMParser):
             "value" in parsed_file.columns
         ), f"Error: column value not found on time series file for {record_name}:{property_name}"
         return parsed_file["value"].cast(pl.Float64).to_numpy()
+
+    def _create_columns_to_check(self, column_type: DATAFILE_COLUMNS):
+        # NOTE: Some files might have duplicated data. If so, we warn the user and drop the duplicates.
+        columns_to_check = [
+            column
+            for column in column_type.value
+            if column in ["name", "pattern", "year", "datetime", "month", "day", "period", "hour"]
+        ]
+        if column_type == DATAFILE_COLUMNS.TS_YMDH:
+            columns_to_check.append("hour")
+        if column_type == DATAFILE_COLUMNS.TS_NM:
+            columns_to_check.append("month")
+        return columns_to_check
 
     def _parse_data_file(
         self,
@@ -1650,6 +1652,7 @@ class PlexosParser(PCMParser):
             case _:
                 msg = f"Record format class not yet supported. {record=}"
                 raise NotImplementedError(msg)
+
         return value
 
     def _resolve_object_id(self, object_id: int) -> int:
