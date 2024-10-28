@@ -1144,7 +1144,7 @@ class PlexosParser(PCMParser):
         self.scenarios = [scenario[0] for scenario in valid_scenarios]  # Flatten list of tuples
         return None
 
-    def _set_unit_capacity(self, record):
+    def _set_unit_capacity(self, record):  # noqa: C901
         """Set availability and active power limit TS for generators.
 
         Plexos does not have a property for base_power (MW) instead it defines it as Max Capacity. In some
@@ -1208,6 +1208,13 @@ class PlexosParser(PCMParser):
                     record["max_active_power"] = availability * record["base_power"] * rating_factor_data
                 else:
                     record["max_active_power"] = availability * max_active_power.data * rating_factor_data
+                if not isinstance(record["max_active_power"], SingleTimeSeries):
+                    record["max_active_power"] = SingleTimeSeries.from_array(
+                        record["max_active_power"].data,
+                        variable_name="max_active_power",
+                        initial_time=rating_factor.initial_time,
+                        resolution=rating_factor.resolution,
+                    )
             else:
                 record["max_active_power"] = rating_factor * record["base_power"] * availability
 
