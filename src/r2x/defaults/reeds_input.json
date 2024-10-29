@@ -93,6 +93,7 @@
     "coal-igcc": "ThermalStandard",
     "coal-new": "ThermalStandard",
     "coaloldscr": "ThermalStandard",
+    "coalolduns": "ThermalStandard",
     "coaluns": "ThermalStandard",
     "distpv": "RenewableNonDispatch",
     "egs_nearfield": "ThermalStandard",
