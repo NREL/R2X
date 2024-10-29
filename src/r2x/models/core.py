@@ -15,8 +15,8 @@ class BaseComponent(Component):
     category: Annotated[str, Field(description="Category that this component belongs to.")] | None = None
     ext: dict = Field(default_factory=dict, description="Additional information of the component.")
 
+    @computed_field  # type: ignore[prop-decorator]
     @property
-    @computed_field
     def class_type(self) -> str:
         """Create attribute that holds the class name."""
         return type(self).__name__

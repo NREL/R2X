@@ -1,89 +1,75 @@
-"""Functions related to parsers."""
+"""Plexos parser class."""
 
-from datetime import datetime, timedelta
 import importlib
+from argparse import ArgumentParser
+from collections.abc import Sequence
+from datetime import datetime, timedelta
 from importlib.resources import files
 from pathlib import Path, PureWindowsPath
-from argparse import ArgumentParser
-import pandas as pd
-import re
+from typing import Any
 
-from pint import UndefinedUnitError, Quantity
-import polars as pl
 import numpy as np
-from loguru import logger
+import polars as pl
+from infrasys.cost_curves import CostCurve, FuelCurve
 from infrasys.exceptions import ISNotStored
-from infrasys.time_series_models import SingleTimeSeries
-from infrasys.value_curves import InputOutputCurve, AverageRateCurve
-from infrasys.cost_curves import FuelCurve
 from infrasys.function_data import (
     LinearFunctionData,
     QuadraticFunctionData,
 )
-
-from r2x.units import ureg
-from r2x.api import System
-from r2x.config import Scenario
-from r2x.enums import ACBusTypes, ReserveDirection, ReserveType, PrimeMoversType
-from r2x.exceptions import ModelError, ParserError
+from infrasys.time_series_models import SingleTimeSeries
+from infrasys.value_curves import AverageRateCurve, InputOutputCurve, LinearCurve
+from loguru import logger
+from pint import Quantity
 from plexosdb import PlexosSQLite
 from plexosdb.enums import ClassEnum, CollectionEnum
-from r2x.models.costs import ThermalGenerationCost, RenewableGenerationCost, HydroGenerationCost
+
+from r2x.api import System
+from r2x.config import Scenario
+from r2x.enums import ACBusTypes, PrimeMoversType, ReserveDirection, ReserveType
+from r2x.exceptions import ModelError, ParserError
 from r2x.models import (
     ACBus,
     Generator,
     GenericBattery,
-    MonitoredLine,
-    PowerLoad,
-    Reserve,
+    HydroDispatch,
     LoadZone,
+    MonitoredLine,
+    RenewableGen,
+    Reserve,
     ReserveMap,
+    ThermalGen,
     TransmissionInterface,
     TransmissionInterfaceMap,
-    RenewableGen,
-    ThermalGen,
-    HydroDispatch,
 )
-from r2x.utils import validate_string
+from r2x.models.branch import Transformer2W
+from r2x.models.core import MinMax
+from r2x.models.costs import HydroGenerationCost, RenewableGenerationCost, ThermalGenerationCost
+from r2x.models.load import PowerLoad
+from r2x.units import ureg
+from r2x.utils import get_pint_unit, validate_string
 
-from .handler import PCMParser
+from .handler import PCMParser, csv_handler
 from .parser_helpers import (
-    handle_leap_year_adjustment,
-    fill_missing_timestamps,
-    resample_data_to_hourly,
-    filter_property_dates,
+    construct_pwl_from_quadtratic,
     field_filter,
     prepare_ext_field,
-    construct_pwl_from_quadtratic,
+    reconcile_timeseries,
 )
+from .plexos_utils import (
+    DATAFILE_COLUMNS,
+    PLEXOS_ACTION_MAP,
+    filter_property_dates,
+    get_column_enum,
+    parse_data_file,
+    time_slice_handler,
+)
+from .polars_helpers import pl_filter_year
 
 models = importlib.import_module("r2x.models")
 
 R2X_MODELS = importlib.import_module("r2x.models")
 BASE_WEATHER_YEAR = 2007
 XML_FILE_KEY = "xml_file"
-PROPERTY_SV_COLUMNS_BASIC = ["name", "value"]
-PROPERTY_SV_COLUMNS_NAMEYEAR = ["name", "year", "month", "day", "period", "value"]
-PROPERTY_TS_COLUMNS_BASIC = ["year", "month", "day", "period", "value"]
-PROPERTY_TS_COLUMNS_MULTIZONE = ["year", "month", "day", "period"]
-PROPERTY_TS_COLUMNS_PIVOT = ["year", "month", "day"]
-PROPERTY_TS_COLUMNS_YM = ["year", "month"]
-PROPERTY_TS_COLUMNS_MDP = ["month", "day", "period"]
-PROPERTY_TS_COLUMNS_MONTH_PIVOT = [
-    "name",
-    "m01",
-    "m02",
-    "m03",
-    "m04",
-    "m05",
-    "m06",
-    "m07",
-    "m08",
-    "m09",
-    "m10",
-    "m11",
-    "m12",
-]
 DEFAULT_QUERY_COLUMNS_SCHEMA = {  # NOTE: Order matters
     "membership_id": pl.Int64,
     "parent_object_id": pl.Int32,
@@ -119,12 +105,36 @@ DEFAULT_PROPERTY_COLUMNS = [
     "data_file",
     "variable",
     "action",
-    "variable_tag",
-    "variable_default",
-    "timeslice",
-    "timeslice_value",
+    # "variable_tag",
+    # "variable_default",
+    # "timeslice",
+    # "timeslice_value",
 ]
 DEFAULT_INDEX = ["object_id", "name", "category"]
+SIMPLE_QUERY_COLUMNS_SCHEMA = {
+    "parent_class_name": pl.String,
+    "child_class_name": pl.String,
+    "parent_object_id": pl.Int32,
+    "object_id": pl.Int32,
+    "name": pl.String,
+    "category": pl.String,
+    "property_name": pl.String,
+    "property_unit": pl.String,
+    "property_value": pl.Float64,
+    "band": pl.Int32,
+    "date_from": pl.String,
+    "date_to": pl.String,
+    "text": pl.String,
+    "text_class_name": pl.String,
+    "tag_timeslice": pl.String,
+    "tag_timeslice_object_id": pl.Int32,
+    "tag_datafile": pl.String,
+    "tag_datafile_object_id": pl.Int32,
+    "tag_variable": pl.String,
+    "tag_variable_object_id": pl.Int32,
+    "action": pl.String,
+    "scenario": pl.String,
+}
 
 
 def cli_arguments(parser: ArgumentParser):
@@ -134,6 +144,7 @@ def cli_arguments(parser: ArgumentParser):
         required=False,
         help="Plexos model to translate",
     )
+    return parser
 
 
 class PlexosParser(PCMParser):
@@ -144,16 +155,25 @@ class PlexosParser(PCMParser):
         assert self.config.run_folder
         self.run_folder = Path(self.config.run_folder)
         self.system = System(name=self.config.name, auto_add_composed_components=True)
-        self.property_map = self.config.defaults["plexos_input_property_map"]
-        self.device_map = self.config.defaults["plexos_device_map"]
-        self.fuel_map = self.config.defaults["plexos_fuel_map"]
-        self.device_match_string = self.config.defaults["device_name_inference_map"]
-        self.generator_models = self.config.defaults["generator_models"]
+        self.property_map = self.config.defaults["plexos_input_property_map"] or {}
+        self.device_map = self.config.defaults["plexos_device_map"] or {}
+        self.fuel_map = self.config.defaults["plexos_fuel_map"] or {}
+        self.category_map = self.config.defaults["plexos_category_map"] or {}
+        self.device_match_string = self.config.defaults["device_name_inference_map"] or {}
+        self.generator_models = self.config.defaults["generator_models"] or {}
+        self.year = self.config.solve_year
+        assert self.year
+        assert isinstance(self.year, int)
 
         # TODO(pesap): Rename exceptions to include R2X
         # https://github.com/NREL/R2X/issues/5
         # R2X needs at least one of this maps defined to correctly work.
-        if not self.fuel_map and not self.device_map and not self.device_match_string:
+        if (
+            not self.fuel_map
+            and not self.device_map
+            and not self.device_match_string
+            and not self.category_map
+        ):
             msg = (
                 "Neither `plexos_fuel_map` or `plexos_device_map` or `device_match_string` was provided. "
                 "To fix, provide any of the mappings."
@@ -166,24 +186,23 @@ class PlexosParser(PCMParser):
 
         # Extract scenario data
         model_name = getattr(self.config, "model", None)
-        logger.debug("Parsing plexos model={}", model_name)
+        logger.info("Parsing plexos model={}", model_name)
         if model_name is None:
             model_name = self._select_model_name()
         self._process_scenarios(model_name=model_name)
 
         # date from is in days since 1900, convert to year
-        date_from = self._collect_horizon_data(model_name=model_name).get("Date From")
-        if date_from is not None:
-            self.study_year: int = int((date_from / 365.25) + 1900)
-            self.config.weather_year = self.study_year
-        else:
-            if self.config.weather_year is None:
-                msg = (
-                    "Weather year can not be None if the model does not provide a year."
-                    "Check for correct model name"
-                )
-                raise ValueError(msg)
-            self.study_year = self.config.weather_year
+        if not self.year:
+            logger.debug("Getting ST year from model horizon")
+            date_from = self._collect_horizon_data(model_name=model_name).get("Date From")
+            if date_from is not None:
+                self.year = int((date_from / 365.25) + 1900)
+
+        self.hourly_time_index = pl.datetime_range(
+            datetime(self.year, 1, 1), datetime(self.year + 1, 1, 1), interval="1h", eager=True, closed="left"
+        ).to_frame("datetime")
+
+        return
 
     def build_system(self) -> System:
         """Create infrasys system."""
@@ -197,6 +216,7 @@ class PlexosParser(PCMParser):
         self._construct_load_zones()
         self._construct_buses()
         self._construct_branches()
+        self._construct_transformers()
         self._construct_interfaces()
         self._construct_reserves()
 
@@ -242,36 +262,6 @@ class PlexosParser(PCMParser):
         horizon_map = {key: value for key, value in horizon_data}
         return horizon_map
 
-    def _reconcile_timeseries(self, data_file):
-        """
-        Adjust timesseries data to match the study year datetime
-        index, such as removing or adding leap-year data.
-        """
-        date_time_column = pd.date_range(
-            start=f"1/1/{self.study_year}",
-            end=f"1/1/{self.study_year + 1}",
-            freq="1h",
-            inclusive="left",
-        )
-        leap_year = len(date_time_column) == 8784
-
-        if data_file.height in [8784, 8760]:
-            if data_file.height == 8784 and not leap_year:
-                before_feb_29 = data_file.slice(0, 1416)
-                after_feb_29 = data_file.slice(1440, len(data_file) - 1440)
-                return pl.concat([before_feb_29, after_feb_29])
-            elif data_file.height == 8760 and leap_year:
-                return handle_leap_year_adjustment(data_file)
-            return data_file
-
-        if data_file.height <= 8760:
-            return fill_missing_timestamps(data_file, date_time_column)
-
-        if data_file.height in [17568, 17520]:
-            return resample_data_to_hourly(data_file)
-
-        return data_file
-
     def _get_fuel_prices(self):
         logger.debug("Creating fuel representation")
         system_fuels = (pl.col("child_class_name") == ClassEnum.Fuel.value) & (
@@ -283,12 +273,14 @@ class PlexosParser(PCMParser):
         fuel_prices = {}
         for fuel_name, fuel_data in fuels.group_by("name"):
             fuel_name = fuel_name[0]
-            property_records = fuel_data[DEFAULT_PROPERTY_COLUMNS].to_dicts()
+            property_records = fuel_data.to_dicts()
 
             for property in property_records:
                 property.update({"property_unit": "$/MMBtu"})
 
-            mapped_records, multi_band_records = self._parse_property_data(property_records, fuel_name)
+            mapped_records, multi_band_records = self._parse_property_data(property_records)
+            if multi_band_records:
+                logger.warning("Some properties have multiple bands.")
             mapped_records["name"] = fuel_name
             fuel_prices[fuel_name] = mapped_records.get("Price", 0)
         return fuel_prices
@@ -308,7 +300,7 @@ class PlexosParser(PCMParser):
 
         region_pivot = regions.pivot(  # noqa: PD010
             index=DEFAULT_INDEX,
-            columns="property_name",
+            on="property_name",
             values="property_value",
             aggregate_function="first",
         )
@@ -328,31 +320,60 @@ class PlexosParser(PCMParser):
         )
         system_buses = self._get_model_data(system_buses)
         buses_region = self._get_model_data(region_buses)
-        buses = system_buses.pivot(  # noqa: PD010
-            index=DEFAULT_INDEX,
-            columns="property_name",
-            values="property_value",
-            aggregate_function="first",
-        )
-        for idx, bus in enumerate(buses.iter_rows(named=True)):
-            mapped_bus = {self.property_map.get(key, key): value for key, value in bus.items()}
+        for idx, (bus_name, bus_data) in enumerate(system_buses.group_by("name")):
+            bus_name = bus_name[0]
+            logger.trace("Parsing bus = {}", bus_name)
 
-            valid_fields, ext_data = field_filter(mapped_bus, default_model.model_fields)
+            property_records = bus_data.to_dicts()
+            mapped_records, _ = self._parse_property_data(property_records)
+            mapped_records["name"] = bus_name
+            # mapped_records, _ = self._parse_property_data(property_records)
+
+            valid_fields, ext_data = field_filter(mapped_records, default_model.model_fields)
 
             # Get region from buses region memberships
-            region_name = buses_region.filter(pl.col("parent_object_id") == bus["object_id"])["name"].item()
+            region_name = buses_region.filter(pl.col("parent_object_id") == bus_data["object_id"].unique())[
+                "name"
+            ].item()
 
             valid_fields["load_zone"] = self.system.get_component(LoadZone, name=region_name)
 
-            # NOTE: We do not parser differenet kind of buses from Plexos
+            # We parse all the buses as PV unless in the model someone specify a bus is a slack.
+            # Plexos defines the True value of a Slack bus assigning it -1. Possible values are only 0
+            # (False), -1 (True).
             valid_fields["bus_type"] = ACBusTypes.PV
+            if mapped_records.get("Is Slack Bus") == -1:
+                valid_fields["bus_type"] = ACBusTypes.SLACK
 
             valid_fields["base_voltage"] = (
                 230.0 if not valid_fields.get("base_voltage") else valid_fields["base_voltage"]
             )
 
             valid_fields = prepare_ext_field(valid_fields, ext_data)
-            self.system.add_component(default_model(number=idx + 1, **valid_fields))
+            bus = default_model(number=idx + 1, **valid_fields)
+            self.system.add_component(bus)
+
+            if max_active_power := mapped_records.pop("max_active_power", False):
+                max_load = (
+                    np.nanmax(max_active_power.data)
+                    if isinstance(max_active_power, SingleTimeSeries)
+                    else max_active_power
+                )
+                # We only add the load if it is bigger than zero.
+                if max_load > 0:
+                    load = PowerLoad(name=f"{bus_name}", bus=bus, max_active_power=max_load)
+                    self.system.add_component(load)
+                    ts_dict = {"solve_year": self.year}
+                    if isinstance(max_active_power, SingleTimeSeries):
+                        self.system.add_time_series(max_active_power, load, **ts_dict)
+
+            ts_fields = {k: v for k, v in mapped_records.items() if isinstance(v, SingleTimeSeries)}
+            if ts_fields:
+                generator = self.system.get_component_by_label(f"{default_model.__name__}.{bus_name}")
+                ts_dict = {"solve_year": self.year}
+                for ts_name, ts in ts_fields.items():
+                    ts.variable_name = ts_name
+                    self.system.add_time_series(ts, generator, **ts_dict)
         return
 
     def _construct_reserves(self, default_model=Reserve):
@@ -365,9 +386,9 @@ class PlexosParser(PCMParser):
 
         for reserve_name, reserve_data in system_reserves.group_by("name"):
             reserve_name = reserve_name[0]
-            logger.trace("Parsing battery = {}", reserve_name)
-            property_records = reserve_data[DEFAULT_PROPERTY_COLUMNS].to_dicts()
-            mapped_records, _ = self._parse_property_data(property_records, reserve_name)
+            logger.trace("Parsing reserve = {}", reserve_name)
+            property_records = reserve_data.to_dicts()
+            mapped_records, _ = self._parse_property_data(property_records)
             mapped_records["name"] = reserve_name
             reserve_type = validate_string(mapped_records.pop("Type", "default"))
             plexos_reserve_map = self.config.defaults["reserve_types"].get(
@@ -377,7 +398,11 @@ class PlexosParser(PCMParser):
             mapped_records["direction"] = ReserveDirection[plexos_reserve_map["direction"]]
 
             # Service model uses all floats
-            mapped_records["max_requirement"] = mapped_records.pop("max_requirement").magnitude
+            mapped_records["max_requirement"] = (
+                mapped_records.pop("max_requirement").magnitude
+                if mapped_records.get("max_requirement")
+                else None
+            )
             mapped_records["vors"] = mapped_records.pop("vors").magnitude
             mapped_records["duration"] = mapped_records["duration"].magnitude
             if mapped_records["time_frame"].units == "second":
@@ -401,19 +426,26 @@ class PlexosParser(PCMParser):
         system_lines = self._get_model_data(system_lines)
         lines_pivot = system_lines.pivot(  # noqa: PD010
             index=DEFAULT_INDEX,
-            columns="property_name",
+            on="property_name",
             values="property_value",
             aggregate_function="first",
         )
+        if lines_pivot.is_empty():
+            logger.warning("No line objects found on the system.")
+            return
 
         lines_pivot_memberships = self.db.get_memberships(
             *lines_pivot["name"].to_list(), object_class=ClassEnum.Line
         )
         for line in lines_pivot.iter_rows(named=True):
             line_properties_mapped = {self.property_map.get(key, key): value for key, value in line.items()}
-            line_properties_mapped["rating"] = line_properties_mapped.get("max_power_flow", None)
-            line_properties_mapped["rating_up"] = line_properties_mapped.pop("max_power_flow", None)
-            line_properties_mapped["rating_down"] = line_properties_mapped.pop("min_power_flow", None)
+            line_properties_mapped["rating"] = line_properties_mapped.get("max_power_flow", 0.0)
+            line_properties_mapped["rating_up"] = line_properties_mapped.pop("max_power_flow", 0.0)
+            line_properties_mapped["rating_down"] = line_properties_mapped.pop("min_power_flow", 0.0)
+
+            if line_properties_mapped["rating"] is None:
+                logger.warning("Skipping disabled line {}", line)
+                continue
 
             valid_fields, ext_data = field_filter(line_properties_mapped, default_model.model_fields)
 
@@ -444,6 +476,72 @@ class PlexosParser(PCMParser):
             self.system.add_component(default_model(**valid_fields))
         return
 
+    def _construct_transformers(self, default_model=Transformer2W):
+        logger.info("Creating transformers")
+        system_transformers = (pl.col("child_class_name") == ClassEnum.Transformer.value) & (
+            pl.col("parent_class_name") == ClassEnum.System.value
+        )
+        system_transformers = self._get_model_data(system_transformers)
+        transformer_pivot = system_transformers.pivot(  # noqa: PD010
+            index=DEFAULT_INDEX,
+            on="property_name",
+            values="property_value",
+            aggregate_function="first",
+        )
+        if transformer_pivot.is_empty():
+            logger.warning("No transformer objects found on the system.")
+            return
+
+        lines_pivot_memberships = self.db.get_memberships(
+            *transformer_pivot["name"].to_list(), object_class=ClassEnum.Transformer
+        )
+        for transformer in transformer_pivot.iter_rows(named=True):
+            transformer_properties_mapped = {
+                self.property_map.get(key, key): value for key, value in transformer.items()
+            }
+            transformer_properties_mapped["rating"] = transformer_properties_mapped.get(
+                "max_active_power", 0.0
+            )
+            transformer_properties_mapped["rating_up"] = transformer_properties_mapped.pop(
+                "max_power_flow", 0.0
+            )
+            transformer_properties_mapped["rating_down"] = transformer_properties_mapped.pop(
+                "min_power_flow", 0.0
+            )
+
+            if transformer_properties_mapped["rating"] is None:
+                logger.warning("Skipping disabled transformer {}", transformer)
+                continue
+
+            valid_fields, ext_data = field_filter(transformer_properties_mapped, default_model.model_fields)
+
+            from_bus_name = next(
+                membership
+                for membership in lines_pivot_memberships
+                if (
+                    membership[2] == transformer["name"]
+                    and membership[5] == ClassEnum.Transformer.name
+                    and membership[6].replace(" ", "") == CollectionEnum.NodeFrom.name
+                )
+            )[3]
+            from_bus = self.system.get_component(ACBus, from_bus_name)
+            to_bus_name = next(
+                membership
+                for membership in lines_pivot_memberships
+                if (
+                    membership[2] == transformer["name"]
+                    and membership[5] == ClassEnum.Transformer.name
+                    and membership[6].replace(" ", "") == CollectionEnum.NodeTo.name
+                )
+            )[3]
+            to_bus = self.system.get_component(ACBus, to_bus_name)
+            valid_fields["from_bus"] = from_bus
+            valid_fields["to_bus"] = to_bus
+
+            valid_fields = prepare_ext_field(valid_fields, ext_data)
+            self.system.add_component(default_model(**valid_fields))
+        return
+
     def _infer_model_type(self, generator_name):
         inference_mapper = self.device_match_string
         generator_name_lower = generator_name.lower()
@@ -452,7 +550,9 @@ class PlexosParser(PCMParser):
                 return device_info
         return None
 
-    def _get_fuel_pmtype(self, generator_name, fuel_name: str | None = None) -> dict[str, str]:
+    def _get_fuel_pmtype(
+        self, generator_name, fuel_name: str | None = None, category: str | None = None
+    ) -> dict[str, str]:
         """Return fuel prime mover combo based on priority.
 
         This function will return first a match using the generator name, then
@@ -464,7 +564,8 @@ class PlexosParser(PCMParser):
             Either an empty dictionary or a dictionary with fuel and prime mover type.
         """
         match_fuel_pmtype = (
-            self.device_map.get(generator_name)
+            self.category_map.get(category)
+            or self.device_map.get(generator_name)
             or self.fuel_map.get(fuel_name)
             or self._infer_model_type(generator_name)
         )
@@ -502,42 +603,54 @@ class PlexosParser(PCMParser):
                     return model
         return ""
 
-    def _construct_generators(self):
-        logger.info("Creating generators")
-        system_generators = (pl.col("child_class_name") == ClassEnum.Generator.name) & (
-            pl.col("parent_class_name") == ClassEnum.System.name
+    def _construct_generators(self):  # noqa: C901
+        """Create Plexos generator objects."""
+        logger.info("Creating generator objects")
+
+        # Filter only generator objects that belong to the system
+        # NOTE: Polars 1.1.0 can not make a comparisson between a Enum and a string column. If we convert the
+        # Enum to string it works, but we might be able to change this in a near future if polars supports it.
+        system_generators_filter = (pl.col("child_class_name") == str(ClassEnum.Generator)) & (
+            pl.col("parent_class_name") == str(ClassEnum.System)
         )
-        system_generators = self._get_model_data(system_generators)
+        system_generators = self._get_model_data(system_generators_filter)
         if self.config.feature_flags.get("plexos-csv", None):
             system_generators.write_csv("generators.csv")
 
         # NOTE: The best way to identify the type of generator on Plexos is by reading the fuel
         fuel_query = f"""
         SELECT
-            parent_obj.name AS parent_object_name,
-            child_obj.name AS fuel_name
+            parent_object.name AS parent_object_name,
+            child_object.name AS fuel_name
         FROM
             t_membership AS mem
-            LEFT JOIN t_object AS child_obj ON mem.child_object_id = child_obj.object_id
-            LEFT JOIN t_object AS parent_obj ON mem.parent_object_id = parent_obj.object_id
-            LEFT JOIN t_class AS child_cls ON child_obj.class_id = child_cls.class_id
-            LEFT JOIN t_class AS parent_cls ON parent_obj.class_id = parent_cls.class_id
+            LEFT JOIN t_object AS child_object ON mem.child_object_id = child_object.object_id
+            LEFT JOIN t_object AS parent_object ON mem.parent_object_id = parent_object.object_id
+            LEFT JOIN t_class AS child_class ON child_object.class_id = child_class.class_id
+            LEFT JOIN t_class AS parent_cls ON parent_object.class_id = parent_cls.class_id
         WHERE
-            child_cls.name = '{ClassEnum.Fuel.value}'
-            AND parent_cls.name = '{ClassEnum.Generator.value}'
+            child_class.name = '{ClassEnum.Fuel}'
+            AND parent_cls.name = '{ClassEnum.Generator}'
         """
         generator_fuel = self.db.query(fuel_query)
         generator_fuel_map = {key: value for key, value in generator_fuel}
+
         fuel_prices = self._get_fuel_prices()
 
         # Iterate over properties to create generator object
         for generator_name, generator_data in system_generators.group_by("name"):
             generator_name = generator_name[0]
 
+            category = generator_data["category"].unique()
+            if len(category) > 1:
+                msg = "Generator has more then one category. Check the dataset"
+                logger.debug(msg)
+            category = category[0]
+
             fuel_name = generator_fuel_map.get(generator_name)
             logger.trace("Parsing generator = {} with fuel type = {}", generator_name, fuel_name)
 
-            fuel_pmtype = self._get_fuel_pmtype(generator_name, fuel_name=fuel_name)
+            fuel_pmtype = self._get_fuel_pmtype(generator_name, fuel_name=fuel_name, category=category)
 
             if not fuel_pmtype:
                 msg = "Fuel mapping not found for {} with fuel_type={}"
@@ -548,9 +661,10 @@ class PlexosParser(PCMParser):
             model_map = self._get_model_type(fuel_pmtype)
             model_map = getattr(R2X_MODELS, model_map)
 
-            property_records = generator_data[DEFAULT_PROPERTY_COLUMNS].to_dicts()
+            # property_records = generator_data[DEFAULT_PROPERTY_COLUMNS].to_dicts()
+            property_records = generator_data.to_dicts()
 
-            mapped_records, multi_band_records = self._parse_property_data(property_records, generator_name)
+            mapped_records, multi_band_records = self._parse_property_data(property_records)
             mapped_records["name"] = generator_name
 
             # if multi_band_records:
@@ -565,7 +679,7 @@ class PlexosParser(PCMParser):
             if "max_active_power" not in mapped_records and "pump_load" in mapped_records:
                 mapped_records["rating"] = mapped_records["pump_load"]
 
-            mapped_records = self._set_unit_availability(mapped_records)
+            mapped_records = self._set_unit_capacity(mapped_records)
             if mapped_records is None:
                 logger.trace("Skipping disabled generator {}", generator_name)
                 # When unit availability is not set, we skip the generator
@@ -581,19 +695,17 @@ class PlexosParser(PCMParser):
                 )
                 continue
 
-            mapped_records["fuel_price"] = fuel_prices.get(generator_fuel_map.get(generator_name), 0)
+            if not mapped_records.get("fuel_price"):
+                mapped_records["fuel_price"] = fuel_prices.get(generator_fuel_map.get(generator_name), 0.0)
             mapped_records = self._construct_operating_costs(mapped_records, generator_name, model_map)
 
-            # TODO(pesap): Remove base_mva once it is not required field on PowerSystems.jl
-            # https://github.com/NREL/R2X/issues/39
-            mapped_records["base_mva"] = 1
             valid_fields, ext_data = field_filter(mapped_records, model_map.model_fields)
 
             ts_fields = {k: v for k, v in mapped_records.items() if isinstance(v, SingleTimeSeries)}
 
             valid_fields.update(
                 {
-                    ts_name: ts.data[0].as_py()  # np.mean(ts.data)
+                    ts_name: np.mean(ts.data)
                     for ts_name, ts in ts_fields.items()
                     if ts_name in valid_fields.keys()
                 }
@@ -605,10 +717,11 @@ class PlexosParser(PCMParser):
 
             if ts_fields:
                 generator = self.system.get_component_by_label(f"{model_map.__name__}.{generator_name}")
-                ts_dict = {"solve_year": self.study_year}
+                ts_dict = {"solve_year": self.year}
                 for ts_name, ts in ts_fields.items():
                     ts.variable_name = ts_name
                     self.system.add_time_series(ts, generator, **ts_dict)
+        return
 
     def _add_buses_to_generators(self):
         # Add buses to generators
@@ -676,19 +789,13 @@ class PlexosParser(PCMParser):
             battery_name = battery_name[0]
             logger.trace("Parsing battery = {}", battery_name)
 
-            property_records = battery_data[DEFAULT_PROPERTY_COLUMNS].to_dicts()
+            property_records = battery_data.to_dicts()
 
-            mapped_records, _ = self._parse_property_data(property_records, battery_name)
+            mapped_records, _ = self._parse_property_data(property_records)
             mapped_records["name"] = battery_name
-
-            if "Max Power" in mapped_records:
-                mapped_records["rating"] = mapped_records["Max Power"]
-
-            if "Capacity" in mapped_records:
-                mapped_records["storage_capacity"] = mapped_records["Capacity"]
             mapped_records["prime_mover_type"] = PrimeMoversType.BA
 
-            mapped_records = self._set_unit_availability(mapped_records)
+            mapped_records = self._set_unit_capacity(mapped_records)
             if mapped_records is None:
                 continue
 
@@ -740,7 +847,7 @@ class PlexosParser(PCMParser):
         reserve_map = self.system.get_component(ReserveMap, name="contributing_generators")
         batteries = [battery["name"] for battery in self.system.to_records(GenericBattery)]
         if not batteries:
-            msg = "No battery objects found on the system. Skipping adding membership to buses."
+            msg = "No battery objects found on the system. Skipping adding reserve memberships"
             logger.warning(msg)
             return
         generator_memberships = self.db.get_memberships(
@@ -777,14 +884,14 @@ class PlexosParser(PCMParser):
         system_interfaces = self._get_model_data(system_interfaces_mask)
         interfaces = system_interfaces.pivot(  # noqa: PD010
             index=DEFAULT_INDEX,
-            columns="property_name",
+            on="property_name",
             values="property_value",
             aggregate_function="first",
         )
 
         interface_property_map = {
             v: k
-            for k, v in self.config.defaults["plexos_property_map"].items()
+            for k, v in self.config.defaults["plexos_input_property_map"].items()
             if k in default_model.model_fields
         }
 
@@ -814,6 +921,8 @@ class PlexosParser(PCMParser):
 
         # Add lines memberships
         lines = [line["name"] for line in self.system.to_records(MonitoredLine)]
+        if not lines:
+            return
         lines_memberships = self.db.get_memberships(
             *lines,
             object_class=ClassEnum.Line,
@@ -840,111 +949,103 @@ class PlexosParser(PCMParser):
         self.system.add_component(tx_interface_map)
         return
 
-    def _construct_value_curves(self, mapped_records, generator_name):
+    def _construct_value_curves(self, record, generator_name):  # noqa: C901
         """Construct value curves for generators."""
-        if any("Heat Rate" in key or "heat_rate" in key for key in mapped_records.keys()):
-            vc = None
-            heat_rate_avg = mapped_records.get("heat_rate", None)
-            heat_rate_base = mapped_records.get("Heat Rate Base", None)
-            heat_rate_incr = mapped_records.get("Heat Rate Incr", None)
-            heat_rate_incr2 = mapped_records.get("Heat Rate Incr2", None)
+        if not any("Heat Rate" in key or "heat_rate" in key for key in record.keys()):
+            return None
+        vc = None
+        heat_rate_avg = record.get("heat_rate", None)
+        heat_rate_base = record.get("Heat Rate Base", None)
+        heat_rate_incr = record.get("Heat Rate Incr", None)
+        heat_rate_incr2 = record.get("Heat Rate Incr2", None)
 
-            if any(
-                isinstance(val, SingleTimeSeries) for val in [heat_rate_avg, heat_rate_base, heat_rate_incr]
-            ):
-                logger.warning(
-                    "Time-varying heat-rates not implemented for generator={}. Using Avg Value",
-                    generator_name,
-                )
-
-            heat_rate_avg = (
-                Quantity(
-                    heat_rate_avg.data[0].as_py(),  # np.mean(heat_rate_avg.data),
-                    units=heat_rate_avg.units,
-                )
-                if isinstance(heat_rate_avg, SingleTimeSeries)
-                else heat_rate_avg
-            )
-            heat_rate_base = (
-                Quantity(
-                    heat_rate_base.data[0].as_py(),  # np.mean(heat_rate_base.data),
-                    units=heat_rate_base.units,
-                )
-                if isinstance(heat_rate_base, SingleTimeSeries)
-                else heat_rate_base
-            )
-            heat_rate_incr = (
-                Quantity(
-                    heat_rate_incr.data[0].as_py(),  # np.mean(heat_rate_incr.data),
-                    units=heat_rate_incr.units,
-                )
-                if isinstance(heat_rate_incr, SingleTimeSeries)
-                else heat_rate_incr
+        if any(isinstance(val, SingleTimeSeries) for val in [heat_rate_avg, heat_rate_base, heat_rate_incr]):
+            logger.warning(
+                "Time-varying heat-rates not implemented for generator={}. Using median value instead",
+                generator_name,
             )
 
-            if heat_rate_incr and heat_rate_incr.units == "british_thermal_unit / kilowatt_hour":
-                heat_rate_incr = Quantity(heat_rate_incr.magnitude * 1e-3, "british_thermal_unit / watt_hour")
+        heat_rate_avg = (
+            Quantity(
+                np.median(heat_rate_avg.data),
+                units=heat_rate_avg.data.units,
+            )
+            if isinstance(heat_rate_avg, SingleTimeSeries)
+            else heat_rate_avg
+        )
+        heat_rate_base = (
+            Quantity(
+                np.median(heat_rate_base.data),
+                units=heat_rate_base.data.units,
+            )
+            if isinstance(heat_rate_base, SingleTimeSeries)
+            else heat_rate_base
+        )
+        heat_rate_incr = (
+            Quantity(
+                np.median(heat_rate_incr.data),
+                units=heat_rate_incr.data.units,
+            )
+            if isinstance(heat_rate_incr, SingleTimeSeries)
+            else heat_rate_incr
+        )
 
-            if heat_rate_avg and heat_rate_avg.units == "british_thermal_unit / kilowatt_hour":
-                heat_rate_avg = Quantity(heat_rate_avg.magnitude * 1e-3, "british_thermal_unit / watt_hour")
+        if heat_rate_incr and heat_rate_incr.units == "british_thermal_unit / kilowatt_hour":
+            heat_rate_incr = Quantity(heat_rate_incr.magnitude * 1e-3, "british_thermal_unit / watt_hour")
 
-            if heat_rate_avg:
-                fn = LinearFunctionData(proportional_term=heat_rate_avg.magnitude, constant_term=0)
-                vc = AverageRateCurve(
-                    # name=f"{generator_name}_HR",
-                    function_data=fn,
-                    initial_input=heat_rate_avg.magnitude,
-                )
-            elif heat_rate_incr2 and "** 2" in str(heat_rate_incr2.units):
-                fn = QuadraticFunctionData(
-                    quadratic_term=heat_rate_incr2.magnitude,
-                    proportional_term=heat_rate_incr.magnitude,
-                    constant_term=heat_rate_base.magnitude,
-                )
-                if self.config.feature_flags.get("quad2pwl", None):
-                    n_tranches = self.config.feature_flags.get("quad2pwl", None)
-                    fn = construct_pwl_from_quadtratic(fn, mapped_records, n_tranches)
-            elif not heat_rate_incr2 and heat_rate_incr:
-                fn = LinearFunctionData(
-                    proportional_term=heat_rate_incr.magnitude, constant_term=heat_rate_base.magnitude
-                )
-            else:
-                logger.warning("Heat Rate type not implemented for generator={}", generator_name)
-                fn = None
+        if heat_rate_avg and heat_rate_avg.units == "british_thermal_unit / kilowatt_hour":
+            heat_rate_avg = Quantity(heat_rate_avg.magnitude * 1e-3, "british_thermal_unit / watt_hour")
 
-            # if mapped_records.get("Bid-Cost Mark-up"):
-            #     bid_cost_mark_up(fn, mapped_records)
+        if heat_rate_avg:
+            fn = LinearFunctionData(proportional_term=heat_rate_avg.magnitude, constant_term=0)
+            vc = AverageRateCurve(
+                function_data=fn,
+                initial_input=heat_rate_avg.magnitude,
+            )
+        elif heat_rate_incr2 and "** 2" in str(heat_rate_incr2.units):
+            fn = QuadraticFunctionData(
+                quadratic_term=heat_rate_incr2.magnitude,
+                proportional_term=heat_rate_incr.magnitude,
+                constant_term=heat_rate_base.magnitude,
+            )
+            if self.config.feature_flags.get("quad2pwl", None):
+                n_tranches = self.config.feature_flags.get("quad2pwl", None)
+                fn = construct_pwl_from_quadtratic(fn, record, n_tranches)
+        elif not heat_rate_incr2 and heat_rate_incr:
+            fn = LinearFunctionData(
+                proportional_term=heat_rate_incr.magnitude, constant_term=heat_rate_base.magnitude
+            )
+        else:
+            logger.warning("Heat Rate type not implemented for generator={}", generator_name)
+            fn = None
 
-            if not vc:
-                vc = InputOutputCurve(
-                    # name=f"{generator_name}_HR",
-                    function_data=fn
-                )
-            mapped_records["hr_value_curve"] = vc
-        return mapped_records
+        if not vc and fn:
+            vc = InputOutputCurve(function_data=fn)
+        if not vc and fn is None:
+            vc = LinearCurve(0)
+        return vc
 
     def _construct_operating_costs(self, mapped_records, generator_name, model_map):
         """Construct operating costs from Value Curves and Operating Costs."""
-        mapped_records = self._construct_value_curves(mapped_records, generator_name)
-        hr_curve = mapped_records.get("hr_value_curve")
+        vom_cost = mapped_records.get("vom_price", 0.0)
 
         if issubclass(model_map, RenewableGen):
             mapped_records["operation_cost"] = RenewableGenerationCost()
         elif issubclass(model_map, ThermalGen):
-            if hr_curve:
-                fuel_cost = mapped_records["fuel_price"]
-                if isinstance(fuel_cost, SingleTimeSeries):
-                    fuel_cost = fuel_cost.data[0].as_py()  # np.mean(fuel_cost.data)
-                elif isinstance(fuel_cost, Quantity):
-                    fuel_cost = fuel_cost.magnitude
-                fuel_curve = FuelCurve(value_curve=hr_curve, fuel_cost=fuel_cost)
-                mapped_records["operation_cost"] = ThermalGenerationCost(
-                    variable=fuel_curve,
-                    start_up=mapped_records.get("startup_cost", 0),
-                )
-                mapped_records.pop("hr_value_curve")
+            heat_rate_curve = self._construct_value_curves(mapped_records, generator_name)
+            fuel_cost = mapped_records.get("fuel_price", 0)
+            if isinstance(fuel_cost, SingleTimeSeries):
+                fuel_cost = np.mean(fuel_cost.data)
+            elif isinstance(fuel_cost, Quantity):
+                fuel_cost = fuel_cost.magnitude
+            if heat_rate_curve:
+                cost_curve = FuelCurve(value_curve=heat_rate_curve, fuel_cost=fuel_cost)
             else:
-                logger.warning("No heat rate curve found for generator={}", generator_name)
+                cost_curve = CostCurve(value_curve=LinearCurve(0), vom_cost=LinearCurve(vom_cost))
+            mapped_records["operation_cost"] = ThermalGenerationCost(
+                variable=cost_curve,
+                start_up=mapped_records.get("startup_cost", 0),
+            )
         elif issubclass(model_map, HydroDispatch):
             mapped_records["operation_cost"] = HydroGenerationCost()
         else:
@@ -989,7 +1090,19 @@ class PlexosParser(PCMParser):
         # self.db = PlexosSQLite(xml_fname=xml_fpath)
 
         logger.trace("Getting object_id for model={}", model_name)
-        model_id = self.db.query("select object_id from t_object where name = ?", params=(model_name,))
+        model_id_query = """
+        SELECT
+            object_id
+        FROM
+            t_object
+        LEFT JOIN
+            t_class on t_class.class_id = t_object.class_id
+        WHERE t_object.name = ? and t_class.name = ?
+        """
+        model_id = self.db.query(
+            model_id_query,
+            params=(model_name, ClassEnum.Model),
+        )
         if len(model_id) > 1:
             msg = f"Multiple models with the same {model_name} returned. Check database or spelling."
             logger.debug(model_id)
@@ -1006,6 +1119,23 @@ class PlexosParser(PCMParser):
             "left join t_class as cls on cls.class_id = obj.class_id "
             f"where mem.parent_object_id = {self.model_id} and cls.name = '{ClassEnum.Scenario}'"
         )
+        valid_scenarios_query = """
+        SELECT
+            t_object.name
+        FROM
+            t_membership as membership
+        LEFT JOIN
+            t_object on t_object.object_id = membership.child_object_id
+        LEFT JOIN
+            t_class on t_object.class_id = t_class.class_id
+        WHERE
+            membership.parent_object_id = ? and
+            t_class.name = ?
+        """
+        valid_scenarios = self.db.query(
+            valid_scenarios_query,
+            params=(self.model_id, ClassEnum.Scenario),
+        )
         if not valid_scenarios:
             msg = f"{model_name=} does not have any scenario attached to it."
             logger.warning(msg)
@@ -1014,88 +1144,129 @@ class PlexosParser(PCMParser):
         self.scenarios = [scenario[0] for scenario in valid_scenarios]  # Flatten list of tuples
         return None
 
-    def _set_unit_availability(self, mapped_records):
+    def _set_unit_capacity(self, record):  # noqa: C901
+        """Set availability and active power limit TS for generators.
+
+        Plexos does not have a property for base_power (MW) instead it defines it as Max Capacity. In some
+        cases, users will derate this Max Capacity using the Rating property which overrules the Max
+        Capacity and it becomes the new max_active_power of the generator. This property can be defined as a
+        single value or a value that changes by pattern or a time series. If defined as a time series, we
+        take the get the maximum active power limits.
+
+        If the Rating property exist and is not defined for the entire time series, Plexos assumes that the
+        times not covered the Rating = 0.
+
+        Plexos allows to define a Rating Factor that is expressed as percentage of of the Max Capacity or
+        Rating if it is defined. If this property is active, we update the active_power_limits to match the
+        new rating.
+
+        Plexos models multiple generators by changing the units attributes (that gets translated to
+        available here). If the `available` key is 0, it means that the unit is deactivated from the model or
+        retired. If it is 1, it means a single unit that is active.
+
+        Notes
+        -----
+        At this point of the code, all the properties should be either a single value, or a `SingleTimeSeries`
         """
-        Set availability and active power limit TS for generators.
-        Note: variables use infrasys naming scheme, rating != plexos rating.
-        """
-        # TODO @ktehranchi: #35 Include date_from and date_to in the availability
-        # https://github.com/NREL/R2X/issues/35
-        active_power_limits_max = None
+        if not (availability := record.get("available")):
+            logger.warning("Unit `{}` is not activated on the model.", record["name"])
+            return
+        record["active_power_limits"] = self._get_active_power_limits(record)
 
-        availability = mapped_records.get("available", None)
-        if availability is not None and availability > 0:
-            # Set availability, rating, storage_capacity as multiplier of availability/'units'
-            if mapped_records.get("storage_capacity") is not None:
-                mapped_records["storage_capacity"] *= mapped_records.get("available")
-            mapped_records["rating"] = mapped_records.get("rating") * mapped_records.get("available")
-            mapped_records["available"] = 1
+        # Set availability, rating, storage_capacity as multiplier of availability/'units'
+        if (
+            record.get("storage_capacity") is not None
+            and not isinstance(record.get("available"), SingleTimeSeries)
+            and availability > 1
+        ):
+            record["storage_capacity"] *= availability
 
-            # Set active power limits
-            rating_factor = mapped_records.get("Rating Factor", 100)
-            rating_factor = self._apply_action(np.divide, rating_factor, 100)
-            rating = mapped_records.get("rating", None)
-            max_active_power = mapped_records.get("max_active_power", None)
-            min_energy_hour = mapped_records.get("Min Energy Hour", None)
-
-            if isinstance(max_active_power, dict):
-                max_active_power = self._time_slice_handler("max_active_power", max_active_power)
-
-            if max_active_power is not None:
-                units = max_active_power.units
-                val = self._apply_action(np.multiply, rating_factor, max_active_power)
-            elif rating is not None:
-                units = rating.units
-                val = self._apply_action(np.multiply, rating_factor, rating.magnitude)
+        # If we have Rating, we need to re-adjust the max_active_power and the active_power limits
+        # Rating can be either a single number or a time series.
+        if rating := record.get("rating"):
+            if isinstance(rating, SingleTimeSeries):
+                rating = rating.data
+                if rating.units == "percent":
+                    rating = rating.to("")
+                # We override the max active power to the max rating
+                record["max_active_power"] = np.nanmax(rating)
+                record["active_power_limits_max"] = np.nanmax(rating)
             else:
-                return mapped_records
-            val = self._apply_unit(val, units)
+                record["max_active_power"] = rating * availability
+                record["active_power_limits_max"] = rating * availability
 
-            if min_energy_hour is not None:
-                mapped_records["min_active_power"] = mapped_records.pop("Min Energy Hour")
-
-            if isinstance(val, SingleTimeSeries):
-                val.variable_name = "max_active_power"
-                max_ts_rating = np.max(
-                    val.data
-                )  # plexos allows dispatch above max rating. Increase rating to max dispatch value
-                active_power_limits_max = Quantity(np.maximum(max_ts_rating, rating.magnitude), rating.units)
-                self._apply_action(np.divide, val, rating.magnitude)
-                mapped_records["max_active_power"] = val
-
-            mapped_records["active_power"] = rating
-            mapped_records["active_power_limits_max"] = active_power_limits_max or rating
-
+        # If we have rating factor we apply it to the max_active power
+        # NOTE: There could be cases where the Rating Factor applies to the rating instead of the Max
+        # Capacity. For those cases, we will need to re-adjust this function.
+        if rating_factor := record.get("Rating Factor"):
             if isinstance(rating_factor, SingleTimeSeries):
-                mapped_records.pop("Rating Factor")  # rm for ext exporter
+                rating_factor_data = rating_factor.data
+                if rating_factor_data.units == "percent":
+                    rating_factor_data = rating_factor_data.to("")
+                if not (max_active_power := record.get("max_active_power")):
+                    # Order of the operation matters
+                    record["max_active_power"] = availability * record["base_power"] * rating_factor_data
+                else:
+                    record["max_active_power"] = availability * max_active_power.data * rating_factor_data
+                if not isinstance(record["max_active_power"], SingleTimeSeries):
+                    record["max_active_power"] = SingleTimeSeries.from_array(
+                        record["max_active_power"].data,
+                        variable_name="max_active_power",
+                        initial_time=rating_factor.initial_time,
+                        resolution=rating_factor.resolution,
+                    )
+            else:
+                record["max_active_power"] = rating_factor * record["base_power"] * availability
 
-        else:  # if unit field not activated in model, skip generator
-            mapped_records = None
-        return mapped_records
+        # Since we use available as if the unit is active or not, we need to set it back to 1
+        record["available"] = 1
+
+        return record
+
+    def _get_active_power_limits(self, record) -> MinMax:
+        assert record["base_power"] is not None
+        if active_power_min := record.get("min_rated_capacity"):
+            if isinstance(active_power_min, SingleTimeSeries):
+                active_power_min = np.nanmin(active_power_min.data)
+        active_power_limits_min = active_power_min or 0.0
+
+        if active_power_max := record.get("max_active_power"):
+            if isinstance(active_power_max, SingleTimeSeries):
+                active_power_max = np.nanmax(active_power_max.data)
+        active_power_limits_max = active_power_max or record["base_power"]
+        return MinMax(active_power_limits_min, active_power_limits_max)
 
     def _plexos_table_data(self) -> list[tuple]:
-        # Get objects table/membership table
-        sql_query = files("plexosdb.queries").joinpath("object_query.sql").read_text()
+        sql_query = files("plexosdb.queries").joinpath("simple_object_query.sql").read_text()
         object_data = self.db.query(sql_query)
         return object_data
 
     def _polarize_data(self, object_data: list[tuple]) -> pl.DataFrame:
-        return pl.from_records(object_data, schema=DEFAULT_QUERY_COLUMNS_SCHEMA)
+        data = pl.from_records(object_data, schema=SIMPLE_QUERY_COLUMNS_SCHEMA)
+
+        # Create a lookup map to find nested objects easily
+        object_map = data.select(["object_id", "tag_datafile", "tag_datafile_object_id"]).to_dict(
+            as_series=False
+        )
+        self.id_to_name = dict(zip(object_map["object_id"], object_map["tag_datafile"]))
+        self.id_to_tag_id = dict(zip(object_map["object_id"], object_map["tag_datafile_object_id"]))
+        return data
 
     def _get_model_data(self, data_filter) -> pl.DataFrame:
         """Filter plexos data for a given class and all scenarios in a model."""
+        assert isinstance(self.year, int)
         scenario_specific_data = None
         scenario_filter = None
         if getattr(self, "scenarios", None):
             scenario_filter = pl.col("scenario").is_in(self.scenarios)
             scenario_specific_data = self.plexos_data.filter(data_filter & scenario_filter)
-            scenario_specific_data = filter_property_dates(scenario_specific_data, self.study_year)
+            scenario_specific_data = filter_property_dates(scenario_specific_data, self.year)
 
         base_case_filter = pl.col("scenario").is_null()
         # Default is to parse data normally if there is not scenario. If scenario exist modify the filter.
         if scenario_specific_data is None:
             system_data = self.plexos_data.filter(data_filter & base_case_filter)
-            system_data = filter_property_dates(system_data, self.study_year)
+            system_data = filter_property_dates(system_data, self.year)
         else:
             # include both scenario specific and basecase data
             combined_key_base = pl.col("name") + "_" + pl.col("property_name")
@@ -1107,7 +1278,7 @@ class PlexosParser(PCMParser):
                 ~combined_key_base.is_in(combined_key_scenario) | pl.col("property_name").is_null()
             )
             base_case_data = self.plexos_data.filter(data_filter & base_case_filter)
-            base_case_data = filter_property_dates(base_case_data, self.study_year)
+            base_case_data = filter_property_dates(base_case_data, self.year)
 
             system_data = pl.concat([scenario_specific_data, base_case_data])
 
@@ -1120,144 +1291,26 @@ class PlexosParser(PCMParser):
             system_data = system_data.filter(~sys_data_key.is_in(rtk_key))
             system_data = pl.concat([system_data, rows_to_keep])
 
-        # Get System Variables
-        variable_data = None
-        variable_filter = (
-            (pl.col("child_class_name") == ClassEnum.Variable.name)
-            & (pl.col("parent_class_name") == ClassEnum.System.name)
-            & (pl.col("property_name") != "Sampling Method")
-        )
-        variable_scenario_data = None
-        if scenario_specific_data is not None and scenario_filter is not None:
-            variable_scenario_data = self.plexos_data.filter(variable_filter & scenario_filter)
-
-        if variable_scenario_data is not None:
-            variable_base_data = self.plexos_data.filter(variable_filter & pl.col("scenario").is_null())
-        else:
-            variable_base_data = self.plexos_data.filter(variable_filter & base_case_filter)
-        if variable_base_data is not None and variable_scenario_data is not None:
-            variable_data = pl.concat([variable_scenario_data, variable_base_data])
-        system_data = self._join_variable_data(system_data, variable_data)
-
-        # Get System Data Files
-        # drop column named data_file and replace it with correct scenario-filtered datafile
-        # system_data.drop_in_place("data_file")
-        datafile_data = None
-        datafile_filter = (pl.col("child_class_name") == ClassEnum.DataFile.value) & (
-            pl.col("parent_class_name") == ClassEnum.System.name
-        )
-        datafile_scenario_data = None
-        if scenario_specific_data is not None and scenario_filter is not None:
-            datafile_scenario_data = self.plexos_data.filter(datafile_filter & scenario_filter)
-
-        if datafile_scenario_data is not None:
-            datafile_base_data = self.plexos_data.filter(datafile_filter & pl.col("scenario").is_null())
-        else:
-            datafile_base_data = self.plexos_data.filter(datafile_filter & base_case_filter)
-        if datafile_base_data is not None and datafile_scenario_data is not None:
-            datafile_data = pl.concat([datafile_scenario_data, datafile_base_data])
-        system_data = self._join_datafile_data(system_data, datafile_data)
-        return system_data
-
-    def _join_datafile_data(self, system_data, datafile_data):
-        """Join system data with datafile data."""
-        # Filter datafiles
-        if datafile_data.height > 0:
-            results = []
-            grouped = datafile_data.group_by("name")
-            for group_name, group_df in grouped:
-                if group_df.height > 1:
-                    # Check if any scenario_name exists
-                    scenario_exists = group_df.filter(pl.col("scenario").is_not_null())
-
-                    if scenario_exists.height > 0:
-                        # Select the first row with a scenario_name
-                        selected_row = scenario_exists[0]
-                    else:
-                        # If no scenario_name, select the row with the lowest band_id
-                        selected_row = group_df.sort("band").head(1)[0]
-                else:
-                    # If the group has only one row, select that row
-                    selected_row = group_df[0]
-                results.append(
-                    {
-                        "name": group_name[0],
-                        "data_file_sc": selected_row["data_text"][0],
-                    }
-                )
-            datafiles_filtered = pl.DataFrame(results)
-            system_data = system_data.join(
-                datafiles_filtered, left_on="data_file_tag", right_on="name", how="left"
-            )
-            # replace system_Data["data_file"] with system_data["data_file_sc"]
-            system_data.drop_in_place("data_file")
-            system_data = system_data.rename({"data_file_sc": "data_file"})
-        else:
-            # NOTE: We might want to include this at the instead of each function call
-            system_data = system_data.with_columns(pl.lit(None).alias("data_file_sc"))
-        return system_data
-
-    def _join_variable_data(self, system_data, variable_data):
-        """Join system data with variable data."""
-        # Filter Variables
-        if variable_data is not None:
-            results = []
-            grouped = variable_data.group_by("name")
-            for group_name, group_df in grouped:
-                if group_df.height > 1:
-                    # Check if any scenario_name exists
-                    scenario_exists = group_df.filter(pl.col("scenario").is_not_null())
-
-                    if scenario_exists.height > 0:
-                        # Select the first row with a scenario_name
-                        selected_row = scenario_exists[0]
-                    else:
-                        # If no scenario_name, select the row with the lowest band_id
-                        selected_row = group_df.sort("band").head(1)[0]
-                else:
-                    # If the group has only one row, select that row
-                    selected_row = group_df[0]
-                results.append(
-                    {
-                        "name": group_name[0],
-                        "variable_name": selected_row["data_file_tag"][0],
-                        "variable": selected_row["data_file"][0],
-                        "variable_default": selected_row["property_value"][0],
-                    }
-                )
-            variables_filtered = pl.DataFrame(results)
-            system_data = system_data.join(
-                variables_filtered, left_on="variable_tag", right_on="name", how="left"
-            )
-        else:
-            # NOTE: We might want to include this at the instead of each function call
-            system_data = system_data.with_columns(
-                pl.lit(None).alias("variable"), pl.lit(None).alias("variable_name")
-            )
         return system_data
 
     def _construct_load_profiles(self):
-        logger.info("Creating load profile representation")
+        logger.info("Creating load profile time series")
         system_regions = (pl.col("child_class_name") == ClassEnum.Region.name) & (
             pl.col("parent_class_name") == ClassEnum.System.name
         )
-        regions = self._get_model_data(system_regions).filter(~pl.col("variable").is_null())
+        regions = self._get_model_data(system_regions)
         for region, region_data in regions.group_by("name"):
-            if not len(region_data) == 1:
-                msg = (
-                    "load data has more than one row for {}. Selecting the first match. "
-                    "Check filtering of properties"
+            property_records = region_data.to_dicts()
+            mapped_records, _ = self._parse_property_data(property_records)
+
+            if max_active_power := mapped_records.get("max_active_power"):
+                max_load = (
+                    np.nanmax(max_active_power.data)
+                    if isinstance(max_active_power, SingleTimeSeries)
+                    else max_active_power
                 )
-                logger.warning(msg, region)
-
-            ts = self._csv_file_handler(
-                property_name="max_active_power", property_data=region_data["variable"][0]
-            )
-            max_load = np.max(ts.data.to_numpy())
-            ts = self._apply_action(np.divide, ts, max_load)
-            if not ts:
+            else:
                 continue
-
             bus_region_membership = self.db.get_memberships(
                 region[0],
                 object_class=ClassEnum.Region,
@@ -1266,212 +1319,153 @@ class PlexosParser(PCMParser):
             )
             for bus in bus_region_membership:
                 bus = self.system.get_component(ACBus, name=bus[2])
-                load = PowerLoad(
-                    name=f"{bus.name}",
-                    bus=bus,
-                    max_active_power=float(max_load / len(bus_region_membership)) * ureg.MW,
-                )
+                load = PowerLoad(name=f"{bus.name}", bus=bus, max_active_power=max_load)
                 self.system.add_component(load)
-                ts_dict = {"solve_year": self.study_year}
-
-                self.system.add_time_series(ts, load, **ts_dict)
+                ts_dict = {"solve_year": self.year}
+                if isinstance(max_active_power, SingleTimeSeries):
+                    self.system.add_time_series(max_active_power, load, **ts_dict)
         return
 
-    def _csv_file_handler(self, property_name, property_data):
-        fpath_text = property_data
-        if "\\" in fpath_text:
-            relative_path = PureWindowsPath(fpath_text)
+    def _data_file_handler(
+        self,
+        record_name: str,
+        property_name: str,
+        fpath_str: str,
+        variable_name: str | None = None,
+        csv_file_encoding: str = "utf8",
+    ):
+        """Read time varying data from a data file."""
+        assert isinstance(self.year, int)
+
+        if encoding := self.config.feature_flags.get("csv_file_encoding"):
+            csv_file_encoding = encoding
+
+        # Adjust for Windows type of paths
+        if "\\" in fpath_str:
+            path = self.run_folder / PureWindowsPath(fpath_str)
         else:
-            relative_path = Path(fpath_text)
-        assert relative_path
-        assert self.config.run_folder
-        fpath = self.config.run_folder / relative_path
-        try:
-            data_file = pl.read_csv(
-                fpath.as_posix(), infer_schema_length=10000
-            )  # This might not work on Windows machines
-        except FileNotFoundError:
-            logger.warning("File {} not found. Skipping it.", relative_path)
+            path = self.run_folder / Path(fpath_str)
+
+        data_file = csv_handler(path, csv_file_encoding=csv_file_encoding)
+
+        column_type = get_column_enum(data_file.columns)
+        if column_type is None:
+            msg = f"Time series format {data_file.columns=} not yet supported."
+            raise NotImplementedError(msg)
+
+        parsed_file = self._parse_data_file(data_file, record_name, property_name, column_type, variable_name)
+
+        if parsed_file.is_empty():
+            msg = "Could not find record_name = {} or property_name = {} in fpath = {}. Check data file."
+            logger.warning(msg, record_name, property_name, path)
             return
 
-        # Lowercase files
-        data_file = data_file.with_columns(pl.col(pl.String).str.to_lowercase()).rename(
-            {column: column.lower() for column in data_file.columns}
-        )
+        single_value = self._get_single_value(parsed_file, record_name, property_name, variable_name)
+        if single_value is not None:
+            return single_value
 
-        single_value_data = self._retrieve_single_value_data(property_name, data_file)
-        if single_value_data is not None:
-            return single_value_data
+        if _ := self.config.feature_flags.get("simplify-heat-rate") and property_name == "Heat Rate":
+            logger.debug("Simplified time series heat rate for {}", record_name)
+            return parsed_file["value"].median()
 
-        time_series_data = self._retrieve_time_series_data(property_name, data_file)
-        if time_series_data is not None:
-            return time_series_data
-        logger.debug("Skipped file {}", relative_path)
+        # PATCH: It is not common to have a Max Capacity time series. But if it is the case, we just get the
+        # median as well
+        if property_name == "Max Capacity":
+            logger.trace("Simplified Max Capacity time series for {}", record_name)
+            return parsed_file["value"].median()
 
-    def _retrieve_single_value_data(self, property_name, data_file):
-        if (
-            all(column in data_file.columns for column in [property_name.lower(), "year"])
-            and "month" not in data_file.columns
-        ):
-            data_file = data_file.filter(pl.col("year") == self.study_year)
-            return data_file[property_name.lower()][0]
+        if "year" not in parsed_file.columns:
+            parsed_file = parsed_file.with_columns(year=self.year)
 
-        if data_file.columns[:2] == PROPERTY_SV_COLUMNS_BASIC:
-            return data_file.filter(pl.col("name") == property_name.lower())["value"][0]
+        columns_to_check = self._create_columns_to_check(column_type)
 
-        if data_file.columns == PROPERTY_SV_COLUMNS_NAMEYEAR:  # double check this case
-            filter_condition = (pl.col("year") == self.study_year) & (pl.col("name") == property_name.lower())
-            try:
-                return data_file.filter(filter_condition)["value"][0]
-            except IndexError:
-                logger.warning("Property {} missing data_file data. Skipping it.", property_name)
-                return
-        return
+        if not parsed_file.filter(parsed_file.select(columns_to_check).is_duplicated()).is_empty():
+            logger.warning("File {} has duplicated rows. Removing duplicates.", path)
+            parsed_file = parsed_file.unique(subset=columns_to_check).sort(pl.all())
 
-    def _retrieve_time_series_data(self, property_name, data_file):
-        output_columns = ["year", "month", "day", "hour", "value"]
+        # We reconcile the time series data using the hourly time stamp given by the solve year
+        parsed_file = reconcile_timeseries(parsed_file, hourly_time_index=self.hourly_time_index)
+        assert (
+            "value" in parsed_file.columns
+        ), f"Error: column value not found on time series file for {record_name}:{property_name}"
+        return parsed_file["value"].cast(pl.Float64).to_numpy()
 
-        if all(column in data_file.columns for column in PROPERTY_TS_COLUMNS_MONTH_PIVOT):
-            # Convert these types to ["pattern", "value"]
-            data_file = data_file.filter(pl.col("name") == property_name.lower())
-            data_file = data_file.melt(id_vars=["name"], variable_name="pattern")
-            data_file = data_file.select(["pattern", "value"])
+    def _create_columns_to_check(self, column_type: DATAFILE_COLUMNS):
+        # NOTE: Some files might have duplicated data. If so, we warn the user and drop the duplicates.
+        columns_to_check = [
+            column
+            for column in column_type.value
+            if column in ["name", "pattern", "year", "datetime", "month", "day", "period", "hour"]
+        ]
+        if column_type == DATAFILE_COLUMNS.TS_YMDH:
+            columns_to_check.append("hour")
+        if column_type == DATAFILE_COLUMNS.TS_NM:
+            columns_to_check.append("month")
+        return columns_to_check
 
-        match data_file.columns:
-            case ["pattern", "value"]:
-                dt = pl.datetime_range(
-                    datetime(self.study_year, 1, 1), datetime(self.study_year, 12, 31), "1h", eager=True
-                ).alias("datetime")
-                date_df = pl.DataFrame({"datetime": dt})
-                date_df = date_df.with_columns(
-                    [
-                        date_df["datetime"].dt.year().alias("year"),
-                        date_df["datetime"].dt.month().alias("month"),
-                        date_df["datetime"].dt.day().alias("day"),
-                        date_df["datetime"].dt.hour().alias("hour"),
-                    ]
-                )
+    def _parse_data_file(
+        self,
+        data_file,
+        record_name: str,
+        property_name: str,
+        column_type: DATAFILE_COLUMNS,
+        variable_name: str | None = None,
+    ) -> pl.DataFrame:
+        """Parse and filter data based on record and property names."""
+        assert isinstance(self.year, int)
+        parsed_file = parse_data_file(column_type, data_file)
 
-                data_file = data_file.with_columns(
-                    month=pl.col("pattern").str.extract(r"(\d{2})$").cast(pl.Int8)
-                )  # If other patterns exist, this will need to change.
-                data_file = date_df.join(data_file.select("month", "value"), on="month", how="inner").select(
-                    output_columns
-                )
+        if "year" in parsed_file.columns:
+            parsed_file = pl_filter_year(parsed_file, year=self.year)
 
-            case ["month", "day", "period", "value"]:
-                data_file = data_file.rename({"period": "hour"})
-                data_file = data_file.with_columns(pl.lit(self.study_year).alias("year"))
-                columns = ["year"] + [col for col in data_file.columns if col != "year"]
-                data_file = data_file.select(columns)
+            if parsed_file.is_empty():
+                logger.warning("No time series data specified for year filter. Year passed {}", self.year)
 
-            case columns if all(
-                column in columns for column in [*PROPERTY_TS_COLUMNS_MDP, property_name.lower()]
-            ):
-                data_file = data_file.with_columns(pl.lit(self.study_year).alias("year"))
-                data_file = data_file.rename({property_name.lower(): "value"})
-                data_file = data_file.rename({"period": "hour"})
-                data_file = data_file.select(output_columns)
+        if "name" in parsed_file.columns:
+            cols = [col.lower() for col in [record_name, property_name, variable_name] if col]
+            parsed_file = parsed_file.filter(pl.col("name").str.to_lowercase().is_in(cols))
 
-            case columns if all(
-                column in columns for column in [*PROPERTY_TS_COLUMNS_YM, property_name.lower()]
-            ):
-                data_file = data_file.filter(pl.col("year") == self.study_year)
-                data_file = data_file.rename({property_name.lower(): "value"})
-                data_file = data_file.with_columns(day=pl.lit(1), hour=pl.lit(0))
-                data_file = data_file.select(output_columns)
+        return parsed_file
 
-            case columns if all(column in columns for column in PROPERTY_TS_COLUMNS_BASIC):
-                data_file = data_file.rename({"period": "hour"})
-                data_file = data_file.filter(pl.col("year") == self.study_year)
+    def _get_single_value(
+        self,
+        parsed_file: pl.DataFrame,
+        record_name: str,
+        property_name: str,
+        variable_name: str | None = None,
+    ) -> float | None:
+        """Return a single value from the parsed file if it matches certain conditions."""
+        if not len(parsed_file) == 1:
+            return None
 
-            # case columns if all(column in columns for column in PROPERTY_TS_COLUMNS_MULTIZONE):
-            #     # Need to test these file types still
-            #     # Drop all columns that are not datetime columns or the region name
-            #     data_file = data_file.filter(pl.col("year") == self.study_year)
-            #     data_file = data_file.drop(
-            #         *[col for col in data_file.columns if col not in DATETIME_COLUMNS_MULTIZONE + [region]]
-            #     )
-            #     # Rename region name to hour
-            #     data_file = data_file.rename({region: "value"})
+        # Return if there is only a value column specified
+        if "value" in parsed_file.columns:
+            return parsed_file["value"][0]
 
-            case columns if all(column in columns for column in PROPERTY_TS_COLUMNS_PIVOT):
-                data_file = data_file.filter(pl.col("year") == self.study_year)
-                data_file = data_file.melt(id_vars=PROPERTY_TS_COLUMNS_PIVOT, variable_name="hour")
-                data_file = data_file.with_columns(pl.col("hour").cast(pl.Int8))
+        if property_name.lower() in parsed_file.columns:
+            return parsed_file[property_name.lower()][0]
 
-            case _:
-                logger.warning("Data file columns not supported. Skipping it.")
-                logger.warning("Datafile Columns: {}", data_file.columns)
-                return
+        names_to_check = [name for name in (record_name, property_name, variable_name) if name]
+        if any(name.lower() in parsed_file["name"] for name in names_to_check):
+            return parsed_file["value"][0]
+        return None
 
-        if data_file.is_empty():
-            logger.debug("Weather year doesn't exist in {}. Skipping it.", property_name)
-            return
+    def _parse_value(self, value: Any, variable_name: str | None = None, unit: str | None = None):
+        """Return appropiate value with units if passed."""
+        if not isinstance(value, np.ndarray | Sequence):
+            return value * ureg.Unit(unit) if unit else value
 
-        # Format to SingleTimeSeries
-        if data_file.columns == output_columns:
-            data_file = data_file.sort(["year", "month", "day", "hour"])
-            resolution = timedelta(hours=1)
-            first_row = data_file.row(0)
-            start = datetime(year=first_row[0], month=first_row[1], day=first_row[2])
-            variable_name = property_name  # Change with property mapping
-            data_file = self._reconcile_timeseries(data_file)
-            return SingleTimeSeries.from_array(
-                data=data_file["value"].cast(pl.Float64),
-                resolution=resolution,
-                initial_time=start,
-                variable_name=variable_name,
-                # Maybe change this to be the property name rather than the object name?
-            )
-        return
-
-    def _time_slice_handler(self, property_name, property_data):
-        """Deconstructs dict of timeslices into SingleTimeSeries objects."""
+        assert isinstance(self.year, int)
+        assert variable_name
+        initial_time = datetime(self.year, 1, 1)
         resolution = timedelta(hours=1)
-        initial_time = datetime(self.study_year, 1, 1)
-        date_time_array = np.arange(
-            f"{self.study_year}",
-            f"{self.study_year + 1}",
-            dtype="datetime64[h]",
-        )  # Removing 1 day to match ReEDS convention and converting into a vector
-        months = np.array([dt.astype("datetime64[M]").astype(int) % 12 + 1 for dt in date_time_array])
-        month_datetime_series = np.zeros(len(date_time_array), dtype=float)
 
-        # Helper function to parse the key patterns
-        def parse_key(key):
-            # Split by semicolons for multiple ranges
-            ranges = key.split(";")
-            month_list = []
-            for rng in ranges:
-                # Match ranges like 'M5-10' and single months like 'M1'
-                match = re.match(r"M(\d+)(?:-(\d+))?", rng)
-                if match:
-                    start_month = int(match.group(1))
-                    end_month = int(match.group(2)) if match.group(2) else start_month
-                    # Generate the list of months from the range
-                    month_list.extend(range(start_month, end_month + 1))
-            return month_list
-
-        # Fill the month_datetime_series with the property data values
-        for key, value in property_data.items():
-            months_in_key = parse_key(key)
-            # Set the value in the array for the corresponding months
-            for month in months_in_key:
-                month_datetime_series[months == month] = value.magnitude
-
-        return SingleTimeSeries.from_array(
-            month_datetime_series,
-            property_name,
+        return SingleTimeSeries(
+            data=ureg.Quantity(value, unit) if unit else value,
+            variable_name=variable_name,
             initial_time=initial_time,
             resolution=resolution,
         )
-
-    def _apply_unit(self, value, unit):
-        if isinstance(value, SingleTimeSeries):
-            value.units = str(unit)
-            return value
-        return value * unit if unit else value
 
     def _apply_action(self, action, val_a, val_b):
         val_a_data = val_a.data if isinstance(val_a, SingleTimeSeries) else val_a
@@ -1486,110 +1480,257 @@ class PlexosParser(PCMParser):
             return val_b
         return results
 
-    def _get_value(self, prop_value, unit, record, record_name):
-        """Parse Property value from record csv, timeslice, and datafiles."""
-        data_file = (
-            self._csv_file_handler(record_name, record.get("data_file")) if record.get("data_file") else None
-        )
-        if data_file is None and record.get("data_file"):
-            return None
-
-        var_default = record.get("variable_default")
-        variable = (
-            self._csv_file_handler(record.get("variable_tag"), record.get("variable"))
-            if record.get("variable")
-            else var_default
-            if var_default != 0
-            else None
-        )
-
-        actions = {
-            "×": np.multiply,  # noqa
-            "+": np.add,
-            "-": np.subtract,
-            "/": np.divide,
-            "=": lambda x, y: y,
-        }
-        action = actions[record.get("action")] if record.get("action") else None
-        timeslice_value = record.get("timeslice_value")
-
-        if variable is not None:
-            if record.get("action") == "=":
-                return self._apply_unit(variable, unit)
-            if data_file is not None:
-                return self._apply_unit(self._apply_action(action, variable, data_file), unit)
-            if prop_value is not None:
-                return self._apply_unit(self._apply_action(action, variable, prop_value), unit)
-            return self._apply_unit(variable, unit)
-
-        if data_file is not None:
-            if timeslice_value is not None and timeslice_value != -1:
-                return self._apply_unit(self._apply_action(action, data_file, timeslice_value), unit)
-            return self._apply_unit(data_file, unit)
-
-        if timeslice_value is not None and timeslice_value != -1:
-            return self._apply_unit(timeslice_value, unit)
-
-        return self._apply_unit(prop_value, unit)
-
-    def _parse_property_data(self, record_data, record_name):
+    def _parse_property_data(self, record_data: list[dict[str, Any]]):
         mapped_properties = {}
-        property_counts = {}
+        property_counts: dict[str, Any] = {}
         multi_band_properties = set()
+        timeslice_properties = set()
+        unit = None
+        mapped_property_name = None
+        property_unit_map = {}
 
         for record in record_data:
             band = record["band"]
-            timeslice = record["timeslice"]
             prop_name = record["property_name"]
             prop_value = record["property_value"]
-            unit = record["property_unit"].replace("$", "usd")
-
+            timeslice = record["tag_timeslice"]
+            unit = record["property_unit"].replace("$", "usd") if record["property_unit"] else None
             mapped_property_name = self.property_map.get(prop_name, prop_name)
-            unit = None if unit == "-" else unit
-            if unit:
-                try:
-                    unit = ureg[unit]
-                except UndefinedUnitError:
-                    unit = None
+            unit = get_pint_unit(unit)
+            property_unit_map[mapped_property_name] = unit
+            value = self._handle_record(record, prop_name, prop_value, unit)
 
-            value = self._get_value(prop_value, unit, record, record_name)
-            if value is None:
-                logger.warning("Property {} missing record data for {}. Skipping it.", prop_name, record_name)
-                continue
-
-            if timeslice is not None:
-                # Timeslice Properties
-                if mapped_property_name not in property_counts:
-                    # First Time reading timeslice
-                    nested_dict = {}
-                    nested_dict[timeslice] = value
-                    mapped_properties[mapped_property_name] = nested_dict
-                    property_counts[mapped_property_name] = {timeslice}
-                elif timeslice not in property_counts[mapped_property_name]:
-                    mapped_properties[mapped_property_name][timeslice] = value
-                    property_counts[mapped_property_name].add(timeslice)
-                    multi_band_properties.add(mapped_property_name)
+            if mapped_property_name not in property_counts:
+                mapped_properties[mapped_property_name] = value
+                property_counts[mapped_property_name] = {band}
+                property_counts[mapped_property_name] = {
+                    "count": 1,
+                    "bands": {band},
+                    "timeslices": {timeslice},
+                    "values": {band: {timeslice: value}},  # Store values by band and timeslice
+                }
             else:
-                # Standard Properties
-                if mapped_property_name not in property_counts:
-                    # First time reading basic property
-                    mapped_properties[mapped_property_name] = value
-                    property_counts[mapped_property_name] = {band}
-                else:
-                    # Multi-band properties
-                    if band not in property_counts[mapped_property_name]:
-                        new_prop_name = f"{mapped_property_name}_{band}"
-                        mapped_properties[new_prop_name] = value
-                        property_counts[mapped_property_name].add(band)
-                        multi_band_properties.add(mapped_property_name)
-                    else:
-                        logger.warning(
-                            "Property {} for {} has multiple values specified. Using the last one.",
-                            mapped_property_name,
-                            record_name,
-                        )
-                        mapped_properties[mapped_property_name] = value
+                property_counts[mapped_property_name]["count"] += 1
+                property_counts[mapped_property_name]["bands"].add(band)
+                property_counts[mapped_property_name]["timeslices"].add(timeslice)
+
+                # Capture the value for multi-band/multi-timeslice
+                if band not in property_counts[mapped_property_name]["values"]:
+                    property_counts[mapped_property_name]["values"][band] = {}
+                property_counts[mapped_property_name]["values"][band][timeslice] = value
+
+                # Handle multi-band and multi-timeslice cases
+                if len(property_counts[mapped_property_name]["bands"]) > 1:
+                    multi_band_properties.add(mapped_property_name)
+                if len(property_counts[mapped_property_name]["timeslices"]) > 1:
+                    timeslice_properties.add(mapped_property_name)
+
+                mapped_properties[mapped_property_name] = value
+        if timeslice_properties:
+            for property in timeslice_properties:
+                property_with_timeslice = property_counts[property]
+                pattern_values = []
+                for timeslice in property_with_timeslice["timeslices"]:
+                    timeslice_object_id = self.db.get_object_id(timeslice, class_name=ClassEnum.Timeslice)
+                    timeslice_data = self._filter_by_object_id(timeslice_object_id)
+                    pattern_values.append(
+                        {
+                            "pattern": timeslice_data["text"][0],
+                            "value": property_with_timeslice["values"][1][
+                                timeslice
+                            ],  # 1 since we only assume single band timeslices
+                        }
+                    )
+                mapped_properties[property] = self._parse_value(
+                    time_slice_handler(pattern_values, self.hourly_time_index),
+                    property,
+                    unit=property_unit_map[property],
+                )
         return mapped_properties, multi_band_properties
+
+    def _handle_record(self, record: dict[str, Any], prop_name, prop_value, unit):  # noqa: C901
+        """Handle record data.
+
+        Possible cases:
+        1. The record has a property value withouth any text, tag_timeslice, tag_variable, tag_datafile
+
+        Possible time series cases:
+        1. A Data File is defined for a property as a text
+        2. A Data File is defined for a property as a tag with a nested DataFile
+
+        Possible timeslice cases values:
+        1. A time slice is defined for a property as a text,
+        2. A time slice is defined for a property as a tag with a nested time slice,
+
+        Possible variable cases values. Not that variable needs to have knowdlege of the action
+        1. A variable is defined for a property as a tag with a time slice,
+        2. A variable is defined for a property as a tag with a data file
+        3. A variable is defined for a property as a tag with a nested data file
+        4. A variable is defined for a property as a text with a data file
+        5. A variable is defined for a property as a text with a nested data file
+        """
+        action = PLEXOS_ACTION_MAP.get(record["action"], None) if record.get("action") else None
+        mapped_property_name = self.property_map.get(prop_name, prop_name)
+        match record:
+            case {"text": None, "tag_timeslice": None, "tag_datafile": None, "tag_variable": None}:
+                logger.trace("Parsing standard property")
+                value = self._parse_value(prop_value, unit=unit)
+            case {"text": str(), "text_class_name": ClassEnum.DataFile}:
+                data_file_value = self._data_file_handler(record["name"], prop_name, record["text"])
+                if data_file_value is None:
+                    data_file_value = prop_value
+                value = self._parse_value(
+                    value=data_file_value, variable_name=mapped_property_name, unit=unit
+                )
+            case {"text": str(), "text_class_name": ClassEnum.Variable}:
+                nested_object_id = self.db.get_object_id(record["text"], class_name=ClassEnum.Variable)
+                nested_object_data = self._get_nested_object_data(nested_object_id)
+                if isinstance(nested_object_data, str):
+                    value = (
+                        self._data_file_handler(
+                            record_name=record["name"],
+                            property_name=prop_name,
+                            fpath_str=nested_object_data,
+                            variable_name=record["text"],
+                        )
+                        or prop_value
+                    )
+                else:
+                    value = nested_object_data
+                if action:
+                    value = self._apply_action(action, prop_value, value)
+                value = self._parse_value(value, variable_name=mapped_property_name, unit=unit)
+
+            # This case covers when the variable is used to scale a property that is nested on a data file
+            case {"tag_datafile": str(), "tag_variable": str()}:
+                nested_object_id = self.db.get_object_id(
+                    record["tag_variable"], class_name=ClassEnum.Variable
+                )
+                nested_object_data = self._get_nested_object_data(nested_object_id)
+                if isinstance(nested_object_data, str):
+                    nested_object_data = self._data_file_handler(
+                        record_name=record["name"],
+                        property_name=prop_name,
+                        fpath_str=nested_object_data,
+                        variable_name=record["tag_variable"],
+                    )
+                record["text"] = self._get_nested_object_data(record["tag_datafile_object_id"])
+                data_file_value = self._data_file_handler(
+                    record["name"], prop_name, fpath_str=str(record["text"])
+                )
+                if data_file_value is None:
+                    data_file_value = prop_value
+                value = self._apply_action(action, data_file_value, nested_object_data)
+                value = self._parse_value(value, variable_name=mapped_property_name, unit=unit)
+            case {"tag_datafile": str()}:
+                record["text"] = self._get_nested_object_data(record["tag_datafile_object_id"])
+                data_file_value = self._data_file_handler(
+                    record["name"], prop_name, fpath_str=str(record["text"])
+                )
+                if data_file_value is None:
+                    data_file_value = prop_value
+                value = self._parse_value(data_file_value, variable_name=mapped_property_name, unit=unit)
+            case {"tag_variable": str()}:
+                nested_object_id = self.db.get_object_id(
+                    record["tag_variable"], class_name=ClassEnum.Variable
+                )
+                nested_object_data = self._get_nested_object_data(nested_object_id)
+                if isinstance(nested_object_data, str):
+                    value = self._data_file_handler(
+                        record_name=record["name"],
+                        property_name=prop_name,
+                        fpath_str=nested_object_data,
+                        variable_name=record["tag_variable"],
+                    )
+                else:
+                    value = nested_object_data
+                if action:
+                    value = self._apply_action(action, prop_value, value)
+                value = self._parse_value(value, variable_name=mapped_property_name, unit=unit)
+            case {"tag_timeslice": str()}:
+                value = self._parse_value(prop_value, variable_name=mapped_property_name, unit=unit)
+            case _:
+                msg = f"Record format class not yet supported. {record=}"
+                raise NotImplementedError(msg)
+
+        return value
+
+    def _resolve_object_id(self, object_id: int) -> int:
+        """Recursively resolve the object ID by following the tag_object_id when tag_object_name is defined.
+
+        Parameters
+        ----------
+        object_id : int
+            The initial object ID to resolve.
+
+        Returns
+        -------
+        int
+            The resolved object ID that does not have a tag_object_name.
+        """
+        assert self.id_to_name
+        assert self.id_to_tag_id
+        while True:
+            tag_object_name = self.id_to_name.get(object_id)
+            if tag_object_name is None:
+                return object_id
+
+            object_id = self.id_to_tag_id[object_id]
+
+    def _filter_by_object_id(self, object_id: int) -> pl.DataFrame:
+        """Filter the DataFrame to return rows that match the specified object_id.
+
+        Parameters
+        ----------
+        object_id : int
+            The object ID to filter the DataFrame by.
+
+        Returns
+        -------
+        pl.DataFrame
+            A filtered DataFrame containing only rows where the object_id matches.
+        """
+        assert hasattr(self, "plexos_data"), "plexos data not processed yet"
+        return self._get_model_data(pl.col("object_id") == object_id)
+
+    def _get_nested_object_data(self, object_id: int) -> str | float | np.ndarray:
+        assert object_id
+        logger.trace("Unnesting nested object", object_id)
+        nested_object_id = self._resolve_object_id(object_id)
+        nested_object_data = self._filter_by_object_id(nested_object_id)
+        nested_object_records = nested_object_data.to_dicts()
+        if len(nested_object_records) > 1:
+            logger.warning("Multiple nested objects")
+            key_str = "text_class_name"
+            if all(
+                record.get(key_str) == ClassEnum.Timeslice
+                for record in nested_object_records
+                if key_str in record
+            ):
+                property_unit = {record["property_unit"] for record in nested_object_records}
+                if len(property_unit) > 1:
+                    raise NotImplementedError
+
+                unit = get_pint_unit(property_unit.pop())
+                timeslice_patterns = [
+                    {"pattern": record.get("text"), "value": ureg.Quantity(record["property_value"], unit)}
+                    for record in nested_object_records
+                ]
+
+                return time_slice_handler(
+                    records=timeslice_patterns,
+                    hourly_time_index=self.hourly_time_index,
+                )
+
+        nested_object_record = nested_object_records[0]  # Get the only element of the list
+
+        match nested_object_record["child_class_name"]:
+            case ClassEnum.DataFile:
+                return nested_object_record["text"]
+            case ClassEnum.Variable:
+                return nested_object_record["property_value"]
+            case _:
+                raise NotImplementedError
 
 
 if __name__ == "__main__":

@@ -214,6 +214,50 @@ def apply_unnest_key(component: dict[str, Any], key_map: dict[str, Any]) -> dict
     }
 
 
+def apply_default_value(component: dict[str, Any], default_value_map: dict[str, Any]) -> dict[str, Any]:
+    """Unnest specific nested dictionary values based on a provided key map.
+
+    This function iterates over a dictionary (`component`) and applies default values
+    to its missing or `None` values using a `default_value_map`. For each key in
+    `default_value_map`, if the key is not present in `component` or has a `None` value,
+    it will be assigned the corresponding default value from `default_value_map`.
+
+    Parameters
+    ----------
+    component : dict[str, Any]
+        The input dictionary to process.
+    default_value_map : dict[str, Any]
+        A dictionary specifying default values. Each key in this dictionary corresponds
+        to a key in `component`, and the associated value is the default value to apply
+        if the key is missing or `None` in `component`.
+
+    Returns
+    -------
+    dict[str, Any]
+        A new dictionary with unnested values based on the key map.
+
+    Examples
+    --------
+    >>> component = {"name": "example", "year": None}
+    >>> default_value_map = {"year": 2024, "month": "M10"}
+    >>> apply_default_value(component, default_value_map)
+    {'name': 'example', 'year': 2024, 'month': 'M10'}
+
+    >>> component = {"name": "example", "year": 2023}
+    >>> default_value_map = {"year": 2024, "month": "M10"}
+    >>> apply_default_value(component, default_value_map)
+    {'name': 'example', 'year': 2023, 'month': 'M10'}
+    """
+    if not default_value_map:
+        return component
+    for key in default_value_map:
+        if key not in component:
+            component[key] = default_value_map[key]
+        if component.get(key, None) is None:
+            component[key] = default_value_map[key]
+    return component
+
+
 def get_property_magnitude(property_value, to_unit: str | None = None) -> Any:
     """Return magnitude with the given units for a pint Quantity.
 
@@ -237,3 +281,40 @@ def get_property_magnitude(property_value, to_unit: str | None = None) -> Any:
         unit = to_unit.replace("$", "usd")  # Dollars are named usd on pint
         property_value = property_value.to(unit)
     return property_value.magnitude
+
+
+def apply_flatten_key(d: dict[str, Any], keys_to_flatten: set[str]) -> dict[str, Any]:
+    """Flatten the specified keys in a dictionary by merging their sub-keys into the main dictionary
+    with the key's name prefixed to each sub-key.
+
+    Parameters
+    ----------
+    d : dict
+        The input dictionary, where some values are dictionaries to be flattened.
+    keys_to_flatten : list of str
+        The keys in the dictionary `d` to be flattened if they contain sub-keys.
+
+    Returns
+    -------
+    dict
+        A new dictionary with the selected keys flattened. Other keys remain unchanged.
+
+    Examples
+    --------
+    >>> d = {"x": {"min": 1, "max": 2}, "y": {"min": 5, "max": 10}, "z": 42}
+    >>> flatten_selected_keys(d, ["x"])
+    {'x_min': 1, 'x_max': 2, 'y': {'min': 5, 'max': 10}, 'z': 42}
+
+    >>> flatten_selected_keys(d, ["y"])
+    {'x': {'min': 1, 'max': 2}, 'y_min': 5, 'y_max': 10, 'z': 42}
+    """
+    flattened_dict = {}
+
+    for key, val in d.items():
+        if key in keys_to_flatten and isinstance(val, dict):
+            for sub_key, sub_val in val.items():
+                flattened_dict[f"{key}_{sub_key}"] = sub_val
+        else:
+            flattened_dict[key] = val
+
+    return flattened_dict

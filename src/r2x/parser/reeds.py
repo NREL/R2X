@@ -44,7 +44,7 @@ from r2x.parser.handler import BaseParser
 from r2x.units import ActivePower, EmissionRate, Energy, Percentage, Time, ureg
 from r2x.utils import match_category, read_csv
 
-from .parser_helpers import pl_left_multi_join
+from .polars_helpers import pl_left_multi_join
 
 R2X_MODELS = importlib.import_module("r2x.models")
 UNITS = importlib.import_module("r2x.units")
@@ -99,7 +99,7 @@ class ReEDSParser(BaseParser):
     # NOTE: Rename to create topology
     def _construct_buses(self):
         logger.info("Creating bus objects.")
-        bus_data = self.get_data("hierarchy").collect()
+        bus_data = self.get_data("hierarchy")
 
         zones = bus_data["transmission_region"].unique()
         for zone in zones:
@@ -122,7 +122,7 @@ class ReEDSParser(BaseParser):
 
     def _construct_reserves(self):
         logger.info("Creating reserves objects.")
-        bus_data = self.get_data("hierarchy").collect()
+        bus_data = self.get_data("hierarchy")
 
         reserves = bus_data["transmission_region"].unique()
         for reserve in reserves:
@@ -247,7 +247,7 @@ class ReEDSParser(BaseParser):
     def _construct_emissions(self) -> None:
         """Construct emission objects."""
         logger.info("Creating emission objects")
-        emit_rates = self.get_data("emission_rates").collect()
+        emit_rates = self.get_data("emission_rates")
 
         emit_rates = emit_rates.with_columns(
             pl.concat_str([pl.col("tech"), pl.col("tech_vintage"), pl.col("region")], separator="_").alias(
@@ -440,15 +440,15 @@ class ReEDSParser(BaseParser):
                     )
                     fuel_curve = FuelCurve(
                         value_curve=heat_rate_curve,
-                        vom_cost=LinearCurve(row.get("vom_price", None)),
-                        fuel_cost=row.get("fuel_price", None),
+                        vom_cost=LinearCurve(row.get("vom_price", None) or 0.0),
+                        fuel_cost=row.get("fuel_price", None) or 0.0,
                     )
                     row["operation_cost"] = ThermalGenerationCost(
                         variable=fuel_curve,
                     )
             if issubclass(gen_model, HydroGen):
                 row["operation_cost"] = HydroGenerationCost(
-                    variable=CostCurve(value_curve=LinearCurve(row.get("vom_price", None)))
+                    variable=CostCurve(value_curve=LinearCurve(row.get("vom_price", None) or 0.0))
                 )
 
             valid_fields = {
@@ -472,7 +472,7 @@ class ReEDSParser(BaseParser):
     def _construct_load(self):
         logger.info("Adding load time series.")
 
-        bus_data = self.get_data("hierarchy").collect()
+        bus_data = self.get_data("hierarchy")
         load_df = self.get_data("load").collect()
         start = datetime(year=self.weather_year, month=1, day=1)
         resolution = timedelta(hours=1)
@@ -492,8 +492,8 @@ class ReEDSParser(BaseParser):
                 resolution=resolution,
             )
             user_dict = {"solve_year": self.config.weather_year}
-            max_load = np.max(ts.data.to_numpy())
-            load = PowerLoad(name=f"{bus.name}", bus=bus, max_active_power=max_load * ureg.MW)
+            max_load = np.max(ts.data)
+            load = PowerLoad(name=f"{bus.name}", bus=bus, max_active_power=max_load)
             self.system.add_component(load)
             self.system.add_time_series(ts, load, **user_dict)
 
@@ -503,11 +503,11 @@ class ReEDSParser(BaseParser):
             raise AttributeError("Missing weather year from the configuration class.")
 
         cf_data = self.get_data("cf").collect()
-        cf_adjustment = self.get_data("cf_adjustment").collect()
+        cf_adjustment = self.get_data("cf_adjustment")
         # NOTE: We take the median of  the seasonal adjustment since we
         # aggregate the generators by technology vintage
         cf_adjustment = cf_adjustment.group_by("tech").agg(pl.col("cf_adj").median())
-        ilr = self.get_data("ilr").collect()
+        ilr = self.get_data("ilr")
         ilr = dict(
             ilr.group_by("tech").agg(pl.col("ilr").sum()).iter_rows()
         )  # Dict is more useful here than series
@@ -526,6 +526,8 @@ class ReEDSParser(BaseParser):
         # the order of the loop and just use that to attach it to the different
         for generator in self.system.get_components(RenewableDispatch, RenewableNonDispatch):
             profile_name = generator.name  # .rsplit("_", 1)[0]
+            if "|" in cf_data.columns[1]:
+                profile_name = "|".join(profile_name.rsplit("_", 1))
             if profile_name not in cf_data.columns:
                 msg = (
                     f"{generator.__class__.__name__}:{generator.name} do not "
@@ -669,10 +671,11 @@ class ReEDSParser(BaseParser):
         hydro_cf = hydro_cf.with_columns(
             month=pl.col("month").map_elements(lambda row: month_map.get(row, row), return_dtype=pl.String)
         )
-        hydro_cap_adj = self.get_data("hydro_cap_adj")
-        hydro_cap_adj = hydro_cap_adj.with_columns(
-            season=pl.col("season").map_elements(lambda row: season_map.get(row, row), return_dtype=pl.String)
-        )
+        # hydro_cap_adj = self.get_data("hydro_cap_adj")
+        # hydro_cap_adj = hydro_cap_adj.with_columns(
+        #     season=pl.col("season").map_elements(lambda row: season_map.get(row, row),
+        #     return_dtype=pl.String)
+        # )
         hydro_minload = self.get_data("hydro_min_gen")
         hydro_minload = hydro_minload.with_columns(
             season=pl.col("season").map_elements(lambda row: season_map.get(row, row), return_dtype=pl.String)

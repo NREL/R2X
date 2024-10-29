@@ -141,6 +141,10 @@
         "type": null
       },
       {
+        "fuel": "OT",
+        "type": null
+      },
+      {
         "fuel": "OTHER_GAS",
         "type": null
       },

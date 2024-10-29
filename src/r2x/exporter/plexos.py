@@ -41,6 +41,7 @@ from r2x.models import (
     Transformer2W,
     TransmissionInterface,
 )
+from r2x.models.branch import Line
 from r2x.units import get_magnitude
 from r2x.utils import custom_attrgetter, get_enum_from_string, read_json
 
@@ -76,6 +77,16 @@ class PlexosExporter(BaseExporter):
         self.default_units = self.config.defaults["default_units"]
         self.reserve_types = self.config.defaults["reserve_types"]
 
+        if not isinstance(self.config.solve_year, int):
+            msg = "Multiple solve years are not supported yet."
+            raise NotImplementedError(msg)
+        self.year: int = self.config.solve_year
+
+        if not isinstance(self.config.weather_year, int):
+            msg = "Multiple solve years are not supported yet."
+            raise NotImplementedError(msg)
+        self.weather_year: int = self.config.weather_year
+
         if not xml_fname:
             if not (xml_fname := getattr(self.config, "master_file", None)):
                 xml_fname = files("r2x.defaults").joinpath(DEFAULT_XML_TEMPLATE)  # type: ignore
@@ -86,7 +97,7 @@ class PlexosExporter(BaseExporter):
         """Run the exporter."""
         logger.info("Starting {}", self.__class__.__name__)
 
-        self.export_data_files()
+        self.export_data_files(year=self.weather_year)
 
         # If starting w/o a reference file we add our custom models and objects
         if new_database:
@@ -201,6 +212,8 @@ class PlexosExporter(BaseExporter):
         match component_type.__name__:
             case "GenericBattery":
                 custom_map = {"active_power": "Max Power", "storage_capacity": "Capacity"}
+            case "Line":
+                custom_map = {"rating": "Max Flow"}
             case _:
                 custom_map = {}
         property_map = self.property_map | custom_map
@@ -237,7 +250,9 @@ class PlexosExporter(BaseExporter):
         class_id = self._db_mgr.get_class_id(class_enum)
         categories = [
             (class_id, rank, category or "")
-            for rank, category in enumerate(sorted(component_categories), start=existing_rank + 1)
+            for rank, category in enumerate(
+                sorted(component_categories, key=lambda x: (x is None, x)), start=existing_rank + 1
+            )
         ]
 
         # Maybe replace `t_category` with right schema.
@@ -405,6 +420,8 @@ class PlexosExporter(BaseExporter):
         # NOTE: The default line on Plexos is a `MonitoredLine` without category. If we need to add a category
         # in the future, we will uncomment the line below with the pertinent category name.
         # self.add_component_category(MonitoredLine, class_enum=ClassEnum.Line)
+        self.bulk_insert_objects(Line, class_enum=ClassEnum.Line, collection_enum=CollectionEnum.Lines)
+        self.insert_component_properties(Line, parent_class=ClassEnum.System, collection=CollectionEnum.Lines)
         self.bulk_insert_objects(
             MonitoredLine, class_enum=ClassEnum.Line, collection_enum=CollectionEnum.Lines
         )
@@ -416,7 +433,7 @@ class PlexosExporter(BaseExporter):
         collection_properties = self._db_mgr.get_valid_properties(
             collection=CollectionEnum.Lines, parent_class=ClassEnum.System, child_class=ClassEnum.Line
         )
-        for line in self.system.get_components(MonitoredLine, filter_func=lambda x: getattr(x, "ext", False)):
+        for line in self.system.get_components(MonitoredLine, Line):
             properties = get_export_properties(
                 line.ext,
                 partial(apply_property_map, property_map=self.property_map),

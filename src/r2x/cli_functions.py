@@ -2,8 +2,16 @@
 
 import argparse
 import importlib
-from importlib.resources import files
 from .__version__ import __version__
+
+FILES_WITH_ARGS = [
+    "r2x.plugins.pcm_defaults",
+    "r2x.plugins.break_gens",
+    "r2x.parser.plexos",
+    "r2x.parser.reeds",
+    "r2x.exporter.plexos",
+    "r2x.exporter.sienna",
+]
 
 
 class Flags(argparse.Action):
@@ -32,7 +40,7 @@ class Flags(argparse.Action):
 
 def get_additional_arguments(
     parser: argparse.ArgumentParser,
-    folder: str = "r2x.plugins",
+    folders: list[str] = FILES_WITH_ARGS,
 ) -> argparse.ArgumentParser:
     """Add plugin arguments to CLI.
 
@@ -41,16 +49,20 @@ def get_additional_arguments(
         plugin_list: List of plugins.
         folder: Folder that contains the plugin.
     """
-    folders = ["r2x.plugins", "r2x.parser", "r2x.exporter"]
+    for package in folders:
+        package_str = package.split(".")
+        if not len(package_str) == 3:
+            msg = (
+                "Format of `FILES_WITH_ARGS` should be `r2x.package.script` but received {package_name}."
+                "Modify `FILES_WITH_ARGS` to match the format."
+            )
+            raise NotImplementedError(msg)
 
-    for folder in folders:
-        folder_files = [folder for folder in files(folder).rglob("*.py") if "__" not in folder.name]  # type: ignore
-        package_name = folder.split(".")[1]
-        for package in folder_files:
-            package_script = importlib.import_module(f".{package.stem}", folder)
-            if hasattr(package_script, "cli_arguments"):
-                script_cli_group = parser.add_argument_group(f"{package_name.upper()}: {package.stem}")
-                package_script.cli_arguments(script_cli_group)
+        _, package_name, script_name = package_str
+        package_script = importlib.import_module(f"{package}")
+        if hasattr(package_script, "cli_arguments"):
+            script_cli_group = parser.add_argument_group(f"{package_name.upper()}: {script_name}")
+            package_script.cli_arguments(script_cli_group)
 
     return parser
 

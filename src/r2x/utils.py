@@ -30,8 +30,10 @@ import yaml
 from jsonschema import validate
 from loguru import logger
 import pint
+from pint import UndefinedUnitError
 from infrasys.base_quantity import BaseQuantity
 from r2x.models import Generator
+from r2x.units import ureg
 
 
 DEFAULT_OUTPUT_FOLDER: str = "r2x_export"
@@ -166,6 +168,7 @@ def update_dict(base_dict: dict, override_dict: ChainMap | dict | None = None) -
         "plexos_fuel_map",
         "device_name_inference_map",
         "plexos_device_map",
+        "plexos_category_map",
     ]
     for key, value in override_dict.items():
         if key in base_dict and all(replace_key not in key for replace_key in _replace_keys):
@@ -709,6 +712,19 @@ def get_property_magnitude(property_value, to_unit: str | None = None) -> float:
         unit = to_unit.replace("$", "usd")  # Dollars are named usd on pint
         property_value = property_value.to(unit)
     return property_value.magnitude
+
+
+def get_pint_unit(unit: str | None):
+    """Parse and convert unit, handling unsupported or empty units."""
+    if unit is None:
+        return
+    unit = unit.replace("$", "usd")
+    if unit != "-":
+        try:
+            return getattr(ureg[unit], "units")
+        except UndefinedUnitError:
+            return None
+    return None
 
 
 def haskey(base_dict: dict, path: list[str]) -> bool:

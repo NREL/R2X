@@ -2,6 +2,7 @@
 
 # System packages
 import json
+from operator import itemgetter
 import os
 from functools import partial
 from typing import Any
@@ -12,7 +13,13 @@ from loguru import logger
 
 # Local imports
 from r2x.exporter.handler import BaseExporter, get_export_records
-from r2x.exporter.utils import apply_pint_deconstruction, apply_property_map, apply_unnest_key
+from r2x.exporter.utils import (
+    apply_default_value,
+    apply_flatten_key,
+    apply_pint_deconstruction,
+    apply_property_map,
+    apply_unnest_key,
+)
 from r2x.models import (
     ACBranch,
     Bus,
@@ -24,10 +31,18 @@ from r2x.models import (
     ReserveMap,
     Storage,
 )
+from r2x.models.branch import Transformer2W
 from r2x.utils import haskey
 
 PSY_URL = "https://raw.githubusercontent.com/NREL-Sienna/PowerSystems.jl/refs/heads/main/"
 TABLE_DATA_SPEC = "src/descriptors/power_system_inputs.json"
+
+
+def get_psy_fields() -> dict[str, Any]:
+    """Get PSY JSON schema."""
+    request = urlopen(PSY_URL + TABLE_DATA_SPEC)
+    descriptor = json.load(request)
+    return descriptor
 
 
 class SiennaExporter(BaseExporter):
@@ -63,10 +78,10 @@ class SiennaExporter(BaseExporter):
         self.unit_map = self.config.defaults.get("sienna_unit_map", {})
         self.output_fields = self.config.defaults["table_data"]
 
-    def _get_table_data_fields(self) -> dict[str, Any]:
-        request = urlopen(PSY_URL + TABLE_DATA_SPEC)
-        descriptor = json.load(request)
-        return descriptor
+        if not isinstance(self.config.solve_year, int):
+            msg = "Multiple solve years are not supported yet."
+            raise NotImplementedError(msg)
+        self.year: int = self.config.solve_year
 
     def run(self, *args, path=None, **kwargs) -> "SiennaExporter":
         """Run sienna exporter workflow.
@@ -108,11 +123,23 @@ class SiennaExporter(BaseExporter):
             "base_voltage",
             "bus_type",
         ]
-        self.system.export_component_to_csv(
-            Bus,
+
+        records = [
+            component.model_dump(exclude_none=True, mode="python", serialize_as_any=True)
+            for component in self.system.get_components(Bus)
+        ]
+
+        key_mapping = {"number": "bus_id", "load_zone": "zone"}
+        export_records = get_export_records(
+            records,
+            partial(apply_property_map, property_map=self.property_map | key_mapping),
+            partial(apply_pint_deconstruction, unit_map=self.unit_map),
+            partial(apply_unnest_key, key_map={"zone": "name", "area": "name"}),
+        )
+        self.system._export_dict_to_csv(
+            export_records,
             fpath=self.output_folder / fname,
             fields=output_fields,
-            key_mapping={"number": "bus_id", "load_zone": "zone"},
             restval="NA",
         )
 
@@ -132,14 +159,24 @@ class SiennaExporter(BaseExporter):
             "reactive_power",
             "max_active_power",
             "max_reeactive_power",
-            "active_power",
         ]
-        self.system.export_component_to_csv(
-            PowerLoad,
+        records = [
+            component.model_dump(exclude_none=True, mode="python", serialize_as_any=True)
+            for component in self.system.get_components(PowerLoad)
+        ]
+        key_mapping = {
+            "bus": "bus_id",
+        }
+        export_records = get_export_records(
+            records,
+            partial(apply_property_map, property_map=self.property_map | key_mapping),
+            partial(apply_pint_deconstruction, unit_map=self.unit_map),
+            partial(apply_unnest_key, key_map={"bus_id": "number"}),
+        )
+        self.system._export_dict_to_csv(
+            export_records,
             fpath=self.output_folder / fname,
             fields=output_fields,
-            unnest_key="number",
-            key_mapping={"bus": "bus_id"},
             restval="0.0",
         )
         logger.info(f"File {fname} created.")
@@ -158,26 +195,47 @@ class SiennaExporter(BaseExporter):
             "connection_points_to",
             "r",
             "x",
-            "b",
+            "primary_shunt",
             "rate",
-            "branch_type",
             "rating_up",
             "rating_down",
+            "tap",
+            "is_transformer",
             "ext",
         ]
 
-        self.system.export_component_to_csv(
-            ACBranch,
+        key_mapping = {
+            "from_bus": "connection_points_from",
+            "to_bus": "connection_points_to",
+            "class_type": "branch_type",
+            "rating": "rate",
+            "b": "primary_shunt",
+        }
+
+        records = [
+            component.model_dump(exclude_none=True, mode="python", serialize_as_any=True)
+            for component in self.system.get_components(ACBranch)
+        ]
+        export_records = get_export_records(
+            records,
+            partial(apply_property_map, property_map=self.property_map | key_mapping),
+            partial(apply_pint_deconstruction, unit_map=self.unit_map),
+            partial(
+                apply_unnest_key,
+                key_map={"connection_points_from": "number", "connection_points_to": "number"},
+            ),
+            partial(
+                lambda component, key, func: component.update({key: func(component)}) or component,
+                key="is_transformer",
+                func=lambda d: True if d["branch_type"] == Transformer2W.__name__ else False,
+            ),
+            partial(apply_default_value, default_value_map={"tap": 1.0}),
+        )
+        self.system._export_dict_to_csv(
+            export_records,
             fpath=self.output_folder / fname,
             fields=output_fields,
-            unnest_key="number",
-            key_mapping={
-                "from_bus": "connection_points_from",
-                "to_bus": "connection_points_to",
-                "class_type": "branch_type",
-                "rating": "rate",
-                "b": "primary_shunt",
-            },
+            restval="NA",
         )
         logger.info(f"File {fname} created.")
 
@@ -221,7 +279,12 @@ class SiennaExporter(BaseExporter):
         fname : str
             Name of the file to be created
         """
-        key_mapping = {"bus": "bus_id"}
+        # reactive power cant be export
+
+        key_mapping = {
+            "bus": "bus_id",
+            "prime_mover_type": "unit_type",
+        }
 
         records = [
             component.model_dump(exclude_none=True, mode="python", serialize_as_any=True)
@@ -230,12 +293,19 @@ class SiennaExporter(BaseExporter):
         export_records = get_export_records(
             records,
             partial(apply_operation_table_data),
+            partial(apply_flatten_key, keys_to_flatten={"active_power_limits"}),
             partial(apply_property_map, property_map=self.property_map | key_mapping),
             partial(apply_pint_deconstruction, unit_map=self.unit_map),
             partial(apply_unnest_key, key_map={"bus_id": "number"}),
+            partial(
+                apply_default_value,
+                default_value_map={"fuel_price": 0.0, "power_factor": 1.0, "startup_cost": 0.0},
+            ),
         )
+
+        sorted_records = sorted(export_records, key=itemgetter("name"), reverse=True)
         self.system._export_dict_to_csv(
-            export_records,
+            sorted_records,
             fpath=self.output_folder / fname,
             fields=self.output_fields["generator"],
             restval="NA",
@@ -292,12 +362,17 @@ class SiennaExporter(BaseExporter):
                 output_data.append(output_dict)
 
         key_mapping = {"region": "eligible_region", "max_requirement": "requirement"} | self.property_map
-        self.system._export_dict_to_csv(
+
+        export_records = get_export_records(
             output_data,
+            partial(apply_property_map, property_map=self.property_map | key_mapping),
+            partial(apply_pint_deconstruction, unit_map=self.unit_map),
+            partial(apply_unnest_key, key_map={"eligible_region": "name"}),
+        )
+        self.system._export_dict_to_csv(
+            export_records,
             fpath=self.output_folder / fname,
             fields=output_fields,
-            key_mapping=key_mapping,
-            unnest_key="name",
             restval="NA",
         )
         logger.info(f"File {fname} created.")
@@ -339,7 +414,7 @@ class SiennaExporter(BaseExporter):
         hydro_pump = list(self.system.to_records(HydroPumpedStorage))
         storage_list = generic_storage + hydro_pump
 
-        if storage_list is None:
+        if not storage_list:
             logger.warning("No storage devices found")
             return
 
@@ -354,7 +429,11 @@ class SiennaExporter(BaseExporter):
             output_dict["input_active_power_limit_min"] = 0  # output_dict["active_power"]
             output_dict["output_active_power_limit_min"] = 0  # output_dict["active_power"]
             output_dict["active_power"] = output_dict["active_power"]
-            output_dict["bus_id"] = getattr(self.system.get_component_by_label(output_dict["bus"]), "number")
+            output_dict["bus_id"] = (
+                getattr(self.system.get_component_by_label(output_dict["bus"]), "number", None)
+                if output_dict["bus"]
+                else None
+            )
             output_dict["rating"] = output_dict["rating"]
 
             # NOTE: For pumped hydro storage we create a head and a tail
@@ -393,9 +472,7 @@ class SiennaExporter(BaseExporter):
         ts_pointers_list = []
 
         for component_type, time_series in self.time_series_objects.items():
-            csv_fpath = self.ts_directory / (
-                f"{component_type}_{self.config.name}_{self.config.weather_year}.csv"
-            )
+            csv_fpath = self.ts_directory / (f"{component_type}_{self.config.name}_{self.year}.csv")
             for i in range(len(time_series)):
                 component_name = self.time_series_name_by_type[component_type][i]
                 ts_instance = time_series[i]
@@ -407,11 +484,11 @@ class SiennaExporter(BaseExporter):
                     "category": component_type.split("_", maxsplit=1)[0],  # Component_name is the first
                     "component_name": component_name,
                     "data_file": str(csv_fpath),
-                    "normalization_factor": 1.0,
+                    "normalization_factor": "Max",
                     "resolution": resolution,
                     "name": variable_name,
-                    "scaling_factor_multiplier_module": None,
-                    "scaling_factor_multiplier": None,
+                    "scaling_factor_multiplier_module": "PowerSystems",
+                    "scaling_factor_multiplier": "get_max_active_power",
                 }
                 ts_pointers_list.append(ts_pointers)
 
@@ -426,7 +503,7 @@ class SiennaExporter(BaseExporter):
         logger.debug("Saving Sienna data and timeseries files.")
 
         # First export all time series objects
-        self.export_data_files()
+        self.export_data_files(year=self.year)
         logger.info("Saving time series data.")
 
 
@@ -479,8 +556,7 @@ def apply_operation_table_data(
     ...                     "constant_term": 100,
     ...                     "proportional_term": 20,
     ...                     "quadratic_term": 0.5,
-    ...                     "x_coords": [0, 50, 100],
-    ...                     "y_coords": [0, 1000, 2500],
+    ...                     "points": [(0, 0), (50, 1000), (100, 2500)],
     ...                 }
     ...             },
     ...         },
@@ -523,26 +599,24 @@ def apply_operation_table_data(
             component["heat_rate_a1"] = function_data["proportional_term"]
         if "quadratic_term" in function_data.keys():
             component["heat_rate_a2"] = function_data["quadratic_term"]
-        if "x_coords" in function_data.keys():
+        if "points" in function_data.keys():
             component = _variable_type_parsing(component, operation_cost)
     return component
 
 
 def _variable_type_parsing(component: dict, cost_dict: dict[str, Any]) -> dict[str, Any]:
     variable_curve = cost_dict["variable"]
-    function_data = variable_curve["value_curve"]["function_data"]
-    x_y_coords = dict(zip(function_data["x_coords"], function_data["y_coords"]))
+    x_y_coords = variable_curve["value_curve"]["function_data"]["points"]
     match cost_dict["variable_type"]:
         case "CostCurve":
-            for i, (x_coord, y_coord) in enumerate(x_y_coords.items()):
+            for i, (x_coord, y_coord) in enumerate(x_y_coords):
                 output_point_col = f"output_point_{i}"
                 component[output_point_col] = x_coord
 
                 cost_point_col = f"cost_point_{i}"
                 component[cost_point_col] = y_coord
-
         case "FuelCurve":
-            for i, (x_coord, y_coord) in enumerate(x_y_coords.items()):
+            for i, (x_coord, y_coord) in enumerate(x_y_coords):
                 output_point_col = f"output_point_{i}"
                 component[output_point_col] = x_coord
 
