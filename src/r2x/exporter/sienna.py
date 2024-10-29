@@ -2,6 +2,7 @@
 
 # System packages
 import json
+from operator import itemgetter
 import os
 from functools import partial
 from typing import Any
@@ -301,8 +302,10 @@ class SiennaExporter(BaseExporter):
                 default_value_map={"fuel_price": 0.0, "power_factor": 1.0, "startup_cost": 0.0},
             ),
         )
+
+        sorted_records = sorted(export_records, key=itemgetter("name"), reverse=True)
         self.system._export_dict_to_csv(
-            export_records,
+            sorted_records,
             fpath=self.output_folder / fname,
             fields=self.output_fields["generator"],
             restval="NA",
