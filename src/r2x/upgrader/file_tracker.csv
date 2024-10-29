@@ -15,3 +15,4 @@ fuel2tech.csv,,,,outputs/fuel2tech.csv,move_file
 heat_rate.csv,,,,outputs/heat_rate.csv,move_file
 hierarchy.csv,,,,outputs/hierarchy.csv,move_file
 tranloss.csv,,,,outputs/tranloss.csv,move_file
+outage_planned.csv,planned_outage.csv,,,,rename

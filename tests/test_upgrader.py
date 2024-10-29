@@ -3,6 +3,7 @@ import tempfile
 import pathlib
 import pandas as pd
 from r2x.upgrader.functions import apply_header, melt, move_file, rename, set_index
+from r2x.upgrader import upgrade_handler
 
 
 def test_rename(tmp_path):
@@ -99,3 +100,8 @@ def test_set_index():
     assert result is not None
     assert result.index.name == "index"
     temp_file.unlink()
+
+
+def test_upgrade_handler(tmp_path, reeds_data_folder):
+    upgrade_handler(tmp_path)
+    pass
