@@ -19,13 +19,13 @@ commands:
 
         .. code-block:: bash
 
-            git clone git@github.nrel.gov:PCM/R2X.git
+            git clone git@github.com:NREL/R2X.git
 
     .. tab:: HTTPS
 
         .. code-block:: bash
 
-            git clone https://github.nrel.gov/PCM/R2X.git
+            git clone https://github.com/NREL/R2X.git
 ```
 
 We recommend setting up a ssh key for your github account to avoid writing your password everytime you want to pull/push changes from the main branch.

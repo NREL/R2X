@@ -30,7 +30,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "pandas": ("https://pandas.pydata.org/docs", None),
-    "infrasys": ("https://pages.github.nrel.gov/CADET/infrastructure_systems/", None),
+    "infrasys": ("https://nrel.github.io/infrasys/", None),
 }
 
 html_theme = "sphinx_book_theme"
@@ -38,7 +38,7 @@ html_static_path = ["_static"]
 source_suffix = [".md"]
 
 html_theme_options = {
-    "repository_url": "https://github.nrel.gov/PCM/R2X",
+    "repository_url": "https://github.com/NREL/R2X",
     "path_to_docs": "docs/source/",
     "show_toc_level": 3,
     "use_source_button": True,

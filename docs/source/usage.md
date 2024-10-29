@@ -52,7 +52,7 @@ Althought, we recognize its functionality, we recommend using the CLI +
 configuration file since it is more easily editable by third-party software.
 ```
 
-Create cases_*.csv file with your scenario specifications. (Copy [cases_default.csv](https://github.nrel.gov/PCM/R2X/blob/main/cases_test.csv) as template).
+Create cases_*.csv file with your scenario specifications. (Copy [cases_default.csv](https://github.com/NREL/R2X/blob/main/cases_test.csv) as template).
 
 Each scenario you are running should have its own column, starting with Column
 D Default values in column B are used for all scenarios unless overwritten in

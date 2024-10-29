@@ -479,7 +479,7 @@ class SiennaExporter(BaseExporter):
                 resolution = ts_instance.resolution.seconds
                 variable_name = self.property_map.get(ts_instance.variable_name, ts_instance.variable_name)
                 # TODO(pedro): check if the time series data is pre normalized
-                # https://github.nrel.gov/PCM/R2X/issues/417
+                # https://github.com/NREL/R2X/issues/417
                 ts_pointers = {
                     "category": component_type.split("_", maxsplit=1)[0],  # Component_name is the first
                     "component_name": component_name,

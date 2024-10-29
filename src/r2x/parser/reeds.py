@@ -396,7 +396,7 @@ class ReEDSParser(BaseParser):
             row["name"] = name
 
             # TODO(pesap): Add prime mover type enums to reeds parser.
-            # https://github.nrel.gov/PCM/R2X/issues/345
+            # https://github.com/NREL/R2X/issues/345
             # NOTE: This should be prime mover type enums.
             tech_fuel_pm_map = self.config.defaults["tech_fuel_pm_map"]
             row["prime_mover_type"] = (

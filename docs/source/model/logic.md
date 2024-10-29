@@ -8,7 +8,7 @@ create a standarized representation of the grid that can be used to convert from
 models.
 
 For creating the baseline system, we use
-[infrasys](https://pages.github.nrel.gov/CADET/infrastructure_systems/), a python package that
+[infrasys](https://nrel.github.io/infrasys/), a python package that
 implements a data store for components and time series that allows for seamless data model
 migration.
 

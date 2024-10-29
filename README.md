@@ -18,7 +18,7 @@
 
 ## Table of contents
 * [Quick Start](#quick-start)
-* [Developer Guide](https://pages.github.nrel.gov/PCM/R2X/dev/develop.html)
+* [Developer Guide](https://nrel.github.io/R2X/dev/develop.html)
 * [Roadmap](#roadmap)
 * [Compatibility](#compatibility)
 
@@ -62,10 +62,10 @@ pre-commit install
 
 If you're curious about what we're working on, check out the roadmap:
 
-- [Active issues](https://github.nrel.gov/PCM/R2X/issues?q=is%3Aopen+is%3Aissue+label%3A%22Working+on+it+%F0%9F%92%AA%22+sort%3Aupdated-asc): Issues that we are actively working on.
-- [Prioritized backlog](https://github.nrel.gov/PCM/R2X/issues?q=is%3Aopen+is%3Aissue+label%3ABacklog): Issues we'll be working on next.
-- [Nice-to-have](https://github.nrel.gov/PCM/R2X/labels/Optional): Nice to have features or Issues to fix. Anyone can start working on (please let us know before you do).
-- [Ideas](https://github.nrel.gov/PCM/R2X/issues?q=is%3Aopen+is%3Aissue+label%3AIdea): Future work or ideas for R2X.
+- [Active issues](https://github.com/NREL/R2X/issues?q=is%3Aopen+is%3Aissue+label%3A%22Working+on+it+%F0%9F%92%AA%22+sort%3Aupdated-asc): Issues that we are actively working on.
+- [Prioritized backlog](https://github.com/NREL/R2X/issues?q=is%3Aopen+is%3Aissue+label%3ABacklog): Issues we'll be working on next.
+- [Nice-to-have](https://github.com/NREL/R2X/labels/Optional): Nice to have features or Issues to fix. Anyone can start working on (please let us know before you do).
+- [Ideas](https://github.com/NREL/R2X/issues?q=is%3Aopen+is%3Aissue+label%3AIdea): Future work or ideas for R2X.
 
 
 ## Compatibility
