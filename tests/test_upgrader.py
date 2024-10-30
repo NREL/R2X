@@ -1,6 +1,7 @@
 import csv
 import tempfile
 import pathlib
+import shutil
 import pandas as pd
 from r2x.upgrader.functions import apply_header, melt, move_file, rename, set_index
 from r2x.upgrader import upgrade_handler
@@ -103,5 +104,9 @@ def test_set_index():
 
 
 def test_upgrade_handler(tmp_path, reeds_data_folder):
-    upgrade_handler(tmp_path)
+    # Move data to new folder to not create backup on the main repo
+    reeds_tmp_path = tmp_path / "reeds_folder"
+    shutil.copytree(reeds_data_folder, tmp_path / "reeds_folder")
+
+    upgrade_handler(reeds_tmp_path)
     pass
