@@ -14,6 +14,7 @@ from r2x.exporter.handler import get_exporter
 # Module level imports
 from .config import Configuration, Scenario
 from .exporter import exporter_list
+from .upgrader import upgrade_handler
 from .parser import parser_list
 from .parser.handler import BaseParser, get_parser_data
 from .utils import (
@@ -48,9 +49,7 @@ def run_parser(config: Scenario, **kwargs):
     assert config.run_folder
     assert config.input_model
     if getattr(config, "upgrade", None):
-        # Here is the logic to run the upgrader
-        # upgrader(config.run_folder, save=True)
-        pass
+        upgrade_handler(config.run_folder)
 
     # Initialize parser
     parser_class = parser_list.get(config.input_model)
