@@ -65,37 +65,34 @@ def update_system(
     if not config.output_model == "plexos":
         msg = "Plugin `emission_cap.py` is not compatible with a model that is not Plexos."
         raise NotImplementedError(msg)
-    logger.info("Adding emission cap.")
 
-    emission_object = EmissionType.CO2
+    logger.info("Adding emission cap...")
+
+    if emission_cap is not None:
+        logger.debug("Using emission cap value from CLI. Setting emission cap to {}", emission_cap)
+
+    emission_object = EmissionType.CO2  #  This is the default emission object.
     if not any(component.emission_type == emission_object for component in system.get_components(Emission)):
         logger.warning("Did not find any emission type to apply emission_cap")
         return system
 
-    if parser is not None and config.input_model == "reeds-US":
+    if parser is not None and config.input_model == "reeds-US" and emission_cap is None:
         assert parser.data.get("switches") is not None, "Missing switches file from run folder."
         switches = {key: validate_string(value) for key, value in parser.data["switches"].iter_rows()}
         emission_object = EmissionType.CO2E if switches["gsw_annualcapco2e"] else EmissionType.CO2
-        cap_value = parser.data.get("co2_cap")
-        cap_value = parser.data["co2_cap"]["value"].item()
+        assert parser.data.get("co2_cap", None) is not None, "co2_cap not found from ReEDS parser"
+        emission_cap = parser.data["co2_cap"]["value"].item()
 
-    if emission_cap is not None:
-        logger.warning("Overriding cap value using CLI. Changing from {} to {}", cap_value, emission_cap)
-        cap_value = emission_cap
-
-    if cap_value is None and not emission_cap:
-        logger.warning("Could not set a cap value for emission. Skipping plugin.")
+    if emission_cap is None:
+        logger.warning("Could not set emission cap value. Skipping plugin.")
         return system
 
-    if cap_value is None:
-        logger.warning("Could not set a cap value. Pass a value throught the CLI or check data file with cap")
-        return system
-    cap_value = ureg.Quantity(cap_value, default_unit)
+    emission_cap = ureg.Quantity(emission_cap, default_unit)
 
     # All of this are Plexos properties that need to be added
     constraint_properties = {
         "Sense": -1,
-        "RHS Year": cap_value,
+        "RHS Year": emission_cap,
         "Scalar": 1e3,
         "Penalty Price": 500,
         emission_object: {"Production Coefficient": 1},

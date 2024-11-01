@@ -4,6 +4,7 @@ from pint import Quantity
 from r2x.api import System
 from r2x.config import Scenario
 from r2x.enums import EmissionType
+from r2x.models.services import Emission
 from r2x.models.utils import Constraint, ConstraintMap
 from r2x.plugins.emission_cap import update_system
 from r2x.runner import run_parser, run_plugins
@@ -68,6 +69,25 @@ def test_no_emission(caplog, infrasys_test_system):
 
     _ = update_system(config=config, system=infrasys_test_system)
     assert "Did not find any emission" in caplog.text
+
+
+def test_emission_but_no_cap(caplog):
+    system = System(name="Test")
+    emission = Emission(
+        name="co2_emission", rate=10, generator_name="test_generator", emission_type=EmissionType.CO2
+    )
+    system.add_component(emission)
+    config = Scenario.from_kwargs(
+        name="Pacific",
+        input_model="reeds-US",
+        output_model="plexos",
+        solve_year=2035,
+        weather_year=2012,
+        plugins=["emission_cap"],
+    )
+
+    _ = update_system(config=config, system=system)
+    assert "Could not set emission cap value" in caplog.text
 
 
 def test_update_system_using_cli(reeds_data_folder, tmp_folder):
