@@ -90,6 +90,28 @@ def test_emission_but_no_cap(caplog):
     assert "Could not set emission cap value" in caplog.text
 
 
+def test_multiple_constraint_maps():
+    system = System(name="Test")
+    emission = Emission(
+        name="co2_emission", rate=10, generator_name="test_generator", emission_type=EmissionType.CO2
+    )
+    constraint_map = ConstraintMap(name="Constraints")
+    constraint_map2 = ConstraintMap(name="Constraints")
+    system.add_components(constraint_map, constraint_map2)
+    system.add_component(emission)
+    config = Scenario.from_kwargs(
+        name="Pacific",
+        input_model="reeds-US",
+        output_model="plexos",
+        solve_year=2035,
+        weather_year=2012,
+        plugins=["emission_cap"],
+    )
+
+    with pytest.raises(NotImplementedError):
+        _ = update_system(config=config, system=system, emission_cap=0.0)
+
+
 def test_update_system_using_cli(reeds_data_folder, tmp_folder):
     config = Scenario.from_kwargs(
         name="Pacific",
