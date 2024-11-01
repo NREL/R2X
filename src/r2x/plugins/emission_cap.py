@@ -28,8 +28,8 @@ def cli_arguments(parser: ArgumentParser):
 
 def update_system(
     config: Scenario,
-    parser: BaseParser,
     system: System,
+    parser: BaseParser | None = None,
     emission_cap: float | None = None,
     default_unit: str = "tonne",
 ) -> System:
@@ -65,25 +65,27 @@ def update_system(
     if not config.output_model == "plexos":
         msg = "Plugin `emission_cap.py` is not compatible with a model that is not Plexos."
         raise NotImplementedError(msg)
-    logger.info("Adding CO2 cap.")
-    assert parser.data.get("switches") is not None, "Missing switches file from run folder."
-    switches = {key: validate_string(value) for key, value in parser.data["switches"].iter_rows()}
-    emission_object = EmissionType.CO2E if switches["gsw_annualcapco2e"] else EmissionType.CO2
+    logger.info("Adding emission cap.")
 
+    emission_object = EmissionType.CO2
     if not any(component.emission_type == emission_object for component in system.get_components(Emission)):
-        logger.warning("Did not find any valid emission type to apply emission_cap")
+        logger.warning("Did not find any emission type to apply emission_cap")
         return system
 
-    cap_value = parser.data.get("co2_cap")
-    if cap_value is None and not emission_cap:
-        logger.warning("Could not set a cap value for emission. Skipping plugin.")
-        return system
-
-    cap_value = parser.data["co2_cap"]["value"].item()
+    if parser is not None and config.input_model == "reeds-US":
+        assert parser.data.get("switches") is not None, "Missing switches file from run folder."
+        switches = {key: validate_string(value) for key, value in parser.data["switches"].iter_rows()}
+        emission_object = EmissionType.CO2E if switches["gsw_annualcapco2e"] else EmissionType.CO2
+        cap_value = parser.data.get("co2_cap")
+        cap_value = parser.data["co2_cap"]["value"].item()
 
     if emission_cap is not None:
         logger.warning("Overriding cap value using CLI. Changing from {} to {}", cap_value, emission_cap)
         cap_value = emission_cap
+
+    if cap_value is None and not emission_cap:
+        logger.warning("Could not set a cap value for emission. Skipping plugin.")
+        return system
 
     if cap_value is None:
         logger.warning("Could not set a cap value. Pass a value throught the CLI or check data file with cap")

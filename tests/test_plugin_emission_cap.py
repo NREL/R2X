@@ -55,6 +55,21 @@ def test_update_system_default(reeds_data_folder, tmp_folder):
         _ = update_system(config=config, parser=parser, system=system)
 
 
+def test_no_emission(caplog, infrasys_test_system):
+    config = Scenario.from_kwargs(
+        name="Pacific",
+        input_model="reeds-US",
+        output_model="plexos",
+        solve_year=2035,
+        weather_year=2012,
+        emission_cap=0.0,
+        plugins=["emission_cap"],
+    )
+
+    _ = update_system(config=config, system=infrasys_test_system)
+    assert "Did not find any emission" in caplog.text
+
+
 def test_update_system_using_cli(reeds_data_folder, tmp_folder):
     config = Scenario.from_kwargs(
         name="Pacific",
