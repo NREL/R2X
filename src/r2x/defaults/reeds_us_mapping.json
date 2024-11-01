@@ -36,6 +36,17 @@
     "input": false,
     "optional": false
   },
+  "co2_cap": {
+    "column_mapping": {
+      "*t": "year",
+      "default": "value"
+    },
+    "description": "CO2 annual cap per year",
+    "fname": "co2_cap.csv",
+    "input": true,
+    "optional": true,
+    "units": "tonne"
+  },
   "cost_vom": {
     "column_mapping": {
       "i": "tech",

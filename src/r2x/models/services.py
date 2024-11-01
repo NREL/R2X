@@ -4,7 +4,7 @@ from typing import Annotated
 
 from pydantic import Field, NonNegativeFloat, PositiveFloat
 
-from r2x.enums import ReserveDirection, ReserveType
+from r2x.enums import EmissionType, ReserveDirection, ReserveType
 from r2x.models.core import MinMax, Service
 from r2x.models.topology import LoadZone
 from r2x.units import EmissionRate
@@ -63,7 +63,7 @@ class Emission(Service):
     """Class representing an emission object that is attached to generators."""
 
     rate: Annotated[EmissionRate, Field(description="Amount of emission produced in kg/MWh.")]
-    emission_type: Annotated[str, Field(description="Type of emission. E.g., CO2, NOx.")]
+    emission_type: Annotated[EmissionType, Field(description="Type of emission. E.g., CO2, NOx.")]
     generator_name: Annotated[str, Field(description="Generator emitting.")]
 
     @classmethod
@@ -72,7 +72,7 @@ class Emission(Service):
             name="ExampleEmission",
             generator_name="gen1",
             rate=EmissionRate(105, "kg/MWh"),
-            emission_type="CO2",
+            emission_type=EmissionType.CO2,
         )
 
 

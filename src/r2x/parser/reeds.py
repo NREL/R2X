@@ -17,7 +17,7 @@ from infrasys.time_series_models import SingleTimeSeries
 from loguru import logger
 
 from r2x.api import System
-from r2x.enums import ACBusTypes, PrimeMoversType, ReserveDirection, ReserveType
+from r2x.enums import ACBusTypes, EmissionType, PrimeMoversType, ReserveDirection, ReserveType
 from r2x.models import (
     ACBus,
     Area,
@@ -42,7 +42,7 @@ from r2x.models.costs import HydroGenerationCost, ThermalGenerationCost
 from r2x.models.generators import RenewableGen, ThermalGen
 from r2x.parser.handler import BaseParser
 from r2x.units import ActivePower, EmissionRate, Energy, Percentage, Time, ureg
-from r2x.utils import match_category, read_csv
+from r2x.utils import get_enum_from_string, match_category, read_csv
 
 from .polars_helpers import pl_left_multi_join
 
@@ -271,6 +271,9 @@ class ReEDSParser(BaseParser):
             for row in generator_emission.iter_rows(named=True):
                 row["rate"] = EmissionRate(row["rate"], "kg/MWh")
                 valid_fields = {key: value for key, value in row.items() if key in Emission.model_fields}
+                valid_fields["emission_type"] = get_enum_from_string(
+                    valid_fields["emission_type"], EmissionType
+                )
                 emission_model = Emission(**valid_fields)
                 self.system.add_component(emission_model)
 

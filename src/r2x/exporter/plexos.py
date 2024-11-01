@@ -42,6 +42,7 @@ from r2x.models import (
     TransmissionInterface,
 )
 from r2x.models.branch import Line
+from r2x.models.utils import Constraint
 from r2x.units import get_magnitude
 from r2x.utils import custom_attrgetter, get_enum_from_string, read_json
 
@@ -105,6 +106,7 @@ class PlexosExporter(BaseExporter):
             self._add_horizons()
             self._add_models()
             self._add_reports()
+        self.add_constraints()
         self.add_topology()
         self.add_lines()
         self.add_transformers()
@@ -347,8 +349,6 @@ class PlexosExporter(BaseExporter):
 
     def add_topology(self) -> None:
         """Create network topology on Plexos."""
-        logger.debug("Adding plexos objects")
-
         # Adding Regions
         self.add_component_category(ACBus, category_attribute="area.name", class_enum=ClassEnum.Region)
         self.bulk_insert_objects(
@@ -502,13 +502,47 @@ class PlexosExporter(BaseExporter):
             TransmissionInterface, parent_class=ClassEnum.System, collection=CollectionEnum.Interfaces
         )
 
+    def add_constraints(self) -> None:
+        """Add custom constraints."""
+        self.bulk_insert_objects(
+            Constraint,
+            class_enum=ClassEnum.Constraint,
+            collection_enum=CollectionEnum.Constraints,
+        )
+        collection_properties = self._db_mgr.get_valid_properties(
+            collection=CollectionEnum.Constraints,
+            parent_class=ClassEnum.System,
+            child_class=ClassEnum.Constraint,
+        )
+        for constraint in self.system.get_components(Constraint):
+            properties = get_export_properties(
+                constraint.ext,
+                partial(apply_property_map, property_map=self.property_map),
+                partial(apply_pint_deconstruction, unit_map=self.default_units),
+                partial(apply_valid_properties, valid_properties=collection_properties),
+            )
+
+            if properties:
+                for property_name, property_value in properties.items():
+                    self._db_mgr.add_property(
+                        constraint.name,
+                        property_name,
+                        property_value,
+                        object_class=ClassEnum.Constraint,
+                        collection=CollectionEnum.Constraints,
+                        scenario=self.plexos_scenario,
+                    )
+
+        return
+
     def add_emissions(self) -> None:
         """Add emission objects to the database."""
-        # Getting all unique emission types (e.g., CO2, NOX) from the emissions objects.
-        # NOTE: On Plexos, we need to add each emission type individually to the Emission class
+        logger.debug("Adding Emission objects...")
         self._db_mgr.execute_query(
             f"UPDATE t_class SET is_enabled=1 WHERE t_class.name='{ClassEnum.Emission}'"
         )
+        # Getting all unique emission types (e.g., CO2, NOX) from the emissions objects.
+        # NOTE: On Plexos, we need to add each emission type individually to the Emission class
         emission_types = set(map(lambda x: x.emission_type, list(self.system.get_components(Emission))))
         for emission_type in emission_types:
             self._db_mgr.add_object(
@@ -517,6 +551,41 @@ class PlexosExporter(BaseExporter):
                 CollectionEnum.Emissions,
             )
 
+            # Add emission caps from emission_cap.py if added.
+            emission_constraint_name = f"Annual_{emission_type}_cap"
+            collection_properties = self._db_mgr.get_valid_properties(
+                collection=CollectionEnum.Constraints,
+                parent_class=ClassEnum.Emission,
+                child_class=ClassEnum.Constraint,
+            )
+            for constraint in self.system.get_components(
+                Constraint, filter_func=lambda x: x.name == emission_constraint_name
+            ):
+                self._db_mgr.add_membership(
+                    emission_type,
+                    constraint.name,
+                    parent_class=ClassEnum.Emission,
+                    child_class=ClassEnum.Constraint,
+                    collection=CollectionEnum.Constraints,
+                )
+                properties = get_export_properties(
+                    constraint.ext[emission_type],
+                    partial(apply_property_map, property_map=self.property_map),
+                    partial(apply_pint_deconstruction, unit_map=self.default_units),
+                    partial(apply_valid_properties, valid_properties=collection_properties),
+                )
+                if properties:
+                    for property_name, property_value in properties.items():
+                        self._db_mgr.add_property(
+                            constraint.name,
+                            property_name,
+                            property_value,
+                            object_class=ClassEnum.Constraint,
+                            parent_object_name=emission_type,
+                            parent_class=ClassEnum.Emission,
+                            collection=CollectionEnum.Constraints,
+                            scenario=self.plexos_scenario,
+                        )
         return
 
     def add_reserves(self) -> None:

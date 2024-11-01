@@ -7,6 +7,7 @@ from .__version__ import __version__
 FILES_WITH_ARGS = [
     "r2x.plugins.pcm_defaults",
     "r2x.plugins.break_gens",
+    "r2x.plugins.emission_cap",
     "r2x.parser.plexos",
     "r2x.parser.reeds",
     "r2x.exporter.plexos",

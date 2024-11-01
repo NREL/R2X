@@ -79,3 +79,14 @@ class ThermalFuels(StrEnum):
     WOOD_WASTE = "WOOD_WASTE"
     GEOTHERMAL = "GEOTHERMAL"
     OTHER = "OTHER"
+
+
+class EmissionType(StrEnum):
+    """Valid emission types."""
+
+    CO2 = "CO2"
+    CO2E = "CO2E"
+    CH4 = "CH4"
+    NOX = "NOX"
+    SOX = "SOX"
+    SO2 = "SO2"

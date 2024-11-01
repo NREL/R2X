@@ -2,12 +2,6 @@ import pytest
 
 from r2x.config import Scenario
 from r2x.exporter.sienna import SiennaExporter, apply_operation_table_data, get_psy_fields
-from tests.models.pjm import pjm_2area
-
-
-@pytest.fixture
-def infrasys_test_system():
-    return pjm_2area()
 
 
 @pytest.fixture
