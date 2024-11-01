@@ -408,6 +408,7 @@ class SiennaExporter(BaseExporter):
         generic_storage = get_export_records(
             list(self.system.to_records(Storage)),
             partial(apply_property_map, property_map=self.property_map),
+            partial(apply_flatten_key, keys_to_flatten={"active_power_limits"}),
             partial(apply_pint_deconstruction, unit_map=self.unit_map),
             # partial(apply_valid_properties, valid_properties=output_fields),
         )
@@ -422,8 +423,8 @@ class SiennaExporter(BaseExporter):
         for storage in storage_list:
             output_dict = storage
             output_dict["generator_name"] = storage["name"]
-            output_dict["input_active_power_limit_max"] = output_dict["active_power"]
-            output_dict["output_active_power_limit_max"] = output_dict["active_power"]
+            output_dict["input_active_power_limit_max"] = output_dict["active_power_limits_max"]
+            output_dict["output_active_power_limit_max"] = output_dict["active_power_limits_max"]
             # NOTE: If we need to change this in the future, we could probably
             # use the function max to check if the component has the field.
             output_dict["input_active_power_limit_min"] = 0  # output_dict["active_power"]
