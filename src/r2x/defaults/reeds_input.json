@@ -155,7 +155,7 @@
   },
   "switches": {
     "gsw_annualcap": [
-      "co2_cap"
+      "emission_cap"
     ],
     "gsw_canada": [
       "canada_imports"

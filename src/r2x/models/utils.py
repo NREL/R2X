@@ -1,5 +1,7 @@
 """Useful function for models."""
 
+from collections import defaultdict
+from r2x.models.core import BaseComponent
 from .generators import Generator, ThermalGen, HydroGen, Storage, RenewableGen
 from .costs import (
     OperationalCost,
@@ -9,6 +11,13 @@ from .costs import (
     RenewableGenerationCost,
 )
 from loguru import logger
+
+
+class Constraint(BaseComponent): ...
+
+
+class ConstraintMap(BaseComponent):
+    mapping: defaultdict[str, list] = defaultdict(list)  # noqa: RUF012
 
 
 def get_operational_cost(model: type["Generator"]) -> type["OperationalCost"] | None:

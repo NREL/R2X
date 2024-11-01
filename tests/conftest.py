@@ -7,6 +7,7 @@ import pytest
 from r2x.utils import read_json
 from loguru import logger
 from _pytest.logging import LogCaptureFixture
+from tests.models.pjm import pjm_2area
 
 
 DATA_FOLDER = "tests/data"
@@ -56,3 +57,8 @@ def caplog(caplog: LogCaptureFixture):
     )
     yield caplog
     logger.remove(handler_id)
+
+
+@pytest.fixture
+def infrasys_test_system():
+    return pjm_2area()

@@ -643,8 +643,12 @@ def get_enum_from_string(string: str, enum_class, prefix: str | None = None):
     closest_enum = None
     if prefix is None:
         prefix = ""
+
+    # We lower to do a caseinsensitive mapping.
+    requested_string = (prefix + string).lower()
     for enum_member in enum_class:
-        similarity = difflib.SequenceMatcher(None, prefix + string, enum_member.name).ratio()
+        enum_member_string = enum_member.lower()
+        similarity = difflib.SequenceMatcher(None, requested_string, enum_member_string).ratio()
         if similarity > max_similarity:
             max_similarity = similarity
             closest_enum = enum_member
