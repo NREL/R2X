@@ -688,7 +688,7 @@ class ReEDSParser(BaseParser):
             hydro_cf,
             month_hrs,
             # hydro_cap_adj,
-            # hydro_minload,
+            # hydro_minload
         )
         hydro_data = hydro_data.with_columns(
             season=pl.col("season").map_elements(lambda row: season_map.get(row, row), return_dtype=pl.String)
@@ -711,27 +711,28 @@ class ReEDSParser(BaseParser):
             months = np.array([dt.astype("datetime64[M]").astype(int) % 12 + 1 for dt in date_time_array])
 
             # Define the values for each season
-            season_datetime_series = np.zeros(len(date_time_array), dtype=float)
-            seasons = ["winter", "spring", "summer", "fall"]
+            month_datetime_series = np.zeros(len(date_time_array), dtype=float)
 
             match generator.__class__.__name__:
                 case "HydroDispatch":
                     for row in hydro_ratings.iter_rows(named=True):
-                        season = row["season"]
-                        season_start_month = seasons.index(season) * 3 + 1
-                        season_end_month = season_start_month + 2
-                        season_indices = np.where(
-                            (months >= season_start_month) & (months <= season_end_month)
+                        month = row["month"]
+                        if isinstance(month, str):
+                            month = int(month.removeprefix("M"))
+
+                        max_budget_month = (
+                            generator.active_power * Percentage(row["hydro_cf"], "") * Time(row["hrs"], "h")
                         )
-                        max_energy_season = (
-                            generator.active_power
-                            * Percentage(row["hydro_cf"], "")
-                            * Time(len(season_indices[0]), "h")
-                        )
-                        season_datetime_series[season_indices] = max_energy_season.magnitude
+                        month_indices = months == month
+                        month_datetime_series[month_indices] = max_budget_month.magnitude
+                        if self.config.feature_flags.get("daily-budgets", None):
+                            month_datetime_series[month_indices] = max_budget_month.magnitude / (
+                                row["hrs"]
+                                / 24  # Equally distributing the budget to the no. of days per month
+                            )
                     ts = SingleTimeSeries.from_array(
-                        Energy(season_datetime_series, "MWh"),
-                        "max_active_power",
+                        Energy(month_datetime_series, "MWh"),
+                        "hydro_budget",
                         initial_time=initial_time,
                         resolution=resolution,
                     )
@@ -740,16 +741,14 @@ class ReEDSParser(BaseParser):
                     if generator.category == "can-imports":
                         continue
                     for row in hydro_ratings.iter_rows(named=True):
-                        season = row["season"]
-                        season_start_month = seasons.index(season) * 3 + 1
-                        season_end_month = season_start_month + 2
-                        season_indices = np.where(
-                            (months >= season_start_month) & (months <= season_end_month)
-                        )
+                        month = row["month"]
+                        if isinstance(month, str):
+                            month = int(month.removeprefix("M"))
+                        month_indices = months == month
                         rating = generator.active_power * Percentage(row["hydro_cf"], "")
-                        season_datetime_series[season_indices] = rating.magnitude
+                        month_datetime_series[month_indices] = rating.magnitude
                     ts = SingleTimeSeries.from_array(
-                        ActivePower(season_datetime_series, "MW"),
+                        ActivePower(month_datetime_series, "MW"),
                         "max_active_power",
                         initial_time=initial_time,
                         resolution=resolution,

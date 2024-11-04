@@ -164,7 +164,12 @@ class PlexosExporter(BaseExporter):
                     case _:
                         raise NotImplementedError(f"Reserve {component.type} not supported")
             case HydroDispatch():
-                time_series_property["Max Energy"] = "0"
+                variable_name = self.system.get_time_series(component).variable_name
+                if not variable_name:
+                    return None
+                property_name = self.property_map.get(variable_name, None)
+                if property_name:
+                    time_series_property[property_name] = "0"
             case HydroEnergyReservoir():
                 time_series_property["Fixed Load"] = "0"
             case ThermalStandard():
