@@ -39,7 +39,7 @@ from r2x.models import (
 )
 from r2x.models.core import MinMax
 from r2x.models.costs import HydroGenerationCost, ThermalGenerationCost
-from r2x.models.generators import RenewableGen, ThermalGen
+from r2x.models.generators import HydroDispatch, HydroEnergyReservoir, RenewableGen, ThermalGen
 from r2x.parser.handler import BaseParser
 from r2x.units import ActivePower, EmissionRate, Energy, Percentage, Time, ureg
 from r2x.utils import get_enum_from_string, match_category, read_csv
@@ -73,6 +73,18 @@ class ReEDSParser(BaseParser):
         self.device_map = self.config.defaults["reeds_device_map"]
         self.weather_year: int = self.config.weather_year
 
+        # Add hourly_time_index
+        self.hourly_time_index = np.arange(
+            f"{self.weather_year}",
+            f"{self.weather_year + 1}",
+            dtype="datetime64[h]",
+        )[:-24]  # Removing 1 day to match ReEDS convention and converting into a vector
+        self.daily_time_index = np.arange(
+            f"{self.weather_year}",
+            f"{self.weather_year + 1}",
+            dtype="datetime64[D]",
+        )[:-1]  # Removing 1 day to match ReEDS convention and converting into a vector
+
     def build_system(self) -> System:
         """Create IS system for the ReEDS model."""
         self.system = System(name=self.config.name, auto_add_composed_components=True)
@@ -89,7 +101,8 @@ class ReEDSParser(BaseParser):
 
         # Time series construction
         self._construct_load()
-        self._construct_hydro_profiles()
+        self._construct_hydro_budgets()
+        self._construct_hydro_rating_profiles()
         self._construct_cf_time_series()
         self._construct_reserve_provision()
         self._construct_hybrid_systems()
@@ -662,100 +675,99 @@ class ReEDSParser(BaseParser):
             # Add total provision as requirement
             setattr(reserve, "max_requirement", total_provision.sum())
 
-    def _construct_hydro_profiles(self):
-        season_map = self.config.defaults.get("season_map", None)
-        month_hrs = read_csv("month_hrs.csv")
+    def _construct_hydro_budgets(self):
+        """Hydro budgets in ReEDS."""
+        logger.debug("Adding hydro budgets.")
+        month_hrs = read_csv("month_hrs.csv").collect()
         month_map = self.config.defaults["month_map"]
 
         hydro_cf = self.get_data("hydro_cf")
         hydro_cf = hydro_cf.with_columns(
             month=pl.col("month").map_elements(lambda row: month_map.get(row, row), return_dtype=pl.String)
         )
+        month_hrs = month_hrs.rename({"szn": "season"})
+        hydro_data = pl_left_multi_join(
+            hydro_cf,
+            month_hrs,
+        )
+        month_of_hour = np.array(
+            [dt.astype("datetime64[M]").astype(int) % 12 + 1 for dt in self.hourly_time_index]
+        )
+        month_of_day = np.array(
+            [dt.astype("datetime64[M]").astype(int) % 12 + 1 for dt in self.daily_time_index]
+        )
+        initial_time = datetime(self.weather_year, 1, 1)
+        for generator in self.system.get_components(HydroDispatch):
+            tech = generator.ext["reeds_tech"]
+            region = generator.bus.name
+            hydro_ratings = hydro_data.filter((pl.col("tech") == tech) & (pl.col("region") == region))
+
+            hourly_time_series = np.zeros(len(month_of_hour), dtype=float)
+            if self.config.feature_flags.get("daily-budgets", None):
+                hourly_time_series = np.zeros(len(month_of_day), dtype=float)
+
+            for row in hydro_ratings.iter_rows(named=True):
+                month = row["month"]
+                if isinstance(month, str):
+                    month = int(month.removeprefix("M"))
+
+                month_max_budget = (
+                    generator.active_power * Percentage(row["hydro_cf"], "") * Time(row["hrs"], "h")
+                )
+                if self.config.feature_flags.get("daily-budgets", None):
+                    daily_max_budget = month_max_budget / (row["hrs"] / 24)
+                    hourly_time_series[month_of_day == month] = daily_max_budget.magnitude
+                else:
+                    month_indices = month_of_hour == month
+                    hourly_time_series[month_indices] = month_max_budget.magnitude
+
+            ts = SingleTimeSeries.from_array(
+                Energy(hourly_time_series, "MWh"),
+                "hydro_budget",
+                initial_time=initial_time,
+                resolution=timedelta(days=1),
+            )
+            self.system.add_time_series(ts, generator)
+
+    def _construct_hydro_rating_profiles(self):
+        logger.debug("Adding hydro rating profiles.")
+        month_hrs = read_csv("month_hrs.csv").collect()
+        month_map = self.config.defaults["month_map"]
+
+        hydro_cf = self.get_data("hydro_cf")
         hydro_cf = hydro_cf.with_columns(
             month=pl.col("month").map_elements(lambda row: month_map.get(row, row), return_dtype=pl.String)
-        )
-        # hydro_cap_adj = self.get_data("hydro_cap_adj")
-        # hydro_cap_adj = hydro_cap_adj.with_columns(
-        #     season=pl.col("season").map_elements(lambda row: season_map.get(row, row),
-        #     return_dtype=pl.String)
-        # )
-        hydro_minload = self.get_data("hydro_min_gen")
-        hydro_minload = hydro_minload.with_columns(
-            season=pl.col("season").map_elements(lambda row: season_map.get(row, row), return_dtype=pl.String)
         )
         month_hrs = month_hrs.rename({"szn": "season"})
         hydro_data = pl_left_multi_join(
             hydro_cf,
             month_hrs,
-            # hydro_cap_adj,
-            # hydro_minload
         )
-        hydro_data = hydro_data.with_columns(
-            season=pl.col("season").map_elements(lambda row: season_map.get(row, row), return_dtype=pl.String)
+        month_of_hour = np.array(
+            [dt.astype("datetime64[M]").astype(int) % 12 + 1 for dt in self.hourly_time_index]
         )
-
-        resolution = timedelta(hours=1)
         initial_time = datetime(self.weather_year, 1, 1)
-        date_time_array = np.arange(
-            f"{self.weather_year}",
-            f"{self.weather_year + 1}",
-            dtype="datetime64[h]",
-        )[:-24]  # Removing 1 day to match ReEDS convention and converting into a vector
-        # date_time_array = np.datetime_as_string(date_time_array, unit="m")
-        for generator in self.system.get_components(HydroGen):
+        for generator in self.system.get_components(HydroEnergyReservoir):
             tech = generator.ext["reeds_tech"]
             region = generator.bus.name
-
+            if generator.category == "can-imports":
+                continue
+            hourly_time_series = np.zeros(len(month_of_hour), dtype=float)
             hydro_ratings = hydro_data.filter((pl.col("tech") == tech) & (pl.col("region") == region))
-            # Extract months from datetime series
-            months = np.array([dt.astype("datetime64[M]").astype(int) % 12 + 1 for dt in date_time_array])
-
-            # Define the values for each season
-            month_datetime_series = np.zeros(len(date_time_array), dtype=float)
-
-            match generator.__class__.__name__:
-                case "HydroDispatch":
-                    for row in hydro_ratings.iter_rows(named=True):
-                        month = row["month"]
-                        if isinstance(month, str):
-                            month = int(month.removeprefix("M"))
-
-                        max_budget_month = (
-                            generator.active_power * Percentage(row["hydro_cf"], "") * Time(row["hrs"], "h")
-                        )
-                        month_indices = months == month
-                        month_datetime_series[month_indices] = max_budget_month.magnitude
-                        if self.config.feature_flags.get("daily-budgets", None):
-                            month_datetime_series[month_indices] = max_budget_month.magnitude / (
-                                row["hrs"]
-                                / 24  # Equally distributing the budget to the no. of days per month
-                            )
-                    ts = SingleTimeSeries.from_array(
-                        Energy(month_datetime_series, "MWh"),
-                        "hydro_budget",
-                        initial_time=initial_time,
-                        resolution=resolution,
-                    )
-                    self.system.add_time_series(ts, generator)
-                case "HydroEnergyReservoir":
-                    if generator.category == "can-imports":
-                        continue
-                    for row in hydro_ratings.iter_rows(named=True):
-                        month = row["month"]
-                        if isinstance(month, str):
-                            month = int(month.removeprefix("M"))
-                        month_indices = months == month
-                        rating = generator.active_power * Percentage(row["hydro_cf"], "")
-                        month_datetime_series[month_indices] = rating.magnitude
-                    ts = SingleTimeSeries.from_array(
-                        ActivePower(month_datetime_series, "MW"),
-                        "max_active_power",
-                        initial_time=initial_time,
-                        resolution=resolution,
-                    )
-                    self.system.add_time_series(ts, generator)
-                case _:
-                    pass
+            for row in hydro_ratings.iter_rows(named=True):
+                month = row["month"]
+                if isinstance(month, str):
+                    month = int(month.removeprefix("M"))
+                month_indices = month_of_hour == month
+                rating = generator.active_power * Percentage(row["hydro_cf"], "")
+                hourly_time_series[month_indices] = rating.magnitude
+            ts = SingleTimeSeries.from_array(
+                ActivePower(hourly_time_series, "MW"),
+                "max_active_power",
+                initial_time=initial_time,
+                resolution=timedelta(days=1),
+            )
+            self.system.add_time_series(ts, generator)
 
     def _construct_hybrid_systems(self):
         """Create hybrid storage units and add them to the system."""
