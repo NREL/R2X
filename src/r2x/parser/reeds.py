@@ -722,7 +722,7 @@ class ReEDSParser(BaseParser):
                     hourly_time_series[month_indices] = month_max_budget.magnitude
 
             ts = SingleTimeSeries.from_array(
-                Energy(hourly_time_series, "MWh"),
+                Energy(hourly_time_series / 1e3, "GWh"),
                 "hydro_budget",
                 initial_time=initial_time,
                 resolution=timedelta(days=1),

@@ -88,7 +88,7 @@
     "forced_outage_rate": "Forced Outage Rate",
     "fuel_price": "Fuel Price",
     "heat_rate": "Heat Rate",
-    "hydro_budget": "Max Energy",
+    "hydro_budget": "Max Energy Day",
     "initial_energy": "Initial SoC",
     "initial_volume": "Initial Volume",
     "load_risk": "Load Risk",
