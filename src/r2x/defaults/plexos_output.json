@@ -77,6 +77,8 @@
   },
   "plexos_property_map": {
     "active_power": "Max Capacity",
+    "active_power_flow_limits_max": "Max Flow",
+    "active_power_flow_limits_min": "Min Flow",
     "available": "Units",
     "base_power": "Max Capacity",
     "base_voltage": "Voltage",

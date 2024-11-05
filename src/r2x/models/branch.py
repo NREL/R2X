@@ -21,9 +21,9 @@ class ACBranch(Branch):
     # arc: Annotated[Arc, Field(description="The branch's connections.")]
     from_bus: Annotated[ACBus, Field(description="Bus connected upstream from the arc.")]
     to_bus: Annotated[ACBus, Field(description="Bus connected downstream from the arc.")]
-    r: Annotated[float, Field(description=("Resistance of the branch"))] = 0
-    x: Annotated[float, Field(description=("Reactance of the branch"))] = 0
-    b: Annotated[float, Field(description=("Shunt susceptance of the branch"))] = 0
+    r: Annotated[float | None, Field(description=("Resistance of the branch"))] = None
+    x: Annotated[float | None, Field(description=("Reactance of the branch"))] = None
+    b: Annotated[float | None, Field(description=("Shunt susceptance of the branch"))] = None
     rating: Annotated[ActivePower, Field(ge=0, description="Thermal rating of the line.")] | None = None
 
 
