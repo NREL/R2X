@@ -198,6 +198,7 @@ class ReEDSParser(BaseParser):
             losses = branch["losses"] if branch["losses"] else 0
             self.system.add_component(
                 MonitoredLine(
+                    category=branch["kind"],
                     name=branch_name,
                     from_bus=from_bus,
                     to_bus=to_bus,
@@ -675,7 +676,7 @@ class ReEDSParser(BaseParser):
             # Add total provision as requirement
             setattr(reserve, "max_requirement", total_provision.sum())
 
-    def _construct_hydro_budgets(self):
+    def _construct_hydro_budgets(self) -> None:
         """Hydro budgets in ReEDS."""
         logger.debug("Adding hydro budgets.")
         month_hrs = read_csv("month_hrs.csv").collect()
@@ -729,7 +730,9 @@ class ReEDSParser(BaseParser):
             )
             self.system.add_time_series(ts, generator)
 
-    def _construct_hydro_rating_profiles(self):
+        return None
+
+    def _construct_hydro_rating_profiles(self) -> None:
         logger.debug("Adding hydro rating profiles.")
         month_hrs = read_csv("month_hrs.csv").collect()
         month_map = self.config.defaults["month_map"]
@@ -765,9 +768,10 @@ class ReEDSParser(BaseParser):
                 ActivePower(hourly_time_series, "MW"),
                 "max_active_power",
                 initial_time=initial_time,
-                resolution=timedelta(days=1),
+                resolution=timedelta(hours=1),
             )
             self.system.add_time_series(ts, generator)
+        return None
 
     def _construct_hybrid_systems(self):
         """Create hybrid storage units and add them to the system."""
