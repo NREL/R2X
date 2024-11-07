@@ -30,7 +30,7 @@ def test_move_file(tmp_path):
         assert new_file.resolve().parent == output_dir.resolve()
 
 
-def test_melt():
+def test_melt(caplog):
     """Test the melt function."""
     temp_file = pathlib.Path(tempfile.gettempdir()) / "test_data.csv"
     pd.DataFrame({"i": [1, 2], "r": [3, 4], "Q1": [10, 20], "Q2": [30, 40]}).to_csv(temp_file, index=False)
@@ -48,6 +48,19 @@ def test_melt():
     ), "Default melt operation failed"
 
     temp_file.unlink()
+
+    # Test skip with already melted file
+    temp_file = pathlib.Path(tempfile.gettempdir()) / "test_data.csv"
+    pd.DataFrame(
+        {
+            "i": [1, 2, 1, 2],
+            "r": [3, 4, 3, 4],
+            "quarter": ["Q1", "Q1", "Q2", "Q2"],
+            "value": [10, 20, 30, 40],
+        }
+    ).to_csv(temp_file, index=False)
+    melted_data = melt(temp_file)
+    assert "has been already melted" in caplog.text
 
 
 def test_apply_header():

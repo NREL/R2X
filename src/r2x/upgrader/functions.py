@@ -3,7 +3,6 @@
 This functions apply an update function to certain raw files file before using them for creating the System.
 """
 
-import inspect
 import os
 import pathlib
 import shutil
@@ -13,7 +12,8 @@ from collections import OrderedDict
 import pandas as pd
 from loguru import logger
 
-from r2x.utils import read_csv, validate_string
+from r2x.upgrader.helpers import get_function_arguments
+from r2x.utils import read_csv
 
 
 def rename(fpath: pathlib.Path, new_fname: str) -> pathlib.Path:
@@ -199,9 +199,6 @@ def melt(fpath: pathlib.Path, melt_id_vars: list | None = None, var_name="quarte
     logger.debug(f"Melting columns for {fpath.name}")
     data = pd.melt(data, id_vars=melt_id_vars, var_name=var_name)
 
-    if data.empty:
-        raise ValueError("Melt operation resulted in an empty DataFrame.")
-
     data.to_csv(fpath, index=False)
     return data
 
@@ -323,25 +320,6 @@ def set_index(fpath: pathlib.Path, index: str) -> pd.DataFrame | None:
     return data
 
 
-def _get_function_arguments(data_dict: dict, function: str) -> dict:
-    _function_arguments = {}
-    for key, value in data_dict.items():
-        if isinstance(value, str):
-            value = validate_string(value)
-        if isinstance(value, dict):
-            for sub_key, sub_value in value.items():
-                _function_arguments[sub_key] = sub_value
-        else:
-            _function_arguments[key] = value
-
-    function_arguments = {
-        key: value
-        for key, value in _function_arguments.items()
-        if key in inspect.getfullargspec(globals()[function]).args
-    }
-    return function_arguments
-
-
 def upgrade_handler(run_folder: str | pathlib.Path):
     """Entry point to call the different upgrade functions."""
     logger.info("Starting upgrader")
@@ -381,9 +359,9 @@ def upgrade_handler(run_folder: str | pathlib.Path):
         f_group_dict["fpath"] = fpath_name
 
         for function in functions_to_apply:
-            # Call function with the right arguments
-            function_arguments = _get_function_arguments(f_group_dict, function)
-            globals()[function](**function_arguments)
+            function_callable = globals()[function]
+            function_arguments = get_function_arguments(f_group_dict, function_callable)
+            function_callable(**function_arguments)
             # Update f_dict if we renamed a file to apply additional functions to it
             if function == "rename":
                 fpath_new = fpath_name.parent.joinpath(f_group_dict["new_fname"][0])
