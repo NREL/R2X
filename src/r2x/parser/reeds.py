@@ -699,6 +699,10 @@ class ReEDSParser(BaseParser):
         )
         initial_time = datetime(self.weather_year, 1, 1)
         for generator in self.system.get_components(HydroDispatch):
+            # NOTE: Canadian imports need another file for the ratings, but we process it as
+            # HydroEnergyReservoir since it is the way ReEDS model it.
+            if generator.category == "can-imports":
+                continue
             tech = generator.ext["reeds_tech"]
             region = generator.bus.name
             hydro_ratings = hydro_data.filter((pl.col("tech") == tech) & (pl.col("region") == region))
@@ -753,8 +757,7 @@ class ReEDSParser(BaseParser):
         for generator in self.system.get_components(HydroEnergyReservoir):
             tech = generator.ext["reeds_tech"]
             region = generator.bus.name
-            if generator.category == "can-imports":
-                continue
+
             hourly_time_series = np.zeros(len(month_of_hour), dtype=float)
             hydro_ratings = hydro_data.filter((pl.col("tech") == tech) & (pl.col("region") == region))
             for row in hydro_ratings.iter_rows(named=True):

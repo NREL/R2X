@@ -89,7 +89,7 @@
     "battery": "GenericBattery",
     "beccs_mod": "ThermalStandard",
     "biopower": "ThermalStandard",
-    "can-imports": "HydroEnergyReservoir",
+    "can-imports": "HydroDispatch",
     "coal-ccs_mod": "ThermalStandard",
     "coal-igcc": "ThermalStandard",
     "coal-igcc_coal-ccs_mod": "ThermalStandard",
