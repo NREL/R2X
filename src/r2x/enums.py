@@ -90,3 +90,4 @@ class EmissionType(StrEnum):
     NOX = "NOX"
     SOX = "SOX"
     SO2 = "SO2"
+    N2O = "N2O"

@@ -77,6 +77,8 @@
   },
   "plexos_property_map": {
     "active_power": "Max Capacity",
+    "active_power_flow_limits_max": "Max Flow",
+    "active_power_flow_limits_min": "Min Flow",
     "available": "Units",
     "base_power": "Max Capacity",
     "base_voltage": "Voltage",
@@ -88,6 +90,7 @@
     "forced_outage_rate": "Forced Outage Rate",
     "fuel_price": "Fuel Price",
     "heat_rate": "Heat Rate",
+    "hydro_budget": "Max Energy Day",
     "initial_energy": "Initial SoC",
     "initial_volume": "Initial Volume",
     "load_risk": "Load Risk",

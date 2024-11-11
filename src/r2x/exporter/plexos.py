@@ -17,6 +17,7 @@ from r2x.exporter.handler import BaseExporter, get_export_properties, get_export
 from plexosdb import PlexosSQLite
 from plexosdb.enums import ClassEnum, CollectionEnum
 from r2x.exporter.utils import (
+    apply_flatten_key,
     apply_pint_deconstruction,
     apply_property_map,
     apply_valid_properties,
@@ -164,7 +165,12 @@ class PlexosExporter(BaseExporter):
                     case _:
                         raise NotImplementedError(f"Reserve {component.type} not supported")
             case HydroDispatch():
-                time_series_property["Max Energy"] = "0"
+                variable_name = self.system.get_time_series(component).variable_name
+                if not variable_name:
+                    return None
+                property_name = self.property_map.get(variable_name, None)
+                if property_name:
+                    time_series_property[property_name] = "0"
             case HydroEnergyReservoir():
                 time_series_property["Fixed Load"] = "0"
             case ThermalStandard():
@@ -223,6 +229,7 @@ class PlexosExporter(BaseExporter):
         export_records = get_export_records(
             records,
             partial(apply_operation_cost),
+            partial(apply_flatten_key, keys_to_flatten={"active_power_limits", "active_power_flow_limits"}),
             partial(apply_property_map, property_map=property_map),
             partial(apply_pint_deconstruction, unit_map=self.default_units),
             partial(apply_valid_properties, valid_properties=collection_properties, add_name=True),
@@ -419,7 +426,7 @@ class PlexosExporter(BaseExporter):
         # Adding Lines
         # NOTE: The default line on Plexos is a `MonitoredLine` without category. If we need to add a category
         # in the future, we will uncomment the line below with the pertinent category name.
-        # self.add_component_category(MonitoredLine, class_enum=ClassEnum.Line)
+        self.add_component_category(MonitoredLine, class_enum=ClassEnum.Line)
         self.bulk_insert_objects(Line, class_enum=ClassEnum.Line, collection_enum=CollectionEnum.Lines)
         self.insert_component_properties(Line, parent_class=ClassEnum.System, collection=CollectionEnum.Lines)
         self.bulk_insert_objects(

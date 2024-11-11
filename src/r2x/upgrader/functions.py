@@ -3,7 +3,6 @@
 This functions apply an update function to certain raw files file before using them for creating the System.
 """
 
-import inspect
 import os
 import pathlib
 import shutil
@@ -13,6 +12,7 @@ from collections import OrderedDict
 import pandas as pd
 from loguru import logger
 
+from r2x.upgrader.helpers import get_function_arguments
 from r2x.utils import read_csv
 
 
@@ -132,7 +132,7 @@ def move_file(fpath: pathlib.Path, new_fpath: str | pathlib.Path) -> pathlib.Pat
     return new_fpath
 
 
-def melt(fpath: pathlib.Path, melt_id_vars: list | None = None, melt_var_name="quarter") -> pd.DataFrame:
+def melt(fpath: pathlib.Path, melt_id_vars: list | None = None, var_name="quarter") -> pd.DataFrame:
     """Apply melt operation to data.
 
     This function reads a CSV file, performs a melt operation on the specified
@@ -187,16 +187,17 @@ def melt(fpath: pathlib.Path, melt_id_vars: list | None = None, melt_var_name="q
     if not melt_id_vars:
         melt_id_vars = ["i", "r"]
 
-    logger.debug(f"Melting columns for {fpath.name}")
-
     if not fpath.exists():
         raise FileNotFoundError(f"{fpath} does not exist.")
 
     data = pd.read_csv(fpath)
-    data = pd.melt(data, id_vars=melt_id_vars, var_name=melt_var_name)
 
-    if data.empty:
-        raise ValueError("Melt operation resulted in an empty DataFrame.")
+    if var_name in data.columns:
+        logger.debug("File {} has been already melted. Skipping.", fpath.name)
+        return data
+
+    logger.debug(f"Melting columns for {fpath.name}")
+    data = pd.melt(data, id_vars=melt_id_vars, var_name=var_name)
 
     data.to_csv(fpath, index=False)
     return data
@@ -358,15 +359,9 @@ def upgrade_handler(run_folder: str | pathlib.Path):
         f_group_dict["fpath"] = fpath_name
 
         for function in functions_to_apply:
-            function_arguments = {
-                key: value
-                for key, value in f_group_dict.items()
-                if key in inspect.getfullargspec(globals()[function]).args
-            }
-
-            # Call function with the right arguments
-            globals()[function](**function_arguments)
-
+            function_callable = globals()[function]
+            function_arguments = get_function_arguments(f_group_dict, function_callable)
+            function_callable(**function_arguments)
             # Update f_dict if we renamed a file to apply additional functions to it
             if function == "rename":
                 fpath_new = fpath_name.parent.joinpath(f_group_dict["new_fname"][0])
