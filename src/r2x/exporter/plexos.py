@@ -995,10 +995,12 @@ def _variable_type_parsing(component: dict, cost_dict: dict[str, Any]) -> dict[s
                     component["Heat Rate"] = function_data["proportional_term"]
                 case "InputOutputCurve":
                     raise NotImplementedError("`InputOutputCurve` not yet implemented on Plexos exporter.")
-            if fuel_cost := fuel_curve.get("fuel_cost"):
-                component["Fuel Price"] = fuel_cost
-            if vom_cost := fuel_curve.get("vom_cost"):
-                component["VO&M Charge"] = vom_cost["function_data"]["proportional_term"]
         case "CostCurve":
-            raise NotImplementedError("`CostCurve` operational cost not yet implemented on Plexos exporter.")
+            pass
+
+    if fuel_cost := fuel_curve.get("fuel_cost"):
+        component["Fuel Price"] = fuel_cost
+    if vom_cost := fuel_curve.get("vom_cost"):
+        component["VO&M Charge"] = vom_cost["function_data"]["proportional_term"]
+
     return component
