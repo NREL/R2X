@@ -63,7 +63,7 @@ class ThermalGenerationCost(OperationalCost):
     @classmethod
     def example(cls) -> "ThermalGenerationCost":
         return ThermalGenerationCost(
-            fixed=Currency(0, "usd/MWh"),
+            fixed=Currency(0, "usd"),
             shut_down=Currency(100, "usd"),
             start_up=Currency(100, "usd"),
             variable=FuelCurve(value_curve=LinearCurve(10)),  # type: ignore
