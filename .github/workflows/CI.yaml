@@ -62,7 +62,7 @@ jobs:
 
       - name: Installing dependencies
         run: uv sync --dev
-      - uses: Run pre-commit
+      - name: Run pre-commit
         run: |
           uv run pre-commit run --all-files
 
