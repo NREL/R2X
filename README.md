@@ -17,46 +17,38 @@
 
 
 ## Table of contents
-* [Quick Start](#quick-start)
-* [Developer Guide](https://nrel.github.io/R2X/dev/develop.html)
+* [Installation](#installation)
+* [Features](#features)
+* [Documentation](#documentation)
 * [Roadmap](#roadmap)
 * [Compatibility](#compatibility)
 
 
-## Quick Start
+## Installation
 
-### Prerequisites
-
-```console
-mamba env create -f environment.yml && conda activate r2x
-```
-To install all Python dependencies
+Install R2X on your local Python installation from PyPi
 
 ```console
-python -m pip install -e  ".[all]"
+python -m pip install r2x
 ```
 
-### Running the CLI
+Or use it as standalone tool,
 
 ```console
-r2x -i $RUN_FOLDER --year=2035 -o $OUTPUT_FOLDER
+uvx r2x --help
 ```
 
-## Developer environment setup
+## Features
 
+- [PowerSystem.jl](https://github.com/NREL-Sienna/PowerSystems.jl) model representations
+- Translate [ReEDS](https://github.com/NREL/ReEDS-2.0) models to PCM models like [Sienna](https://github.com/NREL-Sienna) or PLEXOS,
+- Translate from PLEXOS XML's to Sienna,
+- Comprehensive PLEXOS XML parser,
 
-Before starting to work on adding/fixing on R2X, make sure that you setup your
-environment to include all the developer dependencies and our opinionated
-pre-commit hooks.
+## Documentation
 
-```console
-python -m pip install -e ".[dev]"
-```
+R2X documentation is available at [https://nrel.github.io/R2X/](https://nrel.github.io/R2X/)
 
-### Install pre-commit hooks
-```console
-pre-commit install
-```
 
 ## Roadmap
 
@@ -70,6 +62,9 @@ If you're curious about what we're working on, check out the roadmap:
 
 ## Compatibility
 
+> [!WARNING]
+> 2024-11-12: Compatibility table not updated.
+
 | R2X Version  | Supported Input Model Versions          | Supported Output Model Versions         |
 |--------------|-----------------------------------------|-----------------------------------------|
 | 0.1          | ReEDS (v1, v2, v3, v4)                  | Plexos 9.000R6                           |
@@ -81,6 +76,8 @@ If you're curious about what we're working on, check out the roadmap:
 |              | ReEDS                                   | Plexos 9.000R6, 9.2000R5             |
 |              | Plexos                                  | Nodal Plexos              |
 
+### Licence
 
-### Notes:
-- **Sienna to Plexos:** Experimental phase
+R2X is released under a BSD 3-Clause License.
+
+R2X was developed under software record SWR-24-91 at the National Renewable Energy Laboratory (NREL).
