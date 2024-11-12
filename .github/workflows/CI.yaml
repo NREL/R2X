@@ -62,7 +62,9 @@ jobs:
 
       - name: Installing dependencies
         run: uv sync --dev
-      - uses: pre-commit/action@v3.0.1
+      - uses: Run pre-commit
+        run: |
+          uv run pre-commit run --all-files
 
   mypy:
     runs-on: ubuntu-latest
@@ -77,10 +79,10 @@ jobs:
         with:
           python-version-file: "pyproject.toml"
       - name: Installing dependencies
-        run: uv pip sync --dev --system
+        run: uv sync --dev
       - name: Run mypy
         run: |
-          mypy --config-file=pyproject.toml src/
+          uv run mypy --config-file=pyproject.toml src/
 
   ruff:
     runs-on: ubuntu-latest
