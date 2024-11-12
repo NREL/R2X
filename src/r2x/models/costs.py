@@ -5,7 +5,7 @@ from infrasys.models import InfraSysBaseModelWithIdentifers
 from infrasys.value_curves import LinearCurve
 from pydantic import Field, computed_field
 from infrasys.cost_curves import FuelCurve, ProductionVariableCostCurve
-from r2x.units import Currency, FuelPrice
+from r2x.units import Currency
 from operator import attrgetter
 
 
@@ -53,7 +53,7 @@ class HydroGenerationCost(OperationalCost):
 
 
 class ThermalGenerationCost(OperationalCost):
-    fixed: Annotated[FuelPrice, Field(description="Cost of using fuel in $/MWh.")] = FuelPrice(0.0, "usd/MWh")
+    fixed: Annotated[Currency, Field(description="Cost of using fuel in $ or $/hr.")] = Currency(0, "usd")
     shut_down: Annotated[Currency | None, Field(description="Cost to turn the unit off")] = Currency(
         0.0, "usd"
     )
@@ -63,7 +63,7 @@ class ThermalGenerationCost(OperationalCost):
     @classmethod
     def example(cls) -> "ThermalGenerationCost":
         return ThermalGenerationCost(
-            fixed=FuelPrice(0, "usd/MWh"),
+            fixed=Currency(0, "usd"),
             shut_down=Currency(100, "usd"),
             start_up=Currency(100, "usd"),
             variable=FuelCurve(value_curve=LinearCurve(10)),  # type: ignore
