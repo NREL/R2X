@@ -69,6 +69,7 @@ exclude = [
     'plugins',
 ]
 ignore_missing_imports=true
+strict = "true"
 
 # mypy gets a false positive due to having pandas
 [[tool.mypy.overrides]]
@@ -138,6 +139,8 @@ docstring-code-line-length = "dynamic"
 "src/r2x/models/*" = ["D"]
 
 [tool.pytest.ini_options]
+addopts = "-vvv"
+testpaths = "tests"
 pythonpath = [
   "src"
 ]

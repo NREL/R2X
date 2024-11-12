@@ -77,10 +77,10 @@ jobs:
         with:
           python-version-file: "pyproject.toml"
       - name: Installing dependencies
-        run: uv sync --dev
+        run: uv pip sync --dev --system
       - name: Run mypy
         run: |
-          uv run mypy --config-file=pyproject.toml src/
+          mypy --config-file=pyproject.toml src/
 
   ruff:
     runs-on: ubuntu-latest
