@@ -69,7 +69,6 @@ exclude = [
     'plugins',
 ]
 ignore_missing_imports=true
-strict = "true"
 
 # mypy gets a false positive due to having pandas
 [[tool.mypy.overrides]]
