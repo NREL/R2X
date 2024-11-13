@@ -1,8 +1,8 @@
 """Configuration file for the Sphinx documentation builder."""
 
 project = "R2X"
-copyright = "2024, R2X developers"
-author = "pesap, cobika"
+copyright = "2024, Alliance for Sustainable Energy, LLC"
+author = "R2X developers"
 
 # Add more extensions here
 extensions = [
