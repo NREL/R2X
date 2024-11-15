@@ -56,6 +56,7 @@ from .parser_helpers import (
     reconcile_timeseries,
 )
 from .plexos_utils import (
+    find_xml,
     DATAFILE_COLUMNS,
     PLEXOS_ACTION_MAP,
     filter_property_dates,
@@ -181,7 +182,12 @@ class PlexosParser(PCMParser):
             raise ParserError(msg)
 
         # Populate databse from XML file.
-        xml_file = xml_file or self.run_folder / self.config.fmap["xml_file"]["fname"]
+        # If xml file is not specified, check user_dict["fmap"]["xml_file"] or use
+        # only xml file in project directory
+        if xml_file is None:
+            xml_file = self.config.fmap.get("xml_file", {}).get("fname", None)
+            xml_file = xml_file or str(find_xml(self.run_folder))
+
         self.db = PlexosSQLite(xml_fname=xml_file)
 
         # Extract scenario data
