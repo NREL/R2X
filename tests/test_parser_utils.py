@@ -33,3 +33,13 @@ def test_csv_handler_basic(temp_csv_file):
 
     with pytest.raises(FileNotFoundError):
         _ = csv_handler(Path("non_existent_file.csv"))
+
+
+@pytest.fixture
+def temp_xml_file():
+    with NamedTemporaryFile(mode="w", delete=False, suffix=".xml") as temp_file:
+        return Path(temp_file.name)
+
+
+def test_find_xml():
+    pass
