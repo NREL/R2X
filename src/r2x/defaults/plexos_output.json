@@ -6,6 +6,7 @@
     "Charge Efficiency": "%",
     "Fixed Load": "MW",
     "Forced Outage Rate": "%",
+    "Fuel Price": "$/MMbtu",
     "Heat Rate": "MMBtu/MWh",
     "Initial SoC": "%",
     "Initial Volume": "GWh",

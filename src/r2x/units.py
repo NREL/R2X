@@ -46,7 +46,11 @@ class HeatRate(BaseQuantity):
 
 
 class FuelPrice(BaseQuantity):
-    __base_unit__ = "usd/watthour"
+    __base_unit__ = "usd/Btu"
+
+
+class VOMPrice(BaseQuantity):
+    __base_unit__ = "usd/kWh"
 
 
 class Energy(BaseQuantity):
