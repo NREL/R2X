@@ -17,18 +17,6 @@
     "object_name": "base_report",
     "parent_class": "System",
     "phase_id": 4,
-    "property": "Generation",
-    "report_period": true,
-    "report_samples": false,
-    "report_statistics": false,
-    "report_summary": true
-  },
-  {
-    "child_class": "Battery",
-    "collection": "Batteries",
-    "object_name": "base_report",
-    "parent_class": "System",
-    "phase_id": 4,
     "property": "Load",
     "report_period": true,
     "report_samples": false,
