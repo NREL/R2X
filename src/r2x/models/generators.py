@@ -11,10 +11,10 @@ from r2x.models.load import PowerLoad
 from r2x.enums import PrimeMoversType
 from r2x.units import (
     ActivePower,
-    FuelPrice,
     Percentage,
     PowerRate,
     ApparentPower,
+    VOMPrice,
     ureg,
     Time,
     Energy,
@@ -59,7 +59,7 @@ class Generator(Device):
     must_run: Annotated[int | None, Field(description="If we need to force the dispatch of the device.")] = (
         None
     )
-    vom_price: Annotated[FuelPrice, Field(description="Variable operational price $/MWh.")] | None = None
+    vom_price: Annotated[VOMPrice, Field(description="Variable operational price $/MWh.")] | None = None
     prime_mover_type: (
         Annotated[PrimeMoversType, Field(description="Prime mover technology according to EIA 923.")] | None
     ) = None
