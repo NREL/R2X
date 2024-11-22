@@ -1250,12 +1250,13 @@ class PlexosParser(PCMParser):
         # when accessing Variable data. We may also need to apply this filtering to
         # other Enum classes.
         variables = data.filter(pl.col("child_class_name") == ClassEnum.Variable.name)
-        variables = variables.group_by("object_id", maintain_order=True).map_groups(
-            lambda groupdf: groupdf.filter(pl.col("band") == pl.col("band").min())
-        )
+        if not variables.is_empty():
+            variables = variables.group_by("object_id", maintain_order=True).map_groups(
+                lambda groupdf: groupdf.filter(pl.col("band") == pl.col("band").min())
+            )
 
-        data = data.filter(pl.col("child_class_name") != ClassEnum.Variable.name)
-        data = pl.concat([data, variables])
+            data = data.filter(pl.col("child_class_name") != ClassEnum.Variable.name)
+            data = pl.concat([data, variables])
 
         # Create a lookup map to find nested objects easily
         object_map = data.select(["object_id", "tag_datafile", "tag_datafile_object_id"]).to_dict(
