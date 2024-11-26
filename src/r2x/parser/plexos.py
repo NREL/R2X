@@ -181,6 +181,8 @@ class PlexosParser(PCMParser):
             xml_file = self.config.fmap.get("xml_file", {}).get("fname", None)
             xml_file = xml_file or str(find_xml(self.run_folder))
 
+        xml_file = str(self.run_folder / xml_file)
+
         self.db = PlexosSQLite(xml_fname=xml_file)
 
         # Extract scenario data

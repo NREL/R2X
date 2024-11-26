@@ -4,6 +4,7 @@ from pathlib import Path
 from polars.testing import assert_frame_equal
 from tempfile import NamedTemporaryFile
 from r2x.parser.handler import csv_handler
+from r2x.parser.plexos_utils import find_xml
 
 
 @pytest.fixture
@@ -36,10 +37,32 @@ def test_csv_handler_basic(temp_csv_file):
 
 
 @pytest.fixture
-def temp_xml_file():
-    with NamedTemporaryFile(mode="w", delete=False, suffix=".xml") as temp_file:
-        return Path(temp_file.name)
+def basic_xml():
+    data = """
+            <t_category>
+              <category_id>1</category_id>
+              <class_id>1</class_id>
+              <rank>0</rank>
+              <name>-</name>
+            </t_category>
+           """
+    return data
 
 
-def test_find_xml():
-    pass
+def test_find_xml(tmp_path: Path, basic_xml: str):
+    # Case 1: no xml files in tmp_path
+    with pytest.raises(FileNotFoundError):
+        find_xml(tmp_path)
+
+    # Case 2: 1 xml file in tmp_path
+    xml_file_1 = tmp_path / "file1.xml"
+    xml_file_1.write_text(basic_xml)
+
+    assert xml_file_1 == find_xml(tmp_path)
+
+    # Case 3: 2 xml files in tmp_path
+    xml_file_2 = tmp_path / "file2.xml"
+    xml_file_2.write_text(basic_xml)
+
+    with pytest.raises(FileNotFoundError):
+        find_xml(tmp_path)
