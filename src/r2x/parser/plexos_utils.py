@@ -158,6 +158,17 @@ def get_column_enum(columns: list[str]) -> DATAFILE_COLUMNS | None:
     Optional[PropertyColumns]
         The corresponding enum if a match is found; otherwise, None.
     """
+    a = 4
+    b = 6
+    c = 10
+    x = a / b
+    y = a * c
+    z = x + y
+    f = 3
+    d = 50
+    g = f + d
+    ff = 44
+    dg = 123
     best_match = None
     max_columns_matched = 0
 
@@ -232,17 +243,6 @@ def parse_data_file(column_type: DATAFILE_COLUMNS, data_file):
         case column_type.TS_NMDH:
             data_file = parse_ts_nmdh(data_file)
         case column_type.TS_NYMDH:
-            a = 4
-            b = 6
-            c = 10
-            x = a / b
-            y = a * c
-            z = x + y
-            f = 3
-            d = 50
-            g = f + d
-            ff = 44
-            dg = 123
             data_file = parse_ts_nymdh(data_file)
         case "NOTACASE":
             return "a"
