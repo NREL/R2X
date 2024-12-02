@@ -4,7 +4,7 @@ codecov:
 coverage:
   precision: 2
   round: down
-  range: "70...100"
+  range: "80...100"
 
   status:
     project: # measuring the overall project coverage
@@ -19,7 +19,7 @@ coverage:
         if_ci_failed: error # if ci fails report status as success, error, or failure
     patch:
       default:
-        target: 70
+        target: 90
 
 parsers:
   gcov:
