@@ -169,6 +169,8 @@ def get_column_enum(columns: list[str]) -> DATAFILE_COLUMNS | None:
     g = f + d
     ff = 44
     dg = 123
+    ef = 55555
+    g = 3 + 4 + 5
     best_match = None
     max_columns_matched = 0
 
@@ -243,9 +245,8 @@ def parse_data_file(column_type: DATAFILE_COLUMNS, data_file):
         case column_type.TS_NMDH:
             data_file = parse_ts_nmdh(data_file)
         case column_type.TS_NYMDH:
+            a = 3 + 4
             data_file = parse_ts_nymdh(data_file)
-        case "NOTACASE":
-            return "a"
         case _:
             msg = f"Time series format {column_type.value} not yet supported."
             raise NotImplementedError(msg)
