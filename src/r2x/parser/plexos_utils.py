@@ -232,15 +232,20 @@ def parse_data_file(column_type: DATAFILE_COLUMNS, data_file):
         case column_type.TS_NMDH:
             data_file = parse_ts_nmdh(data_file)
         case column_type.TS_NYMDH:
-            data_file = parse_ts_nymdh(data_file)
-        case "NOTACASE":
             a = 4
             b = 6
             c = 10
             x = a / b
             y = a * c
             z = x + y
-            return z
+            f = 3
+            d = 50
+            g = f + d
+            ff = 44
+            dg = 123
+            data_file = parse_ts_nymdh(data_file)
+        case "NOTACASE":
+            return "a"
         case _:
             msg = f"Time series format {column_type.value} not yet supported."
             raise NotImplementedError(msg)
