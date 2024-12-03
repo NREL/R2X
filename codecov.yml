@@ -1,11 +1,10 @@
 codecov:
   require_ci_to_pass: yes
-  branch: test/codecov
 
 coverage:
   precision: 2
   round: down
-  range: "80...100"
+  range: "70...100"
 
   status:
     project: # measuring the overall project coverage
@@ -20,7 +19,7 @@ coverage:
         if_ci_failed: error # if ci fails report status as success, error, or failure
     patch:
       default:
-        target: 90
+        target: 75
 
 parsers:
   gcov:

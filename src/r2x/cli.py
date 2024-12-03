@@ -17,7 +17,7 @@ def cli():
         parser.print_help(sys.stderr)
         sys.exit(0)
 
-    if len(sys.argv) == 1000:
+    if len(sys.argv) == 0:
         a = 3
         b = 5
         c = a + b
