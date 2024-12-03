@@ -5,7 +5,6 @@ It can either read the information directly or throught a cases file.
 """
 
 # System packages
-import csv
 import inspect
 import os
 import pathlib
@@ -20,7 +19,7 @@ import rich
 from rich.table import Table
 
 # Local imports
-from .utils import get_defaults, get_project_root, match_input_model, update_dict, validate_string
+from .utils import get_defaults, match_input_model, update_dict
 
 
 @dataclass
@@ -307,70 +306,46 @@ class Configuration:
         return instance
 
     @classmethod
-    def from_cases(cls, cases_fpath: str, cli_args: dict, user_dict: dict | None = None):
-        """Parse the legacy cases file into a list of Scenarios.
+    def from_scenarios(cls, cli_args: dict, user_dict: dict, **kwargs):
+        """Create scenario from scenarios on the config file.
+
+        This method takes the `user_dict['scenarios'] key which is a list of dicts to create the different
+        scenarios for translation. The order of override is CLI -> Global Keys -> Scenario Keys
 
         Parameters
         ----------
-        cases_fpath
-            fpath of cases file
+        cli_args
+            Arguments for constructing the scenario.
+        user_dict
+            Configuration for the translation.
 
-        Raises
-        ------
-        FileNotFoundError
-            If csv file does not exists
+        See Also
+        --------
+            Scenario.from_kwargs
         """
         instance = cls()
-        logger.info("Parsing configuration from: {}", cases_fpath)
 
-        # Check if only the file name is passed. If so, try to find the file in
-        # the current folder
-        if not cases_fpath.endswith(".csv"):
-            project_path = str(get_project_root())
-            cases_fpath = os.path.join(project_path, f"cases_{cases_fpath}.csv")
+        global_keys = {key: value for key, value in user_dict.items() if key != "scenarios"}
 
-        with open(cases_fpath) as csv_file:
-            csv_reader = csv.reader(csv_file)
-            header = next(csv_reader)
-            rows = list(csv_reader)
-            for col_num in range(3, len(header)):
-                scenario_flags = {}
-                feature_flag = False
-                feature_flags_dict = {}
-                for row in rows[1:]:
-                    flag_name = row[0]
-
-                    # Skip uppercase flags since they are separators
-                    if flag_name.isupper() and "EXPERIMENTAL" in row:
-                        feature_flag = True
-                        continue
-
-                    default_value = row[1]
-                    flag_value = row[col_num]
-
-                    # Use validated default value if None
-                    value = default_value if not flag_value else flag_value
-                    validated_value = validate_string(value)
-
-                    if not feature_flag:
-                        scenario_flags[flag_name] = validated_value
-                    else:
-                        # Only save feature flag if passed. Not sure if this will stay.
-                        if validated_value is not None:
-                            feature_flags_dict.update({flag_name: validated_value})
-
-                scenario_fpath = scenario_flags.get("scenario")
-                run_folder = scenario_flags.get("run_folder")
-                run_folder = os.path.join(str(run_folder), str(scenario_fpath))
-                scenario_flags["run_folder"] = run_folder
-                scenario_flags["name"] = header[col_num]
-
-                scenario_flags = {key: value for key, value in scenario_flags.items() if value}
-                scenario_flags["feature_flags"] = feature_flags_dict
-                instance.scenarios[header[col_num]] = instance.override(
-                    scenario_flags,
-                    cli_args=cli_args,
-                    user_dict=user_dict,
-                )
-                instance.scenario_names.append(header[col_num])
+        for scenario in user_dict["scenarios"]:
+            scenario = ChainMap(cli_args, global_keys, scenario)
+            scenario_class = Scenario.from_kwargs(**scenario)
+            instance.scenario_names.append(scenario_class.name)
+            instance.scenarios[scenario_class.name] = scenario_class
         return instance
+
+
+def get_config(cli_args, user_dict):
+    """Create configuration class using CLI arguments."""
+    if solve_year := cli_args.get("solve_year"):
+        cli_args["solve_year"] = solve_year[0] if len(solve_year) == 1 else solve_year
+
+    if "scenarios" in user_dict:
+        config_mgr = Configuration.from_scenarios(cli_args, user_dict)
+    else:
+        config_mgr = Configuration.from_cli(cli_args, user_dict=user_dict)
+    assert config_mgr
+
+    if scenario_name := cli_args.get("scenario_name", None):
+        config_mgr = config_mgr.get(scenario_name)
+    return config_mgr

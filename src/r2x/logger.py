@@ -27,7 +27,7 @@ class Formatter:  # noqa: D101
 def setup_logging(
     filename=None,
     level="INFO",
-    debug: bool = False,
+    verbosity: int = 0,
 ):
     """Configure logging of file.
 
@@ -40,8 +40,19 @@ def setup_logging(
     verbose :  bool
         returns additional logging information.
     """
-    if debug:
-        level = "DEBUG"
+    match verbosity:
+        case 0:
+            level = "SUCCESS"
+        case 1:
+            level = "INFO"
+        case 2:
+            level = "DEBUG"
+        case 3:
+            level = "TRACE"
+        case _:
+            msg = "Verbosity level not supported"
+            raise NotImplementedError(msg)
+
     from loguru import logger
 
     logger.remove()

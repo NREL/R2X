@@ -1,22 +1,22 @@
 """Umbrella API for R2X model."""
 
-# System packages
 import importlib
 import inspect
+import shutil
 import sys
-
-from loguru import logger
+from importlib.resources import files
+from pathlib import Path
 
 from infrasys.system import System
+from loguru import logger
+
 from r2x.exporter.handler import get_exporter
 
-# from r2x.models import *
-# Module level imports
-from .config import Configuration, Scenario
+from .config import Scenario, get_config
 from .exporter import exporter_list
-from .upgrader import upgrade_handler
 from .parser import parser_list
 from .parser.handler import BaseParser, get_parser_data
+from .upgrader import upgrade_handler
 from .utils import (
     DEFAULT_PLUGIN_PATH,
 )
@@ -61,13 +61,6 @@ def run_parser(config: Scenario, **kwargs):
 
     assert system is not None, "System failed to create"
 
-    # match config.input_model:
-    #     case "reeds-US":
-    #         return system
-    #     case "plexos" | "sienna":
-    #         return parser
-    #     case _:
-    #         raise NotImplementedError(f"Parser for {config.input_model} is not defined.")
     return system, parser
 
 
@@ -138,24 +131,21 @@ def run_single_scenario(scenario: Scenario, **kwargs) -> None:
     return
 
 
-def scenario_runner(config_mgr: Configuration, **kwargs) -> None:
-    """Run the different translation for a configuration.
-
-    If the config object is Configuration class, we run all the different
-    Scenarios in parallel using multiprocessing.
-
-    Parameters
-    ----------
-    config
-        Configuration
-
-    Other Parameters
-    ----------------
-    kwargs
-        arguments passed for convenience.
-    """
-    logger.debug("Running {} scenarios", len(config_mgr))
+def run(cli_args, user_dict):
+    """Run a translation."""
+    config_mgr = get_config(cli_args=cli_args, user_dict=user_dict)
+    logger.info("Running {} scenarios", len(config_mgr))
     for _, scenario in config_mgr.scenarios.items():
         if not isinstance(scenario.solve_year, list) or len(scenario.solve_year) == 1:
-            run_single_scenario(scenario, **kwargs)
+            run_single_scenario(scenario)
+
+
+def init(cli_args: dict):
+    """Create a configuration file on the path that the user request."""
+    logger.debug("Running init command")
+    path = Path(cli_args["path"])
+
+    with files("r2x.defaults") as package_path:  # type: ignore
+        file_path = package_path / "user_dict.yaml"
+        shutil.copy(file_path, Path(path) / "user_dict.yaml")
     return

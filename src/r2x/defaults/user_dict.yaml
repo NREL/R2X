@@ -1,0 +1,16 @@
+# Example of just using solve year for permutations
+# -------------------------------------------------
+input_model: reeds-US
+output_model: plexos
+weather_year: 2012
+run_folder: tests/data/pacific
+scenarios:
+  - { name: test2030, solve_year: 2035 }
+  - { name: test2050, solve_year: 2050 }
+# Example of fine level of detail for each translation
+# -------------------------------------------------
+# input_model: reeds-US
+# output_model: plexos
+# scenarios:
+#   - { name: test2030, run_folder: tests/data/pacific, weather_year: 2012, solve_year: 2035}
+#   - { name: test2050, run_folder: tests/data/pacific, weather_year: 2012, solve_year: 2050}
