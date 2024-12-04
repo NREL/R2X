@@ -5,6 +5,7 @@ from r2x.api import System
 from r2x.config import Scenario
 from r2x.parser.handler import get_parser_data
 from r2x.parser.plexos import PlexosParser
+from r2x.exceptions import ParserError
 
 DB_NAME = "2-bus_example.xml"
 MODEL_NAME = "main_model"
@@ -63,8 +64,12 @@ def test_parser_system(pjm_scenario):
         "solar": {"fuel": "SUN", "type": "WT"},
         "wind": {"fuel": "WIND", "type": "PV"},
     }
-    pjm_scenario.defaults["plexos_category_map"] = plexos_category_map
     pjm_scenario.model = "model_2012"
+
+    with pytest.raises(ParserError):
+        parser = get_parser_data(pjm_scenario, parser_class=PlexosParser)
+
+    pjm_scenario.defaults["plexos_category_map"] = plexos_category_map
 
     parser = get_parser_data(pjm_scenario, parser_class=PlexosParser)
     system = parser.build_system()
