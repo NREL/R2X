@@ -335,12 +335,12 @@ class Configuration:
         return instance
 
 
-def get_config(cli_args, user_dict):
+def get_config(cli_args: dict, user_dict: dict | None = None):
     """Create configuration class using CLI arguments."""
     if solve_year := cli_args.get("solve_year"):
         cli_args["solve_year"] = solve_year[0] if len(solve_year) == 1 else solve_year
 
-    if "scenarios" in user_dict:
+    if user_dict is not None and "scenarios" in user_dict:
         config_mgr = Configuration.from_scenarios(cli_args, user_dict)
     else:
         config_mgr = Configuration.from_cli(cli_args, user_dict=user_dict)

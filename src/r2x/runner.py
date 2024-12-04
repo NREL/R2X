@@ -131,17 +131,47 @@ def run_single_scenario(scenario: Scenario, **kwargs) -> None:
     return
 
 
-def run(cli_args, user_dict):
-    """Run a translation."""
+def run(cli_args: dict, user_dict: dict | None = None) -> None:
+    """Run a translation.
+
+    This function takes the `cli_args` dictionary to create the configuratio and run the translation process.
+    If the user specifies multiple scenarios, this function run the translation sequentially with
+    no specific order.
+
+    Parameters
+    ----------
+    cli_args
+        Arguments for constructing the scenario.
+    user_dict
+        Optional, User custom configuration.
+
+    See Also
+    --------
+        get_config: Get configuration from arguments
+        run_single_scenario: Run a single translation scenario
+
+    Notes
+    -----
+    Currently the scenario shoul only have a single year to run.
+    """
     config_mgr = get_config(cli_args=cli_args, user_dict=user_dict)
     logger.info("Running {} scenarios", len(config_mgr))
     for _, scenario in config_mgr.scenarios.items():
         if not isinstance(scenario.solve_year, list) or len(scenario.solve_year) == 1:
             run_single_scenario(scenario)
+    return
 
 
-def init(cli_args: dict):
-    """Create a configuration file on the path that the user request."""
+def init(cli_args: dict) -> None:
+    """Copy the default configuration file on the path that the user request.
+
+    If the user does not provide a path, the current path is used.
+
+    Parameters
+    ----------
+    cli_args
+        Arguments from the CLI
+    """
     logger.debug("Running init command")
     path = Path(cli_args["path"])
 

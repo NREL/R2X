@@ -43,7 +43,7 @@ def cli() -> None:
     return None
 
 
-def cli_commands(cli_arguments, user_dict) -> None:
+def cli_commands(cli_args: dict, user_dict: dict | None = None) -> None:
     """Run the different translation for a configuration.
 
     If the config object is Configuration class, we run all the different
@@ -59,10 +59,10 @@ def cli_commands(cli_arguments, user_dict) -> None:
     kwargs
         arguments passed for convenience.
     """
-    if cli_arguments["command"] == "run":
-        run(cli_arguments, user_dict)
-    elif cli_arguments["command"] == "init":
-        init(cli_arguments)
+    if cli_args["command"] == "run":
+        run(cli_args, user_dict=user_dict)
+    elif cli_args["command"] == "init":
+        init(cli_args)
     else:
         raise NotImplementedError
     return
