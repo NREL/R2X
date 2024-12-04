@@ -170,7 +170,7 @@ class PlexosParser(PCMParser):
         # https://github.com/NREL/R2X/issues/5
         # R2X needs at least one of this maps defined to correctly work.
         one_required = ["fuel_map", "device_map", "device_match_string", "category_map"]
-        if all(getattr(self, one_req, True) for one_req in one_required):
+        if all(getattr(self, one_req, {}) == {} for one_req in one_required):
             msg = f'At least one of {", or ".join(one_required)} is required to initialize PlexosParser'
             raise ParserError(msg)
 
