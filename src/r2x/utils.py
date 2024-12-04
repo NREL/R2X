@@ -206,7 +206,7 @@ def _load_file(fname: str, loader) -> dict:
         with open(fname, "r") as f:
             return loader(f)
     except FileNotFoundError:
-        raise IOError(f"File {fname} not found.")
+        raise FileNotFoundError(f"File {fname} not found.")
     except IOError as e:
         raise IOError(f"Error reading the file {fname}: {e}")
 
