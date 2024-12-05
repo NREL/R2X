@@ -3,9 +3,9 @@ import pytest
 from plexosdb import XMLHandler
 from r2x.api import System
 from r2x.config import Scenario
-from r2x.exceptions import ParserError
 from r2x.parser.handler import get_parser_data
 from r2x.parser.plexos import PlexosParser
+from r2x.exceptions import ParserError
 
 DB_NAME = "2-bus_example.xml"
 MODEL_NAME = "main_model"
@@ -58,29 +58,18 @@ def test_build_system(plexos_parser_instance):
     assert isinstance(system, System)
 
 
-def test_raise_if_no_map_provided(tmp_path, data_folder):
-    scenario = Scenario.from_kwargs(
-        name="plexos_test",
-        input_model="plexos",
-        run_folder=data_folder,
-        output_folder=tmp_path,
-        solve_year=2035,
-        model=MODEL_NAME,
-        weather_year=2012,
-        fmap={"xml_file": {"fname": DB_NAME}},
-    )
-    with pytest.raises(ParserError):
-        _ = get_parser_data(scenario, parser_class=PlexosParser)
-
-
 def test_parser_system(pjm_scenario):
     plexos_category_map = {
         "thermal": {"fuel": "GAS", "type": "CC"},
         "solar": {"fuel": "SUN", "type": "WT"},
         "wind": {"fuel": "WIND", "type": "PV"},
     }
-    pjm_scenario.defaults["plexos_category_map"] = plexos_category_map
     pjm_scenario.model = "model_2012"
+
+    with pytest.raises(ParserError):
+        parser = get_parser_data(pjm_scenario, parser_class=PlexosParser)
+
+    pjm_scenario.defaults["plexos_category_map"] = plexos_category_map
 
     parser = get_parser_data(pjm_scenario, parser_class=PlexosParser)
     system = parser.build_system()

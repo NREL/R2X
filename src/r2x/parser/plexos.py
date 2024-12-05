@@ -56,6 +56,7 @@ from .parser_helpers import (
     reconcile_timeseries,
 )
 from .plexos_utils import (
+    find_xml,
     DATAFILE_COLUMNS,
     PLEXOS_ACTION_MAP,
     filter_property_dates,
@@ -168,20 +169,20 @@ class PlexosParser(PCMParser):
         # TODO(pesap): Rename exceptions to include R2X
         # https://github.com/NREL/R2X/issues/5
         # R2X needs at least one of this maps defined to correctly work.
-        if (
-            not self.fuel_map
-            and not self.device_map
-            and not self.device_match_string
-            and not self.category_map
-        ):
-            msg = (
-                "Neither `plexos_fuel_map` or `plexos_device_map` or `device_match_string` was provided. "
-                "To fix, provide any of the mappings."
-            )
+        one_required = ["fuel_map", "device_map", "device_match_string", "category_map"]
+        if all(getattr(self, one_req, {}) == {} for one_req in one_required):
+            msg = f'At least one of {", or ".join(one_required)} is required to initialize PlexosParser'
             raise ParserError(msg)
 
         # Populate databse from XML file.
-        xml_file = xml_file or self.run_folder / self.config.fmap["xml_file"]["fname"]
+        # If xml file is not specified, check user_dict["fmap"]["xml_file"] or use
+        # only xml file in project directory
+        if xml_file is None:
+            xml_file = self.config.fmap.get("xml_file", {}).get("fname", None)
+            xml_file = xml_file or str(find_xml(self.run_folder))
+
+        xml_file = str(self.run_folder / xml_file)
+
         self.db = PlexosSQLite(xml_fname=xml_file)
 
         # Extract scenario data
