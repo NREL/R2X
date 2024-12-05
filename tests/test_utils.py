@@ -33,6 +33,10 @@ def test_read_user_dict(tmp_path):
     with pytest.raises(ValueError):
         _ = read_user_dict(user_dict)
 
+    user_dict = '[{"fmap": true}]'
+    with pytest.raises(ValueError):
+        _ = read_user_dict(user_dict)
+
     sample_data = {"name": "test", "fmap": True, "input_model": "plexos"}
 
     yaml_file = tmp_path / "data.yaml"

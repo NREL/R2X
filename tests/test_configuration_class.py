@@ -165,6 +165,14 @@ def test_get_config(cli_input, user_dict):
     assert config is not None
 
 
+def test_get_config_cli_override():
+    cli_args = {"name": "TestConfig", "input_model": "reeds-US"}
+    user_dict = {"input_model": "plexos"}
+    config = get_config(cli_args, user_dict)
+    assert config is not None
+    assert config["TestConfig"].input_model == "reeds-US"
+
+
 def test_config_override(scenario_instance):
     user_dict = {"fmap": {"xml_file": {"fname": "test_override"}}}
     cli_args = {"output_model": "sienna"}
