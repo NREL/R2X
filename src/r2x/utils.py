@@ -183,7 +183,7 @@ def update_dict(base_dict: dict, override_dict: ChainMap | dict | None = None) -
 
 def read_user_dict(fname: str) -> dict:
     """Load Yaml to Python dictionary."""
-    if fname.strip().startswith("[]"):
+    if fname.strip().startswith("["):
         msg = "JSON arrays not supported for user dict."
         raise ValueError(msg)
 
