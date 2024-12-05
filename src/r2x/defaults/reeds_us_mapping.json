@@ -65,6 +65,20 @@
     "optional": true,
     "units": "tonne"
   },
+  "co2_incent": {
+    "column_mapping": {
+      "i": "tech",
+      "r": "region",
+      "t": "year",
+      "v": "vintage",
+      "value": "incentive"
+    },
+    "description": "Capture incentive in $/ton",
+    "fname": "co2_captured_incentive.csv",
+    "input": true,
+    "optional": true,
+    "units": "$/ton"
+  },
   "cost_vom": {
     "column_mapping": {
       "i": "tech",
@@ -104,6 +118,21 @@
     "input": false,
     "optional": true,
     "units": "MW"
+  },
+  "emission_capture_rate": {
+    "column_mapping": {
+      "e": "pollutant",
+      "i": "tech",
+      "r": "region",
+      "t": "year",
+      "v": "vintage",
+      "value": "incentive"
+    },
+    "description": "Capture rate for given CCS technology.",
+    "fname": "capture_rate.csv",
+    "input": true,
+    "optional": true,
+    "units": "ton/MWh"
   },
   "emission_rates": {
     "column_mapping": {
