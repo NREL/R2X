@@ -1,0 +1,861 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Index &#8212; R2X  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!-- 
+    this give us a css class that will be invisible only if js is disabled 
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=26a4bc78f4c0ddb94549" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=26a4bc78f4c0ddb94549" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/sphinx-book-theme.css?v=a3416100" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/autodoc_pydantic.css" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=26a4bc78f4c0ddb94549"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=26a4bc78f4c0ddb94549" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=26a4bc78f4c0ddb94549" />
+
+    <script src="_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=f281be69"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs";mermaid.registerLayoutLoaders(elkLayouts);mermaid.initialize({startOnLoad:false});</script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";
+window.addEventListener("load", () => mermaid.run());
+</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'genindex';</script>
+    <link rel="index" title="Index" href="#" />
+    <link rel="search" title="Search" href="search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">R2X  documentation</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Using R2X</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Changelog</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="dev/develop.html">How to contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dev/git.html">Git convention</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Modeling PCM</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="model/logic.html">Baseline system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model/diagram.html">R2X diagram</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model/models.html">Data Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model/terminology.html">Terminology</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/enums.html">Enums</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Zonal to Nodal</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="nodal.html">Nodal documentation</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="api/config.html">Configuration classes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/system.html">System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/plexos.html">Plexos API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/models.html">Data Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/parsers.html">Parsers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/exporters.html">Exporters</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button>
+
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+
+<h1 id="index">Index</h1>
+
+<div class="genindex-jumpbox">
+ <a href="#A"><strong>A</strong></a>
+ | <a href="#B"><strong>B</strong></a>
+ | <a href="#C"><strong>C</strong></a>
+ | <a href="#D"><strong>D</strong></a>
+ | <a href="#E"><strong>E</strong></a>
+ | <a href="#F"><strong>F</strong></a>
+ | <a href="#G"><strong>G</strong></a>
+ | <a href="#H"><strong>H</strong></a>
+ | <a href="#I"><strong>I</strong></a>
+ | <a href="#L"><strong>L</strong></a>
+ | <a href="#M"><strong>M</strong></a>
+ | <a href="#N"><strong>N</strong></a>
+ | <a href="#O"><strong>O</strong></a>
+ | <a href="#P"><strong>P</strong></a>
+ | <a href="#R"><strong>R</strong></a>
+ | <a href="#S"><strong>S</strong></a>
+ | <a href="#T"><strong>T</strong></a>
+ | <a href="#U"><strong>U</strong></a>
+ | <a href="#V"><strong>V</strong></a>
+ | <a href="#W"><strong>W</strong></a>
+ | <a href="#Z"><strong>Z</strong></a>
+ 
+</div>
+<h2 id="A">A</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/enums.html#r2x.enums.ACBusTypes">ACBusTypes (class in r2x.enums)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.add_batteries">add_batteries() (r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.add_component">add_component() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.add_component_category">add_component_category() (r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.add_components">add_components() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.add_constraints">add_constraints() (r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.add_emissions">add_emissions() (r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.add_generators">add_generators() (r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.add_interfaces">add_interfaces() (r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.add_lines">add_lines() (r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.add_reserves">add_reserves() (r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.add_storage">add_storage() (r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.add_time_series">add_time_series() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.add_topology">add_topology() (r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.add_transformers">add_transformers() (r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.auto_add_composed_components">auto_add_composed_components (r2x.api.System property)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="B">B</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/exporters.html#r2x.exporter.handler.BaseExporter">BaseExporter (class in r2x.exporter.handler)</a>
+</li>
+      <li><a href="model/terminology.html#term-Baseline-capacity"><strong>Baseline capacity</strong></a>
+</li>
+      <li><a href="model/terminology.html#term-Baseline-system"><strong>Baseline system</strong></a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="model/terminology.html#term-BESS"><strong>BESS</strong></a>
+</li>
+      <li><a href="api/parsers.html#r2x.parser.plexos.PlexosParser.build_system">build_system() (r2x.parser.plexos.PlexosParser method)</a>
+
+      <ul>
+        <li><a href="api/parsers.html#r2x.parser.reeds.ReEDSParser.build_system">(r2x.parser.reeds.ReEDSParser method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.bulk_insert_objects">bulk_insert_objects() (r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="C">C</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="model/terminology.html#term-CEM"><strong>CEM</strong></a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.change_component_uuid">change_component_uuid() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/parsers.html#r2x.parser.plexos.cli_arguments">cli_arguments() (in module r2x.parser.plexos)</a>
+
+      <ul>
+        <li><a href="api/parsers.html#r2x.parser.reeds.cli_arguments">(in module r2x.parser.reeds)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/exporters.html#r2x.exporter.handler.BaseExporter.config">config (r2x.exporter.handler.BaseExporter attribute)</a>
+</li>
+      <li><a href="api/config.html#r2x.config.Configuration">Configuration (class in r2x.config)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.copy_component">copy_component() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.copy_time_series">copy_time_series() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.sienna.SiennaExporter.create_timeseries_pointers">create_timeseries_pointers() (r2x.exporter.sienna.SiennaExporter method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="D">D</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/system.html#r2x.api.System.data_format_version">data_format_version (r2x.api.System property)</a>
+</li>
+      <li><a href="model/terminology.html#term-Deactivated-capacity"><strong>Deactivated capacity</strong></a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/system.html#r2x.api.System.deepcopy_component">deepcopy_component() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.description">description (r2x.api.System property)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.deserialize_system_attributes">deserialize_system_attributes() (r2x.api.System method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="E">E</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/enums.html#r2x.enums.EmissionType">EmissionType (class in r2x.enums)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.export_component_to_csv">export_component_to_csv() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.sienna.SiennaExporter.export_data">export_data() (r2x.exporter.sienna.SiennaExporter method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/exporters.html#id0">export_data_files() (r2x.exporter.handler.BaseExporter method)</a>, <a href="api/exporters.html#r2x.exporter.handler.BaseExporter.export_data_files">[1]</a>
+
+      <ul>
+        <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.export_data_files">(r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+        <li><a href="api/exporters.html#r2x.exporter.sienna.SiennaExporter.export_data_files">(r2x.exporter.sienna.SiennaExporter method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="F">F</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/config.html#r2x.config.Configuration.from_cli">from_cli() (r2x.config.Configuration class method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.from_dict">from_dict() (r2x.api.System class method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.from_json">from_json() (r2x.api.System class method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/config.html#r2x.config.Scenario.from_kwargs">from_kwargs() (r2x.config.Scenario class method)</a>
+</li>
+      <li><a href="api/config.html#r2x.config.Configuration.from_scenarios">from_scenarios() (r2x.config.Configuration class method)</a>
+</li>
+      <li><a href="model/terminology.html#term-Fuel-type"><strong>Fuel type</strong></a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="G">G</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/config.html#r2x.config.Configuration.get">get() (r2x.config.Configuration method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.get_component">get_component() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.get_component_by_label">get_component_by_label() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.get_component_by_uuid">get_component_by_uuid() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.get_component_types">get_component_types() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.get_components">get_components() (r2x.api.System method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/config.html#r2x.config.get_config">get_config() (in module r2x.config)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.handler.BaseExporter.get_data">get_data() (r2x.exporter.handler.BaseExporter method)</a>
+
+      <ul>
+        <li><a href="api/parsers.html#r2x.parser.plexos.PlexosParser.get_data">(r2x.parser.plexos.PlexosParser method)</a>
+</li>
+        <li><a href="api/parsers.html#r2x.parser.reeds.ReEDSParser.get_data">(r2x.parser.reeds.ReEDSParser method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/system.html#r2x.api.System.get_time_series">get_time_series() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.get_time_series_directory">get_time_series_directory() (r2x.api.System method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="H">H</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/system.html#r2x.api.System.handle_data_format_upgrade">handle_data_format_upgrade() (r2x.api.System method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/system.html#r2x.api.System.has_component">has_component() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.has_time_series">has_time_series() (r2x.api.System method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="I">I</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/config.html#r2x.config.Scenario.info">info() (r2x.config.Scenario method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.insert_component_properties">insert_component_properties() (r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="model/terminology.html#term-Investment-capacity"><strong>Investment capacity</strong></a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.iter_all_components">iter_all_components() (r2x.api.System method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="L">L</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/system.html#r2x.api.System.label">label (r2x.api.System property)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.list_child_components">list_child_components() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.list_components_by_name">list_components_by_name() (r2x.api.System method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/system.html#r2x.api.System.list_parent_components">list_parent_components() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.list_time_series">list_time_series() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.list_time_series_metadata">list_time_series_metadata() (r2x.api.System method)</a>
+</li>
+      <li><a href="model/terminology.html#term-LPF"><strong>LPF</strong></a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="M">M</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/system.html#r2x.api.System.merge_system">merge_system() (r2x.api.System method)</a>
+</li>
+      <li>
+    module
+
+      <ul>
+        <li><a href="api/system.html#module-r2x.api">r2x.api</a>
+</li>
+        <li><a href="api/config.html#module-r2x.config">r2x.config</a>
+</li>
+        <li><a href="api/enums.html#module-r2x.enums">r2x.enums</a>
+</li>
+        <li><a href="api/parsers.html#module-r2x.parser.plexos">r2x.parser.plexos</a>
+</li>
+        <li><a href="api/parsers.html#module-r2x.parser.reeds">r2x.parser.reeds</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="N">N</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/system.html#r2x.api.System.name">name (r2x.api.System property)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="model/terminology.html#term-Nodal-unit-limit"><strong>Nodal unit limit</strong></a>
+</li>
+      <li><a href="model/terminology.html#term-Node"><strong>Node</strong></a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="O">O</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/exporters.html#r2x.exporter.handler.BaseExporter.output_foder">output_foder (r2x.exporter.handler.BaseExporter attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/config.html#r2x.config.Configuration.override">override() (r2x.config.Configuration static method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="P">P</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/parsers.html#r2x.parser.plexos.PlexosParser.parse_data">parse_data() (r2x.parser.plexos.PlexosParser method)</a>
+
+      <ul>
+        <li><a href="api/parsers.html#r2x.parser.reeds.ReEDSParser.parse_data">(r2x.parser.reeds.ReEDSParser method)</a>
+</li>
+      </ul></li>
+      <li><a href="model/terminology.html#term-PCM"><strong>PCM</strong></a>
+</li>
+      <li><a href="model/terminology.html#term-Plexos"><strong>Plexos</strong></a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter">PlexosExporter (class in r2x.exporter.plexos)</a>
+</li>
+      <li><a href="api/parsers.html#r2x.parser.plexos.PlexosParser">PlexosParser (class in r2x.parser.plexos)</a>
+</li>
+      <li><a href="model/terminology.html#term-Prescribed-capacity"><strong>Prescribed capacity</strong></a>
+</li>
+      <li><a href="model/terminology.html#term-Prime-mover-type"><strong>Prime mover type</strong></a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/enums.html#r2x.enums.PrimeMoversType">PrimeMoversType (class in r2x.enums)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.sienna.SiennaExporter.process_branch_data">process_branch_data() (r2x.exporter.sienna.SiennaExporter method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.sienna.SiennaExporter.process_bus_data">process_bus_data() (r2x.exporter.sienna.SiennaExporter method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.sienna.SiennaExporter.process_dc_branch_data">process_dc_branch_data() (r2x.exporter.sienna.SiennaExporter method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.sienna.SiennaExporter.process_gen_data">process_gen_data() (r2x.exporter.sienna.SiennaExporter method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.sienna.SiennaExporter.process_load_data">process_load_data() (r2x.exporter.sienna.SiennaExporter method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.sienna.SiennaExporter.process_reserves_data">process_reserves_data() (r2x.exporter.sienna.SiennaExporter method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.sienna.SiennaExporter.process_storage_data">process_storage_data() (r2x.exporter.sienna.SiennaExporter method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="R">R</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    r2x.api
+
+      <ul>
+        <li><a href="api/system.html#module-r2x.api">module</a>
+</li>
+      </ul></li>
+      <li>
+    r2x.config
+
+      <ul>
+        <li><a href="api/config.html#module-r2x.config">module</a>
+</li>
+      </ul></li>
+      <li>
+    r2x.enums
+
+      <ul>
+        <li><a href="api/enums.html#module-r2x.enums">module</a>
+</li>
+      </ul></li>
+      <li>
+    r2x.parser.plexos
+
+      <ul>
+        <li><a href="api/parsers.html#module-r2x.parser.plexos">module</a>
+</li>
+      </ul></li>
+      <li>
+    r2x.parser.reeds
+
+      <ul>
+        <li><a href="api/parsers.html#module-r2x.parser.reeds">module</a>
+</li>
+      </ul></li>
+      <li><a href="api/exporters.html#id1">read_file() (r2x.exporter.handler.BaseExporter method)</a>, <a href="api/exporters.html#r2x.exporter.handler.BaseExporter.read_file">[1]</a>
+
+      <ul>
+        <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.read_file">(r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+        <li><a href="api/exporters.html#r2x.exporter.sienna.SiennaExporter.read_file">(r2x.exporter.sienna.SiennaExporter method)</a>
+</li>
+        <li><a href="api/parsers.html#r2x.parser.plexos.PlexosParser.read_file">(r2x.parser.plexos.PlexosParser method)</a>
+</li>
+        <li><a href="api/parsers.html#r2x.parser.reeds.ReEDSParser.read_file">(r2x.parser.reeds.ReEDSParser method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/system.html#r2x.api.System.rebuild_component_associations">rebuild_component_associations() (r2x.api.System method)</a>
+</li>
+      <li><a href="model/terminology.html#term-ReEDS"><strong>ReEDS</strong></a>
+</li>
+      <li><a href="api/parsers.html#r2x.parser.reeds.ReEDSParser">ReEDSParser (class in r2x.parser.reeds)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.remove_component">remove_component() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.remove_component_by_name">remove_component_by_name() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.remove_component_by_uuid">remove_component_by_uuid() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.remove_time_series">remove_time_series() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/enums.html#r2x.enums.ReserveDirection">ReserveDirection (class in r2x.enums)</a>
+</li>
+      <li><a href="api/enums.html#r2x.enums.ReserveType">ReserveType (class in r2x.enums)</a>
+</li>
+      <li><a href="model/terminology.html#term-reVX"><strong>reVX</strong></a>
+</li>
+      <li><a href="api/exporters.html#id2">run() (r2x.exporter.handler.BaseExporter method)</a>, <a href="api/exporters.html#r2x.exporter.handler.BaseExporter.run">[1]</a>
+
+      <ul>
+        <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.run">(r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+        <li><a href="api/exporters.html#r2x.exporter.sienna.SiennaExporter.run">(r2x.exporter.sienna.SiennaExporter method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="S">S</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/system.html#r2x.api.System.save">save() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/config.html#r2x.config.Scenario">Scenario (class in r2x.config)</a>
+</li>
+      <li><a href="api/config.html#r2x.config.Configuration.scenario_list">scenario_list (r2x.config.Configuration attribute)</a>
+</li>
+      <li><a href="api/config.html#r2x.config.Configuration.scenario_names">scenario_names (r2x.config.Configuration attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/system.html#r2x.api.System.serialize_system_attributes">serialize_system_attributes() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.sienna.SiennaExporter">SiennaExporter (class in r2x.exporter.sienna)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System">System (class in r2x.api)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.handler.BaseExporter.system">system (r2x.exporter.handler.BaseExporter attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="T">T</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/enums.html#r2x.enums.ThermalFuels">ThermalFuels (class in r2x.enums)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.time_series">time_series (r2x.api.System property)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/system.html#r2x.api.System.to_json">to_json() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.to_records">to_records() (r2x.api.System method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="U">U</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="model/terminology.html#term-Uncategorized-technology"><strong>Uncategorized technology</strong></a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/system.html#r2x.api.System.update_components">update_components() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.uuid">uuid (r2x.api.System property)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="V">V</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/system.html#r2x.api.System.version">version (r2x.api.System property)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="W">W</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="model/terminology.html#term-WECC"><strong>WECC</strong></a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="Z">Z</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="model/terminology.html#term-Zone"><strong>Zone</strong></a>
+</li>
+  </ul></td>
+</tr></table>
+
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By R2X developers
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, Alliance for Sustainable Energy, LLC.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=26a4bc78f4c0ddb94549"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=26a4bc78f4c0ddb94549"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
