@@ -1,7 +1,7 @@
 """Testing for the configuration and Scenario class."""
 
 import pytest
-from r2x.config import Scenario, Configuration
+from r2x.config import Scenario, Configuration, get_config
 from r2x.utils import read_fmap
 
 
@@ -78,6 +78,99 @@ def test_config_from_cli():
 
     assert isinstance(scenario_mgr, Configuration)
     assert len(scenario_mgr) == 1
+
+
+def test_config_from_scenarios():
+    user_dict = {
+        "input_model": "reeds-US",
+        "output_model": "sienna",
+        "scenarios": [
+            {
+                "name": "test2030",
+                "weather_year": 2015,
+                "solve_year": 2030,
+            },
+            {
+                "name": "test2050",
+                "weather_year": 2015,
+                "solve_year": 2055,
+            },
+        ],
+    }
+
+    config = Configuration.from_scenarios({}, user_dict)
+    assert config is not None
+    assert len(config) == 2
+    assert config["test2030"]
+    assert config["test2030"].solve_year == 2030
+
+
+@pytest.mark.parametrize(
+    "cli_input,user_dict",
+    [
+        (
+            {
+                "name": "Test",
+                "weather_year": 2015,
+                "solve_year": [2055],
+                "input_model": "plexos",
+                "output_model": "sienna",
+            },
+            {},
+        ),
+        (
+            {},
+            {
+                "input_model": "reeds-US",
+                "output_model": "sienna",
+                "scenarios": [
+                    {
+                        "name": "test2030",
+                        "weather_year": 2015,
+                        "solve_year": 2030,
+                    },
+                    {
+                        "name": "test2050",
+                        "weather_year": 2015,
+                        "solve_year": 2055,
+                    },
+                ],
+            },
+        ),
+        (
+            {
+                "name": "Test",
+                "weather_year": 2015,
+                "input_model": "plexos",
+                "output_model": "sienna",
+            },
+            {
+                "scenarios": [
+                    {
+                        "name": "test2030",
+                        "solve_year": 2030,
+                    },
+                    {
+                        "name": "test2050",
+                        "solve_year": 2055,
+                    },
+                ],
+            },
+        ),
+    ],
+    ids=["no-user-dict", "no-cli", "both"],
+)
+def test_get_config(cli_input, user_dict):
+    config = get_config(cli_input, user_dict)
+    assert config is not None
+
+
+def test_get_config_cli_override():
+    cli_args = {"name": "TestConfig", "input_model": "reeds-US"}
+    user_dict = {"input_model": "plexos"}
+    config = get_config(cli_args, user_dict)
+    assert config is not None
+    assert config["TestConfig"].input_model == "reeds-US"
 
 
 def test_config_override(scenario_instance):

@@ -181,11 +181,38 @@ def update_dict(base_dict: dict, override_dict: ChainMap | dict | None = None) -
     return base_dict
 
 
-def read_yaml(fname: str) -> dict:
+def read_user_dict(fname: str) -> dict:
     """Load Yaml to Python dictionary."""
-    # Read configuration file
-    with open(fname) as f:
-        return yaml.safe_load(f)
+    if fname.strip().startswith("["):
+        msg = "JSON arrays not supported for user dict."
+        raise ValueError(msg)
+
+    if fname.strip().startswith("{"):
+        try:
+            return json.loads(fname)  # Parse the JSON string directly
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON string provided: {e}")
+
+    _, ext = os.path.splitext(fname)
+    ext = ext.lower()
+    match ext:
+        case ".json":
+            return _load_file(fname, json.load)  # Load JSON
+        case ".yaml" | ".yml":
+            return _load_file(fname, yaml.safe_load)  # Load YAML
+        case _:
+            raise ValueError(f"Unsupported file extension: {ext}. Only .json, .yaml, and .yml are supported.")
+
+
+def _load_file(fname: str, loader) -> dict:
+    """Helper function to load a file (either JSON or YAML)."""
+    try:
+        with open(fname, "r") as f:
+            return loader(f)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"File {fname} not found.")
+    except IOError as e:
+        raise IOError(f"Error reading the file {fname}: {e}")
 
 
 def read_json(fname: str):
