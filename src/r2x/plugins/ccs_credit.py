@@ -8,7 +8,7 @@ from loguru import logger
 
 from r2x.api import System
 from r2x.units import ureg
-from r2x.config_scenario import Scenario
+from r2x.config import Scenario
 from r2x.models.generators import Generator
 from r2x.parser.handler import BaseParser
 
@@ -42,15 +42,13 @@ def update_system(
         raise NotImplementedError(msg)
 
     if parser is None:
-        msg = "Missing parser information for ccs_credit. Skipping plugin."
+        msg = "Missing parser information for imports. Skipping plugin."
         logger.debug(msg)
         return system
 
     required_files = ["co2_incentive", "emission_capture_rate", "upgrade_link"]
     if parser is not None:
-        if not all(key in parser.data for key in required_files):
-            logger.warning("Missing required files for ccs_credit. Skipping plugin.")
-            return system
+        assert all(key in parser.data for key in required_files), "Missing required files for import plugin."
 
     production_rate = parser.data["emission_capture_rate"]
 

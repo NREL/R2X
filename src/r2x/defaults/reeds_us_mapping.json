@@ -65,11 +65,11 @@
     "optional": true,
     "units": "tonne"
   },
-  "co2_incent": {
+  "co2_incentive": {
     "column_mapping": {
+      "allt": "year",
       "i": "tech",
       "r": "region",
-      "t": "year",
       "v": "vintage",
       "value": "incentive"
     },
@@ -126,7 +126,7 @@
       "r": "region",
       "t": "year",
       "v": "vintage",
-      "value": "incentive"
+      "value": "capture_rate"
     },
     "description": "Capture rate for given CCS technology.",
     "fname": "capture_rate.csv",

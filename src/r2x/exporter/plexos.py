@@ -52,7 +52,7 @@ from r2x.utils import custom_attrgetter, get_enum_from_string, read_json
 NESTED_ATTRIBUTES = ["ext", "bus", "services"]
 TIME_SERIES_PROPERTIES = ["Min Provision", "Static Risk"]
 DEFAULT_XML_TEMPLATE = "master_9.2R6_btu.xml"
-EXT_PROPERTIES = {"UoS Charge", "Fixed Load"}
+EXT_PROPERTIES = {"UoS Charge"}
 
 
 def cli_arguments(parser: ArgumentParser):
