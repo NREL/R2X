@@ -17,6 +17,7 @@ from r2x.exporter.handler import BaseExporter, get_export_properties, get_export
 from plexosdb import PlexosSQLite
 from plexosdb.enums import ClassEnum, CollectionEnum
 from r2x.exporter.utils import (
+    apply_extract_key,
     apply_flatten_key,
     apply_pint_deconstruction,
     apply_property_map,
@@ -50,6 +51,7 @@ from r2x.utils import custom_attrgetter, get_enum_from_string, read_json
 NESTED_ATTRIBUTES = ["ext", "bus", "services"]
 TIME_SERIES_PROPERTIES = ["Min Provision", "Static Risk"]
 DEFAULT_XML_TEMPLATE = "master_9.2R6_btu.xml"
+EXT_PROPERTIES = {"UoS Charge"}
 
 
 def cli_arguments(parser: ArgumentParser):
@@ -229,6 +231,7 @@ class PlexosExporter(BaseExporter):
         export_records = get_export_records(
             records,
             partial(apply_operation_cost),
+            partial(apply_extract_key, key="ext", keys_to_extract=EXT_PROPERTIES),
             partial(apply_flatten_key, keys_to_flatten={"active_power_limits", "active_power_flow_limits"}),
             partial(apply_property_map, property_map=property_map),
             partial(apply_pint_deconstruction, unit_map=self.default_units),
