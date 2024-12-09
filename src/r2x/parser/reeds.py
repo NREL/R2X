@@ -705,6 +705,9 @@ class ReEDSParser(BaseParser):
             hydro_cf,
             month_hrs,
         )
+        # month_of_hour = np.array(
+        #     [dt.astype("datetime64[M]").astype(int) % 12 + 1 for dt in self.hourly_time_index]
+        # )
         month_of_day = np.array(
             [dt.astype("datetime64[M]").astype(int) % 12 + 1 for dt in self.daily_time_index]
         )
@@ -718,6 +721,8 @@ class ReEDSParser(BaseParser):
             region = generator.bus.name
             hydro_ratings = hydro_data.filter((pl.col("tech") == tech) & (pl.col("region") == region))
 
+            # hourly_time_series = np.zeros(len(month_of_hour), dtype=float)
+            # if self.config.feature_flags.get("daily-budgets", None):
             hourly_time_series = np.zeros(len(month_of_day), dtype=float)
 
             for row in hydro_ratings.iter_rows(named=True):
@@ -728,8 +733,12 @@ class ReEDSParser(BaseParser):
                 month_max_budget = (
                     generator.active_power * Percentage(row["hydro_cf"], "") * Time(row["hrs"], "h")
                 )
+                # if self.config.feature_flags.get("daily-budgets", None):
                 daily_max_budget = month_max_budget / (row["hrs"] / 24)
                 hourly_time_series[month_of_day == month] = daily_max_budget.magnitude
+                # else:
+                #     month_indices = month_of_hour == month
+                #     hourly_time_series[month_indices] = month_max_budget.magnitude
 
             ts = SingleTimeSeries.from_array(
                 Energy(hourly_time_series / 1e3, "GWh"),
