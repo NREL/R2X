@@ -318,3 +318,39 @@ def apply_flatten_key(d: dict[str, Any], keys_to_flatten: set[str]) -> dict[str,
             flattened_dict[key] = val
 
     return flattened_dict
+
+
+def apply_extract_key(d: dict[str, Any], key: str, keys_to_extract: set[str]) -> dict[str, Any]:
+    """Extract keys from a nested dictionary and put it in first level.
+
+    Parameters
+    ----------
+    d : dict
+        The input dictionary, where some values are dictionaries to be flattened.
+    key: dict
+        Key that has a dictionary
+    keys_to_extract : list of str
+        The keys in the nested dictionary that will be extracted
+
+    Returns
+    -------
+    dict
+        A new dictionary with the selected keys flattened. Other keys remain unchanged.
+
+    Examples
+    --------
+    >>> d = {"x": {"min": 1, "max": 2}, "y": {"min": 5, "max": 10}, "z": 42}
+    >>> flatten_selected_keys(d, ["x"])
+    {'x_min': 1, 'x_max': 2, 'y': {'min': 5, 'max': 10}, 'z': 42}
+
+    >>> flatten_selected_keys(d, ["y"])
+    {'x': {'min': 1, 'max': 2}, 'y_min': 5, 'y_max': 10, 'z': 42}
+    """
+    if key not in d.keys() or any(k in d.keys() for k in keys_to_extract):
+        return d
+
+    if not any(k in d[key].keys() for k in keys_to_extract):
+        return d
+
+    extracted_keys = {key: value for key, value in d[key].items() if key in keys_to_extract}
+    return {**d, **extracted_keys}

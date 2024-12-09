@@ -2,6 +2,7 @@ import pytest
 from pint import Quantity
 from r2x.exporter.utils import (
     apply_default_value,
+    apply_extract_key,
     apply_flatten_key,
     apply_property_map,
     apply_unnest_key,
@@ -176,3 +177,29 @@ def test_apply_default_value():
     default_value_map = {"year": 2024, "month": "October"}
     result = apply_default_value(component, default_value_map)
     assert result == {"year": 2024, "month": "October"}
+
+
+def test_extract_key():
+    component = {"name": "example", "ext": {"TestNested": 1.0}}
+    result = apply_extract_key(component, key="ext", keys_to_extract={"TestNested"})
+    assert result is not None
+    assert result.get("TestNested", None) is not None
+    assert result["TestNested"] == 1.0
+
+    component = {"name": "example", "ext": {"TestNested": 1.0, "TestNested2": "test"}}
+    result = apply_extract_key(component, key="ext", keys_to_extract={"TestNested", "TestNested2"})
+    assert result is not None
+    assert result.get("TestNested", None) is not None
+    assert result["TestNested"] == 1.0
+    assert result.get("TestNested2", None) is not None
+    assert result["TestNested2"] == "test"
+
+    component = {"name": "example"}
+    result = apply_extract_key(component, key="ext", keys_to_extract={"TestNested", "TestNested2"})
+    assert result is not None
+    assert result == component
+
+    component = {"name": "example", "ext": {"TestNested": 1.0, "TestNested2": "test"}}
+    result = apply_extract_key(component, key="ext", keys_to_extract={"Test"})
+    assert result is not None
+    assert result == component
