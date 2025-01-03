@@ -141,6 +141,18 @@
         "type": null
       },
       {
+        "fuel": "GAS",
+        "type": "CC"
+      },
+      {
+        "fuel": "GAS",
+        "type": "IG"
+      },
+      {
+        "fuel": "GAS",
+        "type": "IT"
+      },
+      {
         "fuel": "OT",
         "type": null
       },
