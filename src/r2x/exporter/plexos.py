@@ -955,6 +955,7 @@ class PlexosExporter(BaseExporter):
 
     def _add_reports(self):
         fpath = self.config.defaults["plexos_reports"]
+        logger.debug("Using {} for reports.")
         report_objects = read_json(fpath)
 
         for report_object in report_objects:
