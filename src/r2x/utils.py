@@ -169,6 +169,7 @@ def update_dict(base_dict: dict, override_dict: ChainMap | dict | None = None) -
         "device_name_inference_map",
         "plexos_device_map",
         "plexos_category_map",
+        "plexos_reports",
     ]
     for key, value in override_dict.items():
         if key in base_dict and all(replace_key not in key for replace_key in _replace_keys):
