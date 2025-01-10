@@ -57,36 +57,6 @@ def get_project_root() -> Path:
     return Path(__file__).parent.parent
 
 
-def match_input_model(input_model: str) -> dict:
-    match input_model:
-        case "infrasys":
-            fmap = {}
-        case "reeds-US":
-            fmap = read_fmap("r2x/defaults/reeds_us_mapping.json")
-        case "reeds-India":
-            fmap = read_fmap("r2x/defaults/india_mapping.json")
-        case "sienna":
-            fmap = read_fmap("r2x/defaults/sienna_mapping.json")
-        case "plexos":
-            fmap = read_fmap("r2x/defaults/plexos_mapping.json")
-        case "nodal-plexos":
-            fmap = (
-                read_fmap("r2x/defaults/nodal_mapping.json")
-                | read_fmap("r2x/defaults/plexos_mapping.json")
-                | read_fmap("r2x/defaults/reeds_us_mapping.json")
-            )
-        case "nodal-sienna":
-            fmap = (
-                read_fmap("r2x/defaults/sienna_mapping.json")
-                | read_fmap("r2x/defaults/nodal_mapping.json")
-                | read_fmap("r2x/defaults/reeds_us_mapping.json")
-            )
-        case _:
-            logger.error("Input model {} not recognized", input_model)
-            raise KeyError(f"Input model {input_model=} not valid")
-    return fmap
-
-
 def validate_string(value):
     """Read cases flag value and convert it to Python type."""
     if value is None:
@@ -585,85 +555,6 @@ def match_category(row, categories, cutoff=0.6):
     if len(result) > 0:
         return result[0]
     return row
-
-
-def get_defaults(
-    input_model: str | None = None, output_model: str | None = None, *, verbose=None, **kwargs
-) -> dict[str, str]:
-    """Return configuration dictionary based on the output model."""
-    config_dict = read_json("r2x/defaults/config.json")
-    plugins_dict = read_json("r2x/defaults/plugins_config.json")
-
-    config_dict = config_dict | plugins_dict
-
-    if input_model is None and output_model is None:
-        logger.debug("Returning base defaults")
-        return config_dict
-
-    # There is 4 paths for this to go:
-    #   1. Zonal translations should always go throught "reeds-US" (as far as we only support one CEM"),
-    #   2. If you want to translate a Plexos <-> Sienna model,
-    #   3. If you want to read an existing infrasys system,
-    #   4. If you want to run zonal to nodal.
-    #       4.1 Plexos
-    #       4.2 Sienna
-    match input_model:
-        case "infrasys":
-            logger.debug("Returning infrasys defaults")
-        case "reeds-US":
-            config_dict = config_dict | read_json("r2x/defaults/reeds_input.json")
-            logger.debug("Returning reeds defaults")
-        case "reeds-India":
-            config_dict = config_dict | read_json("r2x/defaults/nodal_defaults.json")
-            logger.debug("Returning nodal defaults")
-        case "nodal-sienna":
-            config_dict = (
-                config_dict
-                | read_json("r2x/defaults/nodal_defaults.json")
-                | read_json("r2x/defaults/pcm_defaults.json")
-                | read_json("r2x/defaults/sienna_config.json")
-                | read_json("r2x/defaults/reeds_input.json")
-            )
-            logger.debug("Returning nodal-sienna defaults")
-        case "nodal-plexos":
-            config_dict = (
-                config_dict
-                | read_json("r2x/defaults/nodal_defaults.json")
-                | read_json("r2x/defaults/pcm_defaults.json")
-                | read_json("r2x/defaults/plexos_input.json")
-                | read_json("r2x/defaults/reeds_input.json")
-            )
-            logger.debug("Returning nodal-plexos defaults")
-        case "sienna":
-            config_dict = config_dict | read_json("r2x/defaults/sienna_config.json")
-            logger.debug("Returning sienna defaults")
-        case "plexos":
-            config_dict = config_dict | read_json("r2x/defaults/plexos_input.json")
-            logger.debug("Returning input_model {} defaults", input_model)
-        case _:
-            logger.warning("No input model passed")
-
-    if output_model is None:
-        return config_dict
-
-    match output_model:
-        case "plexos":
-            pcm_dict = (
-                read_json("r2x/defaults/plexos_output.json")
-                | read_json("r2x/defaults/plexos_simulation_objects.json")
-                | read_json("r2x/defaults/plexos_horizons.json")
-                | read_json("r2x/defaults/plexos_models.json")
-            )
-            logger.debug("Returning output_model {} defaults", output_model)
-        case "sienna":
-            pcm_dict = read_json("r2x/defaults/sienna_config.json")
-            logger.debug("Returning sienna defaults")
-        case _:
-            raise NotImplementedError(f"Model {output_model} not supported yet.")
-
-    # Combine all in single dictionary. This assumes they do not share same key names.
-    config_dict = config_dict | pcm_dict
-    return config_dict
 
 
 def get_enum_from_string(string: str, enum_class, prefix: str | None = None):

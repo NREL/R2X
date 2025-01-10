@@ -8,7 +8,7 @@ from loguru import logger
 
 from r2x.api import System
 from r2x.units import ureg
-from r2x.config import Scenario
+from r2x.config_scenario import Scenario
 from r2x.models.generators import Generator
 from r2x.parser.handler import BaseParser
 

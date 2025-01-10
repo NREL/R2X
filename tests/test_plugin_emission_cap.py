@@ -2,7 +2,7 @@ import numpy
 import pytest
 from pint import Quantity
 from r2x.api import System
-from r2x.config import Scenario
+from r2x.config_scenario import Scenario
 from r2x.enums import EmissionType
 from r2x.models.services import Emission
 from r2x.models.utils import Constraint, ConstraintMap
@@ -11,7 +11,7 @@ from r2x.runner import run_parser, run_plugins
 
 
 def test_update_system_default(reeds_data_folder, tmp_folder):
-    config = Scenario(
+    config = Scenario.from_kwargs(
         name="5bus",
         run_folder=reeds_data_folder,
         output_folder=tmp_folder,

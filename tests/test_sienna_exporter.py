@@ -1,18 +1,18 @@
 import pytest
 
-from r2x.config import Scenario
+from r2x.config_scenario import Scenario
 from r2x.exporter.sienna import SiennaExporter, apply_operation_table_data, get_psy_fields
 
 
 @pytest.fixture
 def scenario_instance(data_folder, tmp_folder):
-    return Scenario(
+    return Scenario.from_kwargs(
         name="Test Scenario",
         run_folder=data_folder,
         output_folder=tmp_folder,
         input_model="infrasys",
         output_model="sienna",
-        solve_year=2010,
+        model_year=2010,
     )
 
 

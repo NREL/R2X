@@ -13,7 +13,7 @@ import infrasys
 from loguru import logger
 
 from r2x.api import System
-from r2x.config import Scenario
+from r2x.config_scenario import Scenario
 from r2x.exporter.utils import modify_components
 from r2x.parser.handler import file_handler
 
@@ -297,10 +297,8 @@ def get_exporter(
 
     exporter.run(
         config=config,
-        fmap=config.fmap,
-        year=config.solve_year,
         filter_func=filter_funcs,
-        **kwargs,
+        **{**config.input_config.__dict__, **kwargs},
     )
 
     return exporter

@@ -19,7 +19,7 @@ import pandas as pd
 
 # Local packages
 from r2x.api import System
-from r2x.config import Scenario
+from r2x.config_scenario import Scenario
 from plexosdb import XMLHandler
 from .polars_helpers import pl_filter_year, pl_lowercase, pl_rename
 from ..utils import check_file_exists
@@ -292,12 +292,11 @@ def get_parser_data(
         kwargs["model"] = model
 
     # Parser data
+    assert config.input_config
     parser.parse_data(
-        fmap=config.fmap,
         base_folder=config.run_folder,
-        solve_year=config.solve_year,
         filter_func=filter_funcs,
-        **kwargs,
+        **{**config.input_config.__dict__, **kwargs},
     )
 
     # Create system

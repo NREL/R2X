@@ -24,7 +24,7 @@ from plexosdb import PlexosSQLite
 from plexosdb.enums import ClassEnum, CollectionEnum
 
 from r2x.api import System
-from r2x.config import Scenario
+from r2x.config_models import PlexosConfig
 from r2x.enums import ACBusTypes, PrimeMoversType, ReserveDirection, ReserveType
 from r2x.exceptions import ModelError, ParserError
 from r2x.models import (
@@ -154,15 +154,18 @@ class PlexosParser(PCMParser):
     def __init__(self, *args, xml_file: str | None = None, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         assert self.config.run_folder
+        assert self.config.input_config
+        assert isinstance(self.config.input_config, PlexosConfig)  # Only take Plexos configurations
         self.run_folder = Path(self.config.run_folder)
+        self.input_config = self.config.input_config
         self.system = System(name=self.config.name, auto_add_composed_components=True)
-        self.property_map = self.config.defaults["plexos_input_property_map"] or {}
-        self.device_map = self.config.defaults["plexos_device_map"] or {}
-        self.fuel_map = self.config.defaults["plexos_fuel_map"] or {}
-        self.category_map = self.config.defaults["plexos_category_map"] or {}
-        self.device_match_string = self.config.defaults["device_name_inference_map"] or {}
-        self.generator_models = self.config.defaults["generator_models"] or {}
-        self.year = self.config.solve_year
+        self.property_map = self.input_config.defaults["plexos_input_property_map"] or {}
+        self.device_map = self.input_config.defaults["plexos_device_map"] or {}
+        self.fuel_map = self.input_config.defaults["plexos_fuel_map"] or {}
+        self.category_map = self.input_config.defaults["plexos_category_map"] or {}
+        self.device_match_string = self.input_config.defaults["device_name_inference_map"] or {}
+        self.generator_models = self.input_config.defaults["generator_models"] or {}
+        self.year = self.input_config.model_year
         assert self.year
         assert isinstance(self.year, int)
 
@@ -178,7 +181,7 @@ class PlexosParser(PCMParser):
         # If xml file is not specified, check user_dict["fmap"]["xml_file"] or use
         # only xml file in project directory
         if xml_file is None:
-            xml_file = self.config.fmap.get("xml_file", {}).get("fname", None)
+            xml_file = self.input_config.fmap.get("xml_file", {}).get("fname", None)
             xml_file = xml_file or str(find_xml(self.run_folder))
 
         xml_file = str(self.run_folder / xml_file)
@@ -186,10 +189,12 @@ class PlexosParser(PCMParser):
         self.db = PlexosSQLite(xml_fname=xml_file)
 
         # Extract scenario data
-        model_name = getattr(self.config, "model", None)
-        logger.info("Parsing plexos model={}", model_name)
+        model_name = getattr(self.input_config, "model_name", None) or self.input_config.fmap.get(
+            "xml_file", {}
+        ).get("model_name", None)
         if model_name is None:
             model_name = self._select_model_name()
+        logger.info("Parsing plexos model={}", model_name)
         self._process_scenarios(model_name=model_name)
 
         # date from is in days since 1900, convert to year
@@ -392,8 +397,8 @@ class PlexosParser(PCMParser):
             mapped_records, _ = self._parse_property_data(property_records)
             mapped_records["name"] = reserve_name
             reserve_type = validate_string(mapped_records.pop("Type", "default"))
-            plexos_reserve_map = self.config.defaults["reserve_types"].get(
-                str(reserve_type), self.config.defaults["reserve_types"]["default"]
+            plexos_reserve_map = self.input_config.defaults["reserve_types"].get(
+                str(reserve_type), self.input_config.defaults["reserve_types"]["default"]
             )  # Pass string so we do not need to convert the json mapping.
             mapped_records["reserve_type"] = ReserveType[plexos_reserve_map["type"]]
             mapped_records["direction"] = ReserveDirection[plexos_reserve_map["direction"]]
@@ -892,7 +897,7 @@ class PlexosParser(PCMParser):
 
         interface_property_map = {
             v: k
-            for k, v in self.config.defaults["plexos_input_property_map"].items()
+            for k, v in self.input_config.defaults["plexos_input_property_map"].items()
             if k in default_model.model_fields
         }
 
@@ -1732,24 +1737,3 @@ class PlexosParser(PCMParser):
                 return nested_object_record["property_value"]
             case _:
                 raise NotImplementedError
-
-
-if __name__ == "__main__":
-    from ..logger import setup_logging
-    from .handler import get_parser_data
-
-    run_folder = Path("")
-    # Functions relative to the parser.
-    setup_logging(level="DEBUG")
-
-    config = Scenario.from_kwargs(
-        name="Plexos-Test",
-        input_model="plexos",
-        run_folder=run_folder,
-        solve_year=2030,
-        weather_year=2030,
-        model="",
-    )
-    config.fmap["xml_file"]["fname"] = ""
-
-    parser = get_parser_data(config=config, parser_class=PlexosParser)
