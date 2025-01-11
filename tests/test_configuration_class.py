@@ -91,13 +91,14 @@ def test_config_from_cli():
     assert config["test"].input_config
     assert isinstance(config["test"].input_config, PlexosConfig)
 
-    user_dict = {"fmap": {"xml_file": {"fname": "path.xml"}}}
+    user_dict = {"fmap": {"xml_file": {"fname": "path.xml", "another_field": True}}}
     config = Configuration.from_cli(cli_args=cli_input, user_dict=user_dict)
     assert isinstance(config, Configuration)
     assert len(config) == 1
     scenario = config["test"]
     assert scenario.input_config
     assert scenario.input_config.fmap["xml_file"]["fname"] == user_dict["fmap"]["xml_file"]["fname"]
+    assert scenario.input_config.fmap["xml_file"]["another_field"]
 
 
 def test_config_from_scenarios():

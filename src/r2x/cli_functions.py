@@ -10,6 +10,7 @@ FILES_WITH_ARGS = [
     "r2x.plugins.break_gens",
     "r2x.plugins.emission_cap",
     "r2x.plugins.hurdle_rate",
+    "r2x.plugins.cambium",
     "r2x.parser.plexos",
     "r2x.parser.reeds",
     "r2x.exporter.plexos",
