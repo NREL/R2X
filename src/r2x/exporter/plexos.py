@@ -52,7 +52,7 @@ from r2x.utils import custom_attrgetter, get_enum_from_string, read_json
 NESTED_ATTRIBUTES = ["ext", "bus", "services"]
 TIME_SERIES_PROPERTIES = ["Min Provision", "Static Risk"]
 DEFAULT_XML_TEMPLATE = "master_9.2R6_btu.xml"
-EXT_PROPERTIES = {"UoS Charge"}
+EXT_PROPERTIES = {"UoS Charge", "Fixed Load"}
 
 
 def cli_arguments(parser: ArgumentParser):
@@ -398,19 +398,12 @@ class PlexosExporter(BaseExporter):
         self.insert_component_properties(
             ACBus, parent_class=ClassEnum.System, collection=CollectionEnum.Regions
         )
-
-        # Adding Zones
-        # self.add_component_category(LoadZone, class_enum=ClassEnum.Zone)
-        self.bulk_insert_objects(LoadZone, class_enum=ClassEnum.Zone, collection_enum=CollectionEnum.Zones)
-        self.insert_component_properties(
-            LoadZone, parent_class=ClassEnum.System, collection=CollectionEnum.Zones
-        )
-        for load_zone in self.system.get_components(LoadZone, filter_func=lambda x: x.ext):
+        for bus in self.system.get_components(ACBus, filter_func=lambda x: x.ext):
             collection_properties = self._db_mgr.get_valid_properties(
-                collection=CollectionEnum.Zone, parent_class=ClassEnum.System, child_class=ClassEnum.Zone
+                collection=CollectionEnum.Zones, parent_class=ClassEnum.System, child_class=ClassEnum.Zone
             )
             properties = get_export_properties(
-                load_zone.ext,
+                bus.ext,
                 partial(apply_property_map, property_map=self.property_map),
                 partial(apply_pint_deconstruction, unit_map=self.default_units),
                 partial(apply_valid_properties, valid_properties=collection_properties),
@@ -418,13 +411,20 @@ class PlexosExporter(BaseExporter):
             if properties:
                 for property_name, property_value in properties.items():
                     self._db_mgr.add_property(
-                        load_zone.name,
+                        bus.name,
                         property_name,
                         property_value,
-                        object_class=ClassEnum.Zone,
-                        collection=CollectionEnum.Zones,
+                        object_class=ClassEnum.Region,
+                        collection=CollectionEnum.Regions,
                         scenario=self.plexos_scenario,
                     )
+
+        # Adding Zones
+        # self.add_component_category(LoadZone, class_enum=ClassEnum.Zone)
+        self.bulk_insert_objects(LoadZone, class_enum=ClassEnum.Zone, collection_enum=CollectionEnum.Zones)
+        self.insert_component_properties(
+            LoadZone, parent_class=ClassEnum.System, collection=CollectionEnum.Zones
+        )
 
         # Adding nodes
         # NOTE: For nodes, we do not add category.

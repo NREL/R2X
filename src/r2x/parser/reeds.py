@@ -132,7 +132,6 @@ class ReEDSParser(BaseParser):
                     name=bus["region"],
                     area=self.system.get_component(Area, name=bus["state"]),
                     load_zone=self.system.get_component(LoadZone, name=bus["transmission_region"]),
-                    base_voltage=100 * ureg.kV,  # 100kV default since ReEDS does not model voltage
                     bus_type=ACBusTypes.PV,
                 )
             )
@@ -480,19 +479,22 @@ class ReEDSParser(BaseParser):
                     variable=CostCurve(value_curve=LinearCurve(row.get("vom_price", None) or 0.0))
                 )
 
+            row["must_run"] = (
+                True if row["tech"] in self.reeds_config.defaults["commit_technologies"] else None
+            )
             valid_fields = {
                 key: value for key, value in row.items() if key in gen_model.model_fields if value is not None
             }
-            valid_fields["ext"] = {
-                key: value for key, value in row.items() if key not in valid_fields if value
-            }
+            valid_fields["ext"] = {}
+            # valid_fields["ext"] = {
+            #     key: value for key, value in row.items() if key not in valid_fields if value
+            # }
 
-            commit = True if row["tech"] in self.reeds_config.defaults["commit_technologies"] else False
             valid_fields["ext"].update(
                 {
+                    "tech": row["tech"],
                     "reeds_tech": row["tech"],
                     "reeds_vintage": row["tech_vintage"],
-                    "Commit": commit,
                 }
             )
 
