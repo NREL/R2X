@@ -167,6 +167,7 @@ class PlexosExporter(BaseExporter):
         csv_fname = config_dict.get("time_series_fname", "${component_type}_${name}_${weather_year}.csv")
         string_template = string.Template(csv_fname)
         config_dict["component_type"] = f"{component.__class__.__name__}_{ts_metadata.variable_name}"
+        config_dict["weather_year"] = self.weather_year
         csv_fname = string_template.safe_substitute(config_dict)
         csv_fpath = self.ts_directory / csv_fname
         time_series_property: dict[str, Any] = {"Data File": str(csv_fpath)}
@@ -404,6 +405,26 @@ class PlexosExporter(BaseExporter):
         self.insert_component_properties(
             LoadZone, parent_class=ClassEnum.System, collection=CollectionEnum.Zones
         )
+        for load_zone in self.system.get_components(LoadZone, filter_func=lambda x: x.ext):
+            collection_properties = self._db_mgr.get_valid_properties(
+                collection=CollectionEnum.Zone, parent_class=ClassEnum.System, child_class=ClassEnum.Zone
+            )
+            properties = get_export_properties(
+                load_zone.ext,
+                partial(apply_property_map, property_map=self.property_map),
+                partial(apply_pint_deconstruction, unit_map=self.default_units),
+                partial(apply_valid_properties, valid_properties=collection_properties),
+            )
+            if properties:
+                for property_name, property_value in properties.items():
+                    self._db_mgr.add_property(
+                        load_zone.name,
+                        property_name,
+                        property_value,
+                        object_class=ClassEnum.Zone,
+                        collection=CollectionEnum.Zones,
+                        scenario=self.plexos_scenario,
+                    )
 
         # Adding nodes
         # NOTE: For nodes, we do not add category.
