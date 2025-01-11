@@ -165,7 +165,6 @@ class BaseExporter(ABC):
 
             config_dict["component_type"] = component_type
             csv_fname = string_template.safe_substitute(config_dict)
-            breakpoint()
             csv_table = np.column_stack([datetime_array, *time_series_arrays])
             header = '"DateTime",' + ",".join(
                 [f'"{name}"' for name in self.time_series_name_by_type[component_type]]
