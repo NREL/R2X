@@ -111,6 +111,7 @@ class BaseExporter(ABC):
         """
         assert year is not None
         config_dict = self.config.__dict__
+        config_dict["year"] = year
         for component in self.system.iter_all_components():
             if self.system.has_time_series(component):
                 for ts_metadata in self.system.time_series.list_time_series_metadata(component):
@@ -155,7 +156,7 @@ class BaseExporter(ABC):
         csv_fpath = self.output_folder / time_series_folder
 
         # Use string substitution to dynamically change the output csv fnames
-        csv_fname = config_dict.get("time_series_fname", "${component_type}_${name}_${weather_year}.csv")
+        csv_fname = config_dict.get("time_series_fname", "${component_type}_${name}_${year}.csv")
         logger.trace("Using {} as time_series name", csv_fname)
         string_template = string.Template(csv_fname)
 
@@ -164,6 +165,7 @@ class BaseExporter(ABC):
 
             config_dict["component_type"] = component_type
             csv_fname = string_template.safe_substitute(config_dict)
+            breakpoint()
             csv_table = np.column_stack([datetime_array, *time_series_arrays])
             header = '"DateTime",' + ",".join(
                 [f'"{name}"' for name in self.time_series_name_by_type[component_type]]
