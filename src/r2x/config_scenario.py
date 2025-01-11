@@ -282,8 +282,11 @@ class Configuration:
         global_keys = {key: value for key, value in user_dict.items() if key != "scenarios"}
 
         for scenario_dict in user_dict["scenarios"]:
-            scenario_dict = ChainMap(cli_args, global_keys, scenario_dict)
-            scenario_class = Scenario.from_kwargs(**scenario_dict)
+            user_dict_scenario = {}
+            if "fmap" in global_keys:
+                user_dict_scenario["fmap"] = global_keys.pop("fmap")
+            scenario_choices = ChainMap(cli_args, global_keys, scenario_dict)
+            scenario_class = Scenario.from_kwargs(user_dict=user_dict_scenario, **scenario_choices)
             assert scenario_class.name
             instance.scenarios[scenario_class.name] = scenario_class
         return instance
