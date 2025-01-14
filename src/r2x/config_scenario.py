@@ -44,11 +44,11 @@ class Scenario:
     Attributes
     ----------
     name
-        Name for the scenario
+        Name of the translation scenario
     run_folder
-        Path for the scenario inputs
+        Path to input model files
     output_folder
-        Path for output exports
+        Path for placing the output translation files
     input_model
         Model to translate from
     output_model
@@ -57,6 +57,8 @@ class Scenario:
         Dictionary with experimental features
     plugins
         List of plugins enabled
+    user_dict
+        Dictionary with user configuration.
 
     See Also
     --------
@@ -80,7 +82,11 @@ class Scenario:
         self._load_plugins()
         self._load_model_config()
 
-        # Overload configuration if the key appear on the config file
+        # Overload default initialization of the translation scenario if the user pass a `user_dict`. We allow
+        # overriding the `input_config.defaults` and/or `output_config.defaults`. Also, we allow the user
+        # to change the default file mapping by passing a `fmap` key and passing new key value pairs for
+        # predetermined files that we read for each model (see `{model}_fmap.json`}. The override only happens
+        # if the exact key appears on the `user_dict.
         if self.user_dict and self.input_config:
             self.input_config.defaults = update_dict(self.input_config.defaults, self.user_dict)
             self.input_config.fmap = update_dict(self.input_config.fmap, self.user_dict.get("fmap", {}))
@@ -187,13 +193,11 @@ class Scenario:
 
 @dataclass
 class Configuration:
-    """r2x.config_scenariouration manager that wraps multiple Scenario instances.
-
-    This class parses either the cases_*.csv file or reads the inputs from the CLI.
+    """Configuration manager that wraps multiple Scenario instances.
 
     Attributes
     ----------
-    scenarios_list
+    scenarios
         Dictionary of scenarios to be translated.
 
     See Also
@@ -237,13 +241,17 @@ class Configuration:
         return self.scenarios.keys()
 
     @classmethod
-    def from_cli(cls, cli_args: dict, user_dict: dict | None = None, **kwargs):
-        """Create scenario from the CLI arguments.
+    def from_cli(cls, cli_args: dict[str, Any], user_dict: dict[str, Any] | None = None, **kwargs):
+        """Create a `Scenario` from the CLI arguments.
 
-        It saves the created scenario in the scenario_list` and scenario_names
+        It saves the created scenario using CLI input. It can also be overwrited if an `user_dict` is passed.
 
         Parameters
         ----------
+        cli_args
+            Arguments for constructing the scenario.
+        user_dict
+            Configuration for the translation.
         kwargs
             Arguments for constructing the scenario.
 
@@ -260,7 +268,7 @@ class Configuration:
         return instance
 
     @classmethod
-    def from_scenarios(cls, cli_args: dict, user_dict: dict, **kwargs):
+    def from_scenarios(cls, cli_args: dict, user_dict: dict):
         """Create scenario from scenarios on the config file.
 
         This method takes the `user_dict['scenarios'] key which is a list of dicts to create the different

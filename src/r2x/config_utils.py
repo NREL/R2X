@@ -3,7 +3,7 @@
 import inspect
 from loguru import logger
 
-from .config_models import BaseModelConfig, MODEL_CONFIGS, Models
+from .config_models import BaseModelConfig, MODEL_CONFIGS, Models, ExporterModels, ParserModels
 
 from .utils import read_json, read_fmap
 
@@ -27,7 +27,11 @@ def get_input_defaults(model_enum: Models) -> dict:
             defaults_dict = defaults_dict | read_json("r2x/defaults/plexos_input.json")
             logger.debug("Returning input_model {} defaults", model_enum)
         case _:
-            logger.warning("No input model passed")
+            msg = (
+                f"Unsupported input model: {model_enum}. "
+                f"Supported models: {[str(model) for model in ParserModels]}"
+            )
+            raise ValueError(msg)
     return defaults_dict
 
 
@@ -46,8 +50,12 @@ def get_output_defaults(model_enum: Models) -> dict:
             defaults_dict = read_json("r2x/defaults/sienna_config.json")
             logger.debug("Returning sienna defaults")
         case _:
-            msg = f"Unsupported model: {model_enum}. Supported models: {list(MODEL_CONFIGS.keys())}"
+            msg = (
+                f"Unsupported input model: {model_enum}. "
+                f"Supported models: {[str(model) for model in ExporterModels]}"
+            )
             raise ValueError(msg)
+
     if not defaults_dict:
         return {}
 
@@ -66,8 +74,7 @@ def get_input_model_fmap(model_enum: Models) -> dict:
         case Models.PLEXOS:
             fmap = read_fmap("r2x/defaults/plexos_mapping.json")
         case _:
-            logger.error("Input model {} not recognized", model_enum)
-            raise KeyError(f"Input model {model_enum=} not valid")
+            raise ValueError(f"Input model {model_enum=} not valid")
     return fmap
 
 

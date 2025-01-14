@@ -113,6 +113,23 @@ class Models(StrEnum):
     PRAS = "PRAS"
 
 
+class ParserModels(StrEnum):
+    """Enum of valid parser models supported."""
+
+    INFRASYS = "INFRASYS"
+    REEDS = "REEDS-US"
+    PLEXOS = "PLEXOS"
+    SIENNA = "SIENNA"
+
+
+class ExporterModels(StrEnum):
+    """Enum of valid exporter models supported."""
+
+    PLEXOS = "PLEXOS"
+    SIENNA = "SIENNA"
+    INFRASYS = "INFRASYS"
+
+
 MODEL_CONFIGS = {
     Models.REEDS: ReEDSConfig,
     Models.PLEXOS: PlexosConfig,

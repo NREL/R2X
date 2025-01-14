@@ -16,23 +16,17 @@ import difflib
 from importlib.resources import files
 from pathlib import Path
 from itertools import islice
-from typing import Any, Hashable, Sequence
 
 # Third-party packages
 import numpy as np
 import pandas as pd
 import polars as pl
-import pyarrow as pa
-import pyarrow.dataset as ds
-import pyarrow.parquet as pq
-from tables import file
 import yaml
 from jsonschema import validate
 from loguru import logger
 import pint
 from pint import UndefinedUnitError
 from infrasys.base_quantity import BaseQuantity
-from r2x.models import Generator
 from r2x.units import ureg
 
 
@@ -116,7 +110,8 @@ def get_mean_data(
         rename_dict: Dictionary passed to pd.DataFrame().rename(columns=rename_dict),
         categories: Keys to aggregate the data.
 
-    Returns:
+    Returns
+    -------
         Aggregated dataframe
     """
     if not rename_dict:
@@ -178,12 +173,12 @@ def read_user_dict(fname: str) -> dict:
 def _load_file(fname: str, loader) -> dict:
     """Helper function to load a file (either JSON or YAML)."""
     try:
-        with open(fname, "r") as f:
+        with open(fname) as f:
             return loader(f)
     except FileNotFoundError:
         raise FileNotFoundError(f"File {fname} not found.")
-    except IOError as e:
-        raise IOError(f"Error reading the file {fname}: {e}")
+    except OSError as e:
+        raise OSError(f"Error reading the file {fname}: {e}")
 
 
 def read_json(fname: str):
@@ -214,7 +209,8 @@ def get_missing_columns(fpath: str, column_names: list) -> list:
         fpath: Path to the csv file
         column_names: list of columns to verify
 
-    Returns:
+    Returns
+    -------
         A list of missing columns or empty list
     """
     try:
@@ -237,7 +233,8 @@ def get_missing_files(project_folder: str, file_list: Iterable, max_depth: int =
         file_list: Iterable of files to check
         max_depth: Level of subfolders to look.
 
-    Returns:
+    Returns
+    -------
         A list with the missing files or empty list
     """
     all_files = set()
@@ -271,7 +268,8 @@ def read_csv(fname: str, package_data: str = "r2x.defaults", **kwargs) -> pl.Laz
         package_data: Location of file in package. Default location is r2x.defaults
         **kwargs: Additional keys passed to pandas read_csv function
 
-    Returns:
+    Returns
+    -------
         A pandas dataframe of the csv requested
     """
     csv_file = files(package_data).joinpath(fname).read_text(encoding="utf-8-sig")
@@ -283,7 +281,8 @@ def get_timeindex(
 ) -> pd.DatetimeIndex:
     """ReEDS time indices are in EST, and leap years drop Dec 31 instead of Feb 29.
 
-    Notes:
+    Notes
+    -----
         - Function courtesy of P. Brown.
 
     Args:
@@ -348,7 +347,8 @@ def check_file_exists(
         default_folders: Default location to look for files
         mandatory: Flag to identify needed files
 
-    Returns:
+    Returns
+    -------
         fpath or None
     """
     run_folder = Path(run_folder)
@@ -394,7 +394,8 @@ def get_csv(fpath: str, fname: str, fmap: dict[str, str | dict | list] = {}, **k
         fmap: File mapping values
         kwargs: Additional key arguments for pandas mostly
 
-    Attributes:
+    Attributes
+    ----------
         data:  ReEDS parsed data for PCM.
     """
     logger.debug(f"Attempting to read {fname}")
