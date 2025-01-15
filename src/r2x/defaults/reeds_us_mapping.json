@@ -259,17 +259,6 @@
     "input": true,
     "optional": true
   },
-  "hurdle_rate": {
-    "column_mapping": {
-      "allt": "year",
-      "r": "from_bus",
-      "rr": "to_bus",
-      "value": "hurdle_rate"
-    },
-    "fname": "cost_hurdle.csv",
-    "input": true,
-    "optional": true
-  },
   "hydro_cap_adj": {
     "column_mapping": {
       "*i": "tech",

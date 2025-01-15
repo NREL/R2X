@@ -32,7 +32,7 @@ class BaseModelConfig(BaseModel):
     fmap: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
-    def __get_field_mapping(cls) -> dict[type[BaseModel], dict[str, str]]:
+    def get_field_mapping(cls) -> dict[type[BaseModel], dict[str, str]]:
         """Return a dict of {target_class: {target_field: source_field}}."""
         raise NotImplementedError
 
@@ -44,7 +44,7 @@ class BaseModelConfig(BaseModel):
         self, target_class: type[BaseModelConfigType], base_instance: BaseModel | None = None
     ) -> BaseModelConfigType:
         """Transform this model instance to another Pydantic model."""
-        field_mappings = self.__get_field_mapping().get(target_class, {})
+        field_mappings = self.get_field_mapping().get(target_class, {})
 
         transformed_data = base_instance.model_dump() if base_instance is not None else {}
 

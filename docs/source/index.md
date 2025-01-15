@@ -50,7 +50,7 @@ If you're curious about what we're working on, check out the roadmap:
 
 
 ```{toctree}
-:hidden: tru
+:hidden: true
 install.md
 usage.md
 howtos.md
