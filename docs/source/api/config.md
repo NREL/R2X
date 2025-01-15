@@ -1,7 +1,7 @@
-# Configuration classes
+# Scenario configuration
 
 
 ```{eval-rst}
-.. automodule:: r2x.config
+.. automodule:: r2x.config_scenario
     :members:
 ```

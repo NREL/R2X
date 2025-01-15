@@ -74,7 +74,7 @@ def get_additional_arguments(
 def base_cli() -> argparse.ArgumentParser:
     """Create parser object for CLI."""
     parser = argparse.ArgumentParser(
-        description="""Execute translation of ReEDS scenario results into X model""",
+        description="""Model translation framework""",
         add_help=True,
         prog="r2x",
     )

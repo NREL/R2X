@@ -1,6 +1,6 @@
 # Welcome to R2X's documentation!
 
-R2X is a Framework for translating inputs/outputs of power system model to “X” model(s).
+R2X is a translating framework for inputs/outputs of power system model to “X” model(s).
 
 
 ## Model coverage
@@ -42,28 +42,20 @@ If you're curious about what we're working on, check out the roadmap:
 
 ## Model compatibility
 
-```{warning}
-This table is not up to date.
-```
-
-| R2X Version  | Supported Input Model Versions                            | Supported Output Model Versions          |
-|--------------|-----------------------------------------                  |----------------------------------------- |
-| 0.3          | Sienna (PowerSystems 3.0)                                 | Nodal Sienna                             |
-|              | Sienna (PowerSystems 4.0)                                 | Plexos s 9.000R6, 9.2000R5               |
-|              | ReEDS                                                     | Plexos 9.000R6, 9.2000R5                 |
-|              | Plexos                                                    | Nodal Plexos                             |
-| 0.4          | ReEDS (2024.2.0)                                          | Plexos 9.000R6, 9.200R5                  |
-|              | ReEDS (2024.2.0)                                          | Sienna (PowerSystems 4.0)                |
-|              | Sienna (PowerSystems 4.0)                                 | Plexos 9.000R6, 9.200R5                  |
+| R2X Version  | Supported Input Model Versions           | Supported Output Model Versions          |
+|--------------|----------------------------------------- |----------------------------------------- |
+|     1.0      | ReEDS (v2024.8.0)                        | PLEXOS (9.0, 9.2, 10)                    |
+|              | Sienna (PSY 3.0)                         | Sienna (PSY 3.0, 4.0)                    |
+|              | PLEXOS (9.0, 9.2, 10)                    |                                          |
 
 
 ```{toctree}
-:caption: Getting Started
-:hidden: true
-
+:hidden: tru
 install.md
 usage.md
+howtos.md
 CHANGELOG.md
+troubleshoot.md
 ```
 
 ```{toctree}
@@ -81,8 +73,8 @@ dev/git.md
 model/logic.md
 model/diagram.md
 model/models.md
+model/data_models.md
 model/terminology.md
-api/enums.md
 ```
 
 
@@ -104,6 +96,7 @@ dev/plexosdb.md
 :caption: API Documentation
 :hidden: true
 
+api/enums.md
 api/config.md
 api/system.md
 api/plexos.md

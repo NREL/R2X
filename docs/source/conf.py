@@ -76,3 +76,6 @@ autodoc_typehints = "description"
 # Don't show class signature with the class' name.
 # autodoc_class_signature = "separated"
 suppress_warnings = ["myst.header"]
+
+# Copy button
+copybutton_exclude = ".linenos, .gp, .go"

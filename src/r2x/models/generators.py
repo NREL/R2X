@@ -265,7 +265,7 @@ class ThermalGen(Generator):
 
 
 class ThermalStandard(ThermalGen):
-    """Standard representation of thermal device."""
+    """Class representing a standard thermal generator."""
 
     @classmethod
     def example(cls) -> "ThermalStandard":
