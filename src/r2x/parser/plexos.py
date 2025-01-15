@@ -1230,7 +1230,7 @@ class PlexosParser(PCMParser):
         return record
 
     def _get_active_power_limits(self, record) -> MinMax:
-        assert record["base_power"] is not None
+        # assert record["base_power"] is not None
         if active_power_min := record.get("min_rated_capacity"):
             if isinstance(active_power_min, SingleTimeSeries):
                 active_power_min = np.nanmin(active_power_min.data)
@@ -1390,6 +1390,7 @@ class PlexosParser(PCMParser):
             parsed_file = parsed_file.unique(subset=columns_to_check).sort(pl.all())
 
         # We reconcile the time series data using the hourly time stamp given by the solve year
+
         parsed_file = reconcile_timeseries(parsed_file, hourly_time_index=self.hourly_time_index)
         assert (
             "value" in parsed_file.columns
@@ -1403,7 +1404,7 @@ class PlexosParser(PCMParser):
             for column in column_type.value
             if column in ["name", "pattern", "year", "datetime", "month", "day", "period", "hour"]
         ]
-        if column_type == DATAFILE_COLUMNS.TS_YMDH:
+        if column_type == DATAFILE_COLUMNS.TS_YMDH or column_type == DATAFILE_COLUMNS.TS_NMDH:
             columns_to_check.append("hour")
         if column_type == DATAFILE_COLUMNS.TS_NM:
             columns_to_check.append("month")
