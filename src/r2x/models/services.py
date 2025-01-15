@@ -77,9 +77,9 @@ class Emission(Service):
 
 
 class TransmissionInterface(Service):
-    """A collection of branches that make up an interface or corridor for the transfer of power
-    such as between different :class:Area or :class:LoadZone.
+    """Component representing a collection of branches that make up an interface or corridor.
 
+    It can be specified between different :class:`Area` or :class:`LoadZone`.
     The interface can be used to constrain the power flow across it
     """
 

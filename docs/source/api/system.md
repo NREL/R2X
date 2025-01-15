@@ -1,4 +1,4 @@
-# System
+# `infrasys`
 
 ```{eval-rst}
 .. automodule:: r2x.api

@@ -1,6 +1,6 @@
 # Models
 # ruff: noqa
-from .branch import Branch, ACBranch, DCBranch, MonitoredLine, Transformer2W
+from .branch import Branch, ACBranch, DCBranch, MonitoredLine, Transformer2W, TModelHVDCLine, AreaInterchange
 from .core import ReserveMap, TransmissionInterfaceMap, MinMax
 from .generators import (
     Generator,
@@ -21,4 +21,4 @@ from .generators import (
 from .costs import HydroGenerationCost, StorageCost, ThermalGenerationCost, RenewableGenerationCost
 from .load import PowerLoad, InterruptiblePowerLoad
 from .services import Emission, Reserve, TransmissionInterface
-from .topology import ACBus, Area, Bus, LoadZone
+from .topology import ACBus, Area, Bus, DCBus, LoadZone

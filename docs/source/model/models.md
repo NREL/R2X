@@ -1,76 +1,78 @@
-(Generator-Models)=
-# Data Model
+# Translation Configuration
 
+## Scenario Models
 
-We implemented the data model used follow the
-[NREL-Sienna/PowerSystem.jl](https://github.com/NREL-Sienna/PowerSystems.jl)
-specification tailored for CEM to PCM convertions.
-Here is the list of available representations:
+The default workflow of R2X creates an {class}`~r2x.config_scenario.Scenario` instance that
+keeps track of the default information required to do a translation.
 
-## Generators
-
-```{eval-rst}
-.. autosummary::
-    ~r2x.model.Generator
-    ~r2x.model.RenewableGen
-    ~r2x.model.RenewableDispatch
-    ~r2x.model.RenewableFix
-    ~r2x.model.ThermalGen
-    ~r2x.model.ThermalStandard
-    ~r2x.model.ThermalMultiStart
-    ~r2x.model.HydroGen
-    ~r2x.model.HydroFix
-    ~r2x.model.HydroDispatch
-    ~r2x.model.HydroEnergyReservoir
-
+```{note}
+This class gets created when calling `r2x run` from a terminal
 ```
 
+The recommended way of creating an instance of this class is to call
+{meth}`~r2x.config_scenario.Scenario.from_kwargs` like this example:
 
-## Topology
-
-```{eval-rst}
-.. autosummary::
-    ~r2x.model.Area
-    ~r2x.model.LoadZone
-    ~r2x.model.ACBus
-    ~r2x.model.DCBus
-    ~r2x.model.ACBranch
-    ~r2x.model.DCBranch
-    ~r2x.model.MonitoredLine
-    ~r2x.model.TModelHVDCLine
-    ~r2x.model.Transformer2W
-    ~r2x.model.TransmissionInterface
+```python
+kwargs = {
+    "name": "Test",
+    "weather_year": 2015,
+    "solve_year": 2055,
+    "output_folder": tmp_folder,
+    "input_model": "reeds-US",
+    "output_model": "sienna",
+    "feature_flags": {"cool-feature": True},
+}
+scenario = Scenario.from_kwargs(**kwargs)
 ```
 
-## Load components
+For additional implementation details of the configuration models see the
+[API](#scenario-models)
 
-```{eval-rst}
-.. autosummary::
-    ~r2x.model.PowerLoad
-    ~r2x.model.FixedLoad
-    ~r2x.model.InterruptiblePowerLoad
+## Configuration Models
+R2X depends on [configuration classes](#configuration) that specifies
+the model that we are reading or exporting to. Each model supported by R2X has
+its own class and fields that are required. An example, for the {term}`ReEDS`
+model you can directly create an instance of the class and specify the fields
+for the translation you will perform.
+
+```python
+from r2x.config_models import ReEDSConfig
+reeds_config = ReEDSConfig(solve_year=2050, weather_year=2012)
 ```
 
-## Storage models
+In addition to the configuration of each model, fields defined in one model
+needs to be mapped to another field for another model. A clear example of this
+is when we are translating from {term}`ReEDS` to {term}`PLEXOS`. Each class
+should implement {meth}`~r2x.config_models.BaseModelConfig.get_field_mapping`
+that specifies how we convert from model configuration to another. Here is a
+simplified example from the {class}`~r2x.config_models.ReEDSConfig`,
 
-```{eval-rst}
-.. autosummary::
-    ~r2x.model.Storage
-    ~r2x.model.GenericBattery
-    ~r2x.model.HydroPumpedStorage
+```python
+class ReEDSConfig(BaseModelConfig):
+
+    solve_year: list[int] | int | None = None
+    weather_year: int | None = None
+    ...
+
+    def get_field_mapping(cls) -> dict[type[BaseModel], dict[str, str]]:
+        """Return a dict of {target_class: {target_field: source_field}}."""
+        return {
+            PlexosConfig: {
+                "model_year": "solve_year",
+                "horizon_year": "weather_year",
+            },
+            SiennaConfig: {"model_year": "solve_year"},
+        }
 ```
 
-## Hybrid representation
-```{eval-rst}
-.. autosummary::
-    ~r2x.model.HybridSystem
-```
+On the ReEDS class, we mapped the field `solve_year` to `model_year` for both
+{class}`~r2x.config_models.PlexosConfig` and
+{class}`~r2x.config_models.SiennaConfig`. The syntax to provide the field
+mappings is to add new keys with the subclass of
+{class}`~r2x.config_models.BaseModelConfig` and dictionary for each key tha
+requires mapping. The mapping is performed automatically when calling an
+exporter (for more details see
+{meth}`~r2x.config_models.BaseModelConfig.to_class`).
 
-## Services
-
-```{eval-rst}
-.. autosummary::
-    ~r2x.model.Service
-    ~r2x.model.Emission
-    ~r2x.model.Reserve
-```
+For additional implementation details of the configuration models see the
+[API](#configuration-models)

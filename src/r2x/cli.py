@@ -17,7 +17,7 @@ def cli() -> None:
     parser = base_cli()
     args, remaining_args = parser.parse_known_args()
 
-    if "--help" in remaining_args:
+    if "--help" in remaining_args or len(sys.argv) == 1:
         parser.print_help(sys.stderr)
         sys.exit(0)
 
