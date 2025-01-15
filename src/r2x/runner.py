@@ -158,7 +158,9 @@ def run(cli_args: dict, user_dict: dict | None = None) -> None:
     logger.info("Running {} scenarios", len(config_mgr))
     for _, scenario in config_mgr.scenarios.items():
         # NOTE: We can pass multiple years from the CLI. In those cases we want to raise not implemented.
-        if hasattr(scenario, "solve_year") and isinstance(getattr(scenario, "solve_year"), list):
+        if hasattr(scenario, "input_config") and isinstance(
+            getattr(scenario.input_config, "solve_year"), list
+        ):
             msg = "Multi year runs from the CLI is not yet supported. Use scenarios instead."
             raise NotImplementedError(msg)
         run_single_scenario(scenario)
