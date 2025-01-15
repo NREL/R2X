@@ -1,5 +1,5 @@
 import pytest
-from r2x.config import Scenario
+from r2x.config_scenario import Scenario
 from r2x.exporter.plexos import PlexosExporter
 from r2x.parser.handler import get_parser_data
 from r2x.parser.reeds import ReEDSParser

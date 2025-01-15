@@ -65,6 +65,20 @@
     "optional": true,
     "units": "tonne"
   },
+  "co2_incentive": {
+    "column_mapping": {
+      "allt": "year",
+      "i": "tech",
+      "r": "region",
+      "v": "vintage",
+      "value": "incentive"
+    },
+    "description": "Capture incentive in $/ton",
+    "fname": "co2_captured_incentive.csv",
+    "input": true,
+    "optional": true,
+    "units": "$/ton"
+  },
   "cost_vom": {
     "column_mapping": {
       "i": "tech",
@@ -104,6 +118,21 @@
     "input": false,
     "optional": true,
     "units": "MW"
+  },
+  "emission_capture_rate": {
+    "column_mapping": {
+      "e": "pollutant",
+      "i": "tech",
+      "r": "region",
+      "t": "year",
+      "v": "vintage",
+      "value": "capture_rate"
+    },
+    "description": "Capture rate for given CCS technology.",
+    "fname": "capture_rate.csv",
+    "input": true,
+    "optional": true,
+    "units": "ton/MWh"
   },
   "emission_rates": {
     "column_mapping": {
@@ -227,6 +256,17 @@
       "value": "hour_weight"
     },
     "fname": "hours.csv",
+    "input": true,
+    "optional": true
+  },
+  "hurdle_rate": {
+    "column_mapping": {
+      "allt": "year",
+      "r": "from_bus",
+      "rr": "to_bus",
+      "value": "hurdle_rate"
+    },
+    "fname": "cost_hurdle.csv",
     "input": true,
     "optional": true
   },
@@ -437,6 +477,18 @@
     },
     "fname": "tran_out.csv",
     "units": "MW"
+  },
+  "upgrade_link": {
+    "column_mapping": {
+      "*to": "to",
+      "delta": "delta",
+      "from": "from"
+    },
+    "description": "Upgrade for certain technologies",
+    "fname": "upgrade_link.csv",
+    "input": true,
+    "optional": true,
+    "units": "-"
   },
   "years": {
     "column_mapping": {},

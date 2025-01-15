@@ -13,7 +13,7 @@ import infrasys
 from loguru import logger
 
 from r2x.api import System
-from r2x.config import Scenario
+from r2x.config_scenario import Scenario
 from r2x.exporter.utils import modify_components
 from r2x.parser.handler import file_handler
 
@@ -111,6 +111,7 @@ class BaseExporter(ABC):
         """
         assert year is not None
         config_dict = self.config.__dict__
+        config_dict["year"] = year
         for component in self.system.iter_all_components():
             if self.system.has_time_series(component):
                 for ts_metadata in self.system.time_series.list_time_series_metadata(component):
@@ -155,7 +156,7 @@ class BaseExporter(ABC):
         csv_fpath = self.output_folder / time_series_folder
 
         # Use string substitution to dynamically change the output csv fnames
-        csv_fname = config_dict.get("time_series_fname", "${component_type}_${name}_${weather_year}.csv")
+        csv_fname = config_dict.get("time_series_fname", "${component_type}_${name}_${year}.csv")
         logger.trace("Using {} as time_series name", csv_fname)
         string_template = string.Template(csv_fname)
 
@@ -297,10 +298,8 @@ def get_exporter(
 
     exporter.run(
         config=config,
-        fmap=config.fmap,
-        year=config.solve_year,
         filter_func=filter_funcs,
-        **kwargs,
+        **{**config.input_config.__dict__, **kwargs},
     )
 
     return exporter

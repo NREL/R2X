@@ -12,6 +12,7 @@ from urllib.request import urlopen
 from loguru import logger
 
 # Local imports
+from r2x.config_models import ReEDSConfig, SiennaConfig
 from r2x.exporter.handler import BaseExporter, get_export_records
 from r2x.exporter.utils import (
     apply_default_value,
@@ -73,15 +74,27 @@ class SiennaExporter(BaseExporter):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        assert self.config.output_config
+        assert self.config.input_config
         self.output_data = {}
-        self.property_map = self.config.defaults.get("sienna_property_map", {})
-        self.unit_map = self.config.defaults.get("sienna_unit_map", {})
-        self.output_fields = self.config.defaults["table_data"]
-
-        if not isinstance(self.config.solve_year, int):
+        if not isinstance(self.config.output_config, SiennaConfig):
+            msg = (
+                f"Output config is of type {type(self.config.output_config)}. "
+                "It should be type of `PlexosConfig`."
+            )
+            raise TypeError(msg)
+        if isinstance(self.config.input_config, ReEDSConfig) and isinstance(
+            self.config.input_config.solve_year, list
+        ):
             msg = "Multiple solve years are not supported yet."
             raise NotImplementedError(msg)
-        self.year: int = self.config.solve_year
+
+        self.output_config = self.config.input_config.to_class(SiennaConfig, self.config.output_config)
+        self.property_map = self.output_config.defaults.get("sienna_property_map", {})
+        self.unit_map = self.output_config.defaults.get("sienna_unit_map", {})
+        self.output_fields = self.output_config.defaults["table_data"]
+        self.year = self.output_config.model_year
+        assert self.year is not None
 
     def run(self, *args, path=None, **kwargs) -> "SiennaExporter":
         """Run sienna exporter workflow.

@@ -2,7 +2,7 @@ from plexosdb.sqlite import PlexosSQLite
 import pytest
 from plexosdb import XMLHandler
 from r2x.api import System
-from r2x.config import Scenario
+from r2x.config_scenario import Scenario
 from r2x.parser.handler import get_parser_data
 from r2x.parser.plexos import PlexosParser
 from r2x.exceptions import ParserError
@@ -16,12 +16,11 @@ def plexos_scenario(tmp_path, data_folder):
     return Scenario.from_kwargs(
         name="plexos_test",
         input_model="plexos",
+        output_model="sienna",
         run_folder=data_folder,
         output_folder=tmp_path,
-        model=MODEL_NAME,
-        solve_year=2035,
-        weather_year=2012,
-        fmap={"xml_file": {"fname": DB_NAME, "model": "default"}},
+        model_year=2035,
+        fmap={"xml_file": {"fname": DB_NAME, "model_name": MODEL_NAME}},
     )
 
 
@@ -30,18 +29,18 @@ def pjm_scenario(tmp_path, data_folder):
     return Scenario.from_kwargs(
         name="plexos_test",
         input_model="plexos",
+        output_model="sienna",
         run_folder=data_folder / "pjm_2area",
         output_folder=tmp_path,
-        solve_year=2035,
-        weather_year=2012,
-        fmap={"xml_file": {"fname": "system.xml", "model": "default"}},
+        model_year=2035,
+        fmap={"xml_file": {"fname": "system.xml", "model_name": "default"}},
     )
 
 
 @pytest.fixture
 def plexos_parser_instance(plexos_scenario):
     plexos_device_map = {"SolarPV_01": "RenewableFix", "ThermalCC": "ThermalStandard"}
-    plexos_scenario.defaults["plexos_device_map"] = plexos_device_map
+    plexos_scenario.input_config.defaults["plexos_device_map"] = plexos_device_map
     return get_parser_data(plexos_scenario, parser_class=PlexosParser)
 
 
@@ -64,12 +63,12 @@ def test_parser_system(pjm_scenario):
         "solar": {"fuel": "SUN", "type": "WT"},
         "wind": {"fuel": "WIND", "type": "PV"},
     }
-    pjm_scenario.model = "model_2012"
+    pjm_scenario.input_config.model_name = "model_2012"
 
     with pytest.raises(ParserError):
         parser = get_parser_data(pjm_scenario, parser_class=PlexosParser)
 
-    pjm_scenario.defaults["plexos_category_map"] = plexos_category_map
+    pjm_scenario.input_config.defaults["plexos_category_map"] = plexos_category_map
 
     parser = get_parser_data(pjm_scenario, parser_class=PlexosParser)
     system = parser.build_system()

@@ -12,7 +12,7 @@ from loguru import logger
 
 from r2x.exporter.handler import get_exporter
 
-from .config import Scenario, get_config
+from .config_scenario import Scenario, get_scenario_configuration
 from .exporter import exporter_list
 from .parser import parser_list
 from .parser.handler import BaseParser, get_parser_data
@@ -152,13 +152,18 @@ def run(cli_args: dict, user_dict: dict | None = None) -> None:
 
     Notes
     -----
-    Currently the scenario shoul only have a single year to run.
+    Currently the scenario should only have a single year to run.
     """
-    config_mgr = get_config(cli_args=cli_args, user_dict=user_dict)
+    config_mgr = get_scenario_configuration(cli_args=cli_args, user_dict=user_dict)
     logger.info("Running {} scenarios", len(config_mgr))
     for _, scenario in config_mgr.scenarios.items():
-        if not isinstance(scenario.solve_year, list) or len(scenario.solve_year) == 1:
-            run_single_scenario(scenario)
+        # NOTE: We can pass multiple years from the CLI. In those cases we want to raise not implemented.
+        if hasattr(scenario, "input_config") and isinstance(
+            getattr(scenario.input_config, "solve_year"), list
+        ):
+            msg = "Multi year runs from the CLI is not yet supported. Use scenarios instead."
+            raise NotImplementedError(msg)
+        run_single_scenario(scenario)
     return
 
 

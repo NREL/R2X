@@ -19,7 +19,7 @@ import pandas as pd
 
 # Local packages
 from r2x.api import System
-from r2x.config import Scenario
+from r2x.config_scenario import Scenario
 from plexosdb import XMLHandler
 from .polars_helpers import pl_filter_year, pl_lowercase, pl_rename
 from ..utils import check_file_exists
@@ -228,6 +228,10 @@ def csv_handler(fpath: Path, csv_file_encoding="utf8", **kwargs) -> pl.DataFrame
         logger.warning("File {} could not be parse due to dtype problems. See error.", fpath)
         raise
 
+    if data_file.is_empty():
+        logger.debug("File {} is empty. Skipping it.", fpath)
+        return
+
     data_file = pl_lowercase(data_file)
 
     return data_file
@@ -288,12 +292,11 @@ def get_parser_data(
         kwargs["model"] = model
 
     # Parser data
+    assert config.input_config
     parser.parse_data(
-        fmap=config.fmap,
         base_folder=config.run_folder,
-        solve_year=config.solve_year,
         filter_func=filter_funcs,
-        **kwargs,
+        **{**config.input_config.__dict__, **kwargs},
     )
 
     # Create system

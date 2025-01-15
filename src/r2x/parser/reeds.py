@@ -17,6 +17,7 @@ from infrasys.time_series_models import SingleTimeSeries
 from loguru import logger
 
 from r2x.api import System
+from r2x.config_models import ReEDSConfig
 from r2x.enums import ACBusTypes, EmissionType, PrimeMoversType, ReserveDirection, ReserveType
 from r2x.models import (
     ACBus,
@@ -66,12 +67,15 @@ class ReEDSParser(BaseParser):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        if not self.config.weather_year:
+        assert self.config.input_config
+        assert isinstance(self.config.input_config, ReEDSConfig)
+        self.reeds_config = self.config.input_config
+        if not self.reeds_config.weather_year:
             raise AttributeError("Missing weather year from the configuration class.")
-        if not self.config.solve_year:
+        if not self.reeds_config.solve_year:
             raise AttributeError("Missing solve year from the configuration class.")
-        self.device_map = self.config.defaults["reeds_device_map"]
-        self.weather_year: int = self.config.weather_year
+        self.device_map = self.reeds_config.defaults["reeds_device_map"]
+        self.weather_year: int = self.reeds_config.weather_year
 
         # Add hourly_time_index
         self.hourly_time_index = np.arange(
@@ -128,7 +132,6 @@ class ReEDSParser(BaseParser):
                     name=bus["region"],
                     area=self.system.get_component(Area, name=bus["state"]),
                     load_zone=self.system.get_component(LoadZone, name=bus["transmission_region"]),
-                    base_voltage=100 * ureg.kV,  # 100kV default since ReEDS does not model voltage
                     bus_type=ACBusTypes.PV,
                 )
             )
@@ -139,11 +142,11 @@ class ReEDSParser(BaseParser):
 
         reserves = bus_data["transmission_region"].unique()
         for reserve in reserves:
-            for name in self.config.defaults["default_reserve_types"]:
-                reserve_duration = self.config.defaults["reserve_duration"].get(name)
-                time_frame = self.config.defaults["reserve_time_frame"].get(name)
-                load_risk = self.config.defaults["reserve_load_risk"].get(name)
-                vors = self.config.defaults["reserve_vors"].get(name)
+            for name in self.reeds_config.defaults["default_reserve_types"]:
+                reserve_duration = self.reeds_config.defaults["reserve_duration"].get(name)
+                time_frame = self.reeds_config.defaults["reserve_time_frame"].get(name)
+                load_risk = self.reeds_config.defaults["reserve_load_risk"].get(name)
+                vors = self.reeds_config.defaults["reserve_vors"].get(name)
                 reserve_area = self.system.get_component(LoadZone, name=reserve)
                 self.system.add_component(
                     Reserve(
@@ -244,7 +247,7 @@ class ReEDSParser(BaseParser):
             max_power_flow = max(interface_values["positive_flow"], abs(interface_values["negative_flow"]))
 
             # Ramp multiplier defines the MW/min ratio for the interface
-            ramp_multiplier = self.config.defaults["interface_max_ramp_up_multiplier"]
+            ramp_multiplier = self.reeds_config.defaults["interface_max_ramp_up_multiplier"]
             self.system.add_component(
                 TransmissionInterface(
                     name=interface_name,
@@ -310,7 +313,7 @@ class ReEDSParser(BaseParser):
         planned_outages = self.get_data("planned_outages")
         storage_duration = self.get_data("storage_duration")
         storage_eff = self.get_data("storage_eff")
-        category_map = self.config.defaults.get("tech_categories", None)
+        category_map = self.reeds_config.defaults.get("tech_categories", None)
 
         # NOTE: Temp unit definition. This should be read from the mapping file?
         unit_definition = {
@@ -357,13 +360,17 @@ class ReEDSParser(BaseParser):
                 (
                     pl.col("active_power")
                     * pl.col("storage_duration")
-                    / self.config.defaults["initial_volume_divisor"]  # Storage start at half of its capacity
+                    / self.reeds_config.defaults[
+                        "initial_volume_divisor"
+                    ]  # Storage start at half of its capacity
                 ).alias("initial_volume"),
-                (pl.lit(100) / self.config.defaults["initial_volume_divisor"]).alias("initial_energy"),  # 50%
+                (pl.lit(100) / self.reeds_config.defaults["initial_volume_divisor"]).alias(
+                    "initial_energy"
+                ),  # 50%
                 (pl.col("active_power")).alias("pump_load"),
                 (pl.col("charge_efficiency")).alias("pump_efficiency"),
                 (
-                    pl.when(pl.col("tech").is_in(self.config.defaults["commit_technologies"]))
+                    pl.when(pl.col("tech").is_in(self.reeds_config.defaults["commit_technologies"]))
                     .then(1)
                     .otherwise(None)
                 ).alias("must_run"),
@@ -383,8 +390,12 @@ class ReEDSParser(BaseParser):
                     "Could not parse category {}. Check that the type map is including this category.",
                     category,
                 )
-        non_cf_generators = gen_data.filter(~pl.col("category").is_in(self.config.defaults["vre_categories"]))
-        cf_generators = gen_data.filter(pl.col("category").is_in(self.config.defaults["vre_categories"]))
+        non_cf_generators = gen_data.filter(
+            ~pl.col("category").is_in(self.reeds_config.defaults["vre_categories"])
+        )
+        cf_generators = gen_data.filter(
+            pl.col("category").is_in(self.reeds_config.defaults["vre_categories"])
+        )
         cf_generators = self._aggregate_renewable_generators(cf_generators)
 
         combined_data = pl.concat([non_cf_generators, cf_generators], how="align")
@@ -415,7 +426,7 @@ class ReEDSParser(BaseParser):
             # TODO(pesap): Add prime mover type enums to reeds parser.
             # https://github.com/NREL/R2X/issues/345
             # NOTE: This should be prime mover type enums.
-            tech_fuel_pm_map = self.config.defaults["tech_fuel_pm_map"]
+            tech_fuel_pm_map = self.reeds_config.defaults["tech_fuel_pm_map"]
             row["prime_mover_type"] = (
                 tech_fuel_pm_map[row["category"]].get("type")
                 if row["category"] in tech_fuel_pm_map.keys()
@@ -431,7 +442,7 @@ class ReEDSParser(BaseParser):
             row["bus"] = bus
 
             # Add reserves/services to generator if they are not excluded
-            if row["tech"] not in self.config.defaults["excluded_reserve_techs"]:
+            if row["tech"] not in self.reeds_config.defaults["excluded_reserve_techs"]:
                 row["services"] = list(
                     self.system.get_components(
                         Reserve,
@@ -468,19 +479,22 @@ class ReEDSParser(BaseParser):
                     variable=CostCurve(value_curve=LinearCurve(row.get("vom_price", None) or 0.0))
                 )
 
+            row["must_run"] = (
+                True if row["tech"] in self.reeds_config.defaults["commit_technologies"] else None
+            )
             valid_fields = {
                 key: value for key, value in row.items() if key in gen_model.model_fields if value is not None
             }
-            valid_fields["ext"] = {
-                key: value for key, value in row.items() if key not in valid_fields if value
-            }
+            valid_fields["ext"] = {}
+            # valid_fields["ext"] = {
+            #     key: value for key, value in row.items() if key not in valid_fields if value
+            # }
 
-            commit = True if row["tech"] in self.config.defaults["commit_technologies"] else False
             valid_fields["ext"].update(
                 {
+                    "tech": row["tech"],
                     "reeds_tech": row["tech"],
                     "reeds_vintage": row["tech_vintage"],
-                    "Commit": commit,
                 }
             )
 
@@ -508,7 +522,7 @@ class ReEDSParser(BaseParser):
                 initial_time=start,
                 resolution=resolution,
             )
-            user_dict = {"solve_year": self.config.weather_year}
+            user_dict = {"solve_year": self.reeds_config.weather_year}
             max_load = np.max(ts.data)
             load = PowerLoad(name=f"{bus.name}", bus=bus, max_active_power=max_load)
             self.system.add_component(load)
@@ -516,7 +530,7 @@ class ReEDSParser(BaseParser):
 
     def _construct_cf_time_series(self):
         logger.info("Adding cf time series")
-        if not self.config.weather_year:
+        if not self.weather_year:
             raise AttributeError("Missing weather year from the configuration class.")
 
         cf_data = self.get_data("cf").collect()
@@ -528,12 +542,12 @@ class ReEDSParser(BaseParser):
         ilr = dict(
             ilr.group_by("tech").agg(pl.col("ilr").sum()).iter_rows()
         )  # Dict is more useful here than series
-        start = datetime(year=self.config.weather_year, month=1, day=1)
+        start = datetime(year=self.weather_year, month=1, day=1)
         resolution = timedelta(hours=1)
 
         # Calculate starting index for the weather year starting
         if len(cf_data) > 8760:
-            end_idx = 8760 * (self.config.weather_year - BASE_WEATHER_YEAR + 1)  # +1 to be inclusive.
+            end_idx = 8760 * (self.weather_year - BASE_WEATHER_YEAR + 1)  # +1 to be inclusive.
         else:
             end_idx = 8760
 
@@ -567,7 +581,7 @@ class ReEDSParser(BaseParser):
                 initial_time=start,
                 resolution=resolution,
             )
-            user_dict = {"solve_year": self.config.weather_year}
+            user_dict = {"solve_year": self.weather_year}
             self.system.add_time_series(ts, generator, **user_dict)
             counter += 1
         logger.debug("Added {} time series objects", counter)
@@ -641,19 +655,19 @@ class ReEDSParser(BaseParser):
                 pa.Table.from_arrays(wind_reserves, names=wind_names)
                 .to_pandas()
                 .sum(axis=1)
-                .mul(self.config.defaults["wind_reserves"].get(reserve.reserve_type.name, 1))
+                .mul(self.reeds_config.defaults["wind_reserves"].get(reserve.reserve_type.name, 1))
             )
             solar_provision = (
                 pa.Table.from_arrays(solar_reserves, names=solar_names)
                 .to_pandas()
                 .sum(axis=1)
-                .mul(self.config.defaults["solar_reserves"].get(reserve.reserve_type.name, 1))
+                .mul(self.reeds_config.defaults["solar_reserves"].get(reserve.reserve_type.name, 1))
             )
             load_provision = (
                 pa.Table.from_arrays(load_reserves, names=load_names)
                 .to_pandas()
                 .sum(axis=1)
-                .mul(self.config.defaults["load_reserves"].get(reserve.reserve_type.name, 1))
+                .mul(self.reeds_config.defaults["load_reserves"].get(reserve.reserve_type.name, 1))
             )
             total_provision = load_provision.add(solar_provision, fill_value=0).add(
                 wind_provision, fill_value=0
@@ -680,7 +694,7 @@ class ReEDSParser(BaseParser):
         """Hydro budgets in ReEDS."""
         logger.debug("Adding hydro budgets.")
         month_hrs = read_csv("month_hrs.csv").collect()
-        month_map = self.config.defaults["month_map"]
+        month_map = self.reeds_config.defaults["month_map"]
 
         hydro_cf = self.get_data("hydro_cf")
         hydro_cf = hydro_cf.with_columns(
@@ -690,9 +704,6 @@ class ReEDSParser(BaseParser):
         hydro_data = pl_left_multi_join(
             hydro_cf,
             month_hrs,
-        )
-        month_of_hour = np.array(
-            [dt.astype("datetime64[M]").astype(int) % 12 + 1 for dt in self.hourly_time_index]
         )
         month_of_day = np.array(
             [dt.astype("datetime64[M]").astype(int) % 12 + 1 for dt in self.daily_time_index]
@@ -707,9 +718,7 @@ class ReEDSParser(BaseParser):
             region = generator.bus.name
             hydro_ratings = hydro_data.filter((pl.col("tech") == tech) & (pl.col("region") == region))
 
-            hourly_time_series = np.zeros(len(month_of_hour), dtype=float)
-            if self.config.feature_flags.get("daily-budgets", None):
-                hourly_time_series = np.zeros(len(month_of_day), dtype=float)
+            hourly_time_series = np.zeros(len(month_of_day), dtype=float)
 
             for row in hydro_ratings.iter_rows(named=True):
                 month = row["month"]
@@ -719,12 +728,8 @@ class ReEDSParser(BaseParser):
                 month_max_budget = (
                     generator.active_power * Percentage(row["hydro_cf"], "") * Time(row["hrs"], "h")
                 )
-                if self.config.feature_flags.get("daily-budgets", None):
-                    daily_max_budget = month_max_budget / (row["hrs"] / 24)
-                    hourly_time_series[month_of_day == month] = daily_max_budget.magnitude
-                else:
-                    month_indices = month_of_hour == month
-                    hourly_time_series[month_indices] = month_max_budget.magnitude
+                daily_max_budget = month_max_budget / (row["hrs"] / 24)
+                hourly_time_series[month_of_day == month] = daily_max_budget.magnitude
 
             ts = SingleTimeSeries.from_array(
                 Energy(hourly_time_series / 1e3, "GWh"),
@@ -739,7 +744,7 @@ class ReEDSParser(BaseParser):
     def _construct_hydro_rating_profiles(self) -> None:
         logger.debug("Adding hydro rating profiles.")
         month_hrs = read_csv("month_hrs.csv").collect()
-        month_map = self.config.defaults["month_map"]
+        month_map = self.reeds_config.defaults["month_map"]
 
         hydro_cf = self.get_data("hydro_cf")
         hydro_cf = hydro_cf.with_columns(
