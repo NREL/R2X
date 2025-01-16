@@ -31,6 +31,7 @@ class ACBusTypes(StrEnum):
     PQ = "PQ"
     REF = "REF"
     SLACK = "SLACK"
+    ISOLATED = "ISOLATED"
 
 
 class PrimeMoversType(StrEnum):
