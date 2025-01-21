@@ -440,13 +440,15 @@ class ReEDSParser(BaseParser):
             )
             bus = self.system.get_component(ACBus, name=row["region"])
             row["bus"] = bus
+            bus_load_zone = bus.load_zone
+            assert bus_load_zone is not None
 
             # Add reserves/services to generator if they are not excluded
             if row["tech"] not in self.reeds_config.defaults["excluded_reserve_techs"]:
                 row["services"] = list(
                     self.system.get_components(
                         Reserve,
-                        filter_func=lambda x: x.region.name == bus.load_zone.name,
+                        filter_func=lambda x: x.region.name == bus_load_zone.name,
                     )
                 )
                 reserve_map = self.system.get_component(ReserveMap, name="reserve_map")
@@ -643,7 +645,9 @@ class ReEDSParser(BaseParser):
             )
             solar_capacity = list(
                 map(
-                    lambda component: self.system.get_component_by_label(component.label).active_power,
+                    lambda component: self.system.get_component_by_label(
+                        component.label
+                    ).active_power.magnitude,
                     provision_objects["solar"],
                 )
             )
@@ -735,7 +739,9 @@ class ReEDSParser(BaseParser):
             if generator.category == "can-imports":
                 continue
             tech = generator.ext["reeds_tech"]
-            region = generator.bus.name
+            generator_bus = generator.bus
+            assert generator_bus
+            region = generator_bus.name
             hydro_ratings = hydro_data.filter((pl.col("tech") == tech) & (pl.col("region") == region))
 
             hourly_time_series = np.zeros(len(month_of_day), dtype=float)
@@ -781,7 +787,9 @@ class ReEDSParser(BaseParser):
         initial_time = datetime(self.weather_year, 1, 1)
         for generator in self.system.get_components(HydroEnergyReservoir):
             tech = generator.ext["reeds_tech"]
-            region = generator.bus.name
+            generator_bus = generator.bus
+            assert generator_bus is not None
+            region = generator_bus.name
 
             hourly_time_series = np.zeros(len(month_of_hour), dtype=float)
             hydro_ratings = hydro_data.filter((pl.col("tech") == tech) & (pl.col("region") == region))

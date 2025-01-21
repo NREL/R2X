@@ -49,7 +49,7 @@ from r2x.models.utils import Constraint
 from r2x.units import get_magnitude
 from r2x.utils import custom_attrgetter, get_enum_from_string, read_json
 
-NESTED_ATTRIBUTES = ["ext", "bus", "services"]
+NESTED_ATTRIBUTES = {"ext", "bus", "services"}
 TIME_SERIES_PROPERTIES = ["Min Provision", "Static Risk"]
 DEFAULT_XML_TEMPLATE = "master_9.2R6_btu.xml"
 EXT_PROPERTIES = {"UoS Charge", "Fixed Load"}
@@ -226,7 +226,7 @@ class PlexosExporter(BaseExporter):
         filter_func: Callable | None = None,
         scenario: str | None = None,
         records: list[dict] | None = None,
-        exclude_fields: list[str] | None = NESTED_ATTRIBUTES,
+        exclude_fields: set[str] | None = NESTED_ATTRIBUTES,
     ) -> None:
         """Bulk insert properties from selected component type."""
         logger.debug("Adding {} table properties...", component_type.__name__)
@@ -437,6 +437,7 @@ class PlexosExporter(BaseExporter):
         # Add node memberships to zone and regions.
         # On our default Plexos translation, both Zones and Regions are child of the Node class.
         for bus in self.system.get_components(ACBus):
+            bus_load_zone = bus.load_zone
             self._db_mgr.add_membership(
                 bus.name,
                 bus.name,  # Zone has the same name
@@ -444,9 +445,11 @@ class PlexosExporter(BaseExporter):
                 child_class=ClassEnum.Region,
                 collection=CollectionEnum.Region,
             )
+            if bus_load_zone is None:
+                continue
             self._db_mgr.add_membership(
                 bus.name,
-                bus.load_zone.name,
+                bus_load_zone.name,
                 parent_class=ClassEnum.Node,
                 child_class=ClassEnum.Zone,
                 collection=CollectionEnum.Zone,
@@ -663,7 +666,7 @@ class PlexosExporter(BaseExporter):
             Reserve,
             parent_class=ClassEnum.System,
             collection=CollectionEnum.Reserves,
-            exclude_fields=[*NESTED_ATTRIBUTES, "max_requirement"],
+            exclude_fields=NESTED_ATTRIBUTES | {"max_requirement"},
         )
         for reserve in self.system.get_components(Reserve):
             properties: dict[str, Any] = {}
@@ -700,13 +703,15 @@ class PlexosExporter(BaseExporter):
 
             # Add Regions properties. Currently, we only add the load_risk
             component_dict = reserve.model_dump(
-                exclude_none=True, exclude=[*NESTED_ATTRIBUTES, "max_requirement"]
+                exclude_none=True, exclude=NESTED_ATTRIBUTES | {"max_requirement"}
             )
 
             if not reserve.region:
                 return
+            reserve_region = reserve.region
+            assert reserve_region is not None
             regions = self.system.get_components(
-                ACBus, filter_func=lambda x: x.load_zone.name == reserve.region.name
+                ACBus, filter_func=lambda x: x.load_zone.name == reserve_region.name
             )
 
             collection_properties = self._db_mgr.get_valid_properties(
