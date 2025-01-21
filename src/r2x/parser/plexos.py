@@ -1468,7 +1468,7 @@ class PlexosParser(PCMParser):
         resolution = timedelta(hours=1)
 
         return SingleTimeSeries(
-            data=ureg.Quantity(value, unit) if unit else value,
+            data=ureg.Quantity(value, unit) if unit else value,  # type: ignore
             variable_name=variable_name,
             initial_time=initial_time,
             resolution=resolution,

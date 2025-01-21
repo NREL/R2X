@@ -128,7 +128,7 @@ def base_cli() -> argparse.ArgumentParser:
     group_cli.add_argument(
         "--output-model",
         dest="output_model",
-        choices=["plexos", "sienna", "pras"],
+        choices=["plexos", "sienna", "infrasys"],
         help="Output model to convert to",
     )
     group_cli.add_argument(

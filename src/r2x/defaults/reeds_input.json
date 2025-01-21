@@ -141,14 +141,14 @@
     "SPINNING": 3
   },
   "reserve_time_frame": {
-    "FLEXIBILITY": 600,
-    "REGULATION": 1200,
-    "SPINNING": 300
+    "FLEXIBILITY": 3600,
+    "REGULATION": 300,
+    "SPINNING": 600
   },
   "reserve_vors": {
-    "FLEXIBILITY": 390000,
-    "REGULATION": 410000,
-    "SPINNING": 400000
+    "FLEXIBILITY": 3900,
+    "REGULATION": 4100,
+    "SPINNING": 4000
   },
   "season_map": {
     "fall": "fall",
@@ -389,7 +389,7 @@
   ],
   "wind_reserves": {
     "FLEXIBILITY": 0.1,
-    "REGULATION": 0.05,
+    "REGULATION": 0.005,
     "SPINNING": 0
   }
 }

@@ -127,6 +127,10 @@ def run_single_scenario(scenario: Scenario, **kwargs) -> None:
         system.to_json(output_fpath, overwrite=True)
         system = System.from_json(output_fpath)
 
+    if scenario.output_model == "infrasys":
+        logger.info("Serialize system to {}", output_fpath)
+        system.to_json(output_fpath, overwrite=True)
+        return
     run_exporter(config=scenario, system=system)
     return
 
