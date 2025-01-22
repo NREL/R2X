@@ -11,6 +11,7 @@ import pandas as pd
 import numpy as np
 import infrasys
 from loguru import logger
+from pint import Quantity
 
 from r2x.api import System
 from r2x.config_scenario import Scenario
@@ -161,8 +162,9 @@ class BaseExporter(ABC):
         string_template = string.Template(csv_fname)
 
         for component_type, (datetime_array, time_series) in datetime_arrays.items():
-            time_series_arrays = list(map(lambda x: x.data.to_numpy(), time_series))
-
+            time_series_arrays = list(
+                map(lambda x: x.data.magnitude if isinstance(x.data, Quantity) else x.data, time_series)
+            )
             config_dict["component_type"] = component_type
             csv_fname = string_template.safe_substitute(config_dict)
             csv_table = np.column_stack([datetime_array, *time_series_arrays])

@@ -63,7 +63,10 @@ def get_additional_arguments(
             raise NotImplementedError(msg)
 
         _, package_name, script_name = package_str
-        package_script = importlib.import_module(f"{package}")
+        try:
+            package_script = importlib.import_module(f"{package}")
+        except ImportError:
+            continue
         if hasattr(package_script, "cli_arguments"):
             script_cli_group = parser.add_argument_group(f"{package_name.upper()}: {script_name}")
             package_script.cli_arguments(script_cli_group)
@@ -125,7 +128,7 @@ def base_cli() -> argparse.ArgumentParser:
     group_cli.add_argument(
         "--output-model",
         dest="output_model",
-        choices=["plexos", "sienna", "pras"],
+        choices=["plexos", "sienna", "infrasys"],
         help="Output model to convert to",
     )
     group_cli.add_argument(

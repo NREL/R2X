@@ -174,7 +174,7 @@ class ReEDSParser(BaseParser):
         for idx, branch in enumerate(branch_data.iter_rows(named=True)):
             from_bus = self.system.get_component(ACBus, branch["from_bus"])
             to_bus = self.system.get_component(ACBus, branch["to_bus"])
-            branch_name = f"{idx+1:>04}-{branch['from_bus']}-{branch['to_bus']}"
+            branch_name = f"{idx + 1:>04}-{branch['from_bus']}-{branch['to_bus']}"
             reverse_key = (branch["kind"], branch["from_bus"], branch["to_bus"])
             if reverse_key in reverse_lines:
                 continue
@@ -440,13 +440,15 @@ class ReEDSParser(BaseParser):
             )
             bus = self.system.get_component(ACBus, name=row["region"])
             row["bus"] = bus
+            bus_load_zone = bus.load_zone
+            assert bus_load_zone is not None
 
             # Add reserves/services to generator if they are not excluded
             if row["tech"] not in self.reeds_config.defaults["excluded_reserve_techs"]:
                 row["services"] = list(
                     self.system.get_components(
                         Reserve,
-                        filter_func=lambda x: x.region.name == bus.load_zone.name,
+                        filter_func=lambda x: x.region.name == bus_load_zone.name,
                     )
                 )
                 reserve_map = self.system.get_component(ReserveMap, name="reserve_map")
@@ -633,22 +635,42 @@ class ReEDSParser(BaseParser):
             solar_reserves = list(
                 map(
                     getattr,
-                    map(self.system.get_time_series, provision_objects["solar"]),
-                    repeat("data"),
+                    map(
+                        getattr,
+                        map(self.system.get_time_series, provision_objects["solar"]),
+                        repeat("data"),
+                    ),
+                    repeat("magnitude"),
+                )
+            )
+            solar_capacity = list(
+                map(
+                    lambda component: self.system.get_component_by_label(
+                        component.label
+                    ).active_power.magnitude,
+                    provision_objects["solar"],
                 )
             )
             wind_reserves = list(
                 map(
                     getattr,
-                    map(self.system.get_time_series, provision_objects["wind"]),
-                    repeat("data"),
+                    map(
+                        getattr,
+                        map(self.system.get_time_series, provision_objects["wind"]),
+                        repeat("data"),
+                    ),
+                    repeat("magnitude"),
                 )
             )
             load_reserves = list(
                 map(
                     getattr,
-                    map(self.system.get_time_series, provision_objects["load"]),
-                    repeat("data"),
+                    map(
+                        getattr,
+                        map(self.system.get_time_series, provision_objects["load"]),
+                        repeat("data"),
+                    ),
+                    repeat("magnitude"),
                 )
             )
             wind_provision = (
@@ -661,6 +683,8 @@ class ReEDSParser(BaseParser):
                 pa.Table.from_arrays(solar_reserves, names=solar_names)
                 .to_pandas()
                 .sum(axis=1)
+                .apply(lambda x: 1 if x != 0 else 0)
+                .mul(sum(solar_capacity))
                 .mul(self.reeds_config.defaults["solar_reserves"].get(reserve.reserve_type.name, 1))
             )
             load_provision = (
@@ -715,7 +739,9 @@ class ReEDSParser(BaseParser):
             if generator.category == "can-imports":
                 continue
             tech = generator.ext["reeds_tech"]
-            region = generator.bus.name
+            generator_bus = generator.bus
+            assert generator_bus
+            region = generator_bus.name
             hydro_ratings = hydro_data.filter((pl.col("tech") == tech) & (pl.col("region") == region))
 
             hourly_time_series = np.zeros(len(month_of_day), dtype=float)
@@ -761,7 +787,9 @@ class ReEDSParser(BaseParser):
         initial_time = datetime(self.weather_year, 1, 1)
         for generator in self.system.get_components(HydroEnergyReservoir):
             tech = generator.ext["reeds_tech"]
-            region = generator.bus.name
+            generator_bus = generator.bus
+            assert generator_bus is not None
+            region = generator_bus.name
 
             hourly_time_series = np.zeros(len(month_of_hour), dtype=float)
             hydro_ratings = hydro_data.filter((pl.col("tech") == tech) & (pl.col("region") == region))

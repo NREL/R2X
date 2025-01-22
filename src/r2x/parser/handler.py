@@ -4,6 +4,7 @@ This module provides the abstract class to create parser objects.
 """
 
 # System packages
+import json
 from copy import deepcopy
 import inspect
 from dataclasses import dataclass, field
@@ -153,18 +154,21 @@ def file_handler(
         logger.warning("Skipping optional file {}", fpath)
         return None
 
+    logger.trace("Reading {}", fpath)
     match fpath.suffix:
         case ".csv":
-            logger.trace("Reading {}", fpath)
             return csv_handler(fpath, **kwargs)
         case ".h5":
-            logger.trace("Reading {}", fpath)
             return pl.LazyFrame(pd.read_hdf(fpath).reset_index())  # type: ignore
         case ".xml":
             class_kwargs = {
                 key: value for key, value in kwargs.items() if key in inspect.signature(XMLHandler).parameters
             }
             return XMLHandler.parse(fpath=fpath, **class_kwargs)
+        case ".json":
+            with open(fpath) as json_file:
+                data = json.load(json_file)
+            return data
         case _:
             raise NotImplementedError(f"File {fpath.suffix = } not yet supported.")
 

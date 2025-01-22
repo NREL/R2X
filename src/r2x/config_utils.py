@@ -38,6 +38,10 @@ def get_input_defaults(model_enum: Models) -> dict:
 def get_output_defaults(model_enum: Models) -> dict:
     """Return configuration dicitonary based on the output model."""
     match model_enum:
+        case Models.INFRASYS:
+            # NOTE: Here we will add any infrasys configuration if we need in the future.
+            defaults_dict = None
+            pass
         case Models.PLEXOS:
             defaults_dict = (
                 read_json("r2x/defaults/plexos_output.json")
