@@ -32,6 +32,13 @@ class System(ISSystem):
         """The version property."""
         return __data_model_version__
 
+    def to_json(self, filename: Path | str, overwrite=False, indent=None, data=None) -> None:  # noqa: D102
+        return super().to_json(filename, overwrite=overwrite, indent=indent, data=data)
+
+    @classmethod
+    def from_json(cls, filename: Path | str, upgrade_handler: Callable | None = None, **kwargs) -> "System":  # noqa: D102
+        return super().from_json(filename=filename, upgrade_handler=upgrade_handler, **kwargs)  # type: ignore
+
     def export_component_to_csv(
         self,
         component: type[Component],

@@ -484,6 +484,11 @@ class ReEDSParser(BaseParser):
             row["must_run"] = (
                 True if row["tech"] in self.reeds_config.defaults["commit_technologies"] else None
             )
+
+            # NOTE: If there is a point when ReEDs enforces minimum capacity for a technology here is where we
+            # will need to change it.
+            row["active_power_limits"] = MinMax(min=0, max=row["active_power"])
+
             valid_fields = {
                 key: value for key, value in row.items() if key in gen_model.model_fields if value is not None
             }
