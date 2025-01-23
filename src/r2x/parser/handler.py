@@ -313,7 +313,7 @@ def get_parser_data(
 
 
 def create_model_instance(
-    model_class: type["Component"], skip_validation: bool = False, **field_values
+    model_class: type["Component"], skip_validation: bool = False, **field_values: dict[str, Any]
 ) -> Any:
     """Create R2X model instance."""
     valid_fields = {
