@@ -1,6 +1,7 @@
 from r2x.enums import PrimeMoversType
 from r2x.models import Generator, ACBus, Emission, HydroPumpedStorage, ThermalStandard
 from r2x.models import MinMax
+from r2x.parser.handler import create_model_instance
 from r2x.units import EmissionRate, ureg
 
 
@@ -48,3 +49,17 @@ def test_serialize_active_power_limits():
 
     output = generator.serialize_active_power_limits(active_power_limits)
     assert output == {"min": 0, "max": 100}
+
+
+def test_create_model_instance():
+    name = "TestGen"
+    generator = create_model_instance(Generator, name=name)
+    assert isinstance(generator, Generator)
+    assert isinstance(generator.name, str)
+    assert generator.name == name
+
+    name = ["TestGen"]
+    generator = create_model_instance(Generator, name=name, skip_validation=True)
+    assert isinstance(generator, Generator)
+    assert isinstance(generator.name, list)
+    assert generator.name == name
