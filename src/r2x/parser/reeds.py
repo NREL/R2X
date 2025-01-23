@@ -41,7 +41,7 @@ from r2x.models import (
 from r2x.models.core import MinMax
 from r2x.models.costs import HydroGenerationCost, ThermalGenerationCost
 from r2x.models.generators import HydroDispatch, HydroEnergyReservoir, RenewableGen, ThermalGen
-from r2x.parser.handler import BaseParser
+from r2x.parser.handler import BaseParser, create_model_instance
 from r2x.units import ActivePower, EmissionRate, Energy, Percentage, Time, ureg
 from r2x.utils import get_enum_from_string, match_category, read_csv
 
@@ -76,6 +76,7 @@ class ReEDSParser(BaseParser):
             raise AttributeError("Missing solve year from the configuration class.")
         self.device_map = self.reeds_config.defaults["reeds_device_map"]
         self.weather_year: int = self.reeds_config.weather_year
+        self.skip_validation: bool = getattr(self.reeds_config, "skip_validation", False)
 
         # Add hourly_time_index
         self.hourly_time_index = np.arange(
@@ -120,14 +121,15 @@ class ReEDSParser(BaseParser):
 
         zones = bus_data["transmission_region"].unique()
         for zone in zones:
-            self.system.add_component(LoadZone(name=zone))
+            self.system.add_component(self._create_model_instance(LoadZone, name=zone))
 
         for area in bus_data["state"].unique():
-            self.system.add_component(Area(name=area))
+            self.system.add_component(self._create_model_instance(Area, name=area))
 
         for idx, bus in enumerate(bus_data.iter_rows(named=True)):
             self.system.add_component(
-                ACBus(
+                self._create_model_instance(
+                    ACBus,
                     number=idx + 1,
                     name=bus["region"],
                     area=self.system.get_component(Area, name=bus["state"]),
@@ -149,7 +151,8 @@ class ReEDSParser(BaseParser):
                 vors = self.reeds_config.defaults["reserve_vors"].get(name)
                 reserve_area = self.system.get_component(LoadZone, name=reserve)
                 self.system.add_component(
-                    Reserve(
+                    self._create_model_instance(
+                        Reserve,
                         name=f"{reserve}_{name}",
                         region=reserve_area,
                         reserve_type=ReserveType[name],
@@ -161,7 +164,7 @@ class ReEDSParser(BaseParser):
                     )
                 )
         # Add reserve map
-        self.system.add_component(ReserveMap(name="reserve_map"))
+        self.system.add_component(self._create_model_instance(ReserveMap, name="reserve_map"))
 
     def _construct_branches(self):
         logger.info("Creating branch objects.")
@@ -200,7 +203,8 @@ class ReEDSParser(BaseParser):
 
             losses = branch["losses"] if branch["losses"] else 0
             self.system.add_component(
-                MonitoredLine(
+                self._create_model_instance(
+                    MonitoredLine,
                     category=branch["kind"],
                     name=branch_name,
                     from_bus=from_bus,
@@ -218,7 +222,7 @@ class ReEDSParser(BaseParser):
             MonitoredLine, filter_func=lambda x: x.from_bus.load_zone.name != x.to_bus.load_zone.name
         )
         interfaces = defaultdict(dict)  # Holder of interfaces
-        tx_interface_map = TransmissionInterfaceMap(name="transmission_map")
+        tx_interface_map = self._create_model_instance(TransmissionInterfaceMap, name="transmission_map")
         for line in interface_lines:
             zone_from = line.from_bus.load_zone.name
             zone_to = line.to_bus.load_zone.name
@@ -249,7 +253,8 @@ class ReEDSParser(BaseParser):
             # Ramp multiplier defines the MW/min ratio for the interface
             ramp_multiplier = self.reeds_config.defaults["interface_max_ramp_up_multiplier"]
             self.system.add_component(
-                TransmissionInterface(
+                self._create_model_instance(
+                    TransmissionInterface,
                     name=interface_name,
                     active_power_flow_limits=MinMax(-max_power_flow, max_power_flow),
                     direction_mapping={},  # TBD
@@ -287,11 +292,8 @@ class ReEDSParser(BaseParser):
             generator_emission = emit_rates.filter(pl.col("generator_name") == generator.name)
             for row in generator_emission.iter_rows(named=True):
                 row["rate"] = EmissionRate(row["rate"], "kg/MWh")
-                valid_fields = {key: value for key, value in row.items() if key in Emission.model_fields}
-                valid_fields["emission_type"] = get_enum_from_string(
-                    valid_fields["emission_type"], EmissionType
-                )
-                emission_model = Emission(**valid_fields)
+                row["emission_type"] = get_enum_from_string(row["emission_type"], EmissionType)
+                emission_model = self._create_model_instance(Emission, **row)
                 self.system.add_component(emission_model)
 
     def _construct_generators(self) -> None:  # noqa: C901
@@ -489,23 +491,13 @@ class ReEDSParser(BaseParser):
             # will need to change it.
             row["active_power_limits"] = MinMax(min=0, max=row["active_power"])
 
-            valid_fields = {
-                key: value for key, value in row.items() if key in gen_model.model_fields if value is not None
+            row["ext"] = {}
+            row["ext"] = {
+                "tech": row["tech"],
+                "reeds_tech": row["tech"],
+                "reeds_vintage": row["tech_vintage"],
             }
-            valid_fields["ext"] = {}
-            # valid_fields["ext"] = {
-            #     key: value for key, value in row.items() if key not in valid_fields if value
-            # }
-
-            valid_fields["ext"].update(
-                {
-                    "tech": row["tech"],
-                    "reeds_tech": row["tech"],
-                    "reeds_vintage": row["tech_vintage"],
-                }
-            )
-
-            self.system.add_component(gen_model(**valid_fields))
+            self.system.add_component(self._create_model_instance(gen_model, **row))
 
     def _construct_load(self):
         logger.info("Adding load time series.")
@@ -531,7 +523,9 @@ class ReEDSParser(BaseParser):
             )
             user_dict = {"solve_year": self.reeds_config.weather_year}
             max_load = np.max(ts.data)
-            load = PowerLoad(name=f"{bus.name}", bus=bus, max_active_power=max_load)
+            load = self._create_model_instance(
+                PowerLoad, name=f"{bus.name}", bus=bus, max_active_power=max_load
+            )
             self.system.add_component(load)
             self.system.add_time_series(ts, load, **user_dict)
 
@@ -841,7 +835,8 @@ class ReEDSParser(BaseParser):
             storage_unit_fields["prime_mover_type"] = PrimeMoversType.BA
 
             # If at some point we change the power of the storage it should be here
-            storage_unit = GenericBattery(
+            storage_unit = self._create_model_instance(
+                GenericBattery,
                 name=f"{hybrid_name}",
                 active_power=device.active_power,  # Assume same power for the battery
                 category="pvb-storage",
@@ -856,8 +851,8 @@ class ReEDSParser(BaseParser):
             ts = self.system.get_time_series(device)
             self.system.add_time_series(ts, new_device)
             self.system.remove_component(device)
-            hybrid_construct = HybridSystem(
-                name=f"{hybrid_name}", renewable_unit=new_device, storage_unit=storage_unit
+            hybrid_construct = self._create_model_instance(
+                HybridSystem, name=f"{hybrid_name}", renewable_unit=new_device, storage_unit=storage_unit
             )
             self.system.add_component(hybrid_construct)
 
@@ -865,3 +860,6 @@ class ReEDSParser(BaseParser):
         return data.group_by(["tech", "region"]).agg(
             [pl.col("active_power").sum(), pl.exclude("active_power").first()]
         )
+
+    def _create_model_instance(self, model_class, **kwargs):
+        return create_model_instance(model_class, skip_validation=self.skip_validation, **kwargs)

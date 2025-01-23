@@ -4,26 +4,29 @@ This module provides the abstract class to create parser objects.
 """
 
 # System packages
-import json
-from copy import deepcopy
 import inspect
-from dataclasses import dataclass, field
+import json
 from abc import ABC, abstractmethod
-from typing import Any, TypeVar
 from collections.abc import Callable, Sequence
+from copy import deepcopy
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any, TypeVar
+
+import pandas as pd
+import polars as pl
 
 # Third-party packages
+from infrasys.component import Component
 from loguru import logger
-import polars as pl
-import pandas as pd
+from plexosdb import XMLHandler
 
 # Local packages
 from r2x.api import System
 from r2x.config_scenario import Scenario
-from plexosdb import XMLHandler
-from .polars_helpers import pl_filter_year, pl_lowercase, pl_rename
+
 from ..utils import check_file_exists
+from .polars_helpers import pl_filter_year, pl_lowercase, pl_rename
 
 
 @dataclass
@@ -307,3 +310,18 @@ def get_parser_data(
     logger.debug("Starting creation of system: {}", config.name)
 
     return parser
+
+
+def create_model_instance(
+    model_class: type["Component"], skip_validation: bool = False, **field_values: dict[str, Any]
+) -> Any:
+    """Create R2X model instance."""
+    valid_fields = {
+        key: value
+        for key, value in field_values.items()
+        if key in model_class.model_fields
+        if value is not None
+    }
+    if skip_validation:
+        return model_class.model_construct(**valid_fields)  # type: ignore
+    return model_class.model_validate(valid_fields)
