@@ -7,11 +7,11 @@ import sys
 from importlib.resources import files
 from pathlib import Path
 
-from infrasys.system import System
 from loguru import logger
 
 from r2x.exporter.handler import get_exporter
 
+from .api import System
 from .config_scenario import Scenario, get_scenario_configuration
 from .exporter import exporter_list
 from .parser import parser_list

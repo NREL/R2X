@@ -418,15 +418,17 @@ class SiennaExporter(BaseExporter):
             "unit_type",
         ]
 
-        generic_storage = get_export_records(
-            list(self.system.to_records(Storage)),
+        storage_list = get_export_records(
+            list(
+                self.system.to_records(
+                    Generator, filter_func=lambda x: isinstance(x, Storage | HydroPumpedStorage)
+                )
+            ),
             partial(apply_property_map, property_map=self.property_map),
             partial(apply_flatten_key, keys_to_flatten={"active_power_limits"}),
             partial(apply_pint_deconstruction, unit_map=self.unit_map),
             # partial(apply_valid_properties, valid_properties=output_fields),
         )
-        hydro_pump = list(self.system.to_records(HydroPumpedStorage))
-        storage_list = generic_storage + hydro_pump
 
         if not storage_list:
             logger.warning("No storage devices found")

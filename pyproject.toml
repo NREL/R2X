@@ -28,7 +28,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "infrasys~=0.2.3",
+    "infrasys~=0.2.4",
     "jsonschema~=4.23",
     "loguru~=0.7.2",
     "pandas~=2.2",
