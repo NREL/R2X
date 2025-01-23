@@ -8,10 +8,11 @@ from r2x.runner import run_single_scenario
     [
         ("reeds-US", "sienna", "R2S", "reeds_data_folder"),
         ("reeds-US", "plexos", "R2P", "reeds_data_folder"),
+        ("reeds-US", "infrasys", "R2I", "reeds_data_folder"),
         ("infrasys", "sienna", "pjm_2area", "infrasys_data_folder"),
         ("infrasys", "plexos", "pjm_2area", "infrasys_data_folder"),
     ],
-    ids=["R2S", "R2P", "I2S", "I2P"],
+    ids=["R2S", "R2P", "R2I", "I2S", "I2P"],
 )
 def test_full_translation_workflow(input_model, output_model, name, run_folder, request, tmp_folder):
     run_folder = request.getfixturevalue(run_folder)

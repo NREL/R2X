@@ -2,6 +2,7 @@
 
 from typing import Annotated, Any
 
+from pint import Quantity
 from pydantic import Field, NonNegativeFloat, field_serializer
 
 from r2x.models.core import Device, MinMax
@@ -131,7 +132,10 @@ class Generator(Device):
     @field_serializer("active_power_limits")
     def serialize_active_power_limits(self, min_max: MinMax) -> dict[str, Any]:
         if min_max is not None:
-            return {"min": min_max.min, "max": min_max.max}
+            return {
+                "min": min_max.min.magnitude if isinstance(min_max.min, Quantity) else min_max.min,
+                "max": min_max.max.magnitude if isinstance(min_max.max, Quantity) else min_max.max,
+            }
 
 
 class RenewableGen(Generator):
