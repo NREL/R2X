@@ -22,7 +22,7 @@ class OperationalCost(InfraSysBaseModel):
     @property
     def variable_type(self) -> str | None:
         """Create attribute that holds the class name."""
-        if not getattr(self, "variable"):
+        if not getattr(self, "variable", None):
             return None
         return type(getattr(self, "variable")).__name__
 
