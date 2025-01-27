@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta
 
-from infrasys.cost_curves import FuelCurve
+from infrasys.cost_curves import FuelCurve, UnitSystem
 from infrasys.function_data import LinearFunctionData
 from infrasys.time_series_models import SingleTimeSeries
 from infrasys.value_curves import InputOutputCurve
@@ -108,7 +108,8 @@ def ieee5bus() -> System:
                     function_data=LinearFunctionData(proportional_term=10, constant_term=0)
                 ),
                 fuel_cost=15,
-            )
+                power_units=UnitSystem.NATURAL_UNITS,
+            ),
         ),
         bus=bus_1,
         category="thermal",
@@ -125,6 +126,7 @@ def ieee5bus() -> System:
                     function_data=LinearFunctionData(proportional_term=10, constant_term=0)
                 ),
                 fuel_cost=15,
+                power_units=UnitSystem.NATURAL_UNITS,
             )
         ),
         bus=bus_3,

@@ -15,7 +15,7 @@
       "name": "init",
       "peak_active_power": 0.0,
       "peak_reactive_power": 0.0,
-      "uuid": "085faa90-9594-432b-a819-583a8a2f3c28"
+      "uuid": "aaccc9c1-ee96-4306-b37c-a7a1b67fa996"
     },
     {
       "__metadata__": {
@@ -32,7 +32,7 @@
       "name": "Area2",
       "peak_active_power": 0.0,
       "peak_reactive_power": 0.0,
-      "uuid": "11bfd9ec-4d2c-4ee5-98e9-7f590cf580ca"
+      "uuid": "11a7a2cb-2452-4c73-995b-de822c9ab655"
     },
     {
       "__metadata__": {
@@ -46,7 +46,9 @@
       "category": null,
       "ext": {},
       "name": "init",
-      "uuid": "7e902015-b6b7-43c0-a468-880ddf69dec1"
+      "peak_active_power": 0.0,
+      "peak_reactive_power": 0.0,
+      "uuid": "68ed3753-a733-44e5-97f6-a543a5a3f80b"
     },
     {
       "__metadata__": {
@@ -60,7 +62,9 @@
       "category": null,
       "ext": {},
       "name": "Area2",
-      "uuid": "11cbfd75-6c03-46de-b78c-0bad9285ab19"
+      "peak_active_power": 0.0,
+      "peak_reactive_power": 0.0,
+      "uuid": "479c4417-7866-4f25-aaca-bf6c5bc1318c"
     },
     {
       "__metadata__": {
@@ -77,7 +81,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "Area",
-            "uuid": "085faa90-9594-432b-a819-583a8a2f3c28"
+            "uuid": "aaccc9c1-ee96-4306-b37c-a7a1b67fa996"
           }
         }
       },
@@ -93,7 +97,7 @@
         "units": "kilovolt",
         "value": 230
       },
-      "bus_type": "PV",
+      "bustype": "PV",
       "category": null,
       "ext": {},
       "load_zone": {
@@ -102,14 +106,15 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "LoadZone",
-            "uuid": "7e902015-b6b7-43c0-a468-880ddf69dec1"
+            "uuid": "68ed3753-a733-44e5-97f6-a543a5a3f80b"
           }
         }
       },
       "magnitude": 1.0,
       "name": "Bus_nodeE_2",
       "number": 25,
-      "uuid": "d1a7bb26-c7fb-43f4-b8a9-5899416a3131"
+      "uuid": "4cfcbadb-4b44-44d3-acdd-2f95c1ff6ace",
+      "voltage_limits": null
     },
     {
       "__metadata__": {
@@ -126,7 +131,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "Area",
-            "uuid": "11bfd9ec-4d2c-4ee5-98e9-7f590cf580ca"
+            "uuid": "11a7a2cb-2452-4c73-995b-de822c9ab655"
           }
         }
       },
@@ -142,7 +147,7 @@
         "units": "kilovolt",
         "value": 230
       },
-      "bus_type": "PQ",
+      "bustype": "PQ",
       "category": null,
       "ext": {},
       "load_zone": {
@@ -151,14 +156,15 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "LoadZone",
-            "uuid": "11cbfd75-6c03-46de-b78c-0bad9285ab19"
+            "uuid": "479c4417-7866-4f25-aaca-bf6c5bc1318c"
           }
         }
       },
       "magnitude": 1.0,
       "name": "Bus_nodeB_1",
       "number": 12,
-      "uuid": "3b49a132-bed9-4499-9a85-62bdf7aded88"
+      "uuid": "048aaf28-4e81-45c9-a626-502ec27e6d13",
+      "voltage_limits": null
     },
     {
       "__metadata__": {
@@ -175,7 +181,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "Area",
-            "uuid": "085faa90-9594-432b-a819-583a8a2f3c28"
+            "uuid": "aaccc9c1-ee96-4306-b37c-a7a1b67fa996"
           }
         }
       },
@@ -191,7 +197,7 @@
         "units": "kilovolt",
         "value": 230
       },
-      "bus_type": "PV",
+      "bustype": "PV",
       "category": null,
       "ext": {},
       "load_zone": {
@@ -200,14 +206,15 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "LoadZone",
-            "uuid": "7e902015-b6b7-43c0-a468-880ddf69dec1"
+            "uuid": "68ed3753-a733-44e5-97f6-a543a5a3f80b"
           }
         }
       },
       "magnitude": 1.0,
       "name": "Bus_nodeA_2",
       "number": 21,
-      "uuid": "9bb3e450-adcf-497b-a5ad-e7747a282967"
+      "uuid": "515a0bd5-26fa-4162-b42f-528f2792a56a",
+      "voltage_limits": null
     },
     {
       "__metadata__": {
@@ -224,7 +231,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "Area",
-            "uuid": "11bfd9ec-4d2c-4ee5-98e9-7f590cf580ca"
+            "uuid": "11a7a2cb-2452-4c73-995b-de822c9ab655"
           }
         }
       },
@@ -240,7 +247,7 @@
         "units": "kilovolt",
         "value": 230
       },
-      "bus_type": "PV",
+      "bustype": "PV",
       "category": null,
       "ext": {},
       "load_zone": {
@@ -249,14 +256,15 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "LoadZone",
-            "uuid": "11cbfd75-6c03-46de-b78c-0bad9285ab19"
+            "uuid": "479c4417-7866-4f25-aaca-bf6c5bc1318c"
           }
         }
       },
       "magnitude": 1.0,
       "name": "Bus_nodeA_1",
       "number": 11,
-      "uuid": "cb15615b-af86-4cb8-a2dc-22cca168f423"
+      "uuid": "2cb70269-5816-49b5-a9e0-e835b6d9014e",
+      "voltage_limits": null
     },
     {
       "__metadata__": {
@@ -273,7 +281,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "Area",
-            "uuid": "085faa90-9594-432b-a819-583a8a2f3c28"
+            "uuid": "aaccc9c1-ee96-4306-b37c-a7a1b67fa996"
           }
         }
       },
@@ -289,7 +297,7 @@
         "units": "kilovolt",
         "value": 230
       },
-      "bus_type": "PQ",
+      "bustype": "PQ",
       "category": null,
       "ext": {},
       "load_zone": {
@@ -298,14 +306,15 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "LoadZone",
-            "uuid": "7e902015-b6b7-43c0-a468-880ddf69dec1"
+            "uuid": "68ed3753-a733-44e5-97f6-a543a5a3f80b"
           }
         }
       },
       "magnitude": 1.0,
       "name": "Bus_nodeB_2",
       "number": 22,
-      "uuid": "0cc6551f-815e-47a9-b24b-971869a237a1"
+      "uuid": "e34e1709-8c53-4bfe-a910-a8a31dda5fa3",
+      "voltage_limits": null
     },
     {
       "__metadata__": {
@@ -322,7 +331,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "Area",
-            "uuid": "11bfd9ec-4d2c-4ee5-98e9-7f590cf580ca"
+            "uuid": "11a7a2cb-2452-4c73-995b-de822c9ab655"
           }
         }
       },
@@ -338,7 +347,7 @@
         "units": "kilovolt",
         "value": 230
       },
-      "bus_type": "REF",
+      "bustype": "REF",
       "category": null,
       "ext": {},
       "load_zone": {
@@ -347,14 +356,15 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "LoadZone",
-            "uuid": "11cbfd75-6c03-46de-b78c-0bad9285ab19"
+            "uuid": "479c4417-7866-4f25-aaca-bf6c5bc1318c"
           }
         }
       },
       "magnitude": 1.0,
       "name": "Bus_nodeD_1",
       "number": 14,
-      "uuid": "f2409a01-6bc5-476e-b495-c72ad24a134c"
+      "uuid": "b8cd1c3f-8d23-471e-8004-e87431df4f3a",
+      "voltage_limits": null
     },
     {
       "__metadata__": {
@@ -371,7 +381,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "Area",
-            "uuid": "11bfd9ec-4d2c-4ee5-98e9-7f590cf580ca"
+            "uuid": "11a7a2cb-2452-4c73-995b-de822c9ab655"
           }
         }
       },
@@ -387,7 +397,7 @@
         "units": "kilovolt",
         "value": 230
       },
-      "bus_type": "PV",
+      "bustype": "PV",
       "category": null,
       "ext": {},
       "load_zone": {
@@ -396,14 +406,15 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "LoadZone",
-            "uuid": "11cbfd75-6c03-46de-b78c-0bad9285ab19"
+            "uuid": "479c4417-7866-4f25-aaca-bf6c5bc1318c"
           }
         }
       },
       "magnitude": 1.0,
       "name": "Bus_nodeE_1",
       "number": 15,
-      "uuid": "381ad0cf-b7e4-42fb-90f0-da4323b2b984"
+      "uuid": "ca41b1c1-946f-49b4-aac0-487d69449911",
+      "voltage_limits": null
     },
     {
       "__metadata__": {
@@ -420,7 +431,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "Area",
-            "uuid": "11bfd9ec-4d2c-4ee5-98e9-7f590cf580ca"
+            "uuid": "11a7a2cb-2452-4c73-995b-de822c9ab655"
           }
         }
       },
@@ -436,7 +447,7 @@
         "units": "kilovolt",
         "value": 230
       },
-      "bus_type": "PV",
+      "bustype": "PV",
       "category": null,
       "ext": {},
       "load_zone": {
@@ -445,14 +456,15 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "LoadZone",
-            "uuid": "11cbfd75-6c03-46de-b78c-0bad9285ab19"
+            "uuid": "479c4417-7866-4f25-aaca-bf6c5bc1318c"
           }
         }
       },
       "magnitude": 1.0,
       "name": "Bus_nodeC_1",
       "number": 13,
-      "uuid": "a39544e9-15e4-4782-a665-f57f41763bbf"
+      "uuid": "07be2b63-7469-44a5-8630-32f7e0149b75",
+      "voltage_limits": null
     },
     {
       "__metadata__": {
@@ -469,7 +481,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "Area",
-            "uuid": "085faa90-9594-432b-a819-583a8a2f3c28"
+            "uuid": "aaccc9c1-ee96-4306-b37c-a7a1b67fa996"
           }
         }
       },
@@ -485,7 +497,7 @@
         "units": "kilovolt",
         "value": 230
       },
-      "bus_type": "REF",
+      "bustype": "REF",
       "category": null,
       "ext": {},
       "load_zone": {
@@ -494,14 +506,15 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "LoadZone",
-            "uuid": "7e902015-b6b7-43c0-a468-880ddf69dec1"
+            "uuid": "68ed3753-a733-44e5-97f6-a543a5a3f80b"
           }
         }
       },
       "magnitude": 1.0,
       "name": "Bus_nodeD_2",
       "number": 24,
-      "uuid": "ef2108d0-e91e-4acb-a97f-04de7feabee0"
+      "uuid": "86dd8f6d-901e-4a05-95bb-83661048724f",
+      "voltage_limits": null
     },
     {
       "__metadata__": {
@@ -518,7 +531,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "Area",
-            "uuid": "085faa90-9594-432b-a819-583a8a2f3c28"
+            "uuid": "aaccc9c1-ee96-4306-b37c-a7a1b67fa996"
           }
         }
       },
@@ -534,7 +547,7 @@
         "units": "kilovolt",
         "value": 230
       },
-      "bus_type": "PV",
+      "bustype": "PV",
       "category": null,
       "ext": {},
       "load_zone": {
@@ -543,14 +556,15 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "LoadZone",
-            "uuid": "7e902015-b6b7-43c0-a468-880ddf69dec1"
+            "uuid": "68ed3753-a733-44e5-97f6-a543a5a3f80b"
           }
         }
       },
       "magnitude": 1.0,
       "name": "Bus_nodeC_2",
       "number": 23,
-      "uuid": "e3ea2277-867e-4549-b9ff-384d74c97913"
+      "uuid": "c827258c-33e9-462f-be4f-8b90e7b0e369",
+      "voltage_limits": null
     },
     {
       "__metadata__": {
@@ -560,6 +574,12 @@
           "type": "Line"
         }
       },
+      "active_power_flow": 0.0,
+      "angle_limits": [
+        -0.7,
+        0.7
+      ],
+      "arc": null,
       "available": true,
       "b": null,
       "category": null,
@@ -570,10 +590,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "e3ea2277-867e-4549-b9ff-384d74c97913"
+            "uuid": "c827258c-33e9-462f-be4f-8b90e7b0e369"
           }
         }
       },
+      "g": null,
       "name": "5_2",
       "r": 0.00297,
       "rating": {
@@ -587,6 +608,7 @@
         "units": "megawatt",
         "value": 40.53
       },
+      "reactive_power_flow": 0.0,
       "services": null,
       "to_bus": {
         "__metadata__": {
@@ -594,11 +616,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "ef2108d0-e91e-4acb-a97f-04de7feabee0"
+            "uuid": "86dd8f6d-901e-4a05-95bb-83661048724f"
           }
         }
       },
-      "uuid": "18967bd0-4649-43e2-a784-3d6840beb0b9",
+      "uuid": "18ab1f87-85b5-47e2-a592-5d0220520f80",
       "x": 0.0297
     },
     {
@@ -609,6 +631,12 @@
           "type": "Line"
         }
       },
+      "active_power_flow": 0.0,
+      "angle_limits": [
+        -0.7,
+        0.7
+      ],
+      "arc": null,
       "available": true,
       "b": null,
       "category": null,
@@ -619,10 +647,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "ef2108d0-e91e-4acb-a97f-04de7feabee0"
+            "uuid": "86dd8f6d-901e-4a05-95bb-83661048724f"
           }
         }
       },
+      "g": null,
       "name": "6_2",
       "r": 0.00297,
       "rating": {
@@ -636,6 +665,7 @@
         "units": "megawatt",
         "value": 2
       },
+      "reactive_power_flow": 0.0,
       "services": null,
       "to_bus": {
         "__metadata__": {
@@ -643,11 +673,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "d1a7bb26-c7fb-43f4-b8a9-5899416a3131"
+            "uuid": "4cfcbadb-4b44-44d3-acdd-2f95c1ff6ace"
           }
         }
       },
-      "uuid": "4ff5babe-e6eb-446b-93ee-efd6a3f96ffe",
+      "uuid": "3d62266d-4fdb-42e2-a79c-8c464a97c433",
       "x": 0.0297
     },
     {
@@ -658,6 +688,12 @@
           "type": "Line"
         }
       },
+      "active_power_flow": 0.0,
+      "angle_limits": [
+        -0.7,
+        0.7
+      ],
+      "arc": null,
       "available": true,
       "b": null,
       "category": null,
@@ -668,10 +704,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "9bb3e450-adcf-497b-a5ad-e7747a282967"
+            "uuid": "515a0bd5-26fa-4162-b42f-528f2792a56a"
           }
         }
       },
+      "g": null,
       "name": "1_2",
       "r": 0.00281,
       "rating": {
@@ -685,6 +722,7 @@
         "units": "megawatt",
         "value": 2
       },
+      "reactive_power_flow": 0.0,
       "services": null,
       "to_bus": {
         "__metadata__": {
@@ -692,11 +730,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "0cc6551f-815e-47a9-b24b-971869a237a1"
+            "uuid": "e34e1709-8c53-4bfe-a910-a8a31dda5fa3"
           }
         }
       },
-      "uuid": "5398f054-6d62-4305-9d9c-3673936143f4",
+      "uuid": "15131f85-f8f2-4349-95dc-d6292d6946ca",
       "x": 0.0281
     },
     {
@@ -707,6 +745,12 @@
           "type": "Line"
         }
       },
+      "active_power_flow": 0.0,
+      "angle_limits": [
+        -0.7,
+        0.7
+      ],
+      "arc": null,
       "available": true,
       "b": null,
       "category": null,
@@ -717,10 +761,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "cb15615b-af86-4cb8-a2dc-22cca168f423"
+            "uuid": "2cb70269-5816-49b5-a9e0-e835b6d9014e"
           }
         }
       },
+      "g": null,
       "name": "1_1",
       "r": 0.00281,
       "rating": {
@@ -734,6 +779,7 @@
         "units": "megawatt",
         "value": 2
       },
+      "reactive_power_flow": 0.0,
       "services": null,
       "to_bus": {
         "__metadata__": {
@@ -741,11 +787,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "3b49a132-bed9-4499-9a85-62bdf7aded88"
+            "uuid": "048aaf28-4e81-45c9-a626-502ec27e6d13"
           }
         }
       },
-      "uuid": "b696f77a-0ba6-40ac-8423-69856a5df948",
+      "uuid": "c42b2d5e-54d3-4061-a5da-139928501207",
       "x": 0.0281
     },
     {
@@ -756,6 +802,12 @@
           "type": "Line"
         }
       },
+      "active_power_flow": 0.0,
+      "angle_limits": [
+        -0.7,
+        0.7
+      ],
+      "arc": null,
       "available": true,
       "b": null,
       "category": null,
@@ -766,10 +818,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "f2409a01-6bc5-476e-b495-c72ad24a134c"
+            "uuid": "b8cd1c3f-8d23-471e-8004-e87431df4f3a"
           }
         }
       },
+      "g": null,
       "name": "6_1",
       "r": 0.00297,
       "rating": {
@@ -783,6 +836,7 @@
         "units": "megawatt",
         "value": 2
       },
+      "reactive_power_flow": 0.0,
       "services": null,
       "to_bus": {
         "__metadata__": {
@@ -790,11 +844,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "381ad0cf-b7e4-42fb-90f0-da4323b2b984"
+            "uuid": "ca41b1c1-946f-49b4-aac0-487d69449911"
           }
         }
       },
-      "uuid": "238921d1-54e9-4029-b1df-dbf665f33064",
+      "uuid": "30950120-e1c6-4af8-9768-86de2cce295a",
       "x": 0.0297
     },
     {
@@ -805,6 +859,12 @@
           "type": "Line"
         }
       },
+      "active_power_flow": 0.0,
+      "angle_limits": [
+        -0.7,
+        0.7
+      ],
+      "arc": null,
       "available": true,
       "b": null,
       "category": null,
@@ -815,10 +875,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "0cc6551f-815e-47a9-b24b-971869a237a1"
+            "uuid": "e34e1709-8c53-4bfe-a910-a8a31dda5fa3"
           }
         }
       },
+      "g": null,
       "name": "4_2",
       "r": 0.00108,
       "rating": {
@@ -832,6 +893,7 @@
         "units": "megawatt",
         "value": 11.148
       },
+      "reactive_power_flow": 0.0,
       "services": null,
       "to_bus": {
         "__metadata__": {
@@ -839,11 +901,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "e3ea2277-867e-4549-b9ff-384d74c97913"
+            "uuid": "c827258c-33e9-462f-be4f-8b90e7b0e369"
           }
         }
       },
-      "uuid": "4dae6600-5bb8-466f-80a3-e96a7dc59bc6",
+      "uuid": "e0137b1b-f9fd-4abe-8191-2091d1dee9fa",
       "x": 0.0108
     },
     {
@@ -854,6 +916,12 @@
           "type": "Line"
         }
       },
+      "active_power_flow": 0.0,
+      "angle_limits": [
+        -0.7,
+        0.7
+      ],
+      "arc": null,
       "available": true,
       "b": null,
       "category": null,
@@ -864,10 +932,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "cb15615b-af86-4cb8-a2dc-22cca168f423"
+            "uuid": "2cb70269-5816-49b5-a9e0-e835b6d9014e"
           }
         }
       },
+      "g": null,
       "name": "3_1",
       "r": 0.00064,
       "rating": {
@@ -881,6 +950,7 @@
         "units": "megawatt",
         "value": 18.812
       },
+      "reactive_power_flow": 0.0,
       "services": null,
       "to_bus": {
         "__metadata__": {
@@ -888,11 +958,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "381ad0cf-b7e4-42fb-90f0-da4323b2b984"
+            "uuid": "ca41b1c1-946f-49b4-aac0-487d69449911"
           }
         }
       },
-      "uuid": "ea53b4b9-0391-442a-ba3c-052ef42d5346",
+      "uuid": "d684dfc6-7343-4841-aba8-df7cb2301b48",
       "x": 0.0064
     },
     {
@@ -903,6 +973,12 @@
           "type": "Line"
         }
       },
+      "active_power_flow": 0.0,
+      "angle_limits": [
+        -0.7,
+        0.7
+      ],
+      "arc": null,
       "available": true,
       "b": null,
       "category": null,
@@ -913,10 +989,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "3b49a132-bed9-4499-9a85-62bdf7aded88"
+            "uuid": "048aaf28-4e81-45c9-a626-502ec27e6d13"
           }
         }
       },
+      "g": null,
       "name": "4_1",
       "r": 0.00108,
       "rating": {
@@ -930,6 +1007,7 @@
         "units": "megawatt",
         "value": 11.148
       },
+      "reactive_power_flow": 0.0,
       "services": null,
       "to_bus": {
         "__metadata__": {
@@ -937,11 +1015,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "a39544e9-15e4-4782-a665-f57f41763bbf"
+            "uuid": "07be2b63-7469-44a5-8630-32f7e0149b75"
           }
         }
       },
-      "uuid": "9bac7d2c-866b-4d24-a4b4-2d39d376f35a",
+      "uuid": "193e6519-8312-41c9-8749-91db32adc216",
       "x": 0.0108
     },
     {
@@ -952,6 +1030,12 @@
           "type": "Line"
         }
       },
+      "active_power_flow": 0.0,
+      "angle_limits": [
+        -0.7,
+        0.7
+      ],
+      "arc": null,
       "available": true,
       "b": null,
       "category": null,
@@ -962,10 +1046,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "a39544e9-15e4-4782-a665-f57f41763bbf"
+            "uuid": "07be2b63-7469-44a5-8630-32f7e0149b75"
           }
         }
       },
+      "g": null,
       "name": "5_1",
       "r": 0.00297,
       "rating": {
@@ -979,6 +1064,7 @@
         "units": "megawatt",
         "value": 40.53
       },
+      "reactive_power_flow": 0.0,
       "services": null,
       "to_bus": {
         "__metadata__": {
@@ -986,11 +1072,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "f2409a01-6bc5-476e-b495-c72ad24a134c"
+            "uuid": "b8cd1c3f-8d23-471e-8004-e87431df4f3a"
           }
         }
       },
-      "uuid": "c55f3063-b15c-4ebb-ad02-3b48856c9b4e",
+      "uuid": "5b6e1793-c71d-4273-8812-4e89c5c5ff4f",
       "x": 0.0297
     },
     {
@@ -1001,6 +1087,12 @@
           "type": "Line"
         }
       },
+      "active_power_flow": 0.0,
+      "angle_limits": [
+        -0.7,
+        0.7
+      ],
+      "arc": null,
       "available": true,
       "b": null,
       "category": null,
@@ -1011,10 +1103,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "9bb3e450-adcf-497b-a5ad-e7747a282967"
+            "uuid": "515a0bd5-26fa-4162-b42f-528f2792a56a"
           }
         }
       },
+      "g": null,
       "name": "2_2",
       "r": 0.00304,
       "rating": {
@@ -1028,6 +1121,7 @@
         "units": "megawatt",
         "value": 2
       },
+      "reactive_power_flow": 0.0,
       "services": null,
       "to_bus": {
         "__metadata__": {
@@ -1035,11 +1129,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "ef2108d0-e91e-4acb-a97f-04de7feabee0"
+            "uuid": "86dd8f6d-901e-4a05-95bb-83661048724f"
           }
         }
       },
-      "uuid": "c25054f6-29a7-4b67-8655-e4d75c7b8c67",
+      "uuid": "d2700d03-d4a5-42d1-b84c-adba23436a5d",
       "x": 0.0304
     },
     {
@@ -1050,6 +1144,12 @@
           "type": "Line"
         }
       },
+      "active_power_flow": 0.0,
+      "angle_limits": [
+        -0.7,
+        0.7
+      ],
+      "arc": null,
       "available": true,
       "b": null,
       "category": null,
@@ -1060,10 +1160,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "9bb3e450-adcf-497b-a5ad-e7747a282967"
+            "uuid": "515a0bd5-26fa-4162-b42f-528f2792a56a"
           }
         }
       },
+      "g": null,
       "name": "3_2",
       "r": 0.00064,
       "rating": {
@@ -1077,6 +1178,7 @@
         "units": "megawatt",
         "value": 18.812
       },
+      "reactive_power_flow": 0.0,
       "services": null,
       "to_bus": {
         "__metadata__": {
@@ -1084,11 +1186,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "d1a7bb26-c7fb-43f4-b8a9-5899416a3131"
+            "uuid": "4cfcbadb-4b44-44d3-acdd-2f95c1ff6ace"
           }
         }
       },
-      "uuid": "267f3a8d-84e1-4290-ad64-0fd4d2fbea70",
+      "uuid": "9c532c6a-6152-44fb-93da-68d0a61cf3c5",
       "x": 0.0064
     },
     {
@@ -1099,6 +1201,12 @@
           "type": "Line"
         }
       },
+      "active_power_flow": 0.0,
+      "angle_limits": [
+        -0.7,
+        0.7
+      ],
+      "arc": null,
       "available": true,
       "b": null,
       "category": null,
@@ -1109,10 +1217,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "cb15615b-af86-4cb8-a2dc-22cca168f423"
+            "uuid": "2cb70269-5816-49b5-a9e0-e835b6d9014e"
           }
         }
       },
+      "g": null,
       "name": "2_1",
       "r": 0.00304,
       "rating": {
@@ -1126,6 +1235,7 @@
         "units": "megawatt",
         "value": 2
       },
+      "reactive_power_flow": 0.0,
       "services": null,
       "to_bus": {
         "__metadata__": {
@@ -1133,11 +1243,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "f2409a01-6bc5-476e-b495-c72ad24a134c"
+            "uuid": "b8cd1c3f-8d23-471e-8004-e87431df4f3a"
           }
         }
       },
-      "uuid": "9c020d1a-160a-42ec-a37e-ac8651eb22cd",
+      "uuid": "74b6632f-49da-430e-b719-ed3535d5fd8b",
       "x": 0.0304
     },
     {
@@ -1148,6 +1258,7 @@
           "type": "MonitoredLine"
         }
       },
+      "arc": null,
       "available": true,
       "b": null,
       "category": null,
@@ -1158,10 +1269,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "a39544e9-15e4-4782-a665-f57f41763bbf"
+            "uuid": "07be2b63-7469-44a5-8630-32f7e0149b75"
           }
         }
       },
+      "g": null,
       "losses": null,
       "name": "inter_area_line",
       "r": 0.003,
@@ -1195,11 +1307,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "e3ea2277-867e-4549-b9ff-384d74c97913"
+            "uuid": "c827258c-33e9-462f-be4f-8b90e7b0e369"
           }
         }
       },
-      "uuid": "0f0fc666-cbc1-40a0-9758-ac11a09c8810",
+      "uuid": "843b5d29-227f-40aa-8a58-0db5a9c9be91",
       "x": 0.03
     },
     {
@@ -1210,40 +1322,23 @@
           "type": "AreaInterchange"
         }
       },
+      "active_power_flow": 0.0,
       "available": true,
       "category": null,
       "ext": {},
+      "flow_limits": [
+        -150,
+        150
+      ],
       "from_area": {
         "__metadata__": {
           "fields": {
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "Area",
-            "uuid": "085faa90-9594-432b-a819-583a8a2f3c28"
+            "uuid": "aaccc9c1-ee96-4306-b37c-a7a1b67fa996"
           }
         }
-      },
-      "max_power_flow": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "ActivePower"
-          }
-        },
-        "units": "megawatt",
-        "value": 150.0
-      },
-      "min_power_flow": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "ActivePower"
-          }
-        },
-        "units": "megawatt",
-        "value": -150.0
       },
       "name": "1_2",
       "services": null,
@@ -1253,11 +1348,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "Area",
-            "uuid": "11bfd9ec-4d2c-4ee5-98e9-7f590cf580ca"
+            "uuid": "11a7a2cb-2452-4c73-995b-de822c9ab655"
           }
         }
       },
-      "uuid": "deba583e-c8c8-40a9-9386-2ab6b45e52e7"
+      "uuid": "ac46ca5d-a5ab-4743-96f4-877b8b39ac7e"
     },
     {
       "__metadata__": {
@@ -1288,7 +1383,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "cb15615b-af86-4cb8-a2dc-22cca168f423"
+            "uuid": "2cb70269-5816-49b5-a9e0-e835b6d9014e"
           }
         }
       },
@@ -1352,7 +1447,28 @@
       },
       "must_run": null,
       "name": "Alta_1",
-      "operation_cost": null,
+      "operation_cost": {
+        "fixed": "0 usd",
+        "shut_down": "2 usd",
+        "start_up": "4 usd",
+        "variable": {
+          "power_units": "NATURAL_UNITS",
+          "value_curve": {
+            "function_data": {
+              "constant_term": 0.0,
+              "proportional_term": 14.0
+            },
+            "input_at_zero": null
+          },
+          "vom_cost": {
+            "function_data": {
+              "constant_term": 0.0,
+              "proportional_term": 0.0
+            },
+            "input_at_zero": null
+          }
+        }
+      },
       "planned_outage_rate": {
         "__metadata__": {
           "fields": {
@@ -1365,28 +1481,12 @@
         "value": 0.0
       },
       "prime_mover_type": "ST",
-      "ramp_down": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "PowerRate"
-          }
-        },
-        "units": "megawatt / minute",
-        "value": 0
-      },
-      "ramp_up": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "PowerRate"
-          }
-        },
-        "units": "megawatt / minute",
-        "value": 0
-      },
+      "ramp_down": null,
+      "ramp_limits": [
+        0,
+        0
+      ],
+      "ramp_up": null,
       "rating": {
         "__metadata__": {
           "fields": {
@@ -1396,7 +1496,7 @@
           }
         },
         "units": "megavolt_ampere",
-        "value": 0.4
+        "value": 1
       },
       "reactive_power": {
         "__metadata__": {
@@ -1407,24 +1507,17 @@
           }
         },
         "units": "megavolt_ampere",
-        "value": 0
+        "value": 0.0
       },
+      "reactive_power_limits": null,
       "services": null,
-      "shutdown_cost": 2.0,
-      "startup_cost": 4.0,
+      "shutdown_cost": null,
+      "startup_cost": null,
+      "status": true,
+      "time_limits": null,
       "unit_type": "ST",
-      "uuid": "e86ce5e7-9388-4d59-9dda-3a1baf0d571a",
-      "vom_price": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "VOMPrice"
-          }
-        },
-        "units": "usd / megawatt_hour",
-        "value": 0
-      }
+      "uuid": "d2ad2c48-a240-4357-b86c-44ce4bd918ce",
+      "vom_price": null
     },
     {
       "__metadata__": {
@@ -1455,7 +1548,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "381ad0cf-b7e4-42fb-90f0-da4323b2b984"
+            "uuid": "ca41b1c1-946f-49b4-aac0-487d69449911"
           }
         }
       },
@@ -1519,7 +1612,28 @@
       },
       "must_run": null,
       "name": "Brighton_1",
-      "operation_cost": null,
+      "operation_cost": {
+        "fixed": "0 usd",
+        "shut_down": "0.75 usd",
+        "start_up": "1.5 usd",
+        "variable": {
+          "power_units": "NATURAL_UNITS",
+          "value_curve": {
+            "function_data": {
+              "constant_term": 0.0,
+              "proportional_term": 14.0
+            },
+            "input_at_zero": null
+          },
+          "vom_cost": {
+            "function_data": {
+              "constant_term": 0.0,
+              "proportional_term": 0.0
+            },
+            "input_at_zero": null
+          }
+        }
+      },
       "planned_outage_rate": {
         "__metadata__": {
           "fields": {
@@ -1532,28 +1646,12 @@
         "value": 0.0
       },
       "prime_mover_type": "ST",
-      "ramp_down": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "PowerRate"
-          }
-        },
-        "units": "megawatt / minute",
-        "value": 0.1125
-      },
-      "ramp_up": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "PowerRate"
-          }
-        },
-        "units": "megawatt / minute",
-        "value": 0.1125
-      },
+      "ramp_down": null,
+      "ramp_limits": [
+        0.1125,
+        0.1125
+      ],
+      "ramp_up": null,
       "rating": {
         "__metadata__": {
           "fields": {
@@ -1563,7 +1661,7 @@
           }
         },
         "units": "megavolt_ampere",
-        "value": 6
+        "value": 1
       },
       "reactive_power": {
         "__metadata__": {
@@ -1574,24 +1672,17 @@
           }
         },
         "units": "megavolt_ampere",
-        "value": 0
+        "value": 0.0
       },
+      "reactive_power_limits": null,
       "services": null,
-      "shutdown_cost": 0.75,
-      "startup_cost": 1.5,
+      "shutdown_cost": null,
+      "startup_cost": null,
+      "status": true,
+      "time_limits": null,
       "unit_type": "ST",
-      "uuid": "1abdec23-2f52-43a0-ac9f-f8f98a9a4cf7",
-      "vom_price": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "VOMPrice"
-          }
-        },
-        "units": "usd / megawatt_hour",
-        "value": 0
-      }
+      "uuid": "8e47f063-5219-4993-b379-9ac2dd6f80da",
+      "vom_price": null
     },
     {
       "__metadata__": {
@@ -1622,7 +1713,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "9bb3e450-adcf-497b-a5ad-e7747a282967"
+            "uuid": "515a0bd5-26fa-4162-b42f-528f2792a56a"
           }
         }
       },
@@ -1686,7 +1777,28 @@
       },
       "must_run": null,
       "name": "Alta_2",
-      "operation_cost": null,
+      "operation_cost": {
+        "fixed": "0 usd",
+        "shut_down": "2 usd",
+        "start_up": "4 usd",
+        "variable": {
+          "power_units": "NATURAL_UNITS",
+          "value_curve": {
+            "function_data": {
+              "constant_term": 0.0,
+              "proportional_term": 14.0
+            },
+            "input_at_zero": null
+          },
+          "vom_cost": {
+            "function_data": {
+              "constant_term": 0.0,
+              "proportional_term": 0.0
+            },
+            "input_at_zero": null
+          }
+        }
+      },
       "planned_outage_rate": {
         "__metadata__": {
           "fields": {
@@ -1699,28 +1811,12 @@
         "value": 0.0
       },
       "prime_mover_type": "ST",
-      "ramp_down": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "PowerRate"
-          }
-        },
-        "units": "megawatt / minute",
-        "value": 0
-      },
-      "ramp_up": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "PowerRate"
-          }
-        },
-        "units": "megawatt / minute",
-        "value": 0
-      },
+      "ramp_down": null,
+      "ramp_limits": [
+        0,
+        0
+      ],
+      "ramp_up": null,
       "rating": {
         "__metadata__": {
           "fields": {
@@ -1730,7 +1826,7 @@
           }
         },
         "units": "megavolt_ampere",
-        "value": 0.4
+        "value": 1
       },
       "reactive_power": {
         "__metadata__": {
@@ -1741,24 +1837,17 @@
           }
         },
         "units": "megavolt_ampere",
-        "value": 0
+        "value": 0.0
       },
+      "reactive_power_limits": null,
       "services": null,
-      "shutdown_cost": 2.0,
-      "startup_cost": 4.0,
+      "shutdown_cost": null,
+      "startup_cost": null,
+      "status": true,
+      "time_limits": null,
       "unit_type": "ST",
-      "uuid": "ad230747-f4d2-4b97-9991-7a2d1b62873b",
-      "vom_price": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "VOMPrice"
-          }
-        },
-        "units": "usd / megawatt_hour",
-        "value": 0
-      }
+      "uuid": "f8d6411f-b01c-4e5a-8215-03dc9cc2d80d",
+      "vom_price": null
     },
     {
       "__metadata__": {
@@ -1789,7 +1878,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "d1a7bb26-c7fb-43f4-b8a9-5899416a3131"
+            "uuid": "4cfcbadb-4b44-44d3-acdd-2f95c1ff6ace"
           }
         }
       },
@@ -1853,7 +1942,28 @@
       },
       "must_run": null,
       "name": "Brighton_2",
-      "operation_cost": null,
+      "operation_cost": {
+        "fixed": "0 usd",
+        "shut_down": "0.75 usd",
+        "start_up": "1.5 usd",
+        "variable": {
+          "power_units": "NATURAL_UNITS",
+          "value_curve": {
+            "function_data": {
+              "constant_term": 0.0,
+              "proportional_term": 14.0
+            },
+            "input_at_zero": null
+          },
+          "vom_cost": {
+            "function_data": {
+              "constant_term": 0.0,
+              "proportional_term": 0.0
+            },
+            "input_at_zero": null
+          }
+        }
+      },
       "planned_outage_rate": {
         "__metadata__": {
           "fields": {
@@ -1866,28 +1976,12 @@
         "value": 0.0
       },
       "prime_mover_type": "ST",
-      "ramp_down": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "PowerRate"
-          }
-        },
-        "units": "megawatt / minute",
-        "value": 0.1125
-      },
-      "ramp_up": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "PowerRate"
-          }
-        },
-        "units": "megawatt / minute",
-        "value": 0.1125
-      },
+      "ramp_down": null,
+      "ramp_limits": [
+        0.1125,
+        0.1125
+      ],
+      "ramp_up": null,
       "rating": {
         "__metadata__": {
           "fields": {
@@ -1897,7 +1991,7 @@
           }
         },
         "units": "megavolt_ampere",
-        "value": 6
+        "value": 1
       },
       "reactive_power": {
         "__metadata__": {
@@ -1908,24 +2002,17 @@
           }
         },
         "units": "megavolt_ampere",
-        "value": 0
+        "value": 0.0
       },
+      "reactive_power_limits": null,
       "services": null,
-      "shutdown_cost": 0.75,
-      "startup_cost": 1.5,
+      "shutdown_cost": null,
+      "startup_cost": null,
+      "status": true,
+      "time_limits": null,
       "unit_type": "ST",
-      "uuid": "d932899b-c69e-4e82-aaa7-718349888d0e",
-      "vom_price": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "VOMPrice"
-          }
-        },
-        "units": "usd / megawatt_hour",
-        "value": 0
-      }
+      "uuid": "54de60db-4774-4f41-8c24-cb1a3296b667",
+      "vom_price": null
     },
     {
       "__metadata__": {
@@ -1956,7 +2043,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "9bb3e450-adcf-497b-a5ad-e7747a282967"
+            "uuid": "515a0bd5-26fa-4162-b42f-528f2792a56a"
           }
         }
       },
@@ -2020,7 +2107,28 @@
       },
       "must_run": null,
       "name": "Park City_2",
-      "operation_cost": null,
+      "operation_cost": {
+        "fixed": "0 usd",
+        "shut_down": "0.75 usd",
+        "start_up": "1.5 usd",
+        "variable": {
+          "power_units": "NATURAL_UNITS",
+          "value_curve": {
+            "function_data": {
+              "constant_term": 0.0,
+              "proportional_term": 14.0
+            },
+            "input_at_zero": null
+          },
+          "vom_cost": {
+            "function_data": {
+              "constant_term": 0.0,
+              "proportional_term": 0.0
+            },
+            "input_at_zero": null
+          }
+        }
+      },
       "planned_outage_rate": {
         "__metadata__": {
           "fields": {
@@ -2033,28 +2141,12 @@
         "value": 0.0
       },
       "prime_mover_type": "ST",
-      "ramp_down": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "PowerRate"
-          }
-        },
-        "units": "megawatt / minute",
-        "value": 0.04425
-      },
-      "ramp_up": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "PowerRate"
-          }
-        },
-        "units": "megawatt / minute",
-        "value": 0.04425
-      },
+      "ramp_down": null,
+      "ramp_limits": [
+        0.04425,
+        0.04425
+      ],
+      "ramp_up": null,
       "rating": {
         "__metadata__": {
           "fields": {
@@ -2064,7 +2156,7 @@
           }
         },
         "units": "megavolt_ampere",
-        "value": 1.7
+        "value": 1
       },
       "reactive_power": {
         "__metadata__": {
@@ -2075,24 +2167,17 @@
           }
         },
         "units": "megavolt_ampere",
-        "value": 0
+        "value": 0.0
       },
+      "reactive_power_limits": null,
       "services": null,
-      "shutdown_cost": 0.75,
-      "startup_cost": 1.5,
+      "shutdown_cost": null,
+      "startup_cost": null,
+      "status": true,
+      "time_limits": null,
       "unit_type": "ST",
-      "uuid": "969bdcd1-7c09-4fb2-860b-24138262d779",
-      "vom_price": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "VOMPrice"
-          }
-        },
-        "units": "usd / megawatt_hour",
-        "value": 0
-      }
+      "uuid": "1a81d812-231d-4956-9e54-0633db8cd9b0",
+      "vom_price": null
     },
     {
       "__metadata__": {
@@ -2123,7 +2208,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "a39544e9-15e4-4782-a665-f57f41763bbf"
+            "uuid": "07be2b63-7469-44a5-8630-32f7e0149b75"
           }
         }
       },
@@ -2187,7 +2272,28 @@
       },
       "must_run": null,
       "name": "Solitude_1",
-      "operation_cost": null,
+      "operation_cost": {
+        "fixed": "0 usd",
+        "shut_down": "1.5 usd",
+        "start_up": "3 usd",
+        "variable": {
+          "power_units": "NATURAL_UNITS",
+          "value_curve": {
+            "function_data": {
+              "constant_term": 0.0,
+              "proportional_term": 14.0
+            },
+            "input_at_zero": null
+          },
+          "vom_cost": {
+            "function_data": {
+              "constant_term": 0.0,
+              "proportional_term": 0.0
+            },
+            "input_at_zero": null
+          }
+        }
+      },
       "planned_outage_rate": {
         "__metadata__": {
           "fields": {
@@ -2200,28 +2306,12 @@
         "value": 0.0
       },
       "prime_mover_type": "ST",
-      "ramp_down": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "PowerRate"
-          }
-        },
-        "units": "megawatt / minute",
-        "value": 0.0624
-      },
-      "ramp_up": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "PowerRate"
-          }
-        },
-        "units": "megawatt / minute",
-        "value": 0.0624
-      },
+      "ramp_down": null,
+      "ramp_limits": [
+        0.0624,
+        0.0624
+      ],
+      "ramp_up": null,
       "rating": {
         "__metadata__": {
           "fields": {
@@ -2231,7 +2321,7 @@
           }
         },
         "units": "megavolt_ampere",
-        "value": 5.2
+        "value": 1
       },
       "reactive_power": {
         "__metadata__": {
@@ -2242,24 +2332,17 @@
           }
         },
         "units": "megavolt_ampere",
-        "value": 0
+        "value": 0.0
       },
+      "reactive_power_limits": null,
       "services": null,
-      "shutdown_cost": 1.5,
-      "startup_cost": 3.0,
+      "shutdown_cost": null,
+      "startup_cost": null,
+      "status": true,
+      "time_limits": null,
       "unit_type": "ST",
-      "uuid": "16dd6569-b77b-4ab5-897b-90aa26f46e30",
-      "vom_price": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "VOMPrice"
-          }
-        },
-        "units": "usd / megawatt_hour",
-        "value": 0
-      }
+      "uuid": "f39caffc-5f61-47a4-9104-f3d9b6cdae2b",
+      "vom_price": null
     },
     {
       "__metadata__": {
@@ -2290,7 +2373,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "cb15615b-af86-4cb8-a2dc-22cca168f423"
+            "uuid": "2cb70269-5816-49b5-a9e0-e835b6d9014e"
           }
         }
       },
@@ -2354,7 +2437,28 @@
       },
       "must_run": null,
       "name": "Park City_1",
-      "operation_cost": null,
+      "operation_cost": {
+        "fixed": "0 usd",
+        "shut_down": "0.75 usd",
+        "start_up": "1.5 usd",
+        "variable": {
+          "power_units": "NATURAL_UNITS",
+          "value_curve": {
+            "function_data": {
+              "constant_term": 0.0,
+              "proportional_term": 14.0
+            },
+            "input_at_zero": null
+          },
+          "vom_cost": {
+            "function_data": {
+              "constant_term": 0.0,
+              "proportional_term": 0.0
+            },
+            "input_at_zero": null
+          }
+        }
+      },
       "planned_outage_rate": {
         "__metadata__": {
           "fields": {
@@ -2367,28 +2471,12 @@
         "value": 0.0
       },
       "prime_mover_type": "ST",
-      "ramp_down": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "PowerRate"
-          }
-        },
-        "units": "megawatt / minute",
-        "value": 0.04425
-      },
-      "ramp_up": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "PowerRate"
-          }
-        },
-        "units": "megawatt / minute",
-        "value": 0.04425
-      },
+      "ramp_down": null,
+      "ramp_limits": [
+        0.04425,
+        0.04425
+      ],
+      "ramp_up": null,
       "rating": {
         "__metadata__": {
           "fields": {
@@ -2398,7 +2486,7 @@
           }
         },
         "units": "megavolt_ampere",
-        "value": 1.7
+        "value": 1
       },
       "reactive_power": {
         "__metadata__": {
@@ -2409,24 +2497,17 @@
           }
         },
         "units": "megavolt_ampere",
-        "value": 0
+        "value": 0.0
       },
+      "reactive_power_limits": null,
       "services": null,
-      "shutdown_cost": 0.75,
-      "startup_cost": 1.5,
+      "shutdown_cost": null,
+      "startup_cost": null,
+      "status": true,
+      "time_limits": null,
       "unit_type": "ST",
-      "uuid": "6b91891c-1888-4ff9-bf1c-255e872f2803",
-      "vom_price": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "VOMPrice"
-          }
-        },
-        "units": "usd / megawatt_hour",
-        "value": 0
-      }
+      "uuid": "4ddae488-ba11-44c3-8a9e-645e7ed0a123",
+      "vom_price": null
     },
     {
       "__metadata__": {
@@ -2457,7 +2538,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "f2409a01-6bc5-476e-b495-c72ad24a134c"
+            "uuid": "b8cd1c3f-8d23-471e-8004-e87431df4f3a"
           }
         }
       },
@@ -2521,7 +2602,28 @@
       },
       "must_run": null,
       "name": "Sundance_1",
-      "operation_cost": null,
+      "operation_cost": {
+        "fixed": "0 usd",
+        "shut_down": "2 usd",
+        "start_up": "4 usd",
+        "variable": {
+          "power_units": "NATURAL_UNITS",
+          "value_curve": {
+            "function_data": {
+              "constant_term": 0.0,
+              "proportional_term": 14.0
+            },
+            "input_at_zero": null
+          },
+          "vom_cost": {
+            "function_data": {
+              "constant_term": 0.0,
+              "proportional_term": 0.0
+            },
+            "input_at_zero": null
+          }
+        }
+      },
       "planned_outage_rate": {
         "__metadata__": {
           "fields": {
@@ -2534,28 +2636,12 @@
         "value": 0.0
       },
       "prime_mover_type": "ST",
-      "ramp_down": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "PowerRate"
-          }
-        },
-        "units": "megawatt / minute",
-        "value": 0.0375
-      },
-      "ramp_up": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "PowerRate"
-          }
-        },
-        "units": "megawatt / minute",
-        "value": 0.0375
-      },
+      "ramp_down": null,
+      "ramp_limits": [
+        0.0375,
+        0.0375
+      ],
+      "ramp_up": null,
       "rating": {
         "__metadata__": {
           "fields": {
@@ -2565,7 +2651,7 @@
           }
         },
         "units": "megavolt_ampere",
-        "value": 2
+        "value": 1
       },
       "reactive_power": {
         "__metadata__": {
@@ -2576,24 +2662,17 @@
           }
         },
         "units": "megavolt_ampere",
-        "value": 0
+        "value": 0.0
       },
+      "reactive_power_limits": null,
       "services": null,
-      "shutdown_cost": 2.0,
-      "startup_cost": 4.0,
+      "shutdown_cost": null,
+      "startup_cost": null,
+      "status": true,
+      "time_limits": null,
       "unit_type": "ST",
-      "uuid": "04e00fde-1afc-49e6-a375-b9655054045d",
-      "vom_price": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "VOMPrice"
-          }
-        },
-        "units": "usd / megawatt_hour",
-        "value": 0
-      }
+      "uuid": "fb5e380d-85c6-4bba-bd57-b1c13dbf67cc",
+      "vom_price": null
     },
     {
       "__metadata__": {
@@ -2624,7 +2703,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "e3ea2277-867e-4549-b9ff-384d74c97913"
+            "uuid": "c827258c-33e9-462f-be4f-8b90e7b0e369"
           }
         }
       },
@@ -2688,7 +2767,28 @@
       },
       "must_run": null,
       "name": "Solitude_2",
-      "operation_cost": null,
+      "operation_cost": {
+        "fixed": "0 usd",
+        "shut_down": "1.5 usd",
+        "start_up": "3 usd",
+        "variable": {
+          "power_units": "NATURAL_UNITS",
+          "value_curve": {
+            "function_data": {
+              "constant_term": 0.0,
+              "proportional_term": 14.0
+            },
+            "input_at_zero": null
+          },
+          "vom_cost": {
+            "function_data": {
+              "constant_term": 0.0,
+              "proportional_term": 0.0
+            },
+            "input_at_zero": null
+          }
+        }
+      },
       "planned_outage_rate": {
         "__metadata__": {
           "fields": {
@@ -2701,28 +2801,12 @@
         "value": 0.0
       },
       "prime_mover_type": "ST",
-      "ramp_down": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "PowerRate"
-          }
-        },
-        "units": "megawatt / minute",
-        "value": 0.0624
-      },
-      "ramp_up": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "PowerRate"
-          }
-        },
-        "units": "megawatt / minute",
-        "value": 0.0624
-      },
+      "ramp_down": null,
+      "ramp_limits": [
+        0.0624,
+        0.0624
+      ],
+      "ramp_up": null,
       "rating": {
         "__metadata__": {
           "fields": {
@@ -2732,7 +2816,7 @@
           }
         },
         "units": "megavolt_ampere",
-        "value": 5.2
+        "value": 1
       },
       "reactive_power": {
         "__metadata__": {
@@ -2743,24 +2827,17 @@
           }
         },
         "units": "megavolt_ampere",
-        "value": 0
+        "value": 0.0
       },
+      "reactive_power_limits": null,
       "services": null,
-      "shutdown_cost": 1.5,
-      "startup_cost": 3.0,
+      "shutdown_cost": null,
+      "startup_cost": null,
+      "status": true,
+      "time_limits": null,
       "unit_type": "ST",
-      "uuid": "8e91675c-78df-4e01-bd77-ec1057647cf5",
-      "vom_price": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "VOMPrice"
-          }
-        },
-        "units": "usd / megawatt_hour",
-        "value": 0
-      }
+      "uuid": "bb4fdf13-df27-480f-9fa3-adb262702f40",
+      "vom_price": null
     },
     {
       "__metadata__": {
@@ -2791,7 +2868,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "ef2108d0-e91e-4acb-a97f-04de7feabee0"
+            "uuid": "86dd8f6d-901e-4a05-95bb-83661048724f"
           }
         }
       },
@@ -2855,7 +2932,28 @@
       },
       "must_run": null,
       "name": "Sundance_2",
-      "operation_cost": null,
+      "operation_cost": {
+        "fixed": "0 usd",
+        "shut_down": "2 usd",
+        "start_up": "4 usd",
+        "variable": {
+          "power_units": "NATURAL_UNITS",
+          "value_curve": {
+            "function_data": {
+              "constant_term": 0.0,
+              "proportional_term": 14.0
+            },
+            "input_at_zero": null
+          },
+          "vom_cost": {
+            "function_data": {
+              "constant_term": 0.0,
+              "proportional_term": 0.0
+            },
+            "input_at_zero": null
+          }
+        }
+      },
       "planned_outage_rate": {
         "__metadata__": {
           "fields": {
@@ -2868,28 +2966,12 @@
         "value": 0.0
       },
       "prime_mover_type": "ST",
-      "ramp_down": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "PowerRate"
-          }
-        },
-        "units": "megawatt / minute",
-        "value": 0.0375
-      },
-      "ramp_up": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "PowerRate"
-          }
-        },
-        "units": "megawatt / minute",
-        "value": 0.0375
-      },
+      "ramp_down": null,
+      "ramp_limits": [
+        0.0375,
+        0.0375
+      ],
+      "ramp_up": null,
       "rating": {
         "__metadata__": {
           "fields": {
@@ -2899,7 +2981,7 @@
           }
         },
         "units": "megavolt_ampere",
-        "value": 2
+        "value": 1
       },
       "reactive_power": {
         "__metadata__": {
@@ -2910,24 +2992,17 @@
           }
         },
         "units": "megavolt_ampere",
-        "value": 0
+        "value": 0.0
       },
+      "reactive_power_limits": null,
       "services": null,
-      "shutdown_cost": 2.0,
-      "startup_cost": 4.0,
+      "shutdown_cost": null,
+      "startup_cost": null,
+      "status": true,
+      "time_limits": null,
       "unit_type": "ST",
-      "uuid": "886df1a8-5586-463f-9f5f-03f05af9f1d9",
-      "vom_price": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "VOMPrice"
-          }
-        },
-        "units": "usd / megawatt_hour",
-        "value": 0
-      }
+      "uuid": "eb91d3a5-e324-4c3f-801a-0f72bd7c3d0a",
+      "vom_price": null
     },
     {
       "__metadata__": {
@@ -2958,7 +3033,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "a39544e9-15e4-4782-a665-f57f41763bbf"
+            "uuid": "07be2b63-7469-44a5-8630-32f7e0149b75"
           }
         }
       },
@@ -2983,6 +3058,7 @@
       "name": "PVBus5",
       "operation_cost": null,
       "planned_outage_rate": null,
+      "power_factor": 1.0,
       "prime_mover_type": "PV",
       "ramp_down": null,
       "ramp_up": null,
@@ -3006,13 +3082,14 @@
           }
         },
         "units": "megavolt_ampere",
-        "value": 0
+        "value": 0.0
       },
+      "reactive_power_limits": null,
       "services": null,
       "shutdown_cost": null,
       "startup_cost": null,
       "unit_type": "PV",
-      "uuid": "af761c59-2c58-4fc1-9446-abae962b8e13",
+      "uuid": "65ca2dc3-d3fa-40d4-8484-71e38eb2e330",
       "vom_price": null
     },
     {
@@ -3044,7 +3121,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "9bb3e450-adcf-497b-a5ad-e7747a282967"
+            "uuid": "515a0bd5-26fa-4162-b42f-528f2792a56a"
           }
         }
       },
@@ -3069,6 +3146,7 @@
       "name": "WindBus1",
       "operation_cost": null,
       "planned_outage_rate": null,
+      "power_factor": 1.0,
       "prime_mover_type": "WT",
       "ramp_down": null,
       "ramp_up": null,
@@ -3092,13 +3170,14 @@
           }
         },
         "units": "megavolt_ampere",
-        "value": 0
+        "value": 0.0
       },
+      "reactive_power_limits": null,
       "services": null,
       "shutdown_cost": null,
       "startup_cost": null,
       "unit_type": "WT",
-      "uuid": "73951f45-a38a-4516-b13f-41e4c0422940",
+      "uuid": "d8293058-0ba8-4213-94e0-6f99049f6513",
       "vom_price": null
     },
     {
@@ -3118,7 +3197,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "ef2108d0-e91e-4acb-a97f-04de7feabee0"
+            "uuid": "86dd8f6d-901e-4a05-95bb-83661048724f"
           }
         }
       },
@@ -3140,7 +3219,7 @@
       "operation_cost": null,
       "reactive_power": null,
       "services": null,
-      "uuid": "5b803789-f084-489b-9f62-7120f99b1e8a"
+      "uuid": "8e7bb8c7-20f5-4dd9-8d0c-ca88667abb37"
     },
     {
       "__metadata__": {
@@ -3159,7 +3238,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "e3ea2277-867e-4549-b9ff-384d74c97913"
+            "uuid": "c827258c-33e9-462f-be4f-8b90e7b0e369"
           }
         }
       },
@@ -3181,7 +3260,7 @@
       "operation_cost": null,
       "reactive_power": null,
       "services": null,
-      "uuid": "46de99fd-af6c-4e25-b1ba-8bff64b7bbd3"
+      "uuid": "1e9342c7-9d1f-49dc-a2f9-b1c01d53ed4b"
     },
     {
       "__metadata__": {
@@ -3200,7 +3279,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "0cc6551f-815e-47a9-b24b-971869a237a1"
+            "uuid": "e34e1709-8c53-4bfe-a910-a8a31dda5fa3"
           }
         }
       },
@@ -3222,7 +3301,7 @@
       "operation_cost": null,
       "reactive_power": null,
       "services": null,
-      "uuid": "e927cdd1-5683-4069-ad00-9c28223fed63"
+      "uuid": "6478ec5c-16c9-4d21-9c72-176ae20946d3"
     },
     {
       "__metadata__": {
@@ -3241,7 +3320,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "3b49a132-bed9-4499-9a85-62bdf7aded88"
+            "uuid": "048aaf28-4e81-45c9-a626-502ec27e6d13"
           }
         }
       },
@@ -3263,7 +3342,7 @@
       "operation_cost": null,
       "reactive_power": null,
       "services": null,
-      "uuid": "d79e1942-ad28-44ab-8ece-35e9038a3590"
+      "uuid": "3107a9dd-f2e2-4a59-b988-6d56b67a38f1"
     },
     {
       "__metadata__": {
@@ -3282,7 +3361,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "f2409a01-6bc5-476e-b495-c72ad24a134c"
+            "uuid": "b8cd1c3f-8d23-471e-8004-e87431df4f3a"
           }
         }
       },
@@ -3304,7 +3383,7 @@
       "operation_cost": null,
       "reactive_power": null,
       "services": null,
-      "uuid": "6ce90e5a-5210-44ad-bedf-0069311a7b14"
+      "uuid": "a80e879f-0edb-47dc-8895-6e63175476a9"
     },
     {
       "__metadata__": {
@@ -3323,7 +3402,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "a39544e9-15e4-4782-a665-f57f41763bbf"
+            "uuid": "07be2b63-7469-44a5-8630-32f7e0149b75"
           }
         }
       },
@@ -3345,7 +3424,7 @@
       "operation_cost": null,
       "reactive_power": null,
       "services": null,
-      "uuid": "bfd1c39f-77c5-481a-a532-a7f66dc6eb63"
+      "uuid": "655f9a00-d3c9-4436-b92e-764a30823e74"
     },
     {
       "__metadata__": {
@@ -3369,13 +3448,13 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "LoadZone",
-            "uuid": "7e902015-b6b7-43c0-a468-880ddf69dec1"
+            "uuid": "68ed3753-a733-44e5-97f6-a543a5a3f80b"
           }
         }
       },
       "reserve_type": "SPINNING",
       "time_frame": 3600.0,
-      "uuid": "add37ab8-f42d-40d0-b738-da7987f44566",
+      "uuid": "79435185-78e6-4091-bbca-5622e0a8258f",
       "vors": 0.05
     },
     {
@@ -3396,7 +3475,7 @@
         ]
       },
       "name": "pjm_reserve_map",
-      "uuid": "0954956f-bcb2-4af4-8da3-91bfbb5d0e7c"
+      "uuid": "f3c744af-16b6-47a2-a1c7-a95d2f320b9c"
     }
   ],
   "data_format_version": "0.0.1",
@@ -3405,5 +3484,5 @@
   "time_series": {
     "directory": "pjm_2area_time_series"
   },
-  "uuid": "568011de-c5e4-4aa9-b381-a14c2e632d9f"
+  "uuid": "e88be962-3281-4efe-be0e-daa1d7fae15c"
 }

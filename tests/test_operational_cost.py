@@ -1,4 +1,4 @@
-from infrasys.cost_curves import FuelCurve
+from infrasys.cost_curves import FuelCurve, UnitSystem
 from infrasys.value_curves import LinearCurve
 from r2x.models.costs import (
     HydroGenerationCost,
@@ -15,7 +15,7 @@ def test_properties():
 
 
 def test_computed_fields():
-    variable = FuelCurve(value_curve=LinearCurve(0))
+    variable = FuelCurve(value_curve=LinearCurve(0), power_units=UnitSystem.NATURAL_UNITS)
     cost = ThermalGenerationCost(variable=variable)
 
     assert isinstance(cost, OperationalCost)

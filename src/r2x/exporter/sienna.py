@@ -596,11 +596,11 @@ def apply_operation_table_data(
 
     operation_cost = component["operation_cost"]
 
-    if not (variable := operation_cost.get("variable")):
+    if not (variable := operation_cost["variable"]):
         return component
 
     if haskey(variable, ["vom_cost", "function_data"]):
-        component["variable_cost"] = variable["vom_cost"]["function_data"]["proportional_term"]
+        component["variable_cost"] = variable["vom_cost"]["function_data"].proportional_term
 
     if "fuel_cost" in variable.keys():
         assert variable["fuel_cost"] is not None
@@ -609,20 +609,21 @@ def apply_operation_table_data(
         component["fuel_price"] = variable["fuel_cost"] * 1000
     if haskey(variable, ["value_curve", "function_data"]):
         function_data = variable["value_curve"]["function_data"]
-        if "constant_term" in function_data.keys():
-            component["heat_rate_a0"] = function_data["constant_term"]
-        if "proportional_term" in function_data.keys():
-            component["heat_rate_a1"] = function_data["proportional_term"]
-        if "quadratic_term" in function_data.keys():
-            component["heat_rate_a2"] = function_data["quadratic_term"]
-        if "points" in function_data.keys():
+        function_data_fields = function_data.model_fields_set
+        if "constant_term" in function_data_fields:
+            component["heat_rate_a0"] = function_data.constant_term
+        if "proportional_term" in function_data_fields:
+            component["heat_rate_a1"] = function_data.proportional_term
+        if "quadratic_term" in function_data_fields:
+            component["heat_rate_a2"] = function_data.quadratic_term
+        if "points" in function_data_fields:
             component = _variable_type_parsing(component, operation_cost)
     return component
 
 
 def _variable_type_parsing(component: dict, cost_dict: dict[str, Any]) -> dict[str, Any]:
     variable_curve = cost_dict["variable"]
-    x_y_coords = variable_curve["value_curve"]["function_data"]["points"]
+    x_y_coords = variable_curve["value_curve"]["function_data"].points
     match cost_dict["variable_type"]:
         case "CostCurve":
             for i, (x_coord, y_coord) in enumerate(x_y_coords):

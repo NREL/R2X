@@ -7,10 +7,11 @@ from itertools import repeat
 from operator import attrgetter
 from argparse import ArgumentParser
 
-from infrasys.cost_curves import CostCurve, FuelCurve
+from infrasys.cost_curves import CostCurve, FuelCurve, UnitSystem
 from infrasys.function_data import LinearFunctionData
 from infrasys.value_curves import AverageRateCurve, LinearCurve
 import numpy as np
+from pint import Quantity
 import polars as pl
 import pyarrow as pa
 from infrasys.time_series_models import SingleTimeSeries
@@ -459,28 +460,40 @@ class ReEDSParser(BaseParser):
 
             # Add operational cost data
             # ReEDS model all the thermal generators assuming an average heat rate
+            vom_price = row.get("vom_price", None) or 0.0
+            if isinstance(vom_price, Quantity):
+                vom_price = vom_price.magnitude
+            fuel_price = row.get("fuel_price", None) or 0.0
+            if isinstance(fuel_price, Quantity):
+                fuel_price = fuel_price.magnitude
             if issubclass(gen_model, RenewableGen):
                 row["operation_cost"] = None
             if issubclass(gen_model, ThermalGen):
                 if heat_rate := row.get("heat_rate"):
+                    if isinstance(heat_rate, Quantity):
+                        heat_rate = heat_rate.magnitude
                     heat_rate_curve = AverageRateCurve(
                         function_data=LinearFunctionData(
                             proportional_term=heat_rate,
                             constant_term=0,
                         ),
-                        initial_input=heat_rate.magnitude,
+                        initial_input=heat_rate,
                     )
                     fuel_curve = FuelCurve(
                         value_curve=heat_rate_curve,
-                        vom_cost=LinearCurve(row.get("vom_price", None) or 0.0),
-                        fuel_cost=row.get("fuel_price", None) or 0.0,
+                        vom_cost=LinearCurve(vom_price),
+                        fuel_cost=fuel_price,
+                        power_units=UnitSystem.NATURAL_UNITS,
                     )
                     row["operation_cost"] = ThermalGenerationCost(
                         variable=fuel_curve,
                     )
             if issubclass(gen_model, HydroGen):
                 row["operation_cost"] = HydroGenerationCost(
-                    variable=CostCurve(value_curve=LinearCurve(row.get("vom_price", None) or 0.0))
+                    variable=CostCurve(
+                        value_curve=LinearCurve(vom_price),
+                        power_units=UnitSystem.NATURAL_UNITS,
+                    )
                 )
 
             row["must_run"] = (
@@ -489,7 +502,7 @@ class ReEDSParser(BaseParser):
 
             # NOTE: If there is a point when ReEDs enforces minimum capacity for a technology here is where we
             # will need to change it.
-            row["active_power_limits"] = MinMax(min=0, max=row["active_power"])
+            row["active_power_limits"] = MinMax(min=0, max=row["active_power"].magnitude)
 
             row["ext"] = {}
             row["ext"] = {

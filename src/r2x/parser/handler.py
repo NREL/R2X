@@ -20,6 +20,7 @@ import polars as pl
 from infrasys.component import Component
 from loguru import logger
 from plexosdb import XMLHandler
+from pydantic import ValidationError
 
 # Local packages
 from r2x.api import System
@@ -323,5 +324,8 @@ def create_model_instance(
         if value is not None
     }
     if skip_validation:
-        return model_class.model_construct(**valid_fields)  # type: ignore
+        try:
+            return model_class.model_validate(valid_fields)
+        except ValidationError:
+            return model_class.model_construct(**valid_fields)
     return model_class.model_validate(valid_fields)
