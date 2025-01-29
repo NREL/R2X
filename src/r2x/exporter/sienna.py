@@ -493,8 +493,11 @@ class SiennaExporter(BaseExporter):
                 }
                 ts_pointers_list.append(ts_pointers)
 
+        # Sort the list to make it easier to visually diff
+        ts_pointers_list.sort(key=lambda x: x["component_name"])
+
         with open(os.path.join(self.output_folder, "timeseries_pointers.json"), mode="w") as f:
-            json.dump(ts_pointers_list, f)
+            json.dump(ts_pointers_list, f, indent=4)
 
         logger.info("File timeseries_pointers.json created.")
         return
