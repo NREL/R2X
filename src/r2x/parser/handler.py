@@ -15,6 +15,7 @@ from typing import Any, TypeVar
 
 import pandas as pd
 import polars as pl
+import h5py
 
 # Third-party packages
 from infrasys.component import Component
@@ -163,7 +164,9 @@ def file_handler(
         case ".csv":
             return csv_handler(fpath, **kwargs)
         case ".h5":
-            return pl.LazyFrame(pd.read_hdf(fpath).reset_index())  # type: ignore
+            with h5py.File(fpath, 'r') as f:
+                return pl.LazyFrame(pd.DataFrame(f["data"],columns=[col.decode("utf-8") \
+                    for col in f["columns"]]).reset_index())  # type: ignore
         case ".xml":
             class_kwargs = {
                 key: value for key, value in kwargs.items() if key in inspect.signature(XMLHandler).parameters
