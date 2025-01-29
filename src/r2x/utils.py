@@ -296,7 +296,7 @@ def get_timeindex(
     if year is not None:
         return pd.date_range(
             f"{year}-01-01",
-            f"{year+1}-01-01",
+            f"{year + 1}-01-01",
             freq="H",
             inclusive="left",
             tz=tz,
@@ -308,7 +308,7 @@ def get_timeindex(
         [
             pd.date_range(
                 f"{y}-01-01",
-                f"{y+1}-01-01",
+                f"{y + 1}-01-01",
                 freq="H",
                 inclusive="left",
                 tz=tz,

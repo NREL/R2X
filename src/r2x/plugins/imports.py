@@ -52,9 +52,9 @@ def update_system(
 
     if parser is not None:
         # NOTE: We might change this condition once we change the imports definition on ReEDS.
-        assert all(
-            key in parser.data for key in ["canada_imports", "canada_szn_frac"]
-        ), "Missing required files for import plugin."
+        assert all(key in parser.data for key in ["canada_imports", "canada_szn_frac"]), (
+            "Missing required files for import plugin."
+        )
         assert "hour_map" in parser.data, "Missing hour map from ReEDS run."
 
     logger.info("Adding imports time series...")
