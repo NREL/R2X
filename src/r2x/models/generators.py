@@ -5,20 +5,20 @@ from typing import Annotated, Any
 from pint import Quantity
 from pydantic import Field, NonNegativeFloat, field_serializer
 
+from r2x.enums import PrimeMoversType, StorageTechs, ThermalFuels
 from r2x.models.core import Device, InputOutput, MinMax, UpDown
 from r2x.models.costs import HydroGenerationCost, RenewableGenerationCost, StorageCost, ThermalGenerationCost
-from r2x.models.topology import ACBus
 from r2x.models.load import PowerLoad
-from r2x.enums import PrimeMoversType, StorageTechs
+from r2x.models.topology import ACBus
 from r2x.units import (
     ActivePower,
+    ApparentPower,
+    Energy,
     Percentage,
     PowerRate,
-    ApparentPower,
+    Time,
     VOMPrice,
     ureg,
-    Time,
-    Energy,
 )
 
 
@@ -293,13 +293,14 @@ class ThermalStandard(ThermalGen):
     status: bool = True
     ramp_limits: UpDown | None = None
     time_limits: UpDown | None = None
+    fuel: ThermalFuels = ThermalFuels.OTHER
 
     @classmethod
     def example(cls) -> "ThermalStandard":
         return ThermalStandard(
             name="ThermalStandard",
             bus=ACBus.example(),
-            fuel="gas",
+            fuel=ThermalFuels.NATURAL_GAS,
             active_power=100.0 * ureg.MW,
             ext={"Additional data": "Additional value"},
         )
