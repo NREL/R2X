@@ -384,6 +384,10 @@
     "optional": true,
     "units": "MW"
   },
+  "rev_paths": {
+    "fname": "rev_paths.csv",
+    "keep_case": true
+  },
   "rs_map": {
     "description": "Map for S regions to P regions",
     "fname": "rsmap.csv",
