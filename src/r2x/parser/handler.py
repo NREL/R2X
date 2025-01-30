@@ -240,8 +240,10 @@ def csv_handler(fpath: Path, csv_file_encoding="utf8", **kwargs) -> pl.DataFrame
         logger.debug("File {} is empty. Skipping it.", fpath)
         return
 
-    if not kwargs.get("keep_case"):
+    if kwargs.get("keep_case") is None:
         data_file = pl_lowercase(data_file)
+    else:
+        breakpoint()
 
     return data_file
 
@@ -294,7 +296,7 @@ def get_parser_data(
     # NOTE: At some point we are going to migrate this out, but this sound like a good standard set
     if filter_funcs is None and config.input_model == "reeds-US":
         logger.trace("Using default filter functions")
-        filter_funcs = [pl_lowercase, pl_rename, pl_filter_year]
+        filter_funcs = [pl_rename, pl_filter_year]
 
     # Adding special case for Plexos parser
     if model := getattr(config, "model", False):
