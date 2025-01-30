@@ -240,7 +240,8 @@ def csv_handler(fpath: Path, csv_file_encoding="utf8", **kwargs) -> pl.DataFrame
         logger.debug("File {} is empty. Skipping it.", fpath)
         return
 
-    data_file = pl_lowercase(data_file)
+    if not kwargs.get("keep_case"):
+        data_file = pl_lowercase(data_file)
 
     return data_file
 
