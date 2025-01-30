@@ -324,6 +324,19 @@ class PlexosParser(PCMParser):
             bus_name = bus_name[0]
             logger.trace("Parsing bus = {}", bus_name)
 
+            # Skip islanded buses, which `sienna` doesn't like
+            bus_is_islanded = len(
+                self._get_model_data((
+                    (pl.col("parent_class_name") == ClassEnum.Line.value) &
+                    (pl.col("child_class_name") == ClassEnum.Node.value) &
+                    (pl.col("name") == bus_name)
+                ))
+            ) == 0
+            # If bus is islanded, skip to next iteration of loop
+            if bus_is_islanded:
+                logger.warning("Skipping islanded bus `{}`.", bus_name)
+                continue
+
             property_records = bus_data.to_dicts()
             mapped_records, _ = self._parse_property_data(property_records)
             mapped_records["name"] = bus_name
