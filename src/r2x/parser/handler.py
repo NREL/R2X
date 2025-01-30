@@ -242,8 +242,6 @@ def csv_handler(fpath: Path, csv_file_encoding="utf8", **kwargs) -> pl.DataFrame
 
     if kwargs.get("keep_case") is None:
         data_file = pl_lowercase(data_file)
-    else:
-        breakpoint()
 
     return data_file
 
