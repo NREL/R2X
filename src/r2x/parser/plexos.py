@@ -25,7 +25,7 @@ from plexosdb.enums import ClassEnum, CollectionEnum
 
 from r2x.api import System
 from r2x.config_models import PlexosConfig
-from r2x.enums import ACBusTypes, PrimeMoversType, ReserveDirection, ReserveType
+from r2x.enums import ACBusTypes, PrimeMoversType, ReserveDirection, ReserveType, ThermalFuels
 from r2x.exceptions import ModelError, ParserError
 from r2x.models import (
     ACBus,
@@ -46,7 +46,7 @@ from r2x.models.core import MinMax
 from r2x.models.costs import HydroGenerationCost, RenewableGenerationCost, ThermalGenerationCost
 from r2x.models.load import PowerLoad
 from r2x.units import ureg
-from r2x.utils import get_pint_unit, validate_string
+from r2x.utils import get_enum_from_string, get_pint_unit, validate_string
 
 from .handler import PCMParser, csv_handler
 from .parser_helpers import (
@@ -679,7 +679,7 @@ class PlexosParser(PCMParser):
             # Get prime mover enum
             mapped_records["prime_mover_type"] = fuel_pmtype["type"]
             mapped_records["prime_mover_type"] = PrimeMoversType[mapped_records["prime_mover_type"]]
-            mapped_records["fuel"] = fuel_pmtype["fuel"]
+            mapped_records["fuel"] = get_enum_from_string(fuel_pmtype["fuel"], ThermalFuels)
 
             # Pumped Storage generators are not required to have Max Capacity property
             if "max_active_power" not in mapped_records and "pump_load" in mapped_records:

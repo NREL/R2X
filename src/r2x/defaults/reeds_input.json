@@ -280,7 +280,7 @@
     },
     "distpv": {
       "fuel": null,
-      "type": "RTPV"
+      "type": "PVe"
     },
     "egs": {
       "fuel": "GEOTHERMAL",

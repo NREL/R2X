@@ -1,21 +1,21 @@
 """Functions related to parsers."""
 
-from collections import defaultdict
 import importlib
+from argparse import ArgumentParser
+from collections import defaultdict
 from datetime import datetime, timedelta
 from itertools import repeat
 from operator import attrgetter
-from argparse import ArgumentParser
 
-from infrasys.cost_curves import CostCurve, FuelCurve, UnitSystem
-from infrasys.function_data import LinearFunctionData
-from infrasys.value_curves import AverageRateCurve, LinearCurve
 import numpy as np
-from pint import Quantity
 import polars as pl
 import pyarrow as pa
+from infrasys.cost_curves import CostCurve, FuelCurve, UnitSystem
+from infrasys.function_data import LinearFunctionData
 from infrasys.time_series_models import SingleTimeSeries
+from infrasys.value_curves import AverageRateCurve, LinearCurve
 from loguru import logger
+from pint import Quantity
 
 from r2x.api import System
 from r2x.config_models import ReEDSConfig
@@ -496,9 +496,7 @@ class ReEDSParser(BaseParser):
                     )
                 )
 
-            row["must_run"] = (
-                True if row["tech"] in self.reeds_config.defaults["commit_technologies"] else None
-            )
+            row["must_run"] = 1 if row["tech"] in self.reeds_config.defaults["commit_technologies"] else 0
 
             # NOTE: If there is a point when ReEDs enforces minimum capacity for a technology here is where we
             # will need to change it.
@@ -802,6 +800,10 @@ class ReEDSParser(BaseParser):
             generator_bus = generator.bus
             assert generator_bus is not None
             region = generator_bus.name
+            generator.inflow = 0.0
+            generator.initial_storage = generator.initial_energy
+            generator.storage_capacity = Energy(0.0, "MWh")
+            generator.storage_target = Energy(0.0, "MWh")
 
             hourly_time_series = np.zeros(len(month_of_hour), dtype=float)
             hydro_ratings = hydro_data.filter((pl.col("tech") == tech) & (pl.col("region") == region))
