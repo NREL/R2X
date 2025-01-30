@@ -312,8 +312,18 @@ class PlexosParser(PCMParser):
 
     def _construct_buses(self, default_model=ACBus) -> None:
         logger.info("Creating buses representation")
-        system_buses = (pl.col("child_class_name") == ClassEnum.Node.value) & (
-            pl.col("parent_class_name") == ClassEnum.System.value
+
+        # Get list of buses that are connected to lines, because `sienna` doesn't like islanded buses
+        buses_connected_to_lines = self._get_model_data((
+            (pl.col("parent_class_name") == ClassEnum.Line.value) &
+            (pl.col("child_class_name") == ClassEnum.Node.value)
+
+        ))["name"]
+
+        system_buses = (
+            (pl.col("child_class_name") == ClassEnum.Node.value) &
+            (pl.col("parent_class_name") == ClassEnum.System.value) &
+            (pl.col("name").is_in(buses_connected_to_lines))
         )
         region_buses = (pl.col("child_class_name") == ClassEnum.Region.value) & (
             pl.col("parent_class_name") == ClassEnum.Node.value
@@ -323,19 +333,6 @@ class PlexosParser(PCMParser):
         for idx, (bus_name, bus_data) in enumerate(system_buses.group_by("name")):
             bus_name = bus_name[0]
             logger.trace("Parsing bus = {}", bus_name)
-
-            # Skip islanded buses, which `sienna` doesn't like
-            bus_is_islanded = len(
-                self._get_model_data((
-                    (pl.col("parent_class_name") == ClassEnum.Line.value) &
-                    (pl.col("child_class_name") == ClassEnum.Node.value) &
-                    (pl.col("name") == bus_name)
-                ))
-            ) == 0
-            # If bus is islanded, skip to next iteration of loop
-            if bus_is_islanded:
-                logger.warning("Skipping islanded bus `{}`.", bus_name)
-                continue
 
             property_records = bus_data.to_dicts()
             mapped_records, _ = self._parse_property_data(property_records)
