@@ -30,6 +30,10 @@ class BaseComponent(Component):
 
 
 MinMax = namedtuple("MinMax", ["min", "max"])
+Complex = namedtuple("Complex", ["real", "imag"])
+FromTo_ToFrom = namedtuple("FromTo_ToFrom", ["from_to", "to_from"])
+UpDown = namedtuple("UpDown", ["up", "down"])
+InputOutput = namedtuple("InputOutput", ["input", "output"])
 
 
 class Service(BaseComponent):

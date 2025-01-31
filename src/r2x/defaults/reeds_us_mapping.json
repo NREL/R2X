@@ -384,6 +384,10 @@
     "optional": true,
     "units": "MW"
   },
+  "rev_paths": {
+    "fname": "rev_paths.csv",
+    "keep_case": true
+  },
   "rs_map": {
     "description": "Map for S regions to P regions",
     "fname": "rsmap.csv",
@@ -478,6 +482,19 @@
     "input": true,
     "optional": true,
     "units": "-"
+  },
+  "upv_sc_out": {
+    "description": "Capacity added for each SC gid",
+    "fname": "df_sc_out_upv_reduced.csv",
+    "optional": true
+  },
+  "wind-ofs_sc_out": {
+    "fname": "df_sc_out_wind-ofs_reduced.csv",
+    "optional": true
+  },
+  "wind-ons_sc_out": {
+    "fname": "df_sc_out_wind-ons_reduced.csv",
+    "optional": true
   },
   "years": {
     "column_mapping": {},

@@ -10,7 +10,7 @@ from typing import Any
 
 import numpy as np
 import polars as pl
-from infrasys.cost_curves import CostCurve, FuelCurve
+from infrasys.cost_curves import CostCurve, FuelCurve, UnitSystem
 from infrasys.exceptions import ISNotStored
 from infrasys.function_data import (
     LinearFunctionData,
@@ -25,7 +25,7 @@ from plexosdb.enums import ClassEnum, CollectionEnum
 
 from r2x.api import System
 from r2x.config_models import PlexosConfig
-from r2x.enums import ACBusTypes, PrimeMoversType, ReserveDirection, ReserveType
+from r2x.enums import ACBusTypes, PrimeMoversType, ReserveDirection, ReserveType, ThermalFuels
 from r2x.exceptions import ModelError, ParserError
 from r2x.models import (
     ACBus,
@@ -46,7 +46,7 @@ from r2x.models.core import MinMax
 from r2x.models.costs import HydroGenerationCost, RenewableGenerationCost, ThermalGenerationCost
 from r2x.models.load import PowerLoad
 from r2x.units import ureg
-from r2x.utils import get_pint_unit, validate_string
+from r2x.utils import get_enum_from_string, get_pint_unit, validate_string
 
 from .handler import PCMParser, csv_handler
 from .parser_helpers import (
@@ -56,10 +56,10 @@ from .parser_helpers import (
     reconcile_timeseries,
 )
 from .plexos_utils import (
-    find_xml,
     DATAFILE_COLUMNS,
     PLEXOS_ACTION_MAP,
     filter_property_dates,
+    find_xml,
     get_column_enum,
     parse_data_file,
     time_slice_handler,
@@ -174,7 +174,7 @@ class PlexosParser(PCMParser):
         # R2X needs at least one of this maps defined to correctly work.
         one_required = ["fuel_map", "device_map", "device_match_string", "category_map"]
         if all(getattr(self, one_req, {}) == {} for one_req in one_required):
-            msg = f'At least one of {", or ".join(one_required)} is required to initialize PlexosParser'
+            msg = f"At least one of {', or '.join(one_required)} is required to initialize PlexosParser"
             raise ParserError(msg)
 
         # Populate databse from XML file.
@@ -304,7 +304,7 @@ class PlexosParser(PCMParser):
         )
         regions = self._get_model_data(system_regions)
 
-        region_pivot = regions.pivot(  # noqa: PD010
+        region_pivot = regions.pivot(
             index=DEFAULT_INDEX,
             on="property_name",
             values="property_value",
@@ -347,9 +347,9 @@ class PlexosParser(PCMParser):
             # We parse all the buses as PV unless in the model someone specify a bus is a slack.
             # Plexos defines the True value of a Slack bus assigning it -1. Possible values are only 0
             # (False), -1 (True).
-            valid_fields["bus_type"] = ACBusTypes.PV
+            valid_fields["bustype"] = ACBusTypes.PV
             if mapped_records.get("Is Slack Bus") == -1:
-                valid_fields["bus_type"] = ACBusTypes.SLACK
+                valid_fields["bustype"] = ACBusTypes.SLACK
 
             valid_fields["base_voltage"] = (
                 230.0 if not valid_fields.get("base_voltage") else valid_fields["base_voltage"]
@@ -430,7 +430,7 @@ class PlexosParser(PCMParser):
             pl.col("parent_class_name") == ClassEnum.System.value
         )
         system_lines = self._get_model_data(system_lines)
-        lines_pivot = system_lines.pivot(  # noqa: PD010
+        lines_pivot = system_lines.pivot(
             index=DEFAULT_INDEX,
             on="property_name",
             values="property_value",
@@ -488,7 +488,7 @@ class PlexosParser(PCMParser):
             pl.col("parent_class_name") == ClassEnum.System.value
         )
         system_transformers = self._get_model_data(system_transformers)
-        transformer_pivot = system_transformers.pivot(  # noqa: PD010
+        transformer_pivot = system_transformers.pivot(
             index=DEFAULT_INDEX,
             on="property_name",
             values="property_value",
@@ -679,7 +679,9 @@ class PlexosParser(PCMParser):
             # Get prime mover enum
             mapped_records["prime_mover_type"] = fuel_pmtype["type"]
             mapped_records["prime_mover_type"] = PrimeMoversType[mapped_records["prime_mover_type"]]
-            mapped_records["fuel"] = fuel_pmtype["fuel"]
+            mapped_records["fuel"] = (
+                get_enum_from_string(fuel_pmtype["fuel"], ThermalFuels) if fuel_pmtype.get("fuel") else None
+            )
 
             # Pumped Storage generators are not required to have Max Capacity property
             if "max_active_power" not in mapped_records and "pump_load" in mapped_records:
@@ -888,7 +890,7 @@ class PlexosParser(PCMParser):
             pl.col("parent_class_name") == ClassEnum.System.name
         )
         system_interfaces = self._get_model_data(system_interfaces_mask)
-        interfaces = system_interfaces.pivot(  # noqa: PD010
+        interfaces = system_interfaces.pivot(
             index=DEFAULT_INDEX,
             on="property_name",
             values="property_value",
@@ -1034,6 +1036,8 @@ class PlexosParser(PCMParser):
     def _construct_operating_costs(self, mapped_records, generator_name, model_map):
         """Construct operating costs from Value Curves and Operating Costs."""
         vom_cost = mapped_records.get("vom_price", 0.0)
+        if isinstance(vom_cost, Quantity):
+            vom_cost = vom_cost.magnitude
 
         if issubclass(model_map, RenewableGen):
             mapped_records["operation_cost"] = RenewableGenerationCost()
@@ -1045,9 +1049,15 @@ class PlexosParser(PCMParser):
             elif isinstance(fuel_cost, Quantity):
                 fuel_cost = fuel_cost.magnitude
             if heat_rate_curve:
-                cost_curve = FuelCurve(value_curve=heat_rate_curve, fuel_cost=fuel_cost)
+                cost_curve = FuelCurve(
+                    value_curve=heat_rate_curve, fuel_cost=fuel_cost, power_units=UnitSystem.NATURAL_UNITS
+                )
             else:
-                cost_curve = CostCurve(value_curve=LinearCurve(0), vom_cost=LinearCurve(vom_cost))
+                cost_curve = CostCurve(
+                    value_curve=LinearCurve(0),
+                    vom_cost=LinearCurve(vom_cost),
+                    power_units=UnitSystem.NATURAL_UNITS,
+                )
             mapped_records["operation_cost"] = ThermalGenerationCost(
                 variable=cost_curve,
                 start_up=mapped_records.get("startup_cost", 0),
@@ -1392,9 +1402,9 @@ class PlexosParser(PCMParser):
         # We reconcile the time series data using the hourly time stamp given by the solve year
 
         parsed_file = reconcile_timeseries(parsed_file, hourly_time_index=self.hourly_time_index)
-        assert (
-            "value" in parsed_file.columns
-        ), f"Error: column value not found on time series file for {record_name}:{property_name}"
+        assert "value" in parsed_file.columns, (
+            f"Error: column value not found on time series file for {record_name}:{property_name}"
+        )
         return parsed_file["value"].cast(pl.Float64).to_numpy()
 
     def _create_columns_to_check(self, column_type: DATAFILE_COLUMNS):

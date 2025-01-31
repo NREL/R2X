@@ -59,6 +59,47 @@ class Reserve(Service):
         )
 
 
+class VariableReserve(Reserve):
+    time_frame: Annotated[
+        NonNegativeFloat,
+        Field(description="Timeframe in which the reserve is required in seconds"),
+    ] = 0.0
+    requirement: Annotated[
+        NonNegativeFloat | None,
+        Field(
+            description="the value of required reserves in p.u (SYSTEM_BASE), validation range: (0, nothing)"
+        ),
+    ]
+    sustained_time: Annotated[
+        NonNegativeFloat,
+        Field(description="the time in seconds reserve contribution must sustained at a specified level"),
+    ] = 3600.0
+    max_output_fraction: Annotated[
+        NonNegativeFloat,
+        Field(
+            ge=0.0,
+            le=1.0,
+            description="the time in seconds reserve contribution must sustained at a specified level",
+        ),
+    ] = 1.0
+    max_participation_factor: Annotated[
+        NonNegativeFloat,
+        Field(
+            ge=0.0,
+            le=1.0,
+            description="the maximum portion [0, 1.0] of the reserve that can be contributed per device",
+        ),
+    ] = 1.0
+    deployed_fraction: Annotated[
+        NonNegativeFloat,
+        Field(
+            ge=0.0,
+            le=1.0,
+            description="Fraction of service procurement that is assumed to be actually deployed.",
+        ),
+    ] = 3600.0
+
+
 class Emission(Service):
     """Class representing an emission object that is attached to generators."""
 

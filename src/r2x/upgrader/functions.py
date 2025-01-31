@@ -67,8 +67,11 @@ def rename(fpath: pathlib.Path, new_fname: str) -> pathlib.Path:
     FileExistsError: [Errno 17] File exists: '/path/to/existing_file.txt' -> '/path/to/existing_file.txt'
     """
     fpath_new = fpath.resolve().parent.joinpath(new_fname)
-    logger.debug("Renaming {} to {}", fpath.name, fpath_new.name)
+    if fpath_new.exists():
+        logger.debug(f"File {(fpath_new.name)=} already exist. Skipping it.")
+        return fpath_new
     new_fpath = fpath.replace(fpath_new)
+    logger.debug("Renaming {} to {}", fpath.name, fpath_new.name)
     return new_fpath
 
 

@@ -1,11 +1,12 @@
-from plexosdb.sqlite import PlexosSQLite
 import pytest
 from plexosdb import XMLHandler
+from plexosdb.sqlite import PlexosSQLite
+
 from r2x.api import System
 from r2x.config_scenario import Scenario
+from r2x.exceptions import ParserError
 from r2x.parser.handler import get_parser_data
 from r2x.parser.plexos import PlexosParser
-from r2x.exceptions import ParserError
 
 DB_NAME = "2-bus_example.xml"
 MODEL_NAME = "main_model"
@@ -59,9 +60,9 @@ def test_build_system(plexos_parser_instance):
 
 def test_parser_system(pjm_scenario):
     plexos_category_map = {
-        "thermal": {"fuel": "GAS", "type": "CC"},
-        "solar": {"fuel": "SUN", "type": "WT"},
-        "wind": {"fuel": "WIND", "type": "PV"},
+        "thermal": {"fuel": "NATURAL_GAS", "type": "CC"},
+        "solar": {"fuel": None, "type": "WT"},
+        "wind": {"fuel": None, "type": "PV"},
     }
     pjm_scenario.input_config.model_name = "model_2012"
 

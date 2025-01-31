@@ -5,20 +5,20 @@ from typing import Annotated, Any
 from pint import Quantity
 from pydantic import Field, NonNegativeFloat, field_serializer
 
-from r2x.models.core import Device, MinMax
-from r2x.models.costs import OperationalCost
-from r2x.models.topology import ACBus
+from r2x.enums import PrimeMoversType, StorageTechs, ThermalFuels
+from r2x.models.core import Device, InputOutput, MinMax, UpDown
+from r2x.models.costs import HydroGenerationCost, RenewableGenerationCost, StorageCost, ThermalGenerationCost
 from r2x.models.load import PowerLoad
-from r2x.enums import PrimeMoversType
+from r2x.models.topology import ACBus
 from r2x.units import (
     ActivePower,
+    ApparentPower,
+    Energy,
     Percentage,
     PowerRate,
-    ApparentPower,
+    Time,
     VOMPrice,
     ureg,
-    Time,
-    Energy,
 )
 
 
@@ -38,7 +38,7 @@ class Generator(Device):
                 "state operating point of the system."
             ),
         ),
-    ] = ActivePower(0, "MW")
+    ] = ActivePower(0.0, "MW")
     reactive_power: Annotated[
         ApparentPower | None,
         Field(
@@ -47,8 +47,7 @@ class Generator(Device):
                 "state operating point of the system."
             ),
         ),
-    ] = ApparentPower(0, "MVA")
-    operation_cost: OperationalCost | None = None
+    ] = ApparentPower(0.0, "MVA")
     base_mva: float = 1
     base_power: Annotated[
         ApparentPower | None,
@@ -128,9 +127,16 @@ class Generator(Device):
     active_power_limits: Annotated[
         MinMax | None, Field(description="Maximum output power rating of the unit (MVA).")
     ] = None
+    reactive_power_limits: Annotated[
+        MinMax | None, Field(description="Maximum output power rating of the unit (MVA).")
+    ] = None
 
     @field_serializer("active_power_limits")
-    def serialize_active_power_limits(self, min_max: MinMax) -> dict[str, Any]:
+    def serialize_active_power_limits(self, min_max: MinMax | dict | None) -> dict[str, Any] | None:
+        if min_max is None:
+            return None
+        if not isinstance(min_max, MinMax):
+            min_max = MinMax(**min_max)
         if min_max is not None:
             return {
                 "min": min_max.min.magnitude if isinstance(min_max.min, Quantity) else min_max.min,
@@ -148,12 +154,17 @@ class RenewableDispatch(RenewableGen):
     This type of generator have a hourly capacity factor profile.
     """
 
+    power_factor: float = 1.0
+    operation_cost: RenewableGenerationCost | None = None
+
 
 class RenewableNonDispatch(RenewableGen):
     """Non-curtailable renewable generator.
 
     Renewable technologies w/o operational cost.
     """
+
+    power_factor: float = 1.0
 
 
 class HydroGen(Generator):
@@ -163,6 +174,7 @@ class HydroGen(Generator):
 class HydroDispatch(HydroGen):
     """Class representing flexible hydro generators."""
 
+    operation_cost: HydroGenerationCost | None = None
     ramp_up: (
         Annotated[
             PowerRate,
@@ -186,9 +198,14 @@ class HydroFix(HydroGen):
 class HydroEnergyReservoir(HydroGen):
     """Class representing hydro system with reservoirs."""
 
+    ramp_limits: UpDown | None = None
+    time_limits: UpDown | None = None
+    operation_cost: HydroGenerationCost | None = None
+    inflow: float | None = None
     initial_energy: (
         Annotated[NonNegativeFloat, Field(description="Initial water volume or percentage.")] | None
     ) = 0
+    initial_storage: float | None = None
     storage_capacity: (
         Annotated[
             Energy,
@@ -215,6 +232,7 @@ class HydroEnergyReservoir(HydroGen):
 class HydroPumpedStorage(HydroGen):
     """Class representing pumped hydro generators."""
 
+    operation_cost: HydroGenerationCost | StorageCost | None = None
     storage_duration: (
         Annotated[
             Time,
@@ -266,17 +284,23 @@ class ThermalGen(Generator):
     """Class representing fuel based thermal generator."""
 
     fuel: Annotated[str, Field(description="Fuel category")] | None = None
+    operation_cost: ThermalGenerationCost | None = None
 
 
 class ThermalStandard(ThermalGen):
     """Class representing a standard thermal generator."""
+
+    status: bool = True
+    ramp_limits: UpDown | None = None
+    time_limits: UpDown | None = None
+    fuel: ThermalFuels = ThermalFuels.OTHER
 
     @classmethod
     def example(cls) -> "ThermalStandard":
         return ThermalStandard(
             name="ThermalStandard",
             bus=ACBus.example(),
-            fuel="gas",
+            fuel=ThermalFuels.NATURAL_GAS,
             active_power=100.0 * ureg.MW,
             ext={"Additional data": "Additional value"},
         )
@@ -316,6 +340,22 @@ class GenericBattery(Storage):
     discharge_efficiency: Annotated[Percentage, Field(ge=0, description="Discharge efficiency.")] | None = (
         None
     )
+
+
+class EnergyReservoirStorage(Storage):
+    """Battery energy storage model."""
+
+    storage_technology_type: StorageTechs
+    operation_cost: StorageCost | None = None
+    charge_efficiency: Annotated[Percentage, Field(ge=0, description="Charge efficiency.")] | None = None
+    discharge_efficiency: Annotated[Percentage, Field(ge=0, description="Discharge efficiency.")] | None = (
+        None
+    )
+    storage_level_limits: MinMax | None = None
+    initial_storage_capacity_level: float
+    input_active_power_limits: MinMax
+    output_active_power_limits: MinMax
+    efficiency: InputOutput
 
 
 class HybridSystem(Device):

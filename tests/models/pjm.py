@@ -3,18 +3,21 @@
 import pathlib
 from datetime import datetime, timedelta
 
+from infrasys.cost_curves import CostCurve, UnitSystem
 from infrasys.time_series_models import SingleTimeSeries
+from infrasys.value_curves import LinearCurve
 
 from r2x.api import System
-from r2x.enums import ACBusTypes, PrimeMoversType, ReserveDirection, ReserveType
+from r2x.enums import ACBusTypes, PrimeMoversType, ReserveDirection, ReserveType, ThermalFuels
 from r2x.models.branch import AreaInterchange, Line, MonitoredLine
-from r2x.models.core import ReserveMap
+from r2x.models.core import FromTo_ToFrom, MinMax, ReserveMap, UpDown
+from r2x.models.costs import ThermalGenerationCost
 from r2x.models.generators import RenewableDispatch, ThermalStandard
 from r2x.models.load import PowerLoad
 from r2x.models.services import Reserve
 from r2x.models.topology import ACBus, Area, LoadZone
 from r2x.units import ActivePower, Percentage, Time, Voltage, ureg
-from r2x.utils import read_json
+from r2x.utils import get_enum_from_string, read_json
 
 
 def pjm_2area() -> System:
@@ -38,7 +41,7 @@ def pjm_2area() -> System:
             ACBus(
                 name=bus["name"],
                 number=bus["number"],
-                bus_type=ACBusTypes(bus["bustype"]),
+                bustype=ACBusTypes(bus["bustype"]),
                 base_voltage=Voltage(bus["base_voltage"], "kV"),
                 area=system.get_component(Area, bus["area"]),
                 load_zone=system.get_component(LoadZone, bus["area"]),
@@ -58,6 +61,9 @@ def pjm_2area() -> System:
                 x=branch["x"],
                 r=branch["r"],
                 rating=branch["MaxRating"] * ureg.MW,
+                active_power_flow=0.0,
+                reactive_power_flow=0.0,
+                angle_limits=MinMax(min=-0.7, max=0.7),
             )
         )
     # Add MonitoredLine
@@ -78,10 +84,10 @@ def pjm_2area() -> System:
     system.add_component(
         AreaInterchange(
             name="1_2",
-            max_power_flow=150.0 * ureg.MW,
-            min_power_flow=-150.0 * ureg.MW,
+            flow_limits=FromTo_ToFrom(from_to=-150, to_from=150),
             from_area=system.get_component(Area, "init"),
             to_area=system.get_component(Area, "Area2"),
+            active_power_flow=0.0,
         )
     )
 
@@ -90,24 +96,27 @@ def pjm_2area() -> System:
         system.add_component(
             ThermalStandard(
                 name=gen["Name"],
-                fuel=gen["fuel"].lower(),
+                fuel=get_enum_from_string(gen["fuel"].lower(), ThermalFuels),
                 prime_mover_type=PrimeMoversType.ST,
                 unit_type=PrimeMoversType.ST,
-                rating=gen["Rating"] * ureg.MVA,
                 active_power=ActivePower(100, "MW"),
-                min_rated_capacity=gen["Pmin"] * ureg.MW,
-                startup_cost=gen["StartupCost"] * ureg.Unit("usd"),
-                shutdown_cost=gen["ShutDnCost"] * ureg.Unit("usd"),
-                vom_price=gen["VOM"] * ureg.Unit("usd/MWh"),
                 min_down_time=Time(gen["MinTimeDn"], "hour"),
                 min_up_time=Time(gen["MinTimeUp"], "hour"),
                 mean_time_to_repair=Time(10.0, "hour"),
                 forced_outage_rate=Percentage(0.0),
                 planned_outage_rate=Percentage(0.0),
-                ramp_up=gen["RampLimitsUp"],
-                ramp_down=gen["RampLimitsDn"],
+                ramp_limits=UpDown(up=gen["RampLimitsUp"], down=gen["RampLimitsDn"]),
                 bus=system.get_component(ACBus, gen["BusName"]),
                 category="thermal",
+                operation_cost=ThermalGenerationCost(
+                    shut_down=gen["ShutDnCost"],
+                    start_up=gen["StartupCost"],
+                    variable=CostCurve(
+                        value_curve=LinearCurve(14.0),
+                        power_units=UnitSystem.NATURAL_UNITS,
+                        vom_cost=LinearCurve(gen["VOM"]),
+                    ),
+                ),
             )
         )
 

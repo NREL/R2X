@@ -121,11 +121,15 @@
     ],
     "ThermalStandard": [
       {
-        "fuel": "OIL",
+        "fuel": "DISTILLATE_FUEL_OIL",
         "type": null
       },
       {
-        "fuel": "DISTILLATE_FUEL_OIL",
+        "fuel": "RESIDUAL_FUEL_OIL",
+        "type": null
+      },
+      {
+        "fuel": "WASTE_OIL",
         "type": null
       },
       {
@@ -133,7 +137,15 @@
         "type": null
       },
       {
-        "fuel": "NG",
+        "fuel": "WASTE_COAL",
+        "type": null
+      },
+      {
+        "fuel": "PETROLEUM_COKE",
+        "type": null
+      },
+      {
+        "fuel": "NATURAL_GAS",
         "type": null
       },
       {
@@ -141,20 +153,16 @@
         "type": null
       },
       {
-        "fuel": "GAS",
+        "fuel": "NATURAL_GAS",
         "type": "CC"
       },
       {
-        "fuel": "GAS",
+        "fuel": "NATURAL_GAS",
         "type": "IG"
       },
       {
         "fuel": "GAS",
         "type": "IT"
-      },
-      {
-        "fuel": "OT",
-        "type": null
       },
       {
         "fuel": "OTHER_GAS",
@@ -167,14 +175,6 @@
       {
         "fuel": "NUCLEAR",
         "type": null
-      },
-      {
-        "fuel": "NUC",
-        "type": null
-      },
-      {
-        "fuel": "SYNC_COND",
-        "type": "SYNC_COND"
       },
       {
         "fuel": "OTHER",
