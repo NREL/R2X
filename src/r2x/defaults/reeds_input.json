@@ -241,6 +241,10 @@
       "fuel": "COAL",
       "type": "ST"
     },
+    "coal-ccs_mod": {
+      "fuel": "COAL",
+      "type": "ST"
+    },
     "coal-igcc": {
       "fuel": "COAL",
       "type": "ST"
