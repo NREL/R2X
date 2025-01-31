@@ -15,7 +15,7 @@
       "name": "init",
       "peak_active_power": 0.0,
       "peak_reactive_power": 0.0,
-      "uuid": "aaccc9c1-ee96-4306-b37c-a7a1b67fa996"
+      "uuid": "3dd9f532-0757-425c-b446-c6f3ebdd3860"
     },
     {
       "__metadata__": {
@@ -32,7 +32,7 @@
       "name": "Area2",
       "peak_active_power": 0.0,
       "peak_reactive_power": 0.0,
-      "uuid": "11a7a2cb-2452-4c73-995b-de822c9ab655"
+      "uuid": "a8f5d50a-9a3f-4172-bbbf-dbc5aeb8ea83"
     },
     {
       "__metadata__": {
@@ -48,7 +48,7 @@
       "name": "init",
       "peak_active_power": 0.0,
       "peak_reactive_power": 0.0,
-      "uuid": "68ed3753-a733-44e5-97f6-a543a5a3f80b"
+      "uuid": "92a8a3b0-5fbb-4b75-b879-d4dc9f87e8f1"
     },
     {
       "__metadata__": {
@@ -64,7 +64,7 @@
       "name": "Area2",
       "peak_active_power": 0.0,
       "peak_reactive_power": 0.0,
-      "uuid": "479c4417-7866-4f25-aaca-bf6c5bc1318c"
+      "uuid": "aad08efa-5d30-4f76-9c33-76bca9a1478b"
     },
     {
       "__metadata__": {
@@ -81,7 +81,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "Area",
-            "uuid": "aaccc9c1-ee96-4306-b37c-a7a1b67fa996"
+            "uuid": "3dd9f532-0757-425c-b446-c6f3ebdd3860"
           }
         }
       },
@@ -106,14 +106,14 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "LoadZone",
-            "uuid": "68ed3753-a733-44e5-97f6-a543a5a3f80b"
+            "uuid": "92a8a3b0-5fbb-4b75-b879-d4dc9f87e8f1"
           }
         }
       },
       "magnitude": 1.0,
       "name": "Bus_nodeE_2",
       "number": 25,
-      "uuid": "4cfcbadb-4b44-44d3-acdd-2f95c1ff6ace",
+      "uuid": "f607e80e-070d-4789-ba44-97da9bbc1b68",
       "voltage_limits": null
     },
     {
@@ -131,7 +131,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "Area",
-            "uuid": "11a7a2cb-2452-4c73-995b-de822c9ab655"
+            "uuid": "a8f5d50a-9a3f-4172-bbbf-dbc5aeb8ea83"
           }
         }
       },
@@ -156,14 +156,14 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "LoadZone",
-            "uuid": "479c4417-7866-4f25-aaca-bf6c5bc1318c"
+            "uuid": "aad08efa-5d30-4f76-9c33-76bca9a1478b"
           }
         }
       },
       "magnitude": 1.0,
       "name": "Bus_nodeB_1",
       "number": 12,
-      "uuid": "048aaf28-4e81-45c9-a626-502ec27e6d13",
+      "uuid": "8491f0a9-1e28-4813-8026-bc707a70f6d0",
       "voltage_limits": null
     },
     {
@@ -181,7 +181,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "Area",
-            "uuid": "aaccc9c1-ee96-4306-b37c-a7a1b67fa996"
+            "uuid": "3dd9f532-0757-425c-b446-c6f3ebdd3860"
           }
         }
       },
@@ -206,14 +206,14 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "LoadZone",
-            "uuid": "68ed3753-a733-44e5-97f6-a543a5a3f80b"
+            "uuid": "92a8a3b0-5fbb-4b75-b879-d4dc9f87e8f1"
           }
         }
       },
       "magnitude": 1.0,
       "name": "Bus_nodeA_2",
       "number": 21,
-      "uuid": "515a0bd5-26fa-4162-b42f-528f2792a56a",
+      "uuid": "00cdb87f-3fd9-47dd-a48d-a8ebea3270e0",
       "voltage_limits": null
     },
     {
@@ -231,7 +231,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "Area",
-            "uuid": "11a7a2cb-2452-4c73-995b-de822c9ab655"
+            "uuid": "a8f5d50a-9a3f-4172-bbbf-dbc5aeb8ea83"
           }
         }
       },
@@ -256,14 +256,14 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "LoadZone",
-            "uuid": "479c4417-7866-4f25-aaca-bf6c5bc1318c"
+            "uuid": "aad08efa-5d30-4f76-9c33-76bca9a1478b"
           }
         }
       },
       "magnitude": 1.0,
       "name": "Bus_nodeA_1",
       "number": 11,
-      "uuid": "2cb70269-5816-49b5-a9e0-e835b6d9014e",
+      "uuid": "20ea330c-3cb4-4c1e-a55c-4522d924a275",
       "voltage_limits": null
     },
     {
@@ -281,7 +281,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "Area",
-            "uuid": "aaccc9c1-ee96-4306-b37c-a7a1b67fa996"
+            "uuid": "3dd9f532-0757-425c-b446-c6f3ebdd3860"
           }
         }
       },
@@ -306,14 +306,14 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "LoadZone",
-            "uuid": "68ed3753-a733-44e5-97f6-a543a5a3f80b"
+            "uuid": "92a8a3b0-5fbb-4b75-b879-d4dc9f87e8f1"
           }
         }
       },
       "magnitude": 1.0,
       "name": "Bus_nodeB_2",
       "number": 22,
-      "uuid": "e34e1709-8c53-4bfe-a910-a8a31dda5fa3",
+      "uuid": "5347922d-87a2-478e-aba9-7d35331727ba",
       "voltage_limits": null
     },
     {
@@ -331,7 +331,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "Area",
-            "uuid": "11a7a2cb-2452-4c73-995b-de822c9ab655"
+            "uuid": "a8f5d50a-9a3f-4172-bbbf-dbc5aeb8ea83"
           }
         }
       },
@@ -356,14 +356,14 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "LoadZone",
-            "uuid": "479c4417-7866-4f25-aaca-bf6c5bc1318c"
+            "uuid": "aad08efa-5d30-4f76-9c33-76bca9a1478b"
           }
         }
       },
       "magnitude": 1.0,
       "name": "Bus_nodeD_1",
       "number": 14,
-      "uuid": "b8cd1c3f-8d23-471e-8004-e87431df4f3a",
+      "uuid": "4f37effb-5296-4232-93d0-7635bde80fb1",
       "voltage_limits": null
     },
     {
@@ -381,7 +381,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "Area",
-            "uuid": "11a7a2cb-2452-4c73-995b-de822c9ab655"
+            "uuid": "a8f5d50a-9a3f-4172-bbbf-dbc5aeb8ea83"
           }
         }
       },
@@ -406,14 +406,14 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "LoadZone",
-            "uuid": "479c4417-7866-4f25-aaca-bf6c5bc1318c"
+            "uuid": "aad08efa-5d30-4f76-9c33-76bca9a1478b"
           }
         }
       },
       "magnitude": 1.0,
       "name": "Bus_nodeE_1",
       "number": 15,
-      "uuid": "ca41b1c1-946f-49b4-aac0-487d69449911",
+      "uuid": "cfb5380e-562f-4e6d-9976-f8dfb9e14f53",
       "voltage_limits": null
     },
     {
@@ -431,7 +431,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "Area",
-            "uuid": "11a7a2cb-2452-4c73-995b-de822c9ab655"
+            "uuid": "a8f5d50a-9a3f-4172-bbbf-dbc5aeb8ea83"
           }
         }
       },
@@ -456,14 +456,14 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "LoadZone",
-            "uuid": "479c4417-7866-4f25-aaca-bf6c5bc1318c"
+            "uuid": "aad08efa-5d30-4f76-9c33-76bca9a1478b"
           }
         }
       },
       "magnitude": 1.0,
       "name": "Bus_nodeC_1",
       "number": 13,
-      "uuid": "07be2b63-7469-44a5-8630-32f7e0149b75",
+      "uuid": "a88d86b5-ae6d-483a-b821-1c831819b7c3",
       "voltage_limits": null
     },
     {
@@ -481,7 +481,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "Area",
-            "uuid": "aaccc9c1-ee96-4306-b37c-a7a1b67fa996"
+            "uuid": "3dd9f532-0757-425c-b446-c6f3ebdd3860"
           }
         }
       },
@@ -506,14 +506,14 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "LoadZone",
-            "uuid": "68ed3753-a733-44e5-97f6-a543a5a3f80b"
+            "uuid": "92a8a3b0-5fbb-4b75-b879-d4dc9f87e8f1"
           }
         }
       },
       "magnitude": 1.0,
       "name": "Bus_nodeD_2",
       "number": 24,
-      "uuid": "86dd8f6d-901e-4a05-95bb-83661048724f",
+      "uuid": "cded2d96-a435-4c25-a21c-102a60c09bb0",
       "voltage_limits": null
     },
     {
@@ -531,7 +531,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "Area",
-            "uuid": "aaccc9c1-ee96-4306-b37c-a7a1b67fa996"
+            "uuid": "3dd9f532-0757-425c-b446-c6f3ebdd3860"
           }
         }
       },
@@ -556,14 +556,14 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "LoadZone",
-            "uuid": "68ed3753-a733-44e5-97f6-a543a5a3f80b"
+            "uuid": "92a8a3b0-5fbb-4b75-b879-d4dc9f87e8f1"
           }
         }
       },
       "magnitude": 1.0,
       "name": "Bus_nodeC_2",
       "number": 23,
-      "uuid": "c827258c-33e9-462f-be4f-8b90e7b0e369",
+      "uuid": "05803135-36a5-42dd-b614-2f424b957308",
       "voltage_limits": null
     },
     {
@@ -590,7 +590,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "c827258c-33e9-462f-be4f-8b90e7b0e369"
+            "uuid": "05803135-36a5-42dd-b614-2f424b957308"
           }
         }
       },
@@ -616,11 +616,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "86dd8f6d-901e-4a05-95bb-83661048724f"
+            "uuid": "cded2d96-a435-4c25-a21c-102a60c09bb0"
           }
         }
       },
-      "uuid": "18ab1f87-85b5-47e2-a592-5d0220520f80",
+      "uuid": "aedbadb1-b949-45dd-b4e2-695297012341",
       "x": 0.0297
     },
     {
@@ -647,7 +647,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "86dd8f6d-901e-4a05-95bb-83661048724f"
+            "uuid": "cded2d96-a435-4c25-a21c-102a60c09bb0"
           }
         }
       },
@@ -673,11 +673,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "4cfcbadb-4b44-44d3-acdd-2f95c1ff6ace"
+            "uuid": "f607e80e-070d-4789-ba44-97da9bbc1b68"
           }
         }
       },
-      "uuid": "3d62266d-4fdb-42e2-a79c-8c464a97c433",
+      "uuid": "c8c95aa7-4d93-4930-b052-2221c2b1aeb1",
       "x": 0.0297
     },
     {
@@ -704,7 +704,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "515a0bd5-26fa-4162-b42f-528f2792a56a"
+            "uuid": "00cdb87f-3fd9-47dd-a48d-a8ebea3270e0"
           }
         }
       },
@@ -730,11 +730,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "e34e1709-8c53-4bfe-a910-a8a31dda5fa3"
+            "uuid": "5347922d-87a2-478e-aba9-7d35331727ba"
           }
         }
       },
-      "uuid": "15131f85-f8f2-4349-95dc-d6292d6946ca",
+      "uuid": "e43f3ac3-f6f1-484d-a300-980c20321056",
       "x": 0.0281
     },
     {
@@ -761,7 +761,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "2cb70269-5816-49b5-a9e0-e835b6d9014e"
+            "uuid": "20ea330c-3cb4-4c1e-a55c-4522d924a275"
           }
         }
       },
@@ -787,11 +787,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "048aaf28-4e81-45c9-a626-502ec27e6d13"
+            "uuid": "8491f0a9-1e28-4813-8026-bc707a70f6d0"
           }
         }
       },
-      "uuid": "c42b2d5e-54d3-4061-a5da-139928501207",
+      "uuid": "a283a591-cede-4043-9d7d-f65675ab4f0b",
       "x": 0.0281
     },
     {
@@ -818,7 +818,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "b8cd1c3f-8d23-471e-8004-e87431df4f3a"
+            "uuid": "4f37effb-5296-4232-93d0-7635bde80fb1"
           }
         }
       },
@@ -844,11 +844,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "ca41b1c1-946f-49b4-aac0-487d69449911"
+            "uuid": "cfb5380e-562f-4e6d-9976-f8dfb9e14f53"
           }
         }
       },
-      "uuid": "30950120-e1c6-4af8-9768-86de2cce295a",
+      "uuid": "2865da70-5765-436b-83c7-7972e40d9166",
       "x": 0.0297
     },
     {
@@ -875,7 +875,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "e34e1709-8c53-4bfe-a910-a8a31dda5fa3"
+            "uuid": "5347922d-87a2-478e-aba9-7d35331727ba"
           }
         }
       },
@@ -901,11 +901,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "c827258c-33e9-462f-be4f-8b90e7b0e369"
+            "uuid": "05803135-36a5-42dd-b614-2f424b957308"
           }
         }
       },
-      "uuid": "e0137b1b-f9fd-4abe-8191-2091d1dee9fa",
+      "uuid": "3be6cf36-269e-483a-9f81-367d75dbc316",
       "x": 0.0108
     },
     {
@@ -932,7 +932,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "2cb70269-5816-49b5-a9e0-e835b6d9014e"
+            "uuid": "20ea330c-3cb4-4c1e-a55c-4522d924a275"
           }
         }
       },
@@ -958,11 +958,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "ca41b1c1-946f-49b4-aac0-487d69449911"
+            "uuid": "cfb5380e-562f-4e6d-9976-f8dfb9e14f53"
           }
         }
       },
-      "uuid": "d684dfc6-7343-4841-aba8-df7cb2301b48",
+      "uuid": "56d6774f-1d02-44af-bd21-a6cf718803dd",
       "x": 0.0064
     },
     {
@@ -989,7 +989,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "048aaf28-4e81-45c9-a626-502ec27e6d13"
+            "uuid": "8491f0a9-1e28-4813-8026-bc707a70f6d0"
           }
         }
       },
@@ -1015,11 +1015,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "07be2b63-7469-44a5-8630-32f7e0149b75"
+            "uuid": "a88d86b5-ae6d-483a-b821-1c831819b7c3"
           }
         }
       },
-      "uuid": "193e6519-8312-41c9-8749-91db32adc216",
+      "uuid": "0d85c3cb-5702-4449-b0f6-2e80ebf9cd0c",
       "x": 0.0108
     },
     {
@@ -1046,7 +1046,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "07be2b63-7469-44a5-8630-32f7e0149b75"
+            "uuid": "a88d86b5-ae6d-483a-b821-1c831819b7c3"
           }
         }
       },
@@ -1072,11 +1072,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "b8cd1c3f-8d23-471e-8004-e87431df4f3a"
+            "uuid": "4f37effb-5296-4232-93d0-7635bde80fb1"
           }
         }
       },
-      "uuid": "5b6e1793-c71d-4273-8812-4e89c5c5ff4f",
+      "uuid": "de286e89-ffb1-4447-81b5-a097094c19df",
       "x": 0.0297
     },
     {
@@ -1103,7 +1103,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "515a0bd5-26fa-4162-b42f-528f2792a56a"
+            "uuid": "00cdb87f-3fd9-47dd-a48d-a8ebea3270e0"
           }
         }
       },
@@ -1129,11 +1129,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "86dd8f6d-901e-4a05-95bb-83661048724f"
+            "uuid": "cded2d96-a435-4c25-a21c-102a60c09bb0"
           }
         }
       },
-      "uuid": "d2700d03-d4a5-42d1-b84c-adba23436a5d",
+      "uuid": "32fa986a-c2ad-4407-bd19-a9fb7ededf29",
       "x": 0.0304
     },
     {
@@ -1160,7 +1160,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "515a0bd5-26fa-4162-b42f-528f2792a56a"
+            "uuid": "00cdb87f-3fd9-47dd-a48d-a8ebea3270e0"
           }
         }
       },
@@ -1186,11 +1186,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "4cfcbadb-4b44-44d3-acdd-2f95c1ff6ace"
+            "uuid": "f607e80e-070d-4789-ba44-97da9bbc1b68"
           }
         }
       },
-      "uuid": "9c532c6a-6152-44fb-93da-68d0a61cf3c5",
+      "uuid": "ab7bbff1-1cfc-4237-a3b6-39ce60fa9ca2",
       "x": 0.0064
     },
     {
@@ -1217,7 +1217,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "2cb70269-5816-49b5-a9e0-e835b6d9014e"
+            "uuid": "20ea330c-3cb4-4c1e-a55c-4522d924a275"
           }
         }
       },
@@ -1243,11 +1243,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "b8cd1c3f-8d23-471e-8004-e87431df4f3a"
+            "uuid": "4f37effb-5296-4232-93d0-7635bde80fb1"
           }
         }
       },
-      "uuid": "74b6632f-49da-430e-b719-ed3535d5fd8b",
+      "uuid": "d7646e08-1971-4487-85df-85e8fc93d40c",
       "x": 0.0304
     },
     {
@@ -1269,7 +1269,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "07be2b63-7469-44a5-8630-32f7e0149b75"
+            "uuid": "a88d86b5-ae6d-483a-b821-1c831819b7c3"
           }
         }
       },
@@ -1307,11 +1307,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "c827258c-33e9-462f-be4f-8b90e7b0e369"
+            "uuid": "05803135-36a5-42dd-b614-2f424b957308"
           }
         }
       },
-      "uuid": "843b5d29-227f-40aa-8a58-0db5a9c9be91",
+      "uuid": "b4e8f5a0-4a72-4367-9757-54388b47ecd4",
       "x": 0.03
     },
     {
@@ -1336,7 +1336,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "Area",
-            "uuid": "aaccc9c1-ee96-4306-b37c-a7a1b67fa996"
+            "uuid": "3dd9f532-0757-425c-b446-c6f3ebdd3860"
           }
         }
       },
@@ -1348,11 +1348,11 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "Area",
-            "uuid": "11a7a2cb-2452-4c73-995b-de822c9ab655"
+            "uuid": "a8f5d50a-9a3f-4172-bbbf-dbc5aeb8ea83"
           }
         }
       },
-      "uuid": "ac46ca5d-a5ab-4743-96f4-877b8b39ac7e"
+      "uuid": "5a86d259-5ab3-469b-8216-72f08e30643a"
     },
     {
       "__metadata__": {
@@ -1383,7 +1383,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "2cb70269-5816-49b5-a9e0-e835b6d9014e"
+            "uuid": "20ea330c-3cb4-4c1e-a55c-4522d924a275"
           }
         }
       },
@@ -1400,7 +1400,7 @@
         "units": "dimensionless",
         "value": 0.0
       },
-      "fuel": "coal",
+      "fuel": "COAL",
       "mean_time_to_repair": {
         "__metadata__": {
           "fields": {
@@ -1456,14 +1456,16 @@
           "value_curve": {
             "function_data": {
               "constant_term": 0.0,
-              "proportional_term": 14.0
+              "proportional_term": 14.0,
+              "units": null
             },
             "input_at_zero": null
           },
           "vom_cost": {
             "function_data": {
               "constant_term": 0.0,
-              "proportional_term": 0.0
+              "proportional_term": 0.0,
+              "units": null
             },
             "input_at_zero": null
           }
@@ -1516,7 +1518,7 @@
       "status": true,
       "time_limits": null,
       "unit_type": "ST",
-      "uuid": "d2ad2c48-a240-4357-b86c-44ce4bd918ce",
+      "uuid": "521cec87-9c55-4eee-b827-c9ce125c6521",
       "vom_price": null
     },
     {
@@ -1548,7 +1550,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "ca41b1c1-946f-49b4-aac0-487d69449911"
+            "uuid": "cfb5380e-562f-4e6d-9976-f8dfb9e14f53"
           }
         }
       },
@@ -1565,7 +1567,7 @@
         "units": "dimensionless",
         "value": 0.0
       },
-      "fuel": "coal",
+      "fuel": "COAL",
       "mean_time_to_repair": {
         "__metadata__": {
           "fields": {
@@ -1621,14 +1623,16 @@
           "value_curve": {
             "function_data": {
               "constant_term": 0.0,
-              "proportional_term": 14.0
+              "proportional_term": 14.0,
+              "units": null
             },
             "input_at_zero": null
           },
           "vom_cost": {
             "function_data": {
               "constant_term": 0.0,
-              "proportional_term": 0.0
+              "proportional_term": 0.0,
+              "units": null
             },
             "input_at_zero": null
           }
@@ -1681,7 +1685,7 @@
       "status": true,
       "time_limits": null,
       "unit_type": "ST",
-      "uuid": "8e47f063-5219-4993-b379-9ac2dd6f80da",
+      "uuid": "e1cc21be-61bb-4628-b093-475b3c7b1733",
       "vom_price": null
     },
     {
@@ -1713,7 +1717,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "515a0bd5-26fa-4162-b42f-528f2792a56a"
+            "uuid": "00cdb87f-3fd9-47dd-a48d-a8ebea3270e0"
           }
         }
       },
@@ -1730,7 +1734,7 @@
         "units": "dimensionless",
         "value": 0.0
       },
-      "fuel": "coal",
+      "fuel": "COAL",
       "mean_time_to_repair": {
         "__metadata__": {
           "fields": {
@@ -1786,14 +1790,16 @@
           "value_curve": {
             "function_data": {
               "constant_term": 0.0,
-              "proportional_term": 14.0
+              "proportional_term": 14.0,
+              "units": null
             },
             "input_at_zero": null
           },
           "vom_cost": {
             "function_data": {
               "constant_term": 0.0,
-              "proportional_term": 0.0
+              "proportional_term": 0.0,
+              "units": null
             },
             "input_at_zero": null
           }
@@ -1846,7 +1852,7 @@
       "status": true,
       "time_limits": null,
       "unit_type": "ST",
-      "uuid": "f8d6411f-b01c-4e5a-8215-03dc9cc2d80d",
+      "uuid": "6899fe17-bd5a-4678-84b7-a6c510398223",
       "vom_price": null
     },
     {
@@ -1878,7 +1884,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "4cfcbadb-4b44-44d3-acdd-2f95c1ff6ace"
+            "uuid": "f607e80e-070d-4789-ba44-97da9bbc1b68"
           }
         }
       },
@@ -1895,7 +1901,7 @@
         "units": "dimensionless",
         "value": 0.0
       },
-      "fuel": "coal",
+      "fuel": "COAL",
       "mean_time_to_repair": {
         "__metadata__": {
           "fields": {
@@ -1951,14 +1957,16 @@
           "value_curve": {
             "function_data": {
               "constant_term": 0.0,
-              "proportional_term": 14.0
+              "proportional_term": 14.0,
+              "units": null
             },
             "input_at_zero": null
           },
           "vom_cost": {
             "function_data": {
               "constant_term": 0.0,
-              "proportional_term": 0.0
+              "proportional_term": 0.0,
+              "units": null
             },
             "input_at_zero": null
           }
@@ -2011,7 +2019,7 @@
       "status": true,
       "time_limits": null,
       "unit_type": "ST",
-      "uuid": "54de60db-4774-4f41-8c24-cb1a3296b667",
+      "uuid": "79d16b0c-e910-4b22-b180-96f2876b30a8",
       "vom_price": null
     },
     {
@@ -2043,7 +2051,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "515a0bd5-26fa-4162-b42f-528f2792a56a"
+            "uuid": "00cdb87f-3fd9-47dd-a48d-a8ebea3270e0"
           }
         }
       },
@@ -2060,7 +2068,7 @@
         "units": "dimensionless",
         "value": 0.0
       },
-      "fuel": "coal",
+      "fuel": "COAL",
       "mean_time_to_repair": {
         "__metadata__": {
           "fields": {
@@ -2116,14 +2124,16 @@
           "value_curve": {
             "function_data": {
               "constant_term": 0.0,
-              "proportional_term": 14.0
+              "proportional_term": 14.0,
+              "units": null
             },
             "input_at_zero": null
           },
           "vom_cost": {
             "function_data": {
               "constant_term": 0.0,
-              "proportional_term": 0.0
+              "proportional_term": 0.0,
+              "units": null
             },
             "input_at_zero": null
           }
@@ -2176,7 +2186,7 @@
       "status": true,
       "time_limits": null,
       "unit_type": "ST",
-      "uuid": "1a81d812-231d-4956-9e54-0633db8cd9b0",
+      "uuid": "84522c8c-8db6-44b7-8d0a-5b71d3869e82",
       "vom_price": null
     },
     {
@@ -2208,7 +2218,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "07be2b63-7469-44a5-8630-32f7e0149b75"
+            "uuid": "a88d86b5-ae6d-483a-b821-1c831819b7c3"
           }
         }
       },
@@ -2225,7 +2235,7 @@
         "units": "dimensionless",
         "value": 0.0
       },
-      "fuel": "coal",
+      "fuel": "COAL",
       "mean_time_to_repair": {
         "__metadata__": {
           "fields": {
@@ -2281,14 +2291,16 @@
           "value_curve": {
             "function_data": {
               "constant_term": 0.0,
-              "proportional_term": 14.0
+              "proportional_term": 14.0,
+              "units": null
             },
             "input_at_zero": null
           },
           "vom_cost": {
             "function_data": {
               "constant_term": 0.0,
-              "proportional_term": 0.0
+              "proportional_term": 0.0,
+              "units": null
             },
             "input_at_zero": null
           }
@@ -2341,7 +2353,7 @@
       "status": true,
       "time_limits": null,
       "unit_type": "ST",
-      "uuid": "f39caffc-5f61-47a4-9104-f3d9b6cdae2b",
+      "uuid": "695ad9bd-49b5-42b2-94d4-5aa36e08b9db",
       "vom_price": null
     },
     {
@@ -2373,7 +2385,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "2cb70269-5816-49b5-a9e0-e835b6d9014e"
+            "uuid": "20ea330c-3cb4-4c1e-a55c-4522d924a275"
           }
         }
       },
@@ -2390,7 +2402,7 @@
         "units": "dimensionless",
         "value": 0.0
       },
-      "fuel": "coal",
+      "fuel": "COAL",
       "mean_time_to_repair": {
         "__metadata__": {
           "fields": {
@@ -2446,14 +2458,16 @@
           "value_curve": {
             "function_data": {
               "constant_term": 0.0,
-              "proportional_term": 14.0
+              "proportional_term": 14.0,
+              "units": null
             },
             "input_at_zero": null
           },
           "vom_cost": {
             "function_data": {
               "constant_term": 0.0,
-              "proportional_term": 0.0
+              "proportional_term": 0.0,
+              "units": null
             },
             "input_at_zero": null
           }
@@ -2506,7 +2520,7 @@
       "status": true,
       "time_limits": null,
       "unit_type": "ST",
-      "uuid": "4ddae488-ba11-44c3-8a9e-645e7ed0a123",
+      "uuid": "fb684c1a-8eb4-45c6-9355-70cea82fc030",
       "vom_price": null
     },
     {
@@ -2538,7 +2552,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "b8cd1c3f-8d23-471e-8004-e87431df4f3a"
+            "uuid": "4f37effb-5296-4232-93d0-7635bde80fb1"
           }
         }
       },
@@ -2555,7 +2569,7 @@
         "units": "dimensionless",
         "value": 0.0
       },
-      "fuel": "coal",
+      "fuel": "COAL",
       "mean_time_to_repair": {
         "__metadata__": {
           "fields": {
@@ -2611,14 +2625,16 @@
           "value_curve": {
             "function_data": {
               "constant_term": 0.0,
-              "proportional_term": 14.0
+              "proportional_term": 14.0,
+              "units": null
             },
             "input_at_zero": null
           },
           "vom_cost": {
             "function_data": {
               "constant_term": 0.0,
-              "proportional_term": 0.0
+              "proportional_term": 0.0,
+              "units": null
             },
             "input_at_zero": null
           }
@@ -2671,7 +2687,7 @@
       "status": true,
       "time_limits": null,
       "unit_type": "ST",
-      "uuid": "fb5e380d-85c6-4bba-bd57-b1c13dbf67cc",
+      "uuid": "c60b5048-01ea-4762-b48d-61bdd5ae7eb0",
       "vom_price": null
     },
     {
@@ -2703,7 +2719,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "c827258c-33e9-462f-be4f-8b90e7b0e369"
+            "uuid": "05803135-36a5-42dd-b614-2f424b957308"
           }
         }
       },
@@ -2720,7 +2736,7 @@
         "units": "dimensionless",
         "value": 0.0
       },
-      "fuel": "coal",
+      "fuel": "COAL",
       "mean_time_to_repair": {
         "__metadata__": {
           "fields": {
@@ -2776,14 +2792,16 @@
           "value_curve": {
             "function_data": {
               "constant_term": 0.0,
-              "proportional_term": 14.0
+              "proportional_term": 14.0,
+              "units": null
             },
             "input_at_zero": null
           },
           "vom_cost": {
             "function_data": {
               "constant_term": 0.0,
-              "proportional_term": 0.0
+              "proportional_term": 0.0,
+              "units": null
             },
             "input_at_zero": null
           }
@@ -2836,7 +2854,7 @@
       "status": true,
       "time_limits": null,
       "unit_type": "ST",
-      "uuid": "bb4fdf13-df27-480f-9fa3-adb262702f40",
+      "uuid": "563ff013-a394-403c-ab2c-092822766639",
       "vom_price": null
     },
     {
@@ -2868,7 +2886,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "86dd8f6d-901e-4a05-95bb-83661048724f"
+            "uuid": "cded2d96-a435-4c25-a21c-102a60c09bb0"
           }
         }
       },
@@ -2885,7 +2903,7 @@
         "units": "dimensionless",
         "value": 0.0
       },
-      "fuel": "coal",
+      "fuel": "COAL",
       "mean_time_to_repair": {
         "__metadata__": {
           "fields": {
@@ -2941,14 +2959,16 @@
           "value_curve": {
             "function_data": {
               "constant_term": 0.0,
-              "proportional_term": 14.0
+              "proportional_term": 14.0,
+              "units": null
             },
             "input_at_zero": null
           },
           "vom_cost": {
             "function_data": {
               "constant_term": 0.0,
-              "proportional_term": 0.0
+              "proportional_term": 0.0,
+              "units": null
             },
             "input_at_zero": null
           }
@@ -3001,7 +3021,7 @@
       "status": true,
       "time_limits": null,
       "unit_type": "ST",
-      "uuid": "eb91d3a5-e324-4c3f-801a-0f72bd7c3d0a",
+      "uuid": "b2cf27bb-d2f2-4b12-9710-ef5accb2f41b",
       "vom_price": null
     },
     {
@@ -3033,7 +3053,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "07be2b63-7469-44a5-8630-32f7e0149b75"
+            "uuid": "a88d86b5-ae6d-483a-b821-1c831819b7c3"
           }
         }
       },
@@ -3089,7 +3109,7 @@
       "shutdown_cost": null,
       "startup_cost": null,
       "unit_type": "PV",
-      "uuid": "65ca2dc3-d3fa-40d4-8484-71e38eb2e330",
+      "uuid": "2cb699d9-6f2c-4c69-9380-48fc2f1bcfad",
       "vom_price": null
     },
     {
@@ -3121,7 +3141,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "515a0bd5-26fa-4162-b42f-528f2792a56a"
+            "uuid": "00cdb87f-3fd9-47dd-a48d-a8ebea3270e0"
           }
         }
       },
@@ -3177,7 +3197,7 @@
       "shutdown_cost": null,
       "startup_cost": null,
       "unit_type": "WT",
-      "uuid": "d8293058-0ba8-4213-94e0-6f99049f6513",
+      "uuid": "9dcfb430-9637-43a3-8a2b-4814f676fdb6",
       "vom_price": null
     },
     {
@@ -3197,7 +3217,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "86dd8f6d-901e-4a05-95bb-83661048724f"
+            "uuid": "cded2d96-a435-4c25-a21c-102a60c09bb0"
           }
         }
       },
@@ -3219,7 +3239,7 @@
       "operation_cost": null,
       "reactive_power": null,
       "services": null,
-      "uuid": "8e7bb8c7-20f5-4dd9-8d0c-ca88667abb37"
+      "uuid": "96219e0a-c3e4-4326-9651-4a1133efbbaa"
     },
     {
       "__metadata__": {
@@ -3238,7 +3258,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "c827258c-33e9-462f-be4f-8b90e7b0e369"
+            "uuid": "05803135-36a5-42dd-b614-2f424b957308"
           }
         }
       },
@@ -3260,7 +3280,7 @@
       "operation_cost": null,
       "reactive_power": null,
       "services": null,
-      "uuid": "1e9342c7-9d1f-49dc-a2f9-b1c01d53ed4b"
+      "uuid": "9e92aaf0-d9e9-4343-b9a8-614f5853eb63"
     },
     {
       "__metadata__": {
@@ -3279,7 +3299,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "e34e1709-8c53-4bfe-a910-a8a31dda5fa3"
+            "uuid": "5347922d-87a2-478e-aba9-7d35331727ba"
           }
         }
       },
@@ -3301,7 +3321,7 @@
       "operation_cost": null,
       "reactive_power": null,
       "services": null,
-      "uuid": "6478ec5c-16c9-4d21-9c72-176ae20946d3"
+      "uuid": "ff26e108-0e0c-4e7a-a85d-2784d6f74867"
     },
     {
       "__metadata__": {
@@ -3320,7 +3340,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "048aaf28-4e81-45c9-a626-502ec27e6d13"
+            "uuid": "8491f0a9-1e28-4813-8026-bc707a70f6d0"
           }
         }
       },
@@ -3342,7 +3362,7 @@
       "operation_cost": null,
       "reactive_power": null,
       "services": null,
-      "uuid": "3107a9dd-f2e2-4a59-b988-6d56b67a38f1"
+      "uuid": "52d56204-e96b-4a44-a170-f32acd1f6975"
     },
     {
       "__metadata__": {
@@ -3361,7 +3381,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "b8cd1c3f-8d23-471e-8004-e87431df4f3a"
+            "uuid": "4f37effb-5296-4232-93d0-7635bde80fb1"
           }
         }
       },
@@ -3383,7 +3403,7 @@
       "operation_cost": null,
       "reactive_power": null,
       "services": null,
-      "uuid": "a80e879f-0edb-47dc-8895-6e63175476a9"
+      "uuid": "a7b6f4b2-21ab-4980-937a-bca69d22ec4a"
     },
     {
       "__metadata__": {
@@ -3402,7 +3422,7 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "ACBus",
-            "uuid": "07be2b63-7469-44a5-8630-32f7e0149b75"
+            "uuid": "a88d86b5-ae6d-483a-b821-1c831819b7c3"
           }
         }
       },
@@ -3424,7 +3444,7 @@
       "operation_cost": null,
       "reactive_power": null,
       "services": null,
-      "uuid": "655f9a00-d3c9-4436-b92e-764a30823e74"
+      "uuid": "77d5e361-2a82-48a4-ba29-b0f3dde08f04"
     },
     {
       "__metadata__": {
@@ -3448,13 +3468,13 @@
             "module": "r2x.models.topology",
             "serialized_type": "composed_component",
             "type": "LoadZone",
-            "uuid": "68ed3753-a733-44e5-97f6-a543a5a3f80b"
+            "uuid": "92a8a3b0-5fbb-4b75-b879-d4dc9f87e8f1"
           }
         }
       },
       "reserve_type": "SPINNING",
       "time_frame": 3600.0,
-      "uuid": "79435185-78e6-4091-bbca-5622e0a8258f",
+      "uuid": "008e0450-7972-44da-b2ee-6a3e95a30fd0",
       "vors": 0.05
     },
     {
@@ -3475,7 +3495,7 @@
         ]
       },
       "name": "pjm_reserve_map",
-      "uuid": "f3c744af-16b6-47a2-a1c7-a95d2f320b9c"
+      "uuid": "55b41549-c059-415c-8767-6f4436e22d4a"
     }
   ],
   "data_format_version": "0.0.1",
@@ -3484,5 +3504,5 @@
   "time_series": {
     "directory": "pjm_2area_time_series"
   },
-  "uuid": "e88be962-3281-4efe-be0e-daa1d7fae15c"
+  "uuid": "5010d817-627a-4d42-ac99-4e3353a021b8"
 }

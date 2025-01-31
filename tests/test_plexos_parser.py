@@ -60,9 +60,9 @@ def test_build_system(plexos_parser_instance):
 
 def test_parser_system(pjm_scenario):
     plexos_category_map = {
-        "thermal": {"fuel": "GAS", "type": "CC"},
-        "solar": {"fuel": "SUN", "type": "WT"},
-        "wind": {"fuel": "WIND", "type": "PV"},
+        "thermal": {"fuel": "NATURAL_GAS", "type": "CC"},
+        "solar": {"fuel": None, "type": "WT"},
+        "wind": {"fuel": None, "type": "PV"},
     }
     pjm_scenario.input_config.model_name = "model_2012"
 

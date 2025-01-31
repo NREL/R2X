@@ -19,7 +19,8 @@ from pint import Quantity
 
 from r2x.api import System
 from r2x.config_models import ReEDSConfig
-from r2x.enums import ACBusTypes, EmissionType, PrimeMoversType, ReserveDirection, ReserveType
+from r2x.enums import ACBusTypes, EmissionType, PrimeMoversType, ReserveDirection, ReserveType, ThermalFuels
+from r2x.exceptions import ParserError
 from r2x.models import (
     ACBus,
     Area,
@@ -76,6 +77,8 @@ class ReEDSParser(BaseParser):
         if not self.reeds_config.solve_year:
             raise AttributeError("Missing solve year from the configuration class.")
         self.device_map = self.reeds_config.defaults["reeds_device_map"]
+        self.tech_to_fuel_pm = self.reeds_config.defaults["tech_to_fuel_pm"]
+        self.excluded_categories = self.reeds_config.defaults["excluded_categories"]
         self.weather_year: int = self.reeds_config.weather_year
         self.skip_validation: bool = getattr(self.reeds_config, "skip_validation", False)
 
@@ -301,12 +304,12 @@ class ReEDSParser(BaseParser):
         """Construct generators objects."""
         logger.info("Creating generator objects.")
         capacity_data = self.get_data("online_capacity")
-        fuel = self.get_data("fuels")
+        generator_fuel = self.get_data("fuels")
 
         # Fuel price requires two input files
         fuel_price_input = self.get_data("fuel_price")
         bfuel_price_output = (
-            self.get_data("bfuel_price").with_columns(fuel=pl.lit("biomass")).join(fuel, on="fuel")
+            self.get_data("bfuel_price").with_columns(fuel=pl.lit("biomass")).join(generator_fuel, on="fuel")
         ).select(pl.exclude("fuel"))
         fuel_price = pl.concat([fuel_price_input, bfuel_price_output], how="diagonal")
 
@@ -339,7 +342,7 @@ class ReEDSParser(BaseParser):
         # Combine all the generator dataset in a single frame
         gen_data = pl_left_multi_join(
             capacity_data,
-            fuel,
+            generator_fuel,
             fuel_price,
             heat_rate,
             cost_vom,
@@ -404,9 +407,19 @@ class ReEDSParser(BaseParser):
         combined_data = pl.concat([non_cf_generators, cf_generators], how="align")
 
         for row in combined_data.iter_rows(named=True):
-            device_map = self.device_map.get(row["category"], "")
-            if getattr(R2X_MODELS, device_map, None) is None:
+            category = row["category"]
+
+            if category in self.excluded_categories:
+                msg = "`{}` in excluded categories. Skipping it."
+                logger.debug(msg, category)
                 continue
+
+            device_map = self.device_map.get(category, "")
+            if getattr(R2X_MODELS, device_map, None) is None:
+                msg = "Could not find device model for `{}`. Skipping it."
+                logger.warning(msg, category)
+                continue
+
             gen_model = getattr(R2X_MODELS, device_map)
             for key, value in row.items():
                 if key in unit_definition:
@@ -424,23 +437,21 @@ class ReEDSParser(BaseParser):
                     name = row["tech"] + "_" + row["region"]
                 case _:
                     name = row["tech"] + "_" + row["tech_vintage"] + "_" + row["region"]
+
             row["name"] = name
 
-            # TODO(pesap): Add prime mover type enums to reeds parser.
-            # https://github.com/NREL/R2X/issues/345
-            # NOTE: This should be prime mover type enums.
-            tech_fuel_pm_map = self.reeds_config.defaults["tech_fuel_pm_map"]
+            if not (fuel_pm := self.tech_to_fuel_pm.get(row["category"])) and not self.skip_validation:
+                msg = (
+                    f"Could not find a fuel and prime mover map for `{row['category']}`."
+                    " Check `reeds_input_config.json`"
+                )
+                raise ParserError(msg)
+
             row["prime_mover_type"] = (
-                tech_fuel_pm_map[row["category"]].get("type")
-                if row["category"] in tech_fuel_pm_map.keys()
-                else tech_fuel_pm_map["default"].get("type")
+                get_enum_from_string(fuel_pm["type"], PrimeMoversType) if fuel_pm.get("type") else None
             )
-            row["prime_mover_type"] = PrimeMoversType[row["prime_mover_type"]]
-            row["fuel"] = (
-                tech_fuel_pm_map[row["category"]].get("fuel")
-                if row["category"] in tech_fuel_pm_map.keys()
-                else tech_fuel_pm_map["default"].get("fuel")
-            )
+            row["fuel"] = get_enum_from_string(fuel_pm["fuel"], ThermalFuels) if fuel_pm["fuel"] else None
+
             bus = self.system.get_component(ACBus, name=row["region"])
             row["bus"] = bus
             bus_load_zone = bus.load_zone

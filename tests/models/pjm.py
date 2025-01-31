@@ -8,7 +8,7 @@ from infrasys.time_series_models import SingleTimeSeries
 from infrasys.value_curves import LinearCurve
 
 from r2x.api import System
-from r2x.enums import ACBusTypes, PrimeMoversType, ReserveDirection, ReserveType
+from r2x.enums import ACBusTypes, PrimeMoversType, ReserveDirection, ReserveType, ThermalFuels
 from r2x.models.branch import AreaInterchange, Line, MonitoredLine
 from r2x.models.core import FromTo_ToFrom, MinMax, ReserveMap, UpDown
 from r2x.models.costs import ThermalGenerationCost
@@ -17,7 +17,7 @@ from r2x.models.load import PowerLoad
 from r2x.models.services import Reserve
 from r2x.models.topology import ACBus, Area, LoadZone
 from r2x.units import ActivePower, Percentage, Time, Voltage, ureg
-from r2x.utils import read_json
+from r2x.utils import get_enum_from_string, read_json
 
 
 def pjm_2area() -> System:
@@ -96,7 +96,7 @@ def pjm_2area() -> System:
         system.add_component(
             ThermalStandard(
                 name=gen["Name"],
-                fuel=gen["fuel"].lower(),
+                fuel=get_enum_from_string(gen["fuel"].lower(), ThermalFuels),
                 prime_mover_type=PrimeMoversType.ST,
                 unit_type=PrimeMoversType.ST,
                 active_power=ActivePower(100, "MW"),

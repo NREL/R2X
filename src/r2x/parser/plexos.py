@@ -56,10 +56,10 @@ from .parser_helpers import (
     reconcile_timeseries,
 )
 from .plexos_utils import (
-    find_xml,
     DATAFILE_COLUMNS,
     PLEXOS_ACTION_MAP,
     filter_property_dates,
+    find_xml,
     get_column_enum,
     parse_data_file,
     time_slice_handler,
@@ -679,7 +679,9 @@ class PlexosParser(PCMParser):
             # Get prime mover enum
             mapped_records["prime_mover_type"] = fuel_pmtype["type"]
             mapped_records["prime_mover_type"] = PrimeMoversType[mapped_records["prime_mover_type"]]
-            mapped_records["fuel"] = get_enum_from_string(fuel_pmtype["fuel"], ThermalFuels)
+            mapped_records["fuel"] = (
+                get_enum_from_string(fuel_pmtype["fuel"], ThermalFuels) if fuel_pmtype.get("fuel") else None
+            )
 
             # Pumped Storage generators are not required to have Max Capacity property
             if "max_active_power" not in mapped_records and "pump_load" in mapped_records:
