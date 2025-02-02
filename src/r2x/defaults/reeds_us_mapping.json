@@ -386,7 +386,8 @@
   },
   "rev_paths": {
     "fname": "rev_paths.csv",
-    "keep_case": true
+    "keep_case": true,
+    "optional": true
   },
   "rs_map": {
     "description": "Map for S regions to P regions",

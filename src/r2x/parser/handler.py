@@ -13,7 +13,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, TypeVar
 
-import pandas as pd
 import polars as pl
 
 # Third-party packages
@@ -27,7 +26,8 @@ from r2x.api import System
 from r2x.config_scenario import Scenario
 
 from ..utils import check_file_exists
-from .polars_helpers import pl_filter_year, pl_lowercase, pl_rename
+from .handler_utils import csv_handler, h5_handler
+from .polars_helpers import pl_filter_year, pl_rename
 
 
 @dataclass
@@ -67,7 +67,12 @@ class BaseParser(ABC):
             raise KeyError(f"Key `{key}` not found in data dictionary.")
         return self.data[key]
 
-    def read_file(self, fpath: Path | str, filter_funcs: list[Callable] | None = None, **kwargs):
+    def read_file(
+        self,
+        fpath: Path | str,
+        filter_funcs: list[Callable] | None = None,
+        **kwargs,
+    ):
         """Read input model data from the file system.
 
         Currently supported formats:
@@ -84,7 +89,7 @@ class BaseParser(ABC):
             Filter functions to apply
 
         """
-        data = file_handler(fpath, **kwargs)
+        data = file_handler(fpath, parser_class=type(self).__name__, **kwargs)
         if data is None:
             return
 
@@ -112,7 +117,9 @@ class BaseParser(ABC):
                 continue
             if not data.get("fname"):
                 continue
-            fpath = check_file_exists(fname=data["fname"], run_folder=base_folder)
+            fpath = check_file_exists(
+                fname=data["fname"], run_folder=base_folder, optional=data.get("optional", False)
+            )
             if fpath is not None:
                 if "fpath" in data:
                     _fpath = data.pop("fpath")
@@ -121,7 +128,7 @@ class BaseParser(ABC):
                 assert isinstance(fpath, Path) or isinstance(fpath, str)
                 fmap[dname]["fpath"] = fpath
                 self.data[dname] = self.read_file(fpath=fpath, filter_funcs=filter_func, **{**data, **kwargs})
-            logger.debug("Loaded file for {} from {}", dname, fpath)
+                logger.debug("Loaded file for {} from {}", dname, fpath)
         return None
 
     @abstractmethod
@@ -136,7 +143,7 @@ class PCMParser(BaseParser):
 
 
 def file_handler(
-    fpath: Path | str, optional: bool = False, **kwargs
+    fpath: Path | str, parser_class: str | None = None, optional: bool = False, **kwargs
 ) -> pl.LazyFrame | pl.DataFrame | Sequence | XMLHandler | None:
     """Return FileHandler based on file extension.
 
@@ -145,17 +152,14 @@ def file_handler(
     FileNotFoundError
         If the file is not found.
     NotImplementedError
-        If the file format is not yet supported.
+        If the file format is not yet supported or the file format is not supported for the parser.
     """
     logger.trace("Attempting to read: {}", fpath)
     if not isinstance(fpath, Path):
         fpath = Path(fpath)
 
-    if not fpath.exists() and not optional:
-        raise FileNotFoundError(f"Mandatory file {fpath} does not exists.")
-
-    if not fpath.exists() and optional:
-        logger.warning("Skipping optional file {}", fpath)
+    if optional and not fpath.exists():
+        logger.debug("Could not find optional file {}", fpath)
         return None
 
     logger.trace("Reading {}", fpath)
@@ -163,7 +167,8 @@ def file_handler(
         case ".csv":
             return csv_handler(fpath, **kwargs)
         case ".h5":
-            return pl.LazyFrame(pd.read_hdf(fpath).reset_index())  # type: ignore
+            assert parser_class is not None
+            return h5_handler(fpath, parser_class=parser_class, **kwargs)
         case ".xml":
             class_kwargs = {
                 key: value for key, value in kwargs.items() if key in inspect.signature(XMLHandler).parameters
@@ -175,75 +180,6 @@ def file_handler(
             return data
         case _:
             raise NotImplementedError(f"File {fpath.suffix = } not yet supported.")
-
-
-def csv_handler(fpath: Path, csv_file_encoding="utf8", **kwargs) -> pl.DataFrame:
-    """Parse CSV files and return a Polars DataFrame with all column names in lowercase.
-
-    Parameters
-    ----------
-    fpath : str
-        The file path of the CSV file to read.
-    csv_file_encoding : str, optional
-        The encoding format of the CSV file, by default "utf8".
-    **kwargs : dict, optional
-        Additional keyword arguments passed to the `pl.read_csv` function.
-
-    Returns
-    -------
-    pl.DataFrame or None
-        The parsed CSV file as a Polars DataFrame with lowercase column names if successful,
-        or `None` if the file was not found.
-
-    Raises
-    ------
-    pl.exceptions.ComputeError
-        Raised if there are issues with the data types in the CSV file.
-    FileNotFoundError
-        Raised if the file is not found.
-
-    See Also
-    --------
-    pl_lowercase : Function to convert all column names of a Polars DataFrame to lowercase.
-
-    Example
-    -------
-    >>> df = csv_handler("data/example.csv")
-    >>> print(df)
-    shape: (2, 3)
-    ┌─────┬────────┬──────┐
-    │ id  │ name   │ age  │
-    │ --- │ ---    │ ---  │
-    │ i64 │ str    │ i64  │
-    ╞═════╪════════╪══════╡
-    │ 1   │ Alice  │ 30   │
-    │ 2   │ Bob    │ 24   │
-    └─────┴────────┴──────┘
-    """
-    logger.trace("Attempting reading file {}", fpath)
-    logger.trace("Parsing file {}", fpath)
-    try:
-        data_file = pl.read_csv(
-            fpath.as_posix(),
-            infer_schema_length=10_000_000,
-            encoding=csv_file_encoding,
-        )
-    except FileNotFoundError:
-        msg = f"File {fpath} not found."
-        logger.error(msg)
-        raise FileNotFoundError(msg)
-    except pl.exceptions.PolarsError:
-        logger.warning("File {} could not be parse due to dtype problems. See error.", fpath)
-        raise
-
-    if data_file.is_empty():
-        logger.debug("File {} is empty. Skipping it.", fpath)
-        return
-
-    if kwargs.get("keep_case") is None:
-        data_file = pl_lowercase(data_file)
-
-    return data_file
 
 
 ParserClass = TypeVar("ParserClass", bound=BaseParser)
