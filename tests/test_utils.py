@@ -112,6 +112,11 @@ def test_read_user_dict(tmp_path):
         ),
         (
             {"key1": "value1"},
+            {"key1": "value2"},
+            {"key1": "value2"},
+        ),
+        (
+            {"key1": "value1"},
             {},
             {"key1": "value1"},
         ),
@@ -124,6 +129,7 @@ def test_read_user_dict(tmp_path):
         "replace-nested",
         "replace-new-key",
         "no-override",
+        "override-single-key",
         "full-replace-empty",
     ],
 )
