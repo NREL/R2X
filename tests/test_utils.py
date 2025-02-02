@@ -3,12 +3,12 @@ import json
 import pytest
 import yaml
 
-from r2x.utils import haskey, read_user_dict
+from r2x.utils import haskey, override_dict, read_user_dict
 
 
 @pytest.mark.utils
 @pytest.mark.parametrize(
-    "base_dict, path, expected",
+    "original_dict, path, expected",
     [
         ({"a": {"b": {"c": 1}}}, ["a", "b", "c"], True),  # valid path
         ({"a": {"b": {"c": 1}}}, ["a", "b"], True),  # valid partial path
@@ -18,8 +18,8 @@ from r2x.utils import haskey, read_user_dict
         ({"a": {"b": {"c": 1}}}, ["a", "b", "c", "d"], False),  # path too long
     ],
 )
-def test_haskey(base_dict, path, expected):
-    assert haskey(base_dict, path) == expected
+def test_haskey(original_dict, path, expected):
+    assert haskey(original_dict, path) == expected
 
 
 def test_read_user_dict(tmp_path):
@@ -62,3 +62,77 @@ def test_read_user_dict(tmp_path):
     yaml_file = tmp_path / "missing_file.yaml"
     with pytest.raises(FileNotFoundError):
         _ = read_user_dict(str(yaml_file))
+
+
+@pytest.mark.parametrize(
+    "original, override, expected",
+    [
+        (
+            {"bio_fuel_price": {"fname": "oldfile.csv"}},
+            {"bio_fuel_price": {"fname": "repbioprice_2030.csv"}},
+            {"bio_fuel_price": {"fname": "repbioprice_2030.csv"}},
+        ),
+        (
+            {"plexos_device_map": {}},
+            {"plexos_device_map": {"Lone Mountain": {"fuel": "GAS"}}},
+            {"plexos_device_map": {"Lone Mountain": {"fuel": "GAS"}}},
+        ),
+        (
+            {"tech_to_fuel_pm": {"gas": {"fuel": "GAS", "type": "BA"}}},
+            {"tech_to_fuel_pm": {"coal": {"fuel": None, "type": "BA"}}},
+            {
+                "tech_to_fuel_pm": {
+                    "gas": {"fuel": "GAS", "type": "BA"},
+                    "coal": {"fuel": None, "type": "BA"},
+                }
+            },
+        ),
+        (
+            {"plugins": ["default_plugin"]},
+            {"plugins": {"_replace": True, "list": ["break_gens", "pcm_defaults"]}},
+            {"plugins": {"list": ["break_gens", "pcm_defaults"]}},
+        ),
+        (
+            {"plexos_device_map": {"Old Plant": {"fuel": "COAL"}}},
+            {"plexos_device_map": {"_replace": True, "Lone Mountain": {"fuel": "GAS"}}},
+            {"plexos_device_map": {"Lone Mountain": {"fuel": "GAS"}}},
+        ),
+        (
+            {"existing_key": {"sub_key": "value1"}},
+            {"new_section": {"new_sub_key": "value2"}},
+            {
+                "existing_key": {"sub_key": "value1"},
+                "new_section": {"new_sub_key": "value2"},
+            },
+        ),
+        (
+            {"key1": "value1"},
+            None,
+            {"key1": "value1"},
+        ),
+        (
+            {"key1": {"value1": True}},
+            {"key1": {"value1": False}},
+            {"key1": {"value1": False}},
+        ),
+        (
+            {"key1": "value1"},
+            {},
+            {"key1": "value1"},
+        ),
+    ],
+    ids=[
+        "override-existing",
+        "merge-new-keys-empty",
+        "merge-new-keys-existing",
+        "replace",
+        "replace-nested",
+        "replace-new-key",
+        "no-override",
+        "override-single-key",
+        "full-replace-empty",
+    ],
+)
+def test_update_dict(original, override, expected):
+    result = override_dict(original, override)
+    assert result == expected

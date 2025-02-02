@@ -121,29 +121,84 @@ def get_mean_data(
     return averaged_data
 
 
-def update_dict(base_dict: dict, override_dict: ChainMap | dict | None = None) -> dict:
-    """Update or add defaults dictionary by overriding or creating new key."""
+def override_dict(base_dict: dict, override_dict: ChainMap | dict | None = None) -> dict:
+    """Update a base dictionary with values from an override dictionary.
+
+    Parameters
+    ----------
+    base_dict : dict
+        The base dictionary to be updated.
+    override_dict : ChainMap | dict | None, optional
+        A dictionary containing override values. If None, returns base_dict unchanged.
+
+    Returns
+    -------
+    dict
+        The updated dictionary.
+
+    Examples
+    --------
+    1. Simple update with a key-value pair:
+
+    >>> base_dict = {"a": 1, "b": 2}
+    >>> override_dict = {"b": 3}
+    >>> update_dict(base_dict, override_dict)
+    {'a': 1, 'b': 3}
+
+    2. Merging nested dictionaries:
+
+    >>> base_dict = {"a": 1, "b": {"x": 10}}
+    >>> override_dict = {"b": {"y": 20}}
+    >>> update_dict(base_dict, override_dict)
+    {'a': 1, 'b': {'x': 10, 'y': 20}}
+
+    3. Full replacement of a nested dictionary:
+
+    >>> base_dict = {"a": 1, "b": {"x": 10}}
+    >>> override_dict = {"b": {"_replace": True, "y": 20}}
+    >>> update_dict(base_dict, override_dict)
+    {'b': {'y': 20}}
+
+    4. Adding new keys:
+
+    >>> base_dict = {"a": 1}
+    >>> override_dict = {"b": 2}
+    >>> update_dict(base_dict, override_dict)
+    {'a': 1, 'b': 2}
+
+    5. Replacing the entire dictionary:
+
+    >>> base_dict = {"a": 1, "b": 2}
+    >>> override_dict = {"_replace": True, "c": 3}
+    >>> update_dict(base_dict, override_dict)
+    {'c': 3}
+
+    6. No override (when override_dict is None):
+
+    >>> base_dict = {"a": 1}
+    >>> override_dict = None
+    >>> update_dict(base_dict, override_dict)
+    {'a': 1}
+    """
     if not override_dict:
         return base_dict
-    _replace_keys = [
-        "static_horizons",
-        "static_models",
-        "tech_map",
-        "model_map",
-        "plexos_fuel_map",
-        "device_name_inference_map",
-        "plexos_device_map",
-        "plexos_category_map",
-        "plexos_reports",
-    ]
-    for key, value in override_dict.items():
-        if key in base_dict and all(replace_key not in key for replace_key in _replace_keys):
-            if isinstance(value, dict) and isinstance(base_dict[key], dict):
-                update_dict(base_dict[key], value)  # Recursive call for nested dictionaries
+
+    def recursive_update(base, overrides):
+        for key, value in overrides.items():
+            if isinstance(value, dict):
+                if "_replace" in value:
+                    base[key] = value.copy()
+                    base[key].pop("_replace")
+                elif key not in base:
+                    base[key] = value
+                elif isinstance(base[key], dict) and isinstance(value, dict):
+                    recursive_update(base[key], value)
+                else:
+                    base[key] = value
             else:
-                base_dict[key] = value  # Update the value or entire key-value pair
-        elif key in base_dict:
-            base_dict[key] = value
+                base[key] = value
+
+    recursive_update(base_dict, override_dict)
     return base_dict
 
 

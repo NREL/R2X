@@ -31,6 +31,19 @@ uv tool install r2x
 python -m pip install r2x
 ```
 
+## Upgrading options
+
+### Using UV
+
+```console
+uv tool upgrade r2x
+```
+
+### Using pip
+```console
+python -m pip install --upgrade r2x
+```
+
 ## Next steps
 
 See the [getting started](#getting-started) guide or jump straight to the [how-to's](#howtos).
