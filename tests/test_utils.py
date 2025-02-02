@@ -111,9 +111,9 @@ def test_read_user_dict(tmp_path):
             {"key1": "value1"},
         ),
         (
-            {"key1": "value1"},
-            {"key1": "value2"},
-            {"key1": "value2"},
+            {"key1": {"value1": True}},
+            {"key1": {"value1": False}},
+            {"key1": {"value1": False}},
         ),
         (
             {"key1": "value1"},
