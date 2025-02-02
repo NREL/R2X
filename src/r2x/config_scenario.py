@@ -16,7 +16,7 @@ from loguru import logger
 from rich.table import Table
 
 from r2x.config_utils import get_input_defaults, get_model_config_class, get_output_defaults
-from r2x.utils import get_enum_from_string, update_dict
+from r2x.utils import get_enum_from_string, override_dict
 
 from .config_models import BaseModelConfig, Models
 
@@ -88,10 +88,10 @@ class Scenario:
         # predetermined files that we read for each model (see `{model}_fmap.json`}. The override only happens
         # if the exact key appears on the `user_dict.
         if self.user_dict and self.input_config:
-            self.input_config.defaults = update_dict(self.input_config.defaults, self.user_dict)
-            self.input_config.fmap = update_dict(self.input_config.fmap, self.user_dict.get("fmap", {}))
+            self.input_config.defaults = override_dict(self.input_config.defaults, self.user_dict)
+            self.input_config.fmap = override_dict(self.input_config.fmap, self.user_dict.get("fmap", {}))
         if self.user_dict and self.output_config:
-            self.output_config.defaults = update_dict(self.output_config.defaults, self.user_dict)
+            self.output_config.defaults = override_dict(self.output_config.defaults, self.user_dict)
         return None
 
     def __len__(self) -> int:
