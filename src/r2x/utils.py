@@ -389,7 +389,7 @@ def clean_folder(path) -> None:
 def check_file_exists(
     fname: str,
     run_folder: str | os.PathLike,
-    mandatory: bool = False,
+    optional: bool = False,
 ) -> os.PathLike | None:
     """Return file path for a given filename if exists in folders.
 
@@ -426,7 +426,7 @@ def check_file_exists(
         )
         logger.warning(msg)
 
-    if mandatory and not file_matches:
+    if not optional and not file_matches:
         raise FileNotFoundError(f"Mandatory file '{fname}' not found in {run_folder}.")
     elif not file_matches:
         logger.warning(f"File: '{fname}' not found in {run_folder}.")

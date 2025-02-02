@@ -17,3 +17,4 @@ hierarchy.csv,,,,outputs/hierarchy.csv,move_file
 tranloss.csv,,,,outputs/tranloss.csv,move_file
 outage_planned.csv,planned_outage.csv,,,,rename
 recf.h5,,,,,convert_hdf
+load.h5,,,,,convert_hdf

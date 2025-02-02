@@ -3,14 +3,14 @@
 This functions apply an update function to certain raw files file before using them for creating the System.
 """
 
-import os
-import h5py
 import datetime
+import os
 import pathlib
 import shutil
 import zipfile
 from collections import OrderedDict
 
+import h5py
 import pandas as pd
 from loguru import logger
 
@@ -324,12 +324,13 @@ def set_index(fpath: pathlib.Path, index: str) -> pd.DataFrame | None:
     data.to_csv(fpath)
     return data
 
+
 def convert_hdf(fpath: pathlib.Path, compression_opts=4) -> None:
-    """Converts hdf5 to file format used by ReEDS. 
+    """Convert hdf5 to file format used by ReEDS.
 
     This function reads a hdf5 file which was written with Pandas into a dataframe
     and saves it into a hdf5 file using the h5py format.
-    
+
     Below is copied from adjust_time_load.ipynb mentioned in ReEDS PR 1577
     Data is saved to h5 file as follows:
         - the data itself is saved to a dataset named "data"
@@ -350,42 +351,47 @@ def convert_hdf(fpath: pathlib.Path, compression_opts=4) -> None:
     """
     if not fpath.exists():
         raise FileNotFoundError(f"{fpath} does not exist.")
-    
-    print(fpath)
-    df = pd.read_hdf(fpath)
-     
-    with h5py.File(fpath, 'w') as f:
-        # save index or multi-index in the format 'index_{index order}')
-        for i in range(0, df.index.nlevels):
-            # get values for specified index level
-            indexvals = df.index.get_level_values(i)
-            # save index
+
+    logger.debug("Converting pandas style H5 {} to h5py compatible", fpath)
+    try:
+        original_h5 = pd.read_hdf(fpath)
+    except ValueError:
+        logger.debug("H5 file {} not in pandas format.", fpath)
+        return
+    if not original_h5.index.name == "datetime":
+        original_h5.index.name = "datetime"
+
+    with h5py.File(fpath, "w") as f:
+        for i in range(0, original_h5.index.nlevels):
+            indexvals = original_h5.index.get_level_values(i)
             if isinstance(indexvals[0], bytes):
-                # if already formatted as bytes keep that way
-                f.create_dataset(f'index_{i}', data=indexvals, dtype='S30')
-            elif indexvals.name == 'datetime':
-                # if we have a formatted datetime index that isn't bytes, save as such
+                f.create_dataset(f"index_{i}", data=indexvals, dtype="S30")
+            elif indexvals.name == "datetime":
                 timeindex = indexvals.to_series().apply(datetime.datetime.isoformat).reset_index(drop=True)
-                f.create_dataset(f'index_{i}', data=timeindex.str.encode('utf-8'), dtype='S30')
+                f.create_dataset(f"index_{i}", data=timeindex.str.encode("utf-8"), dtype="S30")
             else:
-                # other indices can be saved using their data type
-                f.create_dataset(f'index_{i}', data=indexvals, dtype=indexvals.dtype)
+                f.create_dataset(f"index_{i}", data=indexvals, dtype=indexvals.dtype)
 
-        # save index names
-        index_names = pd.Index(df.index.names)
-        f.create_dataset('index_names', data=index_names, dtype=f'S{index_names.map(len).max()}')
+        index_names = pd.Index(original_h5.index.names)
+        f.create_dataset("index_names", data=index_names, dtype=f"S{index_names.map(len).max()}")
 
-        # save column names as string type
-        f.create_dataset('columns', data=df.columns, dtype=f'S{df.columns.map(len).max()}')
+        f.create_dataset("columns", data=original_h5.columns, dtype=f"S{original_h5.columns.map(len).max()}")
 
-        # save data
-        if len(df.dtypes.unique()) > 1:
-            raise Exception(f"Multiple data types detected in {fpath.name}, unclear which one to use for re-saving h5.")
+        if len(original_h5.dtypes.unique()) > 1:
+            raise Exception(
+                f"Multiple data types detected in {fpath.name}, unclear which one to use for re-saving h5."
+            )
         else:
-            dftype_out = df.dtypes.unique()[0]    
-        f.create_dataset('data', data=df.values, dtype=dftype_out, compression='gzip', compression_opts=compression_opts,)
-
+            dftype_out = original_h5.dtypes.unique()[0]
+        f.create_dataset(
+            "data",
+            data=original_h5.values,
+            dtype=dftype_out,
+            compression="gzip",
+            compression_opts=compression_opts,
+        )
     return
+
 
 def upgrade_handler(run_folder: str | pathlib.Path):
     """Entry point to call the different upgrade functions."""
