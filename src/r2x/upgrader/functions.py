@@ -412,11 +412,10 @@ def upgrade_handler(run_folder: str | pathlib.Path):
 
     # Backup inputs_case_files for safety
     backup_fpath = pathlib.Path(run_folder).joinpath("backup_files.zip")
-    if not backup_fpath.exists():
-        logger.info("Creating backup of files.")
-        with zipfile.ZipFile(backup_fpath, mode="w") as archive:
-            for fname, fpath_name in f_dict.items():
-                archive.write(fpath_name, arcname=fname)
+    logger.info("Creating backup of files.")
+    with zipfile.ZipFile(backup_fpath, mode="w") as archive:
+        for fname, fpath_name in f_dict.items():
+            archive.write(fpath_name, arcname=fname)
 
     for fname, f_group in file_tracker.groupby("fname", sort=False):
         if fname not in f_dict:
