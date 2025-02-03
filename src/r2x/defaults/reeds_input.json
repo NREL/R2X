@@ -295,7 +295,7 @@
     },
     "distpv": {
       "fuel": null,
-      "type": "PVe"
+      "type": "RTPV"
     },
     "egs": {
       "fuel": "GEOTHERMAL",
@@ -391,7 +391,7 @@
     },
     "pvb": {
       "fuel": null,
-      "type": "PV"
+      "type": "PVe"
     },
     "undisc": {
       "fuel": "GEOTHERMAL",
@@ -399,7 +399,7 @@
     },
     "upv": {
       "fuel": null,
-      "type": "PV"
+      "type": "PVe"
     },
     "wind-ofs": {
       "fuel": null,

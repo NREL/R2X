@@ -1032,6 +1032,7 @@ def apply_operation_cost(component: dict) -> dict[str, Any]:
         case "ThermalGenerationCost":
             if shut_down := cost.get("start_up"):
                 component["Start Cost"] = shut_down
+                breakpoint()
             if shut_down := cost.get("shut_down"):
                 component["Shutdown Cost"] = shut_down
 

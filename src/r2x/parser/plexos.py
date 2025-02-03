@@ -27,6 +27,7 @@ from r2x.api import System
 from r2x.config_models import PlexosConfig
 from r2x.enums import ACBusTypes, PrimeMoversType, ReserveDirection, ReserveType, ThermalFuels
 from r2x.exceptions import ModelError, ParserError
+from r2x.exporter.utils import get_property_magnitude
 from r2x.models import (
     ACBus,
     Generator,
@@ -414,7 +415,7 @@ class PlexosParser(PCMParser):
 
             # Service model uses all floats
             mapped_records["max_requirement"] = (
-                mapped_records.pop("max_requirement").magnitude
+                get_property_magnitude(mapped_records.pop("max_requirement"))
                 if mapped_records.get("max_requirement")
                 else None
             )
@@ -427,7 +428,26 @@ class PlexosParser(PCMParser):
 
             valid_fields, ext_data = field_filter(mapped_records, default_model.model_fields)
             valid_fields = prepare_ext_field(valid_fields, ext_data)
+
+            ts_fields = {k: v for k, v in mapped_records.items() if isinstance(v, SingleTimeSeries)}
+
+            valid_fields.update(
+                {
+                    ts_name: get_property_magnitude(np.mean(ts.data))
+                    for ts_name, ts in ts_fields.items()
+                    if ts_name in valid_fields.keys()
+                }
+            )
+
+            valid_fields = prepare_ext_field(valid_fields, ext_data)
             self.system.add_component(default_model(**valid_fields))
+
+            if ts_fields:
+                reserve = self.system.get_component_by_label(f"{default_model.__name__}.{reserve_name}")
+                ts_dict = {"solve_year": self.year}
+                for ts_name, ts in ts_fields.items():
+                    ts.variable_name = ts_name
+                    self.system.add_time_series(ts, reserve, **ts_dict)
 
         reserve_map = ReserveMap(name="contributing_generators")
         self.system.add_component(reserve_map)
@@ -1389,7 +1409,7 @@ class PlexosParser(PCMParser):
         else:
             path = self.run_folder / Path(fpath_str)
 
-        data_file = csv_handler(path, csv_file_encoding=csv_file_encoding)
+        data_file = csv_handler(path, csv_file_encoding=csv_file_encoding, keep_case=True)
 
         column_type = get_column_enum(data_file.columns)
         if column_type is None:
@@ -1437,9 +1457,9 @@ class PlexosParser(PCMParser):
     def _create_columns_to_check(self, column_type: DATAFILE_COLUMNS):
         # NOTE: Some files might have duplicated data. If so, we warn the user and drop the duplicates.
         columns_to_check = [
-            column
+            column.lower()
             for column in column_type.value
-            if column in ["name", "pattern", "year", "datetime", "month", "day", "period", "hour"]
+            if column in ["name", "pattern", "year", "datetime", "DateTime", "month", "day", "period", "hour"]
         ]
         if column_type == DATAFILE_COLUMNS.TS_YMDH or column_type == DATAFILE_COLUMNS.TS_NMDH:
             columns_to_check.append("hour")
@@ -1468,6 +1488,9 @@ class PlexosParser(PCMParser):
         if "name" in parsed_file.columns:
             cols = [col.lower() for col in [record_name, property_name, variable_name] if col]
             parsed_file = parsed_file.filter(pl.col("name").str.to_lowercase().is_in(cols))
+
+        if record_name in parsed_file.columns:
+            parsed_file = parsed_file.fiter(pl.col(record_name))
 
         return parsed_file
 

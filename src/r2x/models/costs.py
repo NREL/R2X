@@ -6,9 +6,7 @@ from typing import Annotated
 from infrasys.cost_curves import CostCurve, FuelCurve, UnitSystem
 from infrasys.models import InfraSysBaseModel
 from infrasys.value_curves import LinearCurve
-from pydantic import Field, computed_field
-
-from r2x.units import Currency
+from pydantic import Field, NonNegativeFloat, computed_field
 
 
 class OperationalCost(InfraSysBaseModel):
@@ -52,14 +50,14 @@ class RenewableGenerationCost(OperationalCost):
 
 class HydroGenerationCost(OperationalCost):
     fixed: Annotated[
-        Currency | None,
+        NonNegativeFloat | None,
         Field(
             description=(
                 "Fixed cost of keeping the unit online. "
                 "For some cost represenations this field can be duplicative"
             )
         ),
-    ] = Currency(0, "usd")
+    ] = 0.0
     variable: CostCurve | None = None
 
 
@@ -74,19 +72,17 @@ class ThermalGenerationCost(OperationalCost):
        Available: https://nrel-sienna.github.io/PowerSystems.jl/stable/model_library/thermal_generation_cost/
     """
 
-    fixed: Annotated[Currency, Field(description="Cost of using fuel in $ or $/hr.")] = Currency(0, "usd")
-    shut_down: Annotated[Currency | None, Field(description="Cost to turn the unit off")] = Currency(
-        0.0, "usd"
-    )
-    start_up: Annotated[Currency | None, Field(description="Cost to start the unit.")] = Currency(0, "usd")
+    fixed: Annotated[NonNegativeFloat, Field(description="Cost of using fuel in $ or $/hr.")] = 0.0
+    shut_down: Annotated[NonNegativeFloat | None, Field(description="Cost to turn the unit off")] = 0.0
+    start_up: Annotated[NonNegativeFloat | None, Field(description="Cost to start the unit.")] = None
     variable: Annotated[CostCurve | FuelCurve | None, Field(description="Variable production cost")] = None
 
     @classmethod
     def example(cls) -> "ThermalGenerationCost":
         return ThermalGenerationCost(
-            fixed=Currency(0, "usd"),
-            shut_down=Currency(100, "usd"),
-            start_up=Currency(100, "usd"),
+            fixed=0.0,
+            shut_down=100.0,
+            start_up=100.0,
             variable=FuelCurve(value_curve=LinearCurve(10), power_units=UnitSystem.NATURAL_UNITS),
         )
 
@@ -95,15 +91,9 @@ class StorageCost(OperationalCost):
     charge_variable_cost: CostCurve | None = None
     discharge_variable_cost: CostCurve | None = None
     energy_shortage_cost: Annotated[
-        Currency, Field(description="Cost incurred by the model for being short of the energy target")
-    ] = Currency(0.0, "usd")
-    energy_surplus_cost: Annotated[Currency, Field(description="Cost of using fuel in $/MWh.")] = Currency(
-        0.0, "usd"
-    )
-    fixed: Annotated[Currency, Field(description=" Fixed cost of operating the storage system")] = Currency(
-        0.0, "usd"
-    )
-    shut_down: Annotated[Currency | None, Field(description="Cost to turn the unit off")] = Currency(
-        0.0, "usd"
-    )
-    start_up: Annotated[Currency | None, Field(description="Cost to start the unit.")] = Currency(0, "usd")
+        NonNegativeFloat, Field(description="Cost incurred by the model for being short of the energy target")
+    ] = 0.0
+    energy_surplus_cost: Annotated[NonNegativeFloat, Field(description="Cost of using fuel in $/MWh.")] = 0.0
+    fixed: Annotated[NonNegativeFloat, Field(description=" Fixed cost of operating the storage system")] = 0.0
+    shut_down: Annotated[NonNegativeFloat | None, Field(description="Cost to turn the unit off")] = 0.0
+    start_up: Annotated[NonNegativeFloat | None, Field(description="Cost to start the unit.")] = 0.0

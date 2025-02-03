@@ -30,7 +30,52 @@
     "FLEXIBILITY",
     "REGULATION"
   ],
-  "device_name_inference_map": {},
+  "device_name_inference_map": {
+    "battery": {
+      "fuel": null,
+      "type": "BA"
+    },
+    "biopower": {
+      "fuel": "WOOD_WASTE",
+      "type": "GT"
+    },
+    "coal": {
+      "fuel": "COAL",
+      "type": "ST"
+    },
+    "distpv": {
+      "fuel": null,
+      "type": "RTPV"
+    },
+    "gas": {
+      "fuel": "NATURAL_GAS",
+      "type": "CC"
+    },
+    "hyd": {
+      "fuel": null,
+      "type": "HY"
+    },
+    "nuclear": {
+      "fuel": "NUCLEAR",
+      "type": "ST"
+    },
+    "pumped": {
+      "fuel": null,
+      "type": "PS"
+    },
+    "solar": {
+      "fuel": null,
+      "type": "PVe"
+    },
+    "upv": {
+      "fuel": null,
+      "type": "PVe"
+    },
+    "wind": {
+      "fuel": null,
+      "type": "WT"
+    }
+  },
   "distribution_losses": 1,
   "generator_models": {
     "EnergyReservoirStorage": [
@@ -94,7 +139,7 @@
       },
       {
         "fuel": null,
-        "type": "PV"
+        "type": "PVe"
       },
       {
         "fuel": null,

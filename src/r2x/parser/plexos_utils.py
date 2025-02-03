@@ -30,7 +30,8 @@ class DATAFILE_COLUMNS(Enum):  # noqa: N801
     NV = ("name", "value")
     Y = ("year",)
     YV = ("year", "value")
-    TS_Datetime = ("datetime",)
+    TS_datetime = ("datetime",)
+    TS_DateTime = ("DateTime",)
     PV = ("pattern", "value")
     TS_NPV = ("name", "pattern", "value")
     TS_NYV = ("name", "year", "value")
@@ -209,7 +210,9 @@ def parse_data_file(column_type: DATAFILE_COLUMNS, data_file):
             data_file = parse_y(data_file)
         case column_type.YV:
             data_file = parse_yv(data_file)
-        case column_type.TS_Datetime:
+        case column_type.TS_DateTime:
+            data_file = parse_ts_DateTime(data_file)
+        case column_type.TS_datetime:
             data_file = parse_ts_datetime(data_file)
         case column_type.PV:
             data_file = parse_pv(data_file)
@@ -253,6 +256,15 @@ def parse_yv(data_file):
 def parse_ts_datetime(data_file):
     data_file = data_file.with_columns(datetime=pl.col("datetime").str.to_datetime("%Y-%m-%dt%H:%M"))
     data_file = data_file.with_columns(year=pl.col("datetime").dt.year())
+    data_file = data_file.melt(id_vars="year", variable_name="name")
+    return data_file
+
+
+def parse_ts_DateTime(data_file):
+    data_file = data_file.with_columns(datetime=pl.col("DateTime").str.to_datetime("%Y-%m-%dT%H:%M"))
+    data_file = data_file.select(pl.all().exclude("DateTime"))
+    data_file = data_file.with_columns(year=pl.col("datetime").dt.year())
+    data_file = data_file.melt(id_vars=["datetime", "year"], variable_name="name")
     return data_file
 
 
