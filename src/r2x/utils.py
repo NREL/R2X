@@ -387,9 +387,7 @@ def clean_folder(path) -> None:
 
 
 def check_file_exists(
-    fname: str,
-    run_folder: str | os.PathLike,
-    optional: bool = False,
+    fname: str, run_folder: str | os.PathLike, optional: bool = False, folder: str | None = None
 ) -> os.PathLike | None:
     """Return file path for a given filename if exists in folders.
 
@@ -408,7 +406,10 @@ def check_file_exists(
     """
     run_folder = Path(run_folder)
     # Set run_folder as default folder to look
-    search_paths = [run_folder / folder for folder in DEFAULT_SEARCH_FOLDERS]
+    if folder:
+        search_paths = [run_folder / folder]
+    else:
+        search_paths = [run_folder / folder for folder in DEFAULT_SEARCH_FOLDERS]
 
     file_matches = []
     for search_path in search_paths:
