@@ -1,8 +1,9 @@
 """Testing for the configuration and Scenario class."""
 
 import pytest
+
 from r2x.config_models import PlexosConfig, SiennaConfig
-from r2x.config_scenario import Scenario, Configuration, get_scenario_configuration
+from r2x.config_scenario import Configuration, Scenario, get_scenario_configuration
 from r2x.utils import read_fmap
 
 
@@ -196,6 +197,22 @@ def test_get_config_cli_override():
     assert config is not None
     assert isinstance(config, Configuration)
     assert config["TestConfig"].input_model == "reeds-US"
+
+
+def test_update_configuration():
+    cli_args = {}
+
+    new_tech_key = "new_tech"
+    new_tech = {new_tech_key: {"fuel": None, "type": "HY"}}
+    user_dict = {
+        "name": "test",
+        "tech_to_fuel_pm": new_tech,
+        "input_model": "reeds-US",
+        "output_model": "plexos",
+    }
+    config = get_scenario_configuration(cli_args, user_dict)
+    assert new_tech_key in config["test"].input_config.defaults["tech_to_fuel_pm"]
+    assert config["test"].input_config.defaults["tech_to_fuel_pm"][new_tech_key] == new_tech[new_tech_key]
 
 
 def test_configuration_printing(scenario):

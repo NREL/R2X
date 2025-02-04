@@ -33,3 +33,4 @@ from .generators import (
 from .load import FixedAdmittance, InterruptiblePowerLoad, PowerLoad, StandardLoad
 from .services import Emission, Reserve, TransmissionInterface, VariableReserve
 from .topology import ACBus, Arc, Area, Bus, DCBus, LoadZone
+from .utils import GeoLocation, GeographicInfo
