@@ -262,31 +262,31 @@
       "type": "ST"
     },
     "csp": {
-      "fuel": "SOLAR",
+      "fuel": null,
       "type": "CP"
     },
     "csp-ns": {
-      "fuel": "SOLAR",
+      "fuel": null,
       "type": "CP"
     },
     "csp1": {
-      "fuel": "SOLAR",
+      "fuel": null,
       "type": "CP"
     },
     "csp2": {
-      "fuel": "SOLAR",
+      "fuel": null,
       "type": "CP"
     },
     "csp3": {
-      "fuel": "SOLAR",
+      "fuel": null,
       "type": "CP"
     },
     "csp4": {
-      "fuel": "SOLAR",
+      "fuel": null,
       "type": "CP"
     },
     "csp5": {
-      "fuel": "SOLAR",
+      "fuel": null,
       "type": "CP"
     },
     "default": {
@@ -366,6 +366,10 @@
       "type": "HY"
     },
     "hydund": {
+      "fuel": null,
+      "type": "HY"
+    },
+    "hydsnd": {
       "fuel": null,
       "type": "HY"
     },
