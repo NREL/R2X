@@ -38,7 +38,7 @@ dependencies = [
     "tables~=3.9.2",
     "h5py",
     "cvxpy~=1.5.3",
-    "infrasys~=0.2.5",
+    "infrasys~=0.2",
 ]
 
 [project.scripts]
