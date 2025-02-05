@@ -74,7 +74,7 @@ class Scenario:
     output_config: BaseModelConfig | None = None
     feature_flags: dict[str, Any] = field(default_factory=dict)
     plugins: list[Any] | None = None
-    user_dict: dict[str, Any] | None = None
+    user_dict: dict[str, Any] | ChainMap | None = None
 
     def __post_init__(self) -> None:
         self._normalize_path()
@@ -151,7 +151,7 @@ class Scenario:
 
     @classmethod
     def from_kwargs(
-        cls, input_model: str, output_model: str, user_dict: dict | None = None, **kwargs
+        cls, input_model: str, output_model: str, user_dict: ChainMap | dict | None = None, **kwargs
     ) -> "Scenario":
         """Create Scenario instance from key arguments."""
         cls_fields = {field for field in inspect.signature(cls).parameters}
@@ -294,11 +294,10 @@ class Configuration:
         global_keys = {key: value for key, value in user_dict.items() if key != "scenarios"}
 
         for scenario_dict in user_dict["scenarios"]:
-            user_dict_scenario = {}
-            if "fmap" in global_keys:
-                user_dict_scenario["fmap"] = global_keys.get("fmap")
             scenario_choices = ChainMap(cli_args, global_keys, scenario_dict)
-            scenario_class = Scenario.from_kwargs(user_dict=user_dict_scenario, **scenario_choices)
+            scenario_class = Scenario.from_kwargs(
+                user_dict=ChainMap(global_keys, scenario_dict), **scenario_choices
+            )
             assert scenario_class.name
             instance.scenarios[scenario_class.name] = scenario_class
         return instance

@@ -215,6 +215,38 @@ def test_update_configuration():
     assert config["test"].input_config.defaults["tech_to_fuel_pm"][new_tech_key] == new_tech[new_tech_key]
 
 
+def test_update_defaults():
+    cli_args = {}
+
+    default_key = "commit_technologies"
+    default_values = [0, 1, 2]
+    user_dict = {
+        "name": "test",
+        default_key: default_values,
+        "input_model": "reeds-US",
+        "output_model": "plexos",
+    }
+    config = get_scenario_configuration(cli_args, user_dict)
+    assert config["test"].input_config.defaults[default_key] == default_values
+
+    cli_args = {}
+
+    default_key = "commit_technologies"
+    default_values = [0, 1, 2]
+    user_dict = {
+        "name": "test",
+        default_key: default_values,
+        "input_model": "reeds-US",
+        "scenarios": [{"name": "Test1", "solve_year": 2030}, {"name": "Test2", "solve_year": 2040}],
+        "output_model": "plexos",
+    }
+    config = get_scenario_configuration(cli_args, user_dict)
+    for scenario_name, scenario_config in config:
+        assert isinstance(scenario_config, Scenario)
+        assert isinstance(scenario_config.input_config, ReEDSConfig)
+        assert scenario_config.input_config.defaults[default_key] == default_values
+
+
 def test_correct_update_fmap():
     cli_args = {}
     user_dict = {
