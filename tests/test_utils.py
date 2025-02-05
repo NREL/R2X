@@ -73,6 +73,11 @@ def test_read_user_dict(tmp_path):
             {"bio_fuel_price": {"fname": "repbioprice_2030.csv"}},
         ),
         (
+            {"bio_fuel_price": {"fname": "oldfile.csv"}},
+            {"bio_fuel_price": {"fname": "repbioprice_2030.csv", "new_key": True}},
+            {"bio_fuel_price": {"fname": "repbioprice_2030.csv", "new_key": True}},
+        ),
+        (
             {"plexos_device_map": {}},
             {"plexos_device_map": {"Lone Mountain": {"fuel": "GAS"}}},
             {"plexos_device_map": {"Lone Mountain": {"fuel": "GAS"}}},
@@ -123,6 +128,7 @@ def test_read_user_dict(tmp_path):
     ],
     ids=[
         "override-existing",
+        "override-existing-merge-new",
         "merge-new-keys-empty",
         "merge-new-keys-existing",
         "replace",

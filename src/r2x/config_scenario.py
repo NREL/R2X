@@ -88,8 +88,8 @@ class Scenario:
         # predetermined files that we read for each model (see `{model}_fmap.json`}. The override only happens
         # if the exact key appears on the `user_dict.
         if self.user_dict and self.input_config:
-            self.input_config.defaults = override_dict(self.input_config.defaults, self.user_dict)
             self.input_config.fmap = override_dict(self.input_config.fmap, self.user_dict.get("fmap", {}))
+            self.input_config.defaults = override_dict(self.input_config.defaults, self.user_dict)
         if self.user_dict and self.output_config:
             self.output_config.defaults = override_dict(self.output_config.defaults, self.user_dict)
         return None
@@ -162,8 +162,12 @@ class Scenario:
         output_model_enum = get_enum_from_string(output_model, Models)
         output_config = get_model_config_class(output_model_enum)
 
-        input_config_fields = {field for field in input_config.model_fields}
-        output_config_fields = {field for field in output_config.model_fields}
+        input_config_fields = {
+            field for field in input_config.model_fields if field not in input_config.model_fields_set
+        }
+        output_config_fields = {
+            field for field in output_config.model_fields if field not in output_config.model_fields_set
+        }
 
         native_args, input_config_args, output_config_args, other_args = {}, {}, {}, {}
         for name, val in kwargs.items():
@@ -234,7 +238,7 @@ class Configuration:
         raise KeyError(f"No scenario named '{scenario_name}'")
 
     def __iter__(self):
-        return iter(self.scenarios)
+        return iter(self.scenarios.items())
 
     def list_scenarios(self):
         """Return a list of scenarios in the configuration."""
@@ -292,7 +296,7 @@ class Configuration:
         for scenario_dict in user_dict["scenarios"]:
             user_dict_scenario = {}
             if "fmap" in global_keys:
-                user_dict_scenario["fmap"] = global_keys.pop("fmap")
+                user_dict_scenario["fmap"] = global_keys.get("fmap")
             scenario_choices = ChainMap(cli_args, global_keys, scenario_dict)
             scenario_class = Scenario.from_kwargs(user_dict=user_dict_scenario, **scenario_choices)
             assert scenario_class.name

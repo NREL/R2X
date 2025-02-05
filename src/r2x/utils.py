@@ -189,12 +189,10 @@ def override_dict(base_dict: dict, override_dict: ChainMap | dict | None = None)
                 if "_replace" in value:
                     base[key] = value.copy()
                     base[key].pop("_replace")
-                elif key not in base:
-                    base[key] = value
-                elif isinstance(base[key], dict) and isinstance(value, dict):
-                    recursive_update(base[key], value)
                 else:
-                    base[key] = value
+                    if key not in base or not isinstance(base[key], dict):
+                        base[key] = {}
+                    recursive_update(base[key], value)
             else:
                 base[key] = value
 

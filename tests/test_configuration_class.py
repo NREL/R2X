@@ -2,7 +2,7 @@
 
 import pytest
 
-from r2x.config_models import PlexosConfig, SiennaConfig
+from r2x.config_models import PlexosConfig, ReEDSConfig, SiennaConfig
 from r2x.config_scenario import Configuration, Scenario, get_scenario_configuration
 from r2x.utils import read_fmap
 
@@ -213,6 +213,50 @@ def test_update_configuration():
     config = get_scenario_configuration(cli_args, user_dict)
     assert new_tech_key in config["test"].input_config.defaults["tech_to_fuel_pm"]
     assert config["test"].input_config.defaults["tech_to_fuel_pm"][new_tech_key] == new_tech[new_tech_key]
+
+
+def test_correct_update_fmap():
+    cli_args = {}
+    user_dict = {
+        "name": "test",
+        "input_model": "reeds-US",
+        "output_model": "plexos",
+        "fmap": {"online_capacity": {"fname": "test", "folder": True}},
+    }
+    config = get_scenario_configuration(cli_args, user_dict)
+    scenario_config = config["test"]
+    assert isinstance(scenario_config, Scenario)
+    assert isinstance(scenario_config.input_config, ReEDSConfig)
+    assert len(scenario_config.input_config.fmap) > 1
+    assert (
+        scenario_config.input_config.fmap["online_capacity"]["fname"]
+        == user_dict["fmap"]["online_capacity"]["fname"]
+    )
+    assert (
+        scenario_config.input_config.fmap["online_capacity"]["folder"]
+        == user_dict["fmap"]["online_capacity"]["folder"]
+    )
+
+    cli_args = {}
+    user_dict = {
+        "name": "test",
+        "input_model": "reeds-US",
+        "output_model": "plexos",
+        "scenarios": [{"name": "Test1", "solve_year": 2030}, {"name": "Test2", "solve_year": 2040}],
+        "fmap": {"online_capacity": {"fname": "test", "folder": True}},
+    }
+    config = get_scenario_configuration(cli_args, user_dict)
+    for scenario_name, scenario_config in config:
+        assert isinstance(scenario_config, Scenario)
+        assert isinstance(scenario_config.input_config, ReEDSConfig)
+        assert (
+            scenario_config.input_config.fmap["online_capacity"]["fname"]
+            == user_dict["fmap"]["online_capacity"]["fname"]
+        )
+        assert (
+            scenario_config.input_config.fmap["online_capacity"]["folder"]
+            == user_dict["fmap"]["online_capacity"]["folder"]
+        )
 
 
 def test_configuration_printing(scenario):
