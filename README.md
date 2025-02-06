@@ -60,21 +60,13 @@ If you're curious about what we're working on, check out the roadmap:
 - [Ideas](https://github.com/NREL/R2X/issues?q=is%3Aopen+is%3Aissue+label%3AIdea): Future work or ideas for R2X.
 
 
-## Compatibility
+## Model compatibility
 
-> [!WARNING]
-> 2024-11-12: Compatibility table not updated.
-
-| R2X Version  | Supported Input Model Versions          | Supported Output Model Versions         |
-|--------------|-----------------------------------------|-----------------------------------------|
-| 0.1          | ReEDS (v1, v2, v3, v4)                  | Plexos 9.000R6                           |
-| 0.2          | Sienna (PowerSystem 1.0)                | Nodal Sienna              |
-|              | ReEDS                                   | Plexos 9.000R6, 9.2000R5             |
-|              | Plexos                                  | Nodal Plexos              |
-| 0.3          | Sienna (PowerSystem 1.0)                | Nodal Sienna              |
-|              | Sienna (PowerSystem 1.0)<sup><b>*</b></sup>              | Plexos s 9.000R6, 9.2000R5             |
-|              | ReEDS                                   | Plexos 9.000R6, 9.2000R5             |
-|              | Plexos                                  | Nodal Plexos              |
+| R2X Version  | Supported Input Model Versions           | Supported Output Model Versions          |
+|--------------|----------------------------------------- |----------------------------------------- |
+|     1.0      | ReEDS (v2024.8.0)                        | PLEXOS (9.0, 9.2, 10)                    |
+|              | Sienna (PSY 3.0)                         | Sienna (PSY 3.0, 4.0)                    |
+|              | PLEXOS (9.0, 9.2, 10)                    |                                          |
 
 ### Licence
 

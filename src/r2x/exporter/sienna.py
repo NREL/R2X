@@ -12,6 +12,7 @@ from urllib.request import urlopen
 from loguru import logger
 
 # Local imports
+from r2x.config_models import ReEDSConfig, SiennaConfig
 from r2x.exporter.handler import BaseExporter, get_export_records
 from r2x.exporter.utils import (
     apply_default_value,
@@ -73,15 +74,27 @@ class SiennaExporter(BaseExporter):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        assert self.config.output_config
+        assert self.config.input_config
         self.output_data = {}
-        self.property_map = self.config.defaults.get("sienna_property_map", {})
-        self.unit_map = self.config.defaults.get("sienna_unit_map", {})
-        self.output_fields = self.config.defaults["table_data"]
-
-        if not isinstance(self.config.solve_year, int):
+        if not isinstance(self.config.output_config, SiennaConfig):
+            msg = (
+                f"Output config is of type {type(self.config.output_config)}. "
+                "It should be type of `PlexosConfig`."
+            )
+            raise TypeError(msg)
+        if isinstance(self.config.input_config, ReEDSConfig) and isinstance(
+            self.config.input_config.solve_year, list
+        ):
             msg = "Multiple solve years are not supported yet."
             raise NotImplementedError(msg)
-        self.year: int = self.config.solve_year
+
+        self.output_config = self.config.input_config.to_class(SiennaConfig, self.config.output_config)
+        self.property_map = self.output_config.defaults.get("sienna_property_map", {})
+        self.unit_map = self.output_config.defaults.get("sienna_unit_map", {})
+        self.output_fields = self.output_config.defaults["table_data"]
+        self.year = self.output_config.model_year
+        assert self.year is not None
 
     def run(self, *args, path=None, **kwargs) -> "SiennaExporter":
         """Run sienna exporter workflow.
@@ -405,15 +418,17 @@ class SiennaExporter(BaseExporter):
             "unit_type",
         ]
 
-        generic_storage = get_export_records(
-            list(self.system.to_records(Storage)),
+        storage_list = get_export_records(
+            list(
+                self.system.to_records(
+                    Generator, filter_func=lambda x: isinstance(x, Storage | HydroPumpedStorage)
+                )
+            ),
             partial(apply_property_map, property_map=self.property_map),
             partial(apply_flatten_key, keys_to_flatten={"active_power_limits"}),
             partial(apply_pint_deconstruction, unit_map=self.unit_map),
             # partial(apply_valid_properties, valid_properties=output_fields),
         )
-        hydro_pump = list(self.system.to_records(HydroPumpedStorage))
-        storage_list = generic_storage + hydro_pump
 
         if not storage_list:
             logger.warning("No storage devices found")
@@ -584,11 +599,11 @@ def apply_operation_table_data(
 
     operation_cost = component["operation_cost"]
 
-    if not (variable := operation_cost.get("variable")):
+    if not (variable := operation_cost["variable"]):
         return component
 
     if haskey(variable, ["vom_cost", "function_data"]):
-        component["variable_cost"] = variable["vom_cost"]["function_data"]["proportional_term"]
+        component["variable_cost"] = variable["vom_cost"]["function_data"].proportional_term
 
     if "fuel_cost" in variable.keys():
         assert variable["fuel_cost"] is not None
@@ -597,20 +612,21 @@ def apply_operation_table_data(
         component["fuel_price"] = variable["fuel_cost"] * 1000
     if haskey(variable, ["value_curve", "function_data"]):
         function_data = variable["value_curve"]["function_data"]
-        if "constant_term" in function_data.keys():
-            component["heat_rate_a0"] = function_data["constant_term"]
-        if "proportional_term" in function_data.keys():
-            component["heat_rate_a1"] = function_data["proportional_term"]
-        if "quadratic_term" in function_data.keys():
-            component["heat_rate_a2"] = function_data["quadratic_term"]
-        if "points" in function_data.keys():
+        function_data_fields = function_data.model_fields_set
+        if "constant_term" in function_data_fields:
+            component["heat_rate_a0"] = function_data.constant_term
+        if "proportional_term" in function_data_fields:
+            component["heat_rate_a1"] = function_data.proportional_term
+        if "quadratic_term" in function_data_fields:
+            component["heat_rate_a2"] = function_data.quadratic_term
+        if "points" in function_data_fields:
             component = _variable_type_parsing(component, operation_cost)
     return component
 
 
 def _variable_type_parsing(component: dict, cost_dict: dict[str, Any]) -> dict[str, Any]:
     variable_curve = cost_dict["variable"]
-    x_y_coords = variable_curve["value_curve"]["function_data"]["points"]
+    x_y_coords = variable_curve["value_curve"]["function_data"].points
     match cost_dict["variable_type"]:
         case "CostCurve":
             for i, (x_coord, y_coord) in enumerate(x_y_coords):

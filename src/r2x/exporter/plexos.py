@@ -12,11 +12,13 @@ from collections.abc import Callable
 from infrasys.component import Component
 from loguru import logger
 
+from r2x.config_models import PlexosConfig, ReEDSConfig
 from r2x.enums import ReserveType
 from r2x.exporter.handler import BaseExporter, get_export_properties, get_export_records
 from plexosdb import PlexosSQLite
 from plexosdb.enums import ClassEnum, CollectionEnum
 from r2x.exporter.utils import (
+    apply_extract_key,
     apply_flatten_key,
     apply_pint_deconstruction,
     apply_property_map,
@@ -47,9 +49,10 @@ from r2x.models.utils import Constraint
 from r2x.units import get_magnitude
 from r2x.utils import custom_attrgetter, get_enum_from_string, read_json
 
-NESTED_ATTRIBUTES = ["ext", "bus", "services"]
+NESTED_ATTRIBUTES = {"ext", "bus", "services"}
 TIME_SERIES_PROPERTIES = ["Min Provision", "Static Risk"]
 DEFAULT_XML_TEMPLATE = "master_9.2R6_btu.xml"
+EXT_PROPERTIES = {"UoS Charge", "Fixed Load"}
 
 
 def cli_arguments(parser: ArgumentParser):
@@ -73,27 +76,53 @@ class PlexosExporter(BaseExporter):
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
-        self.plexos_scenario = plexos_scenario
-        self.property_map = self.config.defaults["plexos_property_map"]
-        self.valid_properties = self.config.defaults["valid_properties"]
-        self.default_units = self.config.defaults["default_units"]
-        self.reserve_types = self.config.defaults["reserve_types"]
+        assert self.config.output_config
+        assert self.config.input_config
 
-        if not isinstance(self.config.solve_year, int):
+        if not isinstance(self.config.output_config, PlexosConfig):
+            msg = (
+                f"Output config is of type {type(self.config.output_config)}. "
+                "It should be type of `PlexosConfig`."
+            )
+            raise TypeError(msg)
+
+        # Do not allow multiple years for the solve year.
+        if isinstance(self.config.input_config, ReEDSConfig) and isinstance(
+            self.config.input_config.solve_year, list
+        ):
             msg = "Multiple solve years are not supported yet."
             raise NotImplementedError(msg)
-        self.year: int = self.config.solve_year
 
-        if not isinstance(self.config.weather_year, int):
-            msg = "Multiple solve years are not supported yet."
-            raise NotImplementedError(msg)
-        self.weather_year: int = self.config.weather_year
+        # Map relevant input configuration to output configuration
+        self.output_config = self.config.input_config.to_class(PlexosConfig, self.config.output_config)
+        self.plexos_scenario = plexos_scenario or self.output_config.model_name
+        if not xml_fname and not (xml_fname := getattr(self.output_config, "master_file", None)):
+            xml_fname = files("r2x.defaults").joinpath(DEFAULT_XML_TEMPLATE)  # type: ignore
+            logger.debug("Using default XML template.")
 
-        if not xml_fname:
-            if not (xml_fname := getattr(self.config, "master_file", None)):
-                xml_fname = files("r2x.defaults").joinpath(DEFAULT_XML_TEMPLATE)  # type: ignore
+        # Initialize PlexosDB
         self._db_mgr = database_manager or PlexosSQLite(xml_fname=xml_fname)
         self.plexos_scenario_id = self._db_mgr.get_scenario_id(scenario_name=plexos_scenario)
+
+        self._setup_plexos_configuration()
+
+    def _setup_plexos_configuration(self) -> None:
+        self.property_map = self.output_config.defaults["plexos_property_map"]
+        self.valid_properties = self.output_config.defaults["valid_properties"]
+        self.default_units = self.output_config.defaults["default_units"]
+        self.reserve_types = self.output_config.defaults["reserve_types"]
+
+        self.simulation_objects = self.output_config.defaults["simulation_objects"]
+        self.static_horizon_type = self.output_config.defaults["static_horizon_type"]
+        self.static_horizons = self.output_config.defaults[self.static_horizon_type]
+        self.static_model_type = self.output_config.defaults["static_model_type"]
+        self.static_models = self.output_config.defaults[self.static_model_type]
+        self.plexos_reports_fpath = self.output_config.defaults["plexos_reports"]
+
+        # Set modeling years that will be used.
+        assert isinstance(self.output_config.model_year, int)
+        self.model_year: int = self.output_config.model_year
+        self.weather_year: int = self.output_config.horizon_year or self.model_year
 
     def run(self, *args, new_database: bool = True, **kwargs) -> "PlexosExporter":
         """Run the exporter."""
@@ -138,6 +167,7 @@ class PlexosExporter(BaseExporter):
         csv_fname = config_dict.get("time_series_fname", "${component_type}_${name}_${weather_year}.csv")
         string_template = string.Template(csv_fname)
         config_dict["component_type"] = f"{component.__class__.__name__}_{ts_metadata.variable_name}"
+        config_dict["weather_year"] = self.weather_year
         csv_fname = string_template.safe_substitute(config_dict)
         csv_fpath = self.ts_directory / csv_fname
         time_series_property: dict[str, Any] = {"Data File": str(csv_fpath)}
@@ -196,7 +226,7 @@ class PlexosExporter(BaseExporter):
         filter_func: Callable | None = None,
         scenario: str | None = None,
         records: list[dict] | None = None,
-        exclude_fields: list[str] | None = NESTED_ATTRIBUTES,
+        exclude_fields: set[str] | None = NESTED_ATTRIBUTES,
     ) -> None:
         """Bulk insert properties from selected component type."""
         logger.debug("Adding {} table properties...", component_type.__name__)
@@ -229,6 +259,7 @@ class PlexosExporter(BaseExporter):
         export_records = get_export_records(
             records,
             partial(apply_operation_cost),
+            partial(apply_extract_key, key="ext", keys_to_extract=EXT_PROPERTIES),
             partial(apply_flatten_key, keys_to_flatten={"active_power_limits", "active_power_flow_limits"}),
             partial(apply_property_map, property_map=property_map),
             partial(apply_pint_deconstruction, unit_map=self.default_units),
@@ -367,6 +398,26 @@ class PlexosExporter(BaseExporter):
         self.insert_component_properties(
             ACBus, parent_class=ClassEnum.System, collection=CollectionEnum.Regions
         )
+        for bus in self.system.get_components(ACBus, filter_func=lambda x: x.ext):
+            collection_properties = self._db_mgr.get_valid_properties(
+                collection=CollectionEnum.Zones, parent_class=ClassEnum.System, child_class=ClassEnum.Zone
+            )
+            properties = get_export_properties(
+                bus.ext,
+                partial(apply_property_map, property_map=self.property_map),
+                partial(apply_pint_deconstruction, unit_map=self.default_units),
+                partial(apply_valid_properties, valid_properties=collection_properties),
+            )
+            if properties:
+                for property_name, property_value in properties.items():
+                    self._db_mgr.add_property(
+                        bus.name,
+                        property_name,
+                        property_value,
+                        object_class=ClassEnum.Region,
+                        collection=CollectionEnum.Regions,
+                        scenario=self.plexos_scenario,
+                    )
 
         # Adding Zones
         # self.add_component_category(LoadZone, class_enum=ClassEnum.Zone)
@@ -386,6 +437,7 @@ class PlexosExporter(BaseExporter):
         # Add node memberships to zone and regions.
         # On our default Plexos translation, both Zones and Regions are child of the Node class.
         for bus in self.system.get_components(ACBus):
+            bus_load_zone = bus.load_zone
             self._db_mgr.add_membership(
                 bus.name,
                 bus.name,  # Zone has the same name
@@ -393,9 +445,11 @@ class PlexosExporter(BaseExporter):
                 child_class=ClassEnum.Region,
                 collection=CollectionEnum.Region,
             )
+            if bus_load_zone is None:
+                continue
             self._db_mgr.add_membership(
                 bus.name,
-                bus.load_zone.name,
+                bus_load_zone.name,
                 parent_class=ClassEnum.Node,
                 child_class=ClassEnum.Zone,
                 collection=CollectionEnum.Zone,
@@ -612,7 +666,7 @@ class PlexosExporter(BaseExporter):
             Reserve,
             parent_class=ClassEnum.System,
             collection=CollectionEnum.Reserves,
-            exclude_fields=[*NESTED_ATTRIBUTES, "max_requirement"],
+            exclude_fields=NESTED_ATTRIBUTES | {"max_requirement"},
         )
         for reserve in self.system.get_components(Reserve):
             properties: dict[str, Any] = {}
@@ -649,13 +703,15 @@ class PlexosExporter(BaseExporter):
 
             # Add Regions properties. Currently, we only add the load_risk
             component_dict = reserve.model_dump(
-                exclude_none=True, exclude=[*NESTED_ATTRIBUTES, "max_requirement"]
+                exclude_none=True, exclude=NESTED_ATTRIBUTES | {"max_requirement"}
             )
 
             if not reserve.region:
                 return
+            reserve_region = reserve.region
+            assert reserve_region is not None
             regions = self.system.get_components(
-                ACBus, filter_func=lambda x: x.load_zone.name == reserve.region.name
+                ACBus, filter_func=lambda x: x.load_zone.name == reserve_region.name
             )
 
             collection_properties = self._db_mgr.get_valid_properties(
@@ -875,7 +931,7 @@ class PlexosExporter(BaseExporter):
         return
 
     def _add_simulation_objects(self):
-        for simulation_object in self.config.defaults["simulation_objects"]:
+        for simulation_object in self.simulation_objects:
             collection_enum = get_enum_from_string(simulation_object["collection_name"], CollectionEnum)
             class_enum: ClassEnum = get_enum_from_string(simulation_object["class_name"], ClassEnum)
             for objects in simulation_object["attributes"]:
@@ -887,7 +943,7 @@ class PlexosExporter(BaseExporter):
                 )
 
             # Add attributes
-            property_list = self.config.defaults[simulation_object["class_name"]]
+            property_list = self.output_config.defaults[simulation_object["class_name"]]
             for attributes in property_list["attributes"]:
                 self._db_mgr.add_attribute(
                     object_name=attributes["name"],
@@ -899,9 +955,7 @@ class PlexosExporter(BaseExporter):
 
     def _add_horizons(self):
         logger.info("Adding model horizon")
-        static_horizon_type = self.config.defaults["static_horizon_type"]
-        static_horizons = self.config.defaults[static_horizon_type]
-        for horizon, values in static_horizons.items():
+        for horizon, values in self.static_horizons.items():
             self._db_mgr.add_object(
                 horizon,
                 ClassEnum.Horizon,
@@ -917,9 +971,7 @@ class PlexosExporter(BaseExporter):
                 )
 
     def _add_models(self):
-        static_model_type = self.config.defaults["static_model_type"]
-        static_models = self.config.defaults[static_model_type]
-        for model, values in static_models.items():
+        for model, values in self.static_models.items():
             self._db_mgr.add_object(
                 model,
                 ClassEnum.Model,
@@ -954,8 +1006,8 @@ class PlexosExporter(BaseExporter):
         return
 
     def _add_reports(self):
-        fpath = self.config.defaults["plexos_reports"]
-        report_objects = read_json(fpath)
+        logger.debug("Using {} for reports.")
+        report_objects = read_json(self.plexos_reports_fpath)
 
         for report_object in report_objects:
             report_object["collection"] = get_enum_from_string(report_object["collection"], CollectionEnum)
@@ -999,7 +1051,7 @@ def _variable_type_parsing(component: dict, cost_dict: dict[str, Any]) -> dict[s
         case "FuelCurve":
             match value_curve_type:
                 case "AverageRateCurve":
-                    component["Heat Rate"] = function_data["proportional_term"]
+                    component["Heat Rate"] = function_data.proportional_term
                 case "InputOutputCurve":
                     raise NotImplementedError("`InputOutputCurve` not yet implemented on Plexos exporter.")
         case "CostCurve":
@@ -1008,6 +1060,6 @@ def _variable_type_parsing(component: dict, cost_dict: dict[str, Any]) -> dict[s
     if fuel_cost := fuel_curve.get("fuel_cost"):
         component["Fuel Price"] = fuel_cost
     if vom_cost := fuel_curve.get("vom_cost"):
-        component["VO&M Charge"] = vom_cost["function_data"]["proportional_term"]
+        component["VO&M Charge"] = vom_cost["function_data"].proportional_term
 
     return component

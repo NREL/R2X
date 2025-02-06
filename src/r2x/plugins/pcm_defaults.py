@@ -8,7 +8,7 @@ from loguru import logger
 
 from r2x.models import Generator
 from r2x.api import System
-from r2x.config import Scenario
+from r2x.config_scenario import Scenario
 from r2x.parser.handler import BaseParser
 from r2x.units import ActivePower
 from r2x.utils import read_json
@@ -41,9 +41,10 @@ def update_system(
         System
     """
     logger.info("Augmenting generators attributes")
+    assert config.input_config
     if pcm_defaults_fpath is None:
-        logger.debug("Using {}", config.defaults["pcm_defaults_fpath"])
-        pcm_defaults = read_json(config.defaults["pcm_defaults_fpath"])
+        logger.debug("Using {}", config.input_config.defaults["pcm_defaults_fpath"])
+        pcm_defaults = read_json(config.input_config.defaults["pcm_defaults_fpath"])
     else:
         logger.debug("Using custom defaults from {}", pcm_defaults_fpath)
         pcm_defaults: dict = read_json(pcm_defaults_fpath)
@@ -59,13 +60,13 @@ def update_system(
         )
     )
     reference_data.loc[reference_data.tech.str.startswith("battery"), "mean_time_to_repair"] = (
-        config.defaults["storage_mean_time_to_repair"]
+        config.input_config.defaults["storage_mean_time_to_repair"]
     )
-    reference_data.loc[reference_data.tech.str.startswith("hyd"), "mean_time_to_repair"] = config.defaults[
-        "hydro_mean_time_to_repair"
-    ]
+    reference_data.loc[reference_data.tech.str.startswith("hyd"), "mean_time_to_repair"] = (
+        config.input_config.defaults["hydro_mean_time_to_repair"]
+    )
     reference_data.loc[reference_data.tech.str.startswith("hyd"), "max_ramp_up_percentage"] = (
-        config.defaults["hydro_ramp_rate"] * 100
+        config.input_config.defaults["hydro_ramp_rate"] * 100
     )
     reference_data.loc[reference_data.tech.str.endswith("nd"), "min_stable_level_percentage"] = 1
 

@@ -6,6 +6,8 @@ import re
 from enum import Enum
 from typing import Any
 from collections.abc import Sequence
+from os import PathLike
+from pathlib import Path
 
 from numpy._typing import NDArray
 import pint
@@ -465,3 +467,42 @@ def time_slice_handler(
                     raise NotImplementedError
 
     return month_datetime_series
+
+
+def find_xml(directory: PathLike):
+    """
+    Parameters
+    ----------
+
+    directory: Pathlike
+        directory to search in for an xml file
+
+    Raises
+    ------
+
+    FileNotFoundError:
+        if no xml file is in <directory>
+        OR more than one xml files are in <directory>
+
+    NotADirectoryError:
+        if <directory> is not a directory
+
+    Returns
+    -------
+    ret: Path
+        Path to a single xml file
+
+    """
+    directory = Path(directory)
+    if not directory.is_dir():
+        raise NotADirectoryError(f"Can't search {directory}, not a directory")
+
+    xml_files = list(directory.glob("*.xml"))
+
+    if len(xml_files) == 0:
+        raise FileNotFoundError(f"No xml file in {directory}")
+
+    if len(xml_files) > 1:
+        raise FileNotFoundError(f"More than one xml file in {directory}")
+
+    return xml_files[0]

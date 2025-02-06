@@ -8,7 +8,7 @@ from argparse import ArgumentParser
 from loguru import logger
 
 from r2x.api import System
-from r2x.config import Scenario
+from r2x.config_scenario import Scenario
 from r2x.enums import EmissionType
 from r2x.models.services import Emission
 from r2x.models.utils import Constraint, ConstraintMap

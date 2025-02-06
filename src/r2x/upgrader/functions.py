@@ -3,17 +3,19 @@
 This functions apply an update function to certain raw files file before using them for creating the System.
 """
 
+import datetime
 import os
 import pathlib
 import shutil
 import zipfile
 from collections import OrderedDict
 
+import h5py
 import pandas as pd
 from loguru import logger
 
 from r2x.upgrader.helpers import get_function_arguments
-from r2x.utils import read_csv
+from r2x.utils import get_timeindex, read_csv
 
 
 def rename(fpath: pathlib.Path, new_fname: str) -> pathlib.Path:
@@ -67,8 +69,11 @@ def rename(fpath: pathlib.Path, new_fname: str) -> pathlib.Path:
     FileExistsError: [Errno 17] File exists: '/path/to/existing_file.txt' -> '/path/to/existing_file.txt'
     """
     fpath_new = fpath.resolve().parent.joinpath(new_fname)
-    logger.debug("Renaming {} to {}", fpath.name, fpath_new.name)
+    if fpath_new.exists():
+        logger.debug(f"File {(fpath_new.name)=} already exist. Skipping it.")
+        return fpath_new
     new_fpath = fpath.replace(fpath_new)
+    logger.debug("Renaming {} to {}", fpath.name, fpath_new.name)
     return new_fpath
 
 
@@ -320,6 +325,77 @@ def set_index(fpath: pathlib.Path, index: str) -> pd.DataFrame | None:
     return data
 
 
+def convert_hdf(fpath: pathlib.Path, compression_opts=4) -> None:
+    """Convert hdf5 to file format used by ReEDS.
+
+    This function reads a hdf5 file which was written with Pandas into a dataframe
+    and saves it into a hdf5 file using the h5py format.
+
+    Below is copied from adjust_time_load.ipynb mentioned in ReEDS PR 1577
+    Data is saved to h5 file as follows:
+        - the data itself is saved to a dataset named "data"
+        - column names are saved to a dataset named "columns"
+        - the index of the data is saved to a dataset named "index"; in the case of a multindex,
+          each index is saved to a separate dataset with the format "index_{index order}"
+        - the names of the index (or multindex) are saved to a dataset named "index_names"
+      following groups the data itself is stored
+
+    Parameters
+    ----------
+    fpath : pathlib.Path
+        The path to the hdf5 file which was saved using Pandas.
+
+    Returns
+    -------
+    None
+    """
+    if not fpath.exists():
+        raise FileNotFoundError(f"{fpath} does not exist.")
+
+    logger.debug("Converting pandas style H5 {} to h5py compatible", fpath)
+    try:
+        original_h5 = pd.read_hdf(fpath)
+    except ValueError:
+        logger.debug("H5 file {} not in pandas format.", fpath)
+        return
+    if not original_h5.index.name == "datetime":
+        original_h5.index.name = "datetime"
+
+    with h5py.File(fpath, "w") as f:
+        for i in range(0, original_h5.index.nlevels):
+            indexvals = original_h5.index.get_level_values(i)
+            if isinstance(indexvals[0], bytes):
+                f.create_dataset(f"index_{i}", data=indexvals, dtype="S30")
+            elif indexvals.name == "datetime":
+                timeindex = get_timeindex()
+                assert len(indexvals) == len(timeindex), f"H5 file {fpath} has more weather year data."
+                timeindex = timeindex.to_series().apply(datetime.datetime.isoformat).reset_index(drop=True)
+                f.create_dataset(f"index_{i}", data=timeindex.str.encode("utf-8"), dtype="S30")
+            else:
+                f.create_dataset(f"index_{i}", data=indexvals, dtype=indexvals.dtype)
+
+        index_names = pd.Index(original_h5.index.names)
+        f.create_dataset("index_names", data=index_names, dtype=f"S{index_names.map(len).max()}")
+
+        f.create_dataset("columns", data=original_h5.columns, dtype=f"S{original_h5.columns.map(len).max()}")
+
+        if len(original_h5.dtypes.unique()) > 1:
+            raise Exception(
+                f"Multiple data types detected in {fpath.name}, unclear which one to use for re-saving h5."
+            )
+        else:
+            dftype_out = original_h5.dtypes.unique()[0]
+        f.create_dataset(
+            "data",
+            data=original_h5.values,
+            dtype=dftype_out,
+            compression="gzip",
+            compression_opts=compression_opts,
+        )
+    logger.debug("H5 {} converted to h5py compatible", fpath)
+    return
+
+
 def upgrade_handler(run_folder: str | pathlib.Path):
     """Entry point to call the different upgrade functions."""
     logger.info("Starting upgrader")
@@ -339,11 +415,10 @@ def upgrade_handler(run_folder: str | pathlib.Path):
 
     # Backup inputs_case_files for safety
     backup_fpath = pathlib.Path(run_folder).joinpath("backup_files.zip")
-    if not backup_fpath.exists():
-        logger.info("Creating backup of files.")
-        with zipfile.ZipFile(backup_fpath, mode="w") as archive:
-            for fname, fpath_name in f_dict.items():
-                archive.write(fpath_name, arcname=fname)
+    logger.info("Creating backup of files.")
+    with zipfile.ZipFile(backup_fpath, mode="w") as archive:
+        for fname, fpath_name in f_dict.items():
+            archive.write(fpath_name, arcname=fname)
 
     for fname, f_group in file_tracker.groupby("fname", sort=False):
         if fname not in f_dict:
