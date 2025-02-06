@@ -2,9 +2,9 @@
 
 # System packages
 import json
-from operator import itemgetter
 import os
 from functools import partial
+from operator import itemgetter
 from typing import Any
 from urllib.request import urlopen
 
@@ -13,6 +13,7 @@ from loguru import logger
 
 # Local imports
 from r2x.config_models import ReEDSConfig, SiennaConfig
+from r2x.config_utils import get_year
 from r2x.exporter.handler import BaseExporter, get_export_records
 from r2x.exporter.utils import (
     apply_default_value,
@@ -93,7 +94,7 @@ class SiennaExporter(BaseExporter):
         self.property_map = self.output_config.defaults.get("sienna_property_map", {})
         self.unit_map = self.output_config.defaults.get("sienna_unit_map", {})
         self.output_fields = self.output_config.defaults["table_data"]
-        self.year = self.output_config.model_year
+        self.year = get_year(self.output_config)
         assert self.year is not None
 
     def run(self, *args, path=None, **kwargs) -> "SiennaExporter":
