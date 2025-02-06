@@ -189,12 +189,10 @@ def override_dict(base_dict: dict, override_dict: ChainMap | dict | None = None)
                 if "_replace" in value:
                     base[key] = value.copy()
                     base[key].pop("_replace")
-                elif key not in base:
-                    base[key] = value
-                elif isinstance(base[key], dict) and isinstance(value, dict):
-                    recursive_update(base[key], value)
                 else:
-                    base[key] = value
+                    if key not in base or not isinstance(base[key], dict):
+                        base[key] = {}
+                    recursive_update(base[key], value)
             else:
                 base[key] = value
 
@@ -387,9 +385,7 @@ def clean_folder(path) -> None:
 
 
 def check_file_exists(
-    fname: str,
-    run_folder: str | os.PathLike,
-    optional: bool = False,
+    fname: str, run_folder: str | os.PathLike, optional: bool = False, folder: str | None = None
 ) -> os.PathLike | None:
     """Return file path for a given filename if exists in folders.
 
@@ -408,7 +404,10 @@ def check_file_exists(
     """
     run_folder = Path(run_folder)
     # Set run_folder as default folder to look
-    search_paths = [run_folder / folder for folder in DEFAULT_SEARCH_FOLDERS]
+    if folder:
+        search_paths = [run_folder / folder]
+    else:
+        search_paths = [run_folder / folder for folder in DEFAULT_SEARCH_FOLDERS]
 
     file_matches = []
     for search_path in search_paths:

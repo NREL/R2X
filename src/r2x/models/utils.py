@@ -1,16 +1,28 @@
 """Useful function for models."""
 
-from collections import defaultdict
-from r2x.models.core import BaseComponent
-from .generators import Generator, ThermalGen, HydroGen, Storage, RenewableGen
-from .costs import (
-    OperationalCost,
-    ThermalGenerationCost,
-    StorageCost,
-    HydroGenerationCost,
-    RenewableGenerationCost,
-)
+from collections import defaultdict, namedtuple
+
+from infrasys.models import InfraSysBaseModelWithIdentifers
 from loguru import logger
+
+from r2x.models.core import BaseComponent
+
+from .costs import (
+    HydroGenerationCost,
+    OperationalCost,
+    RenewableGenerationCost,
+    StorageCost,
+    ThermalGenerationCost,
+)
+from .generators import Generator, HydroGen, RenewableGen, Storage, ThermalGen
+
+GeoLocation = namedtuple("GeoLocation", ["Latitude", "Longitude"])
+
+
+class GeographicInfo(InfraSysBaseModelWithIdentifers):
+    """Supplemental attribute that capture location."""
+
+    geo_json: GeoLocation
 
 
 class Constraint(BaseComponent): ...

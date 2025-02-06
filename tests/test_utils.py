@@ -1,9 +1,11 @@
 import json
+from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 import pytest
 import yaml
 
-from r2x.utils import haskey, override_dict, read_user_dict
+from r2x.utils import check_file_exists, haskey, override_dict, read_user_dict
 
 
 @pytest.mark.utils
@@ -73,6 +75,11 @@ def test_read_user_dict(tmp_path):
             {"bio_fuel_price": {"fname": "repbioprice_2030.csv"}},
         ),
         (
+            {"bio_fuel_price": {"fname": "oldfile.csv"}},
+            {"bio_fuel_price": {"fname": "repbioprice_2030.csv", "new_key": True}},
+            {"bio_fuel_price": {"fname": "repbioprice_2030.csv", "new_key": True}},
+        ),
+        (
             {"plexos_device_map": {}},
             {"plexos_device_map": {"Lone Mountain": {"fuel": "GAS"}}},
             {"plexos_device_map": {"Lone Mountain": {"fuel": "GAS"}}},
@@ -123,6 +130,7 @@ def test_read_user_dict(tmp_path):
     ],
     ids=[
         "override-existing",
+        "override-existing-merge-new",
         "merge-new-keys-empty",
         "merge-new-keys-existing",
         "replace",
@@ -136,3 +144,15 @@ def test_read_user_dict(tmp_path):
 def test_update_dict(original, override, expected):
     result = override_dict(original, override)
     assert result == expected
+
+
+def test_check_file_exist():
+    csv_file_contents = "name,value\nTemp,25.5\nLoad,1200\nPressure,101.3"
+    with NamedTemporaryFile(mode="w+", suffix=".csv", delete=False) as temp_file:
+        temp_file.write(csv_file_contents)
+        temp_file.seek(0)
+
+        path = Path(temp_file.name)
+        folder = path.parent
+        fpath = check_file_exists(path.name, folder, folder=folder)
+        assert path == fpath

@@ -1,6 +1,7 @@
 """R2X pint units."""
 
 from infrasys.base_quantity import ureg, BaseQuantity
+from pint import Quantity
 
 # ruff: noqa
 # type: ignore
@@ -75,4 +76,4 @@ class Currency(BaseQuantity):
 
 def get_magnitude(field) -> float | int:
     """Get reference base power of the component."""
-    return field.magnitude if isinstance(field, BaseQuantity) else field
+    return field.magnitude if isinstance(field, Quantity) else field

@@ -21,7 +21,9 @@ def plexos_scenario(tmp_path, data_folder):
         run_folder=data_folder,
         output_folder=tmp_path,
         model_year=2035,
-        fmap={"xml_file": {"fname": DB_NAME, "model_name": MODEL_NAME}},
+        user_dict={
+            "fmap": {"xml_file": {"fname": DB_NAME, "model_name": MODEL_NAME}},
+        },
     )
 
 
@@ -35,6 +37,9 @@ def pjm_scenario(tmp_path, data_folder):
         output_folder=tmp_path,
         model_year=2035,
         fmap={"xml_file": {"fname": "system.xml", "model_name": "default"}},
+        user_dict={
+            "fmap": {"xml_file": {"fname": "system.xml", "model_name": MODEL_NAME}},
+        },
     )
 
 
