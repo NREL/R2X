@@ -31,6 +31,7 @@ class ACBusTypes(StrEnum):
     PQ = "PQ"
     REF = "REF"
     SLACK = "SLACK"
+    ISOLATED = "ISOLATED"
 
 
 class PrimeMoversType(StrEnum):
@@ -57,6 +58,7 @@ class PrimeMoversType(StrEnum):
     OT = "OT"
     ST = "ST"
     PV = "PV"
+    PVe = "PVe"
     WT = "WT"
     WS = "WS"
     RTPV = "RTPV"
@@ -91,3 +93,19 @@ class EmissionType(StrEnum):
     SOX = "SOX"
     SO2 = "SO2"
     N2O = "N2O"
+
+
+class StorageTechs(StrEnum):
+    """Valid Storage technologies."""
+
+    PTES = "PTES"
+    LIB = "LIB"
+    LAB = "LAB"
+    FLWB = "FLWB"
+    SIB = "SIB"
+    ZIB = "ZIB"
+    HGS = "HGS"
+    LAES = "LAES"
+    OTHER_CHEM = "OTHER_CHEM"
+    OTHER_MECH = "OTHER_MECH"
+    OTHER_THERM = "OTHER_THERM"

@@ -13,13 +13,6 @@
     :inherited-members:
 ```
 
-## Sienna
-```{eval-rst}
-.. automodule:: r2x.parser.sienna
-    :members:
-    :inherited-members:
-```
-
 ## Plexos
 ```{eval-rst}
 .. automodule:: r2x.parser.plexos

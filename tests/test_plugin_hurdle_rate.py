@@ -1,6 +1,6 @@
 import pytest
 from r2x.api import System
-from r2x.config import Scenario
+from r2x.config_scenario import Scenario
 from r2x.models.branch import MonitoredLine
 from r2x.models.topology import ACBus, LoadZone
 from r2x.plugins.hurdle_rate import update_system
@@ -36,7 +36,7 @@ def test_hurdle_rate():
     )
     system.add_components(line_1_2, line_2_3, line_1_3)
 
-    config = Scenario(
+    config = Scenario.from_kwargs(
         name="5bus",
         input_model="reeds-US",
         output_model="plexos",
@@ -66,7 +66,7 @@ def test_hurdle_rate():
 
 
 def test_hurdle_rate_with_parser(reeds_data_folder, tmp_folder):
-    config = Scenario(
+    config = Scenario.from_kwargs(
         name="5bus",
         run_folder=reeds_data_folder,
         output_folder=tmp_folder,

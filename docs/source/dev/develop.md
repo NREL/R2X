@@ -1,4 +1,4 @@
-# How to contribute
+# How To Contribute
 
 We welcome any contributions to R2X. Please follow this guidelines to maintain code quality and consistency.
 

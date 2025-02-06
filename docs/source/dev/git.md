@@ -1,4 +1,4 @@
-# Git convention
+# Git Convention
 
 The R2X project follow a trunk based development and we try our best to have short lived branches.
 If you want to contribute to R2X first,

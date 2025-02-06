@@ -65,6 +65,20 @@
     "optional": true,
     "units": "tonne"
   },
+  "co2_incentive": {
+    "column_mapping": {
+      "allt": "year",
+      "i": "tech",
+      "r": "region",
+      "v": "vintage",
+      "value": "incentive"
+    },
+    "description": "Capture incentive in $/ton",
+    "fname": "co2_captured_incentive.csv",
+    "input": true,
+    "optional": true,
+    "units": "$/ton"
+  },
   "cost_vom": {
     "column_mapping": {
       "i": "tech",
@@ -104,6 +118,21 @@
     "input": false,
     "optional": true,
     "units": "MW"
+  },
+  "emission_capture_rate": {
+    "column_mapping": {
+      "e": "pollutant",
+      "i": "tech",
+      "r": "region",
+      "t": "year",
+      "v": "vintage",
+      "value": "capture_rate"
+    },
+    "description": "Capture rate for given CCS technology.",
+    "fname": "capture_rate.csv",
+    "input": true,
+    "optional": true,
+    "units": "ton/MWh"
   },
   "emission_rates": {
     "column_mapping": {
@@ -355,6 +384,11 @@
     "optional": true,
     "units": "MW"
   },
+  "rev_paths": {
+    "fname": "rev_paths.csv",
+    "keep_case": true,
+    "optional": true
+  },
   "rs_map": {
     "description": "Map for S regions to P regions",
     "fname": "rsmap.csv",
@@ -437,6 +471,31 @@
     },
     "fname": "tran_out.csv",
     "units": "MW"
+  },
+  "upgrade_link": {
+    "column_mapping": {
+      "*to": "to",
+      "delta": "delta",
+      "from": "from"
+    },
+    "description": "Upgrade for certain technologies",
+    "fname": "upgrade_link.csv",
+    "input": true,
+    "optional": true,
+    "units": "-"
+  },
+  "upv_sc_out": {
+    "description": "Capacity added for each SC gid",
+    "fname": "df_sc_out_upv_reduced.csv",
+    "optional": true
+  },
+  "wind-ofs_sc_out": {
+    "fname": "df_sc_out_wind-ofs_reduced.csv",
+    "optional": true
+  },
+  "wind-ons_sc_out": {
+    "fname": "df_sc_out_wind-ons_reduced.csv",
+    "optional": true
   },
   "years": {
     "column_mapping": {},

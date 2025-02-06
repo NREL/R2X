@@ -53,6 +53,9 @@
     "FLEXIBILITY",
     "REGULATION"
   ],
+  "excluded_categories": [
+    "electrolyzer"
+  ],
   "excluded_reserve_techs": [
     "nuclear",
     "hydund",
@@ -141,14 +144,14 @@
     "SPINNING": 3
   },
   "reserve_time_frame": {
-    "FLEXIBILITY": 600,
-    "REGULATION": 1200,
-    "SPINNING": 300
+    "FLEXIBILITY": 3600,
+    "REGULATION": 300,
+    "SPINNING": 600
   },
   "reserve_vors": {
-    "FLEXIBILITY": 390000,
-    "REGULATION": 410000,
-    "SPINNING": 400000
+    "FLEXIBILITY": 3900,
+    "REGULATION": 4100,
+    "SPINNING": 4000
   },
   "season_map": {
     "fall": "fall",
@@ -201,32 +204,44 @@
     "egs_nearfield",
     "pumped-hydro"
   ],
-  "tech_fuel_pm_map": {
+  "tech_to_fuel_pm": {
     "10hrLDES": {
-      "fuel": "LDES",
+      "fuel": null,
       "type": "BA"
     },
     "4hr": {
-      "fuel": "Storage",
+      "fuel": null,
       "type": "BA"
     },
     "8hr": {
-      "fuel": "Storage",
+      "fuel": null,
       "type": "BA"
     },
     "battery": {
-      "fuel": "Storage",
+      "fuel": null,
       "type": "BA"
+    },
+    "beccs_mod": {
+      "fuel": "WOOD_WASTE",
+      "type": "GT"
+    },
+    "biomass": {
+      "fuel": "WOOD_WASTE",
+      "type": "GT"
     },
     "biopower": {
       "fuel": "WOOD_WASTE",
       "type": "GT"
     },
     "can-imports": {
-      "fuel": "HYDRO",
+      "fuel": null,
       "type": "HY"
     },
     "coal-ccs": {
+      "fuel": "COAL",
+      "type": "ST"
+    },
+    "coal-ccs_mod": {
       "fuel": "COAL",
       "type": "ST"
     },
@@ -247,31 +262,31 @@
       "type": "ST"
     },
     "csp": {
-      "fuel": "SOLAR",
+      "fuel": null,
       "type": "CP"
     },
     "csp-ns": {
-      "fuel": "SOLAR",
+      "fuel": null,
       "type": "CP"
     },
     "csp1": {
-      "fuel": "SOLAR",
+      "fuel": null,
       "type": "CP"
     },
     "csp2": {
-      "fuel": "SOLAR",
+      "fuel": null,
       "type": "CP"
     },
     "csp3": {
-      "fuel": "SOLAR",
+      "fuel": null,
       "type": "CP"
     },
     "csp4": {
-      "fuel": "SOLAR",
+      "fuel": null,
       "type": "CP"
     },
     "csp5": {
-      "fuel": "SOLAR",
+      "fuel": null,
       "type": "CP"
     },
     "default": {
@@ -280,9 +295,13 @@
     },
     "distpv": {
       "fuel": null,
-      "type": "RTPV"
+      "type": "PVe"
     },
     "egs": {
+      "fuel": "GEOTHERMAL",
+      "type": "ST"
+    },
+    "egs_nearfield": {
       "fuel": "GEOTHERMAL",
       "type": "ST"
     },
@@ -294,13 +313,21 @@
       "fuel": "NATURAL_GAS",
       "type": "CC"
     },
+    "gas-cc-ccs_mod": {
+      "fuel": "NATURAL_GAS",
+      "type": "CC"
+    },
+    "gas-cc_h2-ct": {
+      "fuel": "NATURAL_GAS",
+      "type": "CT"
+    },
     "gas-ct": {
       "fuel": "NATURAL_GAS",
       "type": "CT"
     },
     "gas-ct_h2-ct": {
       "fuel": "NATURAL_GAS",
-      "type": "CC"
+      "type": "CT"
     },
     "geohydro": {
       "fuel": "GEOTHERMAL",
@@ -315,31 +342,35 @@
       "type": "CT"
     },
     "hyded": {
-      "fuel": "HYDRO",
+      "fuel": null,
       "type": "HY"
     },
     "hydend": {
-      "fuel": "HYDRO",
+      "fuel": null,
       "type": "HY"
     },
     "hydnd": {
-      "fuel": "HYDRO",
+      "fuel": null,
       "type": "HY"
     },
     "hydnpd": {
-      "fuel": "HYDRO",
+      "fuel": null,
       "type": "HY"
     },
     "hydnpnd": {
-      "fuel": "HYDRO",
+      "fuel": null,
+      "type": "HY"
+    },
+    "hydsnd": {
+      "fuel": null,
       "type": "HY"
     },
     "hydud": {
-      "fuel": "HYDRO",
+      "fuel": null,
       "type": "HY"
     },
     "hydund": {
-      "fuel": "HYDRO",
+      "fuel": null,
       "type": "HY"
     },
     "lfill-gas": {
@@ -355,11 +386,11 @@
       "type": "GT"
     },
     "pumped-hydro": {
-      "fuel": "OTHER",
+      "fuel": null,
       "type": "PS"
     },
     "pvb": {
-      "fuel": "SOLAR",
+      "fuel": null,
       "type": "PV"
     },
     "undisc": {
@@ -367,15 +398,15 @@
       "type": "ST"
     },
     "upv": {
-      "fuel": "SOLAR",
+      "fuel": null,
       "type": "PV"
     },
     "wind-ofs": {
-      "fuel": "WIND",
+      "fuel": null,
       "type": "WS"
     },
     "wind-ons": {
-      "fuel": "WIND",
+      "fuel": null,
       "type": "WT"
     }
   },
@@ -389,7 +420,7 @@
   ],
   "wind_reserves": {
     "FLEXIBILITY": 0.1,
-    "REGULATION": 0.05,
+    "REGULATION": 0.005,
     "SPINNING": 0
   }
 }

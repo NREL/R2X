@@ -310,11 +310,62 @@ def apply_flatten_key(d: dict[str, Any], keys_to_flatten: set[str]) -> dict[str,
     """
     flattened_dict = {}
 
-    for key, val in d.items():
-        if key in keys_to_flatten and isinstance(val, dict):
-            for sub_key, sub_val in val.items():
-                flattened_dict[f"{key}_{sub_key}"] = sub_val
+    for key, value in d.items():
+        if key in keys_to_flatten and isinstance(value, dict):
+            for inner_key, inner_value in value.items():
+                flattened_dict[f"{key}_{inner_key}"] = inner_value
         else:
-            flattened_dict[key] = val
+            flattened_dict[key] = value
 
     return flattened_dict
+
+
+def apply_extract_key(d: dict[str, Any], key: str, keys_to_extract: set[str]) -> dict[str, Any]:
+    """Extract keys from a nested dictionary and put them in the first level if specific conditions are met.
+
+    Parameters
+    ----------
+    d : dict
+        The input dictionary that may contain nested dictionaries.
+    key : str
+        The key in the input dictionary whose value should be a nested dictionary.
+    keys_to_extract : set[str]
+        The set of keys to extract from the nested dictionary.
+
+    Returns
+    -------
+    dict
+        If conditions are met: a new dictionary containing all original key-value pairs
+        plus the extracted key-value pairs at the top level.
+        If conditions are not met: returns the input dictionary unchanged.
+
+    Notes
+    -----
+    The function will return the input dictionary unchanged if any of these conditions are met:
+    - The specified key is not in the input dictionary
+    - Any of keys_to_extract already exist in the top level of input dictionary
+    - None of keys_to_extract exist in the nested dictionary
+
+    Examples
+    --------
+    >>> component = {"name": "Gen01", "rating": {"up": 100, "down": -100}}
+    >>> apply_extract_key(component, "rating", {"up"})
+    {'name': 'Gen01', 'rating': {'up': 100, 'down': -100}, 'up': 100}
+
+    >>> # Returns unchanged when extracted key already exists at top level
+    >>> d = {"name": "Gen01", "rating": {"up": 100}, "up": 50}
+    >>> apply_extract_key(d, "rating", {"up"})
+    {'name': 'Gen01', 'rating': {'up': 100}, 'up': 50}
+
+    >>> # Returns unchanged when no keys_to_extract exist in nested dict
+    >>> apply_extract_key(component, "rating", {"middle"})
+    {'name': 'Gen01', 'rating': {'up': 100, 'down': -100}}
+    """
+    if key not in d.keys() or any(k in d.keys() for k in keys_to_extract):
+        return d
+
+    if not any(k in d[key].keys() for k in keys_to_extract):
+        return d
+
+    extracted_keys = {key: value for key, value in d[key].items() if key in keys_to_extract}
+    return {**d, **extracted_keys}

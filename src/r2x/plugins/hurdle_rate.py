@@ -8,7 +8,7 @@ from argparse import ArgumentParser
 from loguru import logger
 
 from r2x.api import System
-from r2x.config import Scenario
+from r2x.config_scenario import Scenario
 from r2x.models.branch import MonitoredLine
 from r2x.parser.handler import BaseParser
 
@@ -53,9 +53,9 @@ def update_system(
     logger.info("Applying hurdle rate to transmission lines")
 
     if parser is not None:
-        assert (
-            parser.data.get("hierarchy") is not None
-        ), "Did not find hierarchy file on parser. Check parser object."
+        assert parser.data.get("hierarchy") is not None, (
+            "Did not find hierarchy file on parser. Check parser object."
+        )
 
     for line in system.get_components(MonitoredLine):
         region_to = line.to_bus.load_zone.name

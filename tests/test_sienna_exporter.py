@@ -1,18 +1,23 @@
+from typing import Any
+from infrasys.cost_curves import CostCurve, FuelCurve, UnitSystem
+from infrasys.function_data import PiecewiseLinearData, QuadraticFunctionData, XYCoords
+from infrasys.value_curves import InputOutputCurve, LinearCurve
 import pytest
 
-from r2x.config import Scenario
+from r2x.config_scenario import Scenario
 from r2x.exporter.sienna import SiennaExporter, apply_operation_table_data, get_psy_fields
+from r2x.models.costs import ThermalGenerationCost
 
 
 @pytest.fixture
 def scenario_instance(data_folder, tmp_folder):
-    return Scenario(
+    return Scenario.from_kwargs(
         name="Test Scenario",
         run_folder=data_folder,
         output_folder=tmp_folder,
         input_model="infrasys",
         output_model="sienna",
-        solve_year=2010,
+        model_year=2010,
     )
 
 
@@ -53,33 +58,23 @@ def test_sienna_exporter_empty_storage(caplog, sienna_exporter):
     assert "No storage devices found" in caplog.text
 
 
-@pytest.fixture
-def sample_component():
-    return {
-        "operation_cost": {
-            "variable": {
-                "vom_cost": {"function_data": {"proportional_term": 10}},
-                "fuel_cost": 0.05,
-                "value_curve": {
-                    "function_data": {
-                        "constant_term": 100,
-                        "proportional_term": 20,
-                        "quadratic_term": 0.5,
-                        "points": [(0, 0), (50, 1000), (100, 2500)],
-                    }
-                },
-            },
-            "variable_type": "CostCurve",
-        }
-    }
-
-
 def test_get_psy_fields():
     fields = get_psy_fields()
     assert isinstance(fields, dict)
 
 
-def test_apply_operation_table_data_basic(sample_component):
+def test_apply_operation_table_data_basic():
+    sample_component = {
+        "operation_cost": ThermalGenerationCost(
+            variable=FuelCurve(
+                value_curve=LinearCurve(10.0, 12),
+                vom_cost=LinearCurve(10.0),
+                fuel_cost=0.05,
+                power_units=UnitSystem.NATURAL_UNITS,
+            )
+        ).model_dump(mode="python", serialize_as_any=True)
+    }
+
     updated_component = apply_operation_table_data(sample_component)
 
     assert "variable_cost" in updated_component
@@ -88,7 +83,21 @@ def test_apply_operation_table_data_basic(sample_component):
     assert updated_component["fuel_price"] == 50  # 0.05 * 1000
 
 
-def test_apply_operation_table_data_heat_rate(sample_component):
+def test_apply_operation_table_data_heat_rate():
+    sample_component = {
+        "operation_cost": ThermalGenerationCost(
+            variable=FuelCurve(
+                value_curve=InputOutputCurve(
+                    function_data=QuadraticFunctionData(
+                        constant_term=100, proportional_term=20, quadratic_term=0.5
+                    )
+                ),
+                vom_cost=LinearCurve(10.0),
+                fuel_cost=0.05,
+                power_units=UnitSystem.NATURAL_UNITS,
+            )
+        ).model_dump(mode="python", serialize_as_any=True)
+    }
     updated_component = apply_operation_table_data(sample_component)
 
     assert "heat_rate_a0" in updated_component
@@ -99,8 +108,19 @@ def test_apply_operation_table_data_heat_rate(sample_component):
     assert updated_component["heat_rate_a2"] == 0.5
 
 
-def test_apply_operation_table_data_cost_curve(sample_component):
-    updated_component = apply_operation_table_data(sample_component)
+def test_apply_operation_table_data_cost_curve():
+    cost_curve_component = {
+        "operation_cost": ThermalGenerationCost(
+            variable=CostCurve(
+                value_curve=InputOutputCurve(
+                    function_data=PiecewiseLinearData(points=[XYCoords(x=0, y=0), XYCoords(x=50, y=1000)])
+                ),
+                vom_cost=LinearCurve(10.0),
+                power_units=UnitSystem.NATURAL_UNITS,
+            )
+        ).model_dump(mode="python", serialize_as_any=True)
+    }
+    updated_component = apply_operation_table_data(cost_curve_component)
 
     assert "output_point_0" in updated_component
     assert "cost_point_0" in updated_component
@@ -112,10 +132,17 @@ def test_apply_operation_table_data_cost_curve(sample_component):
 
 def test_apply_operation_table_data_fuel_curve():
     fuel_curve_component = {
-        "operation_cost": {
-            "variable": {"value_curve": {"function_data": {"points": [(0, 0), (50, 10), (100, 25)]}}},
-            "variable_type": "FuelCurve",
-        }
+        "operation_cost": ThermalGenerationCost(
+            variable=FuelCurve(
+                value_curve=InputOutputCurve(
+                    function_data=PiecewiseLinearData(
+                        points=[XYCoords(x=0, y=0), XYCoords(x=50, y=10), XYCoords(x=100, y=25)]
+                    )
+                ),
+                vom_cost=LinearCurve(10.0),
+                power_units=UnitSystem.NATURAL_UNITS,
+            )
+        ).model_dump(mode="python", serialize_as_any=True)
     }
     updated_component = apply_operation_table_data(fuel_curve_component)
 
@@ -140,14 +167,22 @@ def test_apply_operation_table_data_no_variable():
 
 
 def test_apply_operation_table_data_unsupported_curve():
-    component = {
-        "operation_cost": {
-            "variable": {"value_curve": {"function_data": {"points": [(0, 0), (50, 10), (100, 25)]}}},
-            "variable_type": "UnsupportedCurve",
-        }
+    wrong_curve_component: dict[str, Any] = {
+        "operation_cost": ThermalGenerationCost(
+            variable=FuelCurve(
+                value_curve=InputOutputCurve(
+                    function_data=PiecewiseLinearData(
+                        points=[XYCoords(x=0, y=0), XYCoords(x=50, y=10), XYCoords(x=100, y=25)]
+                    )
+                ),
+                vom_cost=LinearCurve(10.0),
+                power_units=UnitSystem.NATURAL_UNITS,
+            )
+        ).model_dump(mode="python", serialize_as_any=True)
     }
+    wrong_curve_component["operation_cost"]["variable_type"] = "NewValueCurve"
     with pytest.raises(NotImplementedError):
-        apply_operation_table_data(component)
+        apply_operation_table_data(wrong_curve_component)
 
 
 def test_apply_operation_table_data_none_fuel_cost():

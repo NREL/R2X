@@ -2,6 +2,8 @@
 
 import argparse
 import importlib
+import os
+
 from .__version__ import __version__
 
 FILES_WITH_ARGS = [
@@ -9,6 +11,8 @@ FILES_WITH_ARGS = [
     "r2x.plugins.break_gens",
     "r2x.plugins.emission_cap",
     "r2x.plugins.hurdle_rate",
+    "r2x.plugins.cambium",
+    "r2x.plugins.electrolyzer",
     "r2x.parser.plexos",
     "r2x.parser.reeds",
     "r2x.exporter.plexos",
@@ -61,7 +65,10 @@ def get_additional_arguments(
             raise NotImplementedError(msg)
 
         _, package_name, script_name = package_str
-        package_script = importlib.import_module(f"{package}")
+        try:
+            package_script = importlib.import_module(f"{package}")
+        except ImportError:
+            continue
         if hasattr(package_script, "cli_arguments"):
             script_cli_group = parser.add_argument_group(f"{package_name.upper()}: {script_name}")
             package_script.cli_arguments(script_cli_group)
@@ -72,24 +79,38 @@ def get_additional_arguments(
 def base_cli() -> argparse.ArgumentParser:
     """Create parser object for CLI."""
     parser = argparse.ArgumentParser(
-        description="""Execute translation of ReEDS scenario results into X model""",
+        description="""Model translation framework""",
         add_help=True,
         prog="r2x",
     )
+    subparsers = parser.add_subparsers(dest="command", help="Subcommands")
+    init_command = subparsers.add_parser("init", help="Create an empty configuration file.")
+    run_command = subparsers.add_parser("run", help="Run an R2X translation")
 
-    group_run = parser.add_argument_group("Options for running the code")
-    group = group_run.add_mutually_exclusive_group()
+    init_command.add_argument(
+        "-o",
+        nargs="?",
+        dest="path",
+        default=os.getcwd(),
+        help="Destination folder where the file will be copied. Defaults to current directory.",
+    )
+
+    group_run = run_command.add_argument_group("Options for running the code")
+    group_run.add_argument("--inspect", action="store_true", help="Inspect resulting infrasys system.")
+    group_run.add_argument("--upgrade", action="store_true", help="Run upgrader logic.")
+    group = group_run.add_mutually_exclusive_group(required=True)
     group.add_argument(
         "-i",
         dest="run_folder",
         help="Location of the folder with the input model data",
     )
     group.add_argument(
-        "--cases",
-        dest="cases_file",
-        help="Path to the cases file",
+        "--config",
+        "--user-config",
+        dest="user_config",
+        help="User configuration",
     )
-    group_cli = parser.add_argument_group("Args used alongside run folder")
+    group_cli = run_command.add_argument_group("Arguments used with a run folder")
     group_cli.add_argument(
         "--name",
         dest="name",
@@ -109,7 +130,7 @@ def base_cli() -> argparse.ArgumentParser:
     group_cli.add_argument(
         "--output-model",
         dest="output_model",
-        choices=["plexos", "sienna", "pras"],
+        choices=["plexos", "sienna", "infrasys"],
         help="Output model to convert to",
     )
     group_cli.add_argument(
@@ -147,12 +168,11 @@ def base_cli() -> argparse.ArgumentParser:
     group_cli.add_argument(
         "--save",
         action="store_true",
-        help="Store system in the same output folder",
+        help="Serialize infrasys system.",
     )
-    group_cli.add_argument("--inspect", action="store_true", help="Inspect infrasys system")
-    group_cli.add_argument("--upgrade", action="store_true", help="Run upgrader")
-    group_cli.add_argument("--flags", nargs="*", dest="feature_flags", action=Flags, help="Feature flags")
-    parser.add_argument("--debug", action="store_true", help="Enable debug logging")
-    parser.add_argument("--version", action="version", version=f"R2X version: {__version__}")
-    parser = get_additional_arguments(parser)
+    run_command.add_argument("--pdb", action="store_true", dest="pdb", help="Run with debugger enabled.")
+    run_command.add_argument("--flags", nargs="*", dest="feature_flags", action=Flags, help="Feature flags")
+    parser.add_argument("--verbose", "-v", action="count", default=0, help="Run with additional verbosity")
+    parser.add_argument("--version", "-V", action="version", version=f"R2X version: {__version__}")
+    _ = get_additional_arguments(run_command)
     return parser

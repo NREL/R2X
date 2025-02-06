@@ -10,7 +10,7 @@ from typing import Any
 
 import numpy as np
 import polars as pl
-from infrasys.cost_curves import CostCurve, FuelCurve
+from infrasys.cost_curves import CostCurve, FuelCurve, UnitSystem
 from infrasys.exceptions import ISNotStored
 from infrasys.function_data import (
     LinearFunctionData,
@@ -24,8 +24,8 @@ from plexosdb import PlexosSQLite
 from plexosdb.enums import ClassEnum, CollectionEnum
 
 from r2x.api import System
-from r2x.config import Scenario
-from r2x.enums import ACBusTypes, PrimeMoversType, ReserveDirection, ReserveType
+from r2x.config_models import PlexosConfig
+from r2x.enums import ACBusTypes, PrimeMoversType, ReserveDirection, ReserveType, ThermalFuels
 from r2x.exceptions import ModelError, ParserError
 from r2x.models import (
     ACBus,
@@ -46,7 +46,7 @@ from r2x.models.core import MinMax
 from r2x.models.costs import HydroGenerationCost, RenewableGenerationCost, ThermalGenerationCost
 from r2x.models.load import PowerLoad
 from r2x.units import ureg
-from r2x.utils import get_pint_unit, validate_string
+from r2x.utils import get_enum_from_string, get_pint_unit, validate_string
 
 from .handler import PCMParser, csv_handler
 from .parser_helpers import (
@@ -59,6 +59,7 @@ from .plexos_utils import (
     DATAFILE_COLUMNS,
     PLEXOS_ACTION_MAP,
     filter_property_dates,
+    find_xml,
     get_column_enum,
     parse_data_file,
     time_slice_handler,
@@ -153,42 +154,47 @@ class PlexosParser(PCMParser):
     def __init__(self, *args, xml_file: str | None = None, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         assert self.config.run_folder
+        assert self.config.input_config
+        assert isinstance(self.config.input_config, PlexosConfig)  # Only take Plexos configurations
         self.run_folder = Path(self.config.run_folder)
+        self.input_config = self.config.input_config
         self.system = System(name=self.config.name, auto_add_composed_components=True)
-        self.property_map = self.config.defaults["plexos_input_property_map"] or {}
-        self.device_map = self.config.defaults["plexos_device_map"] or {}
-        self.fuel_map = self.config.defaults["plexos_fuel_map"] or {}
-        self.category_map = self.config.defaults["plexos_category_map"] or {}
-        self.device_match_string = self.config.defaults["device_name_inference_map"] or {}
-        self.generator_models = self.config.defaults["generator_models"] or {}
-        self.year = self.config.solve_year
+        self.property_map = self.input_config.defaults["plexos_input_property_map"] or {}
+        self.device_map = self.input_config.defaults["plexos_device_map"] or {}
+        self.fuel_map = self.input_config.defaults["plexos_fuel_map"] or {}
+        self.category_map = self.input_config.defaults["plexos_category_map"] or {}
+        self.device_match_string = self.input_config.defaults["device_name_inference_map"] or {}
+        self.generator_models = self.input_config.defaults["generator_models"] or {}
+        self.year = self.input_config.model_year
         assert self.year
         assert isinstance(self.year, int)
 
         # TODO(pesap): Rename exceptions to include R2X
         # https://github.com/NREL/R2X/issues/5
         # R2X needs at least one of this maps defined to correctly work.
-        if (
-            not self.fuel_map
-            and not self.device_map
-            and not self.device_match_string
-            and not self.category_map
-        ):
-            msg = (
-                "Neither `plexos_fuel_map` or `plexos_device_map` or `device_match_string` was provided. "
-                "To fix, provide any of the mappings."
-            )
+        one_required = ["fuel_map", "device_map", "device_match_string", "category_map"]
+        if all(getattr(self, one_req, {}) == {} for one_req in one_required):
+            msg = f"At least one of {', or '.join(one_required)} is required to initialize PlexosParser"
             raise ParserError(msg)
 
         # Populate databse from XML file.
-        xml_file = xml_file or self.run_folder / self.config.fmap["xml_file"]["fname"]
+        # If xml file is not specified, check user_dict["fmap"]["xml_file"] or use
+        # only xml file in project directory
+        if xml_file is None:
+            xml_file = self.input_config.fmap.get("xml_file", {}).get("fname", None)
+            xml_file = xml_file or str(find_xml(self.run_folder))
+
+        xml_file = str(self.run_folder / xml_file)
+
         self.db = PlexosSQLite(xml_fname=xml_file)
 
         # Extract scenario data
-        model_name = getattr(self.config, "model", None)
-        logger.info("Parsing plexos model={}", model_name)
+        model_name = getattr(self.input_config, "model_name", None) or self.input_config.fmap.get(
+            "xml_file", {}
+        ).get("model_name", None)
         if model_name is None:
             model_name = self._select_model_name()
+        logger.info("Parsing plexos model={}", model_name)
         self._process_scenarios(model_name=model_name)
 
         # date from is in days since 1900, convert to year
@@ -298,7 +304,7 @@ class PlexosParser(PCMParser):
         )
         regions = self._get_model_data(system_regions)
 
-        region_pivot = regions.pivot(  # noqa: PD010
+        region_pivot = regions.pivot(
             index=DEFAULT_INDEX,
             on="property_name",
             values="property_value",
@@ -341,9 +347,9 @@ class PlexosParser(PCMParser):
             # We parse all the buses as PV unless in the model someone specify a bus is a slack.
             # Plexos defines the True value of a Slack bus assigning it -1. Possible values are only 0
             # (False), -1 (True).
-            valid_fields["bus_type"] = ACBusTypes.PV
+            valid_fields["bustype"] = ACBusTypes.PV
             if mapped_records.get("Is Slack Bus") == -1:
-                valid_fields["bus_type"] = ACBusTypes.SLACK
+                valid_fields["bustype"] = ACBusTypes.SLACK
 
             valid_fields["base_voltage"] = (
                 230.0 if not valid_fields.get("base_voltage") else valid_fields["base_voltage"]
@@ -391,8 +397,8 @@ class PlexosParser(PCMParser):
             mapped_records, _ = self._parse_property_data(property_records)
             mapped_records["name"] = reserve_name
             reserve_type = validate_string(mapped_records.pop("Type", "default"))
-            plexos_reserve_map = self.config.defaults["reserve_types"].get(
-                str(reserve_type), self.config.defaults["reserve_types"]["default"]
+            plexos_reserve_map = self.input_config.defaults["reserve_types"].get(
+                str(reserve_type), self.input_config.defaults["reserve_types"]["default"]
             )  # Pass string so we do not need to convert the json mapping.
             mapped_records["reserve_type"] = ReserveType[plexos_reserve_map["type"]]
             mapped_records["direction"] = ReserveDirection[plexos_reserve_map["direction"]]
@@ -425,7 +431,7 @@ class PlexosParser(PCMParser):
         )
         system_lines = self._get_model_data(system_lines)
 
-        lines_pivot = system_lines.pivot(  # noqa: PD010
+        lines_pivot = system_lines.pivot(
             index=DEFAULT_INDEX,
             on="property_name",
             values="property_value",
@@ -483,7 +489,7 @@ class PlexosParser(PCMParser):
             pl.col("parent_class_name") == ClassEnum.System.value
         )
         system_transformers = self._get_model_data(system_transformers)
-        transformer_pivot = system_transformers.pivot(  # noqa: PD010
+        transformer_pivot = system_transformers.pivot(
             index=DEFAULT_INDEX,
             on="property_name",
             values="property_value",
@@ -675,7 +681,9 @@ class PlexosParser(PCMParser):
             # Get prime mover enum
             mapped_records["prime_mover_type"] = fuel_pmtype["type"]
             mapped_records["prime_mover_type"] = PrimeMoversType[mapped_records["prime_mover_type"]]
-            mapped_records["fuel"] = fuel_pmtype["fuel"]
+            mapped_records["fuel"] = (
+                get_enum_from_string(fuel_pmtype["fuel"], ThermalFuels) if fuel_pmtype.get("fuel") else None
+            )
 
             # Pumped Storage generators are not required to have Max Capacity property
             if "max_active_power" not in mapped_records and "pump_load" in mapped_records:
@@ -884,7 +892,7 @@ class PlexosParser(PCMParser):
             pl.col("parent_class_name") == ClassEnum.System.name
         )
         system_interfaces = self._get_model_data(system_interfaces_mask)
-        interfaces = system_interfaces.pivot(  # noqa: PD010
+        interfaces = system_interfaces.pivot(
             index=DEFAULT_INDEX,
             on="property_name",
             values="property_value",
@@ -893,7 +901,7 @@ class PlexosParser(PCMParser):
 
         interface_property_map = {
             v: k
-            for k, v in self.config.defaults["plexos_input_property_map"].items()
+            for k, v in self.input_config.defaults["plexos_input_property_map"].items()
             if k in default_model.model_fields
         }
 
@@ -1030,6 +1038,8 @@ class PlexosParser(PCMParser):
     def _construct_operating_costs(self, mapped_records, generator_name, model_map):
         """Construct operating costs from Value Curves and Operating Costs."""
         vom_cost = mapped_records.get("vom_price", 0.0)
+        if isinstance(vom_cost, Quantity):
+            vom_cost = vom_cost.magnitude
 
         if issubclass(model_map, RenewableGen):
             mapped_records["operation_cost"] = RenewableGenerationCost()
@@ -1041,9 +1051,15 @@ class PlexosParser(PCMParser):
             elif isinstance(fuel_cost, Quantity):
                 fuel_cost = fuel_cost.magnitude
             if heat_rate_curve:
-                cost_curve = FuelCurve(value_curve=heat_rate_curve, fuel_cost=fuel_cost)
+                cost_curve = FuelCurve(
+                    value_curve=heat_rate_curve, fuel_cost=fuel_cost, power_units=UnitSystem.NATURAL_UNITS
+                )
             else:
-                cost_curve = CostCurve(value_curve=LinearCurve(0), vom_cost=LinearCurve(vom_cost))
+                cost_curve = CostCurve(
+                    value_curve=LinearCurve(0),
+                    vom_cost=LinearCurve(vom_cost),
+                    power_units=UnitSystem.NATURAL_UNITS,
+                )
             mapped_records["operation_cost"] = ThermalGenerationCost(
                 variable=cost_curve,
                 start_up=mapped_records.get("startup_cost", 0),
@@ -1226,7 +1242,7 @@ class PlexosParser(PCMParser):
         return record
 
     def _get_active_power_limits(self, record) -> MinMax:
-        assert record["base_power"] is not None
+        # assert record["base_power"] is not None
         if active_power_min := record.get("min_rated_capacity"):
             if isinstance(active_power_min, SingleTimeSeries):
                 active_power_min = np.nanmin(active_power_min.data)
@@ -1399,10 +1415,11 @@ class PlexosParser(PCMParser):
             parsed_file = parsed_file.unique(subset=columns_to_check).sort(pl.all())
 
         # We reconcile the time series data using the hourly time stamp given by the solve year
+
         parsed_file = reconcile_timeseries(parsed_file, hourly_time_index=self.hourly_time_index)
-        assert (
-            "value" in parsed_file.columns
-        ), f"Error: column value not found on time series file for {record_name}:{property_name}"
+        assert "value" in parsed_file.columns, (
+            f"Error: column value not found on time series file for {record_name}:{property_name}"
+        )
         return parsed_file["value"].cast(pl.Float64).to_numpy()
 
     def _create_columns_to_check(self, column_type: DATAFILE_COLUMNS):
@@ -1412,7 +1429,7 @@ class PlexosParser(PCMParser):
             for column in column_type.value
             if column in ["name", "pattern", "year", "datetime", "month", "day", "period", "hour"]
         ]
-        if column_type == DATAFILE_COLUMNS.TS_YMDH:
+        if column_type == DATAFILE_COLUMNS.TS_YMDH or column_type == DATAFILE_COLUMNS.TS_NMDH:
             columns_to_check.append("hour")
         if column_type == DATAFILE_COLUMNS.TS_NM:
             columns_to_check.append("month")
@@ -1476,7 +1493,7 @@ class PlexosParser(PCMParser):
         resolution = timedelta(hours=1)
 
         return SingleTimeSeries(
-            data=ureg.Quantity(value, unit) if unit else value,
+            data=ureg.Quantity(value, unit) if unit else value,  # type: ignore
             variable_name=variable_name,
             initial_time=initial_time,
             resolution=resolution,
@@ -1747,24 +1764,3 @@ class PlexosParser(PCMParser):
                 return nested_object_record["property_value"]
             case _:
                 raise NotImplementedError
-
-
-if __name__ == "__main__":
-    from ..logger import setup_logging
-    from .handler import get_parser_data
-
-    run_folder = Path("")
-    # Functions relative to the parser.
-    setup_logging(level="DEBUG")
-
-    config = Scenario.from_kwargs(
-        name="Plexos-Test",
-        input_model="plexos",
-        run_folder=run_folder,
-        solve_year=2030,
-        weather_year=2030,
-        model="",
-    )
-    config.fmap["xml_file"]["fname"] = ""
-
-    parser = get_parser_data(config=config, parser_class=PlexosParser)
