@@ -89,6 +89,13 @@ class SiennaExporter(BaseExporter):
             msg = "Multiple solve years are not supported yet."
             raise NotImplementedError(msg)
 
+        # RG 2025-02-06: For some reason, I get an error here, and I can't trace the git history to figure out how this config initialization worked before:
+        #   File "/Users/roderick/PycharmProjects/r2x/src/r2x/config_models.py", line 47, in to_class
+        #     field_mappings = self.get_field_mapping().get(target_class, {})
+        #                      ^^^^^^^^^^^^^^^^^^^^^^^^
+        #   File "/Users/roderick/PycharmProjects/r2x/src/r2x/config_models.py", line 37, in get_field_mapping
+        #     raise NotImplementedError
+        # NotImplementedError
         self.output_config = self.config.input_config.to_class(SiennaConfig, self.config.output_config)
         self.property_map = self.output_config.defaults.get("sienna_property_map", {})
         self.unit_map = self.output_config.defaults.get("sienna_unit_map", {})

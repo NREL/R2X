@@ -227,6 +227,10 @@
       {
         "fuel": null,
         "type": "CC"
+      },
+      {
+        "fuel": null,
+        "type": "IC"
       }
     ]
   },

@@ -614,7 +614,7 @@ class PlexosParser(PCMParser):
             return ""
         for model, conditions in self.generator_models.items():
             for cond in conditions:
-                if (cond["fuel"] == fuel_pmtype["fuel"] or cond["fuel"] is None) and (
+                if (cond["fuel"] == fuel_pmtype.get("fuel", None) or cond["fuel"] is None) and (
                     cond["type"] == fuel_pmtype["type"] or cond["type"] is None
                 ):
                     return model
@@ -1058,7 +1058,7 @@ class PlexosParser(PCMParser):
             fuel_cost = mapped_records.get("fuel_price", 0)
             if isinstance(fuel_cost, SingleTimeSeries):
                 fuel_cost = np.mean(fuel_cost.data)
-            elif isinstance(fuel_cost, Quantity):
+            if isinstance(fuel_cost, Quantity):
                 fuel_cost = fuel_cost.magnitude
             if heat_rate_curve:
                 cost_curve = FuelCurve(
