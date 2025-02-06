@@ -49,11 +49,14 @@ def five_bus_variables_scenario(tmp_path, data_folder):
     return Scenario.from_kwargs(
         name="plexos_test",
         input_model="plexos",
+        output_model="sienna",
         run_folder=data_folder / "5_bus_system_variables",
         output_folder=tmp_path,
-        solve_year=2035,
-        weather_year=2012,
-        fmap={"xml_file": {"fname": "5_bus_system_variables.xml", "model": "default"}},
+        model_year=2035,
+        fmap={"xml_file": {"fname": "5_bus_system_variables.xml", "model": "Base"}},
+        user_dict={
+            "fmap": {"xml_file": {"fname": "5_bus_system_variables.xml", "model": "Base"}},
+        },
     )
 
 
@@ -101,14 +104,15 @@ def test_parser_system(pjm_scenario):
 
 def test_variable_parsing(five_bus_variables_scenario):
     plexos_category_map = {
-        "thermal": {"fuel": "GAS", "type": "CC"},
-        "solar": {"fuel": "SUN", "type": "WT"},
-        "wind": {"fuel": "WIND", "type": "PV"},
+        "thermal": {"fuel": "NATURAL_GAS", "type": "CC"},
+        "solar": {"fuel": None, "type": "WT"},
+        "wind": {"fuel": None, "type": "PV"},
     }
-    five_bus_variables_scenario.defaults["plexos_category_map"] = plexos_category_map
-    five_bus_variables_scenario.model = "Base"
-    parser = get_parser_data(five_bus_variables_scenario, parser_class=PlexosParser)
+    five_bus_variables_scenario.input_config.model_name = "Base"
 
+    five_bus_variables_scenario.input_config.defaults["plexos_category_map"] = plexos_category_map
+
+    parser = get_parser_data(five_bus_variables_scenario, parser_class=PlexosParser)
     system = parser.build_system()
     assert isinstance(system, System)
 
@@ -119,5 +123,5 @@ def test_variable_parsing(five_bus_variables_scenario):
         ts_metadata = system.get_time_series(component, "max_active_power")
         record_ts[component.name] = ts_metadata
 
-    assert sum(record_ts["SolarPV1"].data.to_pylist()) == 4224.0
+    assert sum(record_ts["SolarPV1"].data.tolist()) == 4224.0
     assert "SolarPV2" not in record_ts
