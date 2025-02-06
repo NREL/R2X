@@ -941,11 +941,21 @@ class PlexosParser(PCMParser):
             }
             valid_fields, ext_data = field_filter(mapped_interface, default_model.model_fields)
 
+            # Add flow limits
+            if "Max Flow" in mapped_interface:
+                valid_fields["active_power_flow_limits"] = MinMax(
+                    min=mapped_interface.get("Min Flow", 0.0), max=mapped_interface["Max Flow"]
+                )
+
+            # NOTE: TransmissionInterface require a direction mapping. This basically says the direction of
+            # the flow to each of the lines contributing to the interface.
+            valid_fields["direction_mapping"] = {}
+
             # Check that the interface has all the required fields of the model.
             required_fields = {
                 key: value for key, value in default_model.model_fields.items() if value.is_required()
             }
-            if not all(key in mapped_interface for key in required_fields):
+            if not all(key in valid_fields for key in required_fields):
                 missing_fields = [key for key in required_fields if key not in mapped_interface]
                 logger.warning(
                     "{}:{} missing required fields: {}. Skipping it.",
