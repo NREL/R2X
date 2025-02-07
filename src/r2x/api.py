@@ -95,7 +95,7 @@ class System(ISSystem):
         with open(str(fpath), "w", newline="") as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=fields, extrasaction="ignore", **dict_writer_kwargs)  # type: ignore
             writer.writeheader()
-            for row in data:
+            for row in sorted(data, key=lambda d: d["name"]):
                 writer.writerow(row)
         return
 

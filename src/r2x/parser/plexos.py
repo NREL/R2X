@@ -318,8 +318,18 @@ class PlexosParser(PCMParser):
 
     def _construct_buses(self, default_model=ACBus) -> None:
         logger.info("Creating buses representation")
-        system_buses = (pl.col("child_class_name") == ClassEnum.Node.value) & (
-            pl.col("parent_class_name") == ClassEnum.System.value
+
+        # Get list of buses that are connected to lines, because `sienna` doesn't like islanded buses
+        buses_connected_to_lines = self._get_model_data((
+            (pl.col("parent_class_name") == ClassEnum.Line.value) &
+            (pl.col("child_class_name") == ClassEnum.Node.value)
+
+        ))["name"]
+
+        system_buses = (
+            (pl.col("child_class_name") == ClassEnum.Node.value) &
+            (pl.col("parent_class_name") == ClassEnum.System.value) &
+            (pl.col("name").is_in(buses_connected_to_lines))
         )
         region_buses = (pl.col("child_class_name") == ClassEnum.Region.value) & (
             pl.col("parent_class_name") == ClassEnum.Node.value
@@ -604,7 +614,7 @@ class PlexosParser(PCMParser):
             return ""
         for model, conditions in self.generator_models.items():
             for cond in conditions:
-                if (cond["fuel"] == fuel_pmtype["fuel"] or cond["fuel"] is None) and (
+                if (cond["fuel"] == fuel_pmtype.get("fuel", None) or cond["fuel"] is None) and (
                     cond["type"] == fuel_pmtype["type"] or cond["type"] is None
                 ):
                     return model
@@ -1048,7 +1058,7 @@ class PlexosParser(PCMParser):
             fuel_cost = mapped_records.get("fuel_price", 0)
             if isinstance(fuel_cost, SingleTimeSeries):
                 fuel_cost = np.mean(fuel_cost.data)
-            elif isinstance(fuel_cost, Quantity):
+            if isinstance(fuel_cost, Quantity):
                 fuel_cost = fuel_cost.magnitude
             if heat_rate_curve:
                 cost_curve = FuelCurve(
