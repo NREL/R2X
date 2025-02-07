@@ -1275,7 +1275,10 @@ class PlexosParser(PCMParser):
         # Filtering Variables to select only the correct band-id which should be used
         # when accessing Variable data. We may also need to apply this filtering to
         # other Enum classes.
-        variables = data.filter(pl.col("child_class_name") == ClassEnum.Variable.name)
+        variables = data.filter(
+            (pl.col("child_class_name") == ClassEnum.Variable.name)
+            & (pl.col("parent_class_name") == ClassEnum.System.name)
+        )
         if not variables.is_empty():
             variables = variables.group_by("object_id", maintain_order=True).map_groups(
                 lambda groupdf: groupdf.filter(pl.col("band") == pl.col("band").min())
