@@ -494,17 +494,16 @@ class SiennaExporter(BaseExporter):
                 ts_instance = time_series[i]
                 resolution = ts_instance.resolution.seconds
                 variable_name = self.property_map.get(ts_instance.variable_name, ts_instance.variable_name)
-                # TODO(pedro): check if the time series data is pre normalized
-                # https://github.com/NREL/R2X/issues/417
+                # Set to None if the variable is not found in the property map
                 ts_pointers = {
                     "category": component_type.split("_", maxsplit=1)[0],  # Component_name is the first
                     "component_name": component_name,
                     "data_file": str(csv_fpath),
-                    "normalization_factor": "Max",
+                    "normalization_factor": None,
                     "resolution": resolution,
                     "name": variable_name,
                     "scaling_factor_multiplier_module": "PowerSystems",
-                    "scaling_factor_multiplier": "get_max_active_power",
+                    "scaling_factor_multiplier": None,
                 }
                 ts_pointers_list.append(ts_pointers)
 
