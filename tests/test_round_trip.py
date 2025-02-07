@@ -52,6 +52,7 @@ def test_round_trip(tmp_folder, reeds_data_folder):
     # Export plexos to infrasys
     deserialized_plexos, parser = run_parser(plexos_infrasys_config)
 
+    assert 0
     assert (
         original_system._components.get_num_components()
         == deserialized_plexos._components.get_num_components()

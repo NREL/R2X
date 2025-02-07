@@ -25,7 +25,7 @@ from plexosdb.enums import ClassEnum, CollectionEnum
 
 from r2x.api import System
 from r2x.config_models import PlexosConfig
-from r2x.enums import ACBusTypes, PrimeMoversType, ReserveDirection, ReserveType, ThermalFuels
+from r2x.enums import ACBusTypes, EmissionType, PrimeMoversType, ReserveDirection, ReserveType, ThermalFuels
 from r2x.exceptions import ModelError, ParserError
 from r2x.exporter.utils import get_property_magnitude
 from r2x.models import (
@@ -46,6 +46,8 @@ from r2x.models.branch import Transformer2W
 from r2x.models.core import MinMax
 from r2x.models.costs import HydroGenerationCost, RenewableGenerationCost, ThermalGenerationCost
 from r2x.models.load import PowerLoad
+from r2x.models.services import Emission
+from r2x.models.topology import Area
 from r2x.units import ureg
 from r2x.utils import get_enum_from_string, get_pint_unit, validate_string
 
@@ -220,6 +222,7 @@ class PlexosParser(PCMParser):
         self.plexos_data = self._polarize_data(object_data=object_data)
 
         # Construct the network
+        self._construct_areas()
         self._construct_load_zones()
         self._construct_buses()
         self._construct_branches()
@@ -238,6 +241,9 @@ class PlexosParser(PCMParser):
         self._add_battery_reserves()
 
         self._construct_load_profiles()
+
+        # Emission object_class
+        self._construct_emissions()
         return self.system
 
     def _collect_horizon_data(self, model_name: str) -> dict[str, float]:
@@ -292,6 +298,28 @@ class PlexosParser(PCMParser):
             fuel_prices[fuel_name] = mapped_records.get("Price", 0)
         return fuel_prices
 
+    def _construct_areas(self) -> None:
+        """Create Area representation.
+
+        Area is an aggregation of buses that could or could not be used for balancing purposes. What we are
+        parsing from PLEXOS is a the categories of the `ClassEnum.Region` as it is the most direct
+        representation of an Area.
+
+        """
+        logger.info("Creating Area representation")
+        system_regions = (pl.col("child_class_name") == ClassEnum.Region.value) & (
+            pl.col("parent_class_name") == ClassEnum.System.value
+        )
+        regions = self._get_model_data(system_regions)
+        region_pivot = regions.pivot(
+            index=DEFAULT_INDEX,
+            on="property_name",
+            values="property_value",
+            aggregate_function="first",
+        )
+        for area in region_pivot["category"].unique():
+            self.system.add_component(Area(name=area))
+
     def _construct_load_zones(self, default_model=LoadZone) -> None:
         """Create LoadZone representation.
 
@@ -300,7 +328,7 @@ class PlexosParser(PCMParser):
         of doing it.
         """
         logger.info("Creating load zone representation")
-        system_regions = (pl.col("child_class_name") == ClassEnum.Region.value) & (
+        system_regions = (pl.col("child_class_name") == ClassEnum.Zone.value) & (
             pl.col("parent_class_name") == ClassEnum.System.value
         )
         regions = self._get_model_data(system_regions)
@@ -334,8 +362,12 @@ class PlexosParser(PCMParser):
         region_buses = (pl.col("child_class_name") == ClassEnum.Region.value) & (
             pl.col("parent_class_name") == ClassEnum.Node.value
         )
+        zone_buses = (pl.col("child_class_name") == ClassEnum.Zone.value) & (
+            pl.col("parent_class_name") == ClassEnum.Node.value
+        )
         system_buses = self._get_model_data(system_buses)
         buses_region = self._get_model_data(region_buses)
+        buses_zone = self._get_model_data(zone_buses)
         for idx, (bus_name, bus_data) in enumerate(system_buses.group_by("name")):
             bus_name = bus_name[0]
             logger.trace("Parsing bus = {}", bus_name)
@@ -349,10 +381,14 @@ class PlexosParser(PCMParser):
 
             # Get region from buses region memberships
             region_name = buses_region.filter(pl.col("parent_object_id") == bus_data["object_id"].unique())[
+                "category"
+            ].item()
+            zone_name = buses_zone.filter(pl.col("parent_object_id") == bus_data["object_id"].unique())[
                 "name"
             ].item()
 
-            valid_fields["load_zone"] = self.system.get_component(LoadZone, name=region_name)
+            valid_fields["area"] = self.system.get_component(Area, name=region_name)
+            valid_fields["load_zone"] = self.system.get_component(LoadZone, name=zone_name)
 
             # We parse all the buses as PV unless in the model someone specify a bus is a slack.
             # Plexos defines the True value of a Slack bus assigning it -1. Possible values are only 0
@@ -391,6 +427,35 @@ class PlexosParser(PCMParser):
                     ts.variable_name = ts_name
                     self.system.add_time_series(ts, generator, **ts_dict)
         return
+
+    def _construct_emissions(self, default_model=Emission):
+        logger.info("Creating buses representation")
+        emission_objects = (pl.col("child_class_name") == ClassEnum.Emission.value) & (
+            pl.col("parent_class_name") == ClassEnum.System.value
+        )
+        generator_emissions = (pl.col("child_class_name") == ClassEnum.Generator.value) & (
+            pl.col("parent_class_name") == ClassEnum.Emission.value
+        )
+        emission_objects = self._get_model_data(emission_objects)
+        generator_emissions = self._get_model_data(generator_emissions)
+        generator_emissions = generator_emissions.join(
+            emission_objects, left_on="parent_object_id", right_on="object_id", suffix="_emission"
+        )
+
+        for generator_name, generator_data in generator_emissions.group_by(["name", "name_emission"]):
+            generator_name = generator_name[0]
+            logger.trace("Parsing generator emission properties = {}", generator_name)
+
+            property_records = generator_data.to_dicts()
+            mapped_records, multi_band_records = self._parse_property_data(property_records)
+            mapped_records["generator_name"] = generator_name
+            mapped_records["emission_type"] = get_enum_from_string(
+                generator_data["name_emission"].item(), EmissionType
+            )
+            mapped_records["name"] = f"{mapped_records['generator_name']}_{mapped_records['emission_type']}"
+            valid_fields, ext_data = field_filter(mapped_records, default_model.model_fields)
+            valid_fields = prepare_ext_field(valid_fields, ext_data)
+            self.system.add_component(default_model(**valid_fields))
 
     def _construct_reserves(self, default_model=Reserve):
         logger.info("Creating reserve representation")
