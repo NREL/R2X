@@ -500,11 +500,11 @@ class SiennaExporter(BaseExporter):
                     "category": component_type.split("_", maxsplit=1)[0],  # Component_name is the first
                     "component_name": component_name,
                     "data_file": str(csv_fpath),
-                    "normalization_factor": "Max",
+                    "normalization_factor": None,
                     "resolution": resolution,
                     "name": variable_name,
                     "scaling_factor_multiplier_module": "PowerSystems",
-                    "scaling_factor_multiplier": "get_max_active_power",
+                    "scaling_factor_multiplier": None,
                 }
                 ts_pointers_list.append(ts_pointers)
 
