@@ -1,4 +1,5 @@
 import pytest
+
 from r2x.config_scenario import Scenario
 from r2x.runner import run_single_scenario
 
@@ -25,6 +26,7 @@ def test_full_translation_workflow(input_model, output_model, name, run_folder, 
         solve_year=2050,
         model_year=2050,
         weather_year=2012,
+        reference_year=2012,
     )
 
     _ = run_single_scenario(scenario=config)

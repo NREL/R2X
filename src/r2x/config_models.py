@@ -90,16 +90,16 @@ class SiennaConfig(BaseModelConfig):
 class InfrasysConfig(BaseModelConfig):
     """Infrasys specific configuration."""
 
-    model_year: int | None = None
+    reference_year: int | None = None
 
     @classmethod
     def get_field_mapping(cls) -> dict[type[BaseModel], dict[str, str]]:
         """Return a dict of {target_class: {target_field: source_field}}."""
         return {
             PlexosConfig: {
-                "model_year": "model_year",
+                "horizon_year": "reference_year",
             },
-            SiennaConfig: {"model_year": "model_year"},
+            SiennaConfig: {"model_year": "reference_year"},
         }
 
 
