@@ -318,8 +318,18 @@ class PlexosParser(PCMParser):
 
     def _construct_buses(self, default_model=ACBus) -> None:
         logger.info("Creating buses representation")
-        system_buses = (pl.col("child_class_name") == ClassEnum.Node.value) & (
-            pl.col("parent_class_name") == ClassEnum.System.value
+
+        # Get list of buses that are connected to lines, because `sienna` doesn't like islanded buses
+        buses_connected_to_lines = self._get_model_data((
+            (pl.col("parent_class_name") == ClassEnum.Line.value) &
+            (pl.col("child_class_name") == ClassEnum.Node.value)
+
+        ))["name"]
+
+        system_buses = (
+            (pl.col("child_class_name") == ClassEnum.Node.value) &
+            (pl.col("parent_class_name") == ClassEnum.System.value) &
+            (pl.col("name").is_in(buses_connected_to_lines))
         )
         region_buses = (pl.col("child_class_name") == ClassEnum.Region.value) & (
             pl.col("parent_class_name") == ClassEnum.Node.value
