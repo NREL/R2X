@@ -459,7 +459,8 @@ class ReEDSParser(BaseParser):
             row["prime_mover_type"] = (
                 get_enum_from_string(fuel_pm["type"], PrimeMoversType) if fuel_pm.get("type") else None
             )
-            row["fuel"] = get_enum_from_string(fuel_pm["fuel"], ThermalFuels) if fuel_pm["fuel"] else None
+            if issubclass(gen_model, ThermalGen) and fuel_pm.get("fuel"):
+                row["fuel"] = get_enum_from_string(fuel_pm["fuel"], ThermalFuels)
 
             if gen_model.__name__ == "EnergyReservoirStorage":
                 row["storage_technology_type"] = StorageTechs.OTHER_CHEM
@@ -494,7 +495,7 @@ class ReEDSParser(BaseParser):
             if isinstance(fuel_price, Quantity):
                 fuel_price = fuel_price.magnitude
             if issubclass(gen_model, RenewableGen):
-                row["operation_cost"] = None
+                row["operation_cost"] = RenewableGenerationCost()
             if issubclass(gen_model, ThermalGen):
                 if heat_rate := row.get("heat_rate"):
                     if isinstance(heat_rate, Quantity):
@@ -643,7 +644,8 @@ class ReEDSParser(BaseParser):
                     RenewableDispatch,
                     filter_func=lambda x: x.bus.load_zone.name == region.name
                     and (
-                        x.prime_mover_type == PrimeMoversType.PV or x.prime_mover_type == PrimeMoversType.RTPV
+                        x.prime_mover_type == PrimeMoversType.PVe
+                        or x.prime_mover_type == PrimeMoversType.RTPV
                     ),
                 )
                 if self.system.has_time_series(component)

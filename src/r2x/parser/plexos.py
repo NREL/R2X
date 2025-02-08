@@ -45,6 +45,7 @@ from r2x.models import (
 from r2x.models.branch import Transformer2W
 from r2x.models.core import MinMax
 from r2x.models.costs import HydroGenerationCost, RenewableGenerationCost, ThermalGenerationCost
+from r2x.models.generators import HydroPumpedStorage
 from r2x.models.load import PowerLoad
 from r2x.models.services import Emission
 from r2x.models.topology import Area
@@ -175,8 +176,8 @@ class PlexosParser(PCMParser):
         # TODO(pesap): Rename exceptions to include R2X
         # https://github.com/NREL/R2X/issues/5
         # R2X needs at least one of this maps defined to correctly work.
-        one_required = ["fuel_map", "device_map", "device_match_string", "category_map"]
-        if all(getattr(self, one_req, {}) == {} for one_req in one_required):
+        one_required = ["fuel_map", "device_map", "category_map"]
+        if all(getattr(self, one_req, {}) == {} for one_req in one_required) and self.device_match_string:
             msg = f"At least one of {', or '.join(one_required)} is required to initialize PlexosParser"
             raise ParserError(msg)
 
@@ -243,7 +244,7 @@ class PlexosParser(PCMParser):
         self._construct_load_profiles()
 
         # Emission object_class
-        self._construct_emissions()
+        self._add_generator_emissions()
         return self.system
 
     def _collect_horizon_data(self, model_name: str) -> dict[str, float]:
@@ -428,7 +429,7 @@ class PlexosParser(PCMParser):
                     self.system.add_time_series(ts, generator, **ts_dict)
         return
 
-    def _construct_emissions(self, default_model=Emission):
+    def _add_generator_emissions(self, default_model=Emission):
         logger.info("Creating buses representation")
         emission_objects = (pl.col("child_class_name") == ClassEnum.Emission.value) & (
             pl.col("parent_class_name") == ClassEnum.System.value
@@ -680,7 +681,7 @@ class PlexosParser(PCMParser):
         assert isinstance(match_fuel_pmtype, dict), msg
         return match_fuel_pmtype
 
-    def _get_model_type(self, fuel_pmtype) -> str:
+    def _get_model_type(self, fuel_pmtype: dict[str, str | None]) -> str:
         """Get model type for given pair of fuel and prime mover type.
 
         Notes
@@ -696,11 +697,11 @@ class PlexosParser(PCMParser):
         assert len(self.generator_models) < 1000, "Change the data structure. Fool."
         if fuel_pmtype is None:
             return ""
-        for model, conditions in self.generator_models.items():
-            for cond in conditions:
-                if (cond["fuel"] == fuel_pmtype["fuel"] or cond["fuel"] is None) and (
-                    cond["type"] == fuel_pmtype["type"] or cond["type"] is None
-                ):
+        for model, items in self.generator_models.items():
+            if not isinstance(items, list):
+                continue
+            for item in items:
+                if item == fuel_pmtype:
                     return model
         return ""
 
@@ -744,6 +745,7 @@ class PlexosParser(PCMParser):
             generator_name = generator_name[0]
 
             category = generator_data["category"].unique()
+            object_id = generator_data["object_id"].unique().item()
             if len(category) > 1:
                 msg = "Generator has more then one category. Check the dataset"
                 logger.debug(msg)
@@ -775,15 +777,17 @@ class PlexosParser(PCMParser):
             # Get prime mover enum
             mapped_records["prime_mover_type"] = fuel_pmtype["type"]
             mapped_records["prime_mover_type"] = PrimeMoversType[mapped_records["prime_mover_type"]]
-            mapped_records["fuel"] = (
-                get_enum_from_string(fuel_pmtype["fuel"], ThermalFuels) if fuel_pmtype.get("fuel") else None
-            )
+
+            if issubclass(model_map, ThermalGen) and fuel_pmtype.get("fuel"):
+                mapped_records["fuel"] = get_enum_from_string(fuel_pmtype["fuel"], ThermalFuels)
 
             # Pumped Storage generators are not required to have Max Capacity property
             if "max_active_power" not in mapped_records and "pump_load" in mapped_records:
                 mapped_records["rating"] = mapped_records["pump_load"]
 
             mapped_records = self._set_unit_capacity(mapped_records)
+            if model_map.__name__ == HydroPumpedStorage.__name__:
+                mapped_records = self._get_storage_objects_attached(object_id, mapped_records)
             if mapped_records is None:
                 logger.trace("Skipping disabled generator {}", generator_name)
                 # When unit availability is not set, we skip the generator
@@ -826,6 +830,33 @@ class PlexosParser(PCMParser):
                     ts.variable_name = ts_name
                     self.system.add_time_series(ts, generator, **ts_dict)
         return
+
+    def _get_storage_objects_attached(self, object_id: int, mapped_records: dict[str, Any]) -> dict[str, Any]:
+        """Get head and tail objects for generators with Storage.
+
+        Currently only works for PHS type of generator where the generator appears and it has a head and tail
+        object attached to it.
+
+        Notes
+        -----
+            If the head and tail have separate values, we just get the first occurence.
+        """
+        system_storage_filter = (pl.col("child_class_name") == str(ClassEnum.Storage)) & (
+            pl.col("parent_class_name") == str(ClassEnum.System)
+        )
+        generator_storage_filter = (pl.col("child_class_name") == str(ClassEnum.Storage)) & (
+            pl.col("parent_class_name") == str(ClassEnum.Generator)
+        )
+        storage_objects = self._get_model_data(generator_storage_filter).filter(
+            pl.col("parent_object_id") == object_id
+        )["object_id"]
+
+        system_storage_data = self._get_model_data(system_storage_filter).filter(
+            pl.col("object_id").is_in(storage_objects)
+        )
+        mapped_storage_records, ext_data = self._parse_property_data(system_storage_data.to_dicts())
+
+        return mapped_storage_records | mapped_records
 
     def _add_buses_to_generators(self):
         # Add buses to generators
@@ -1171,8 +1202,10 @@ class PlexosParser(PCMParser):
         elif issubclass(model_map, HydroDispatch):
             mapped_records["operation_cost"] = HydroGenerationCost()
         else:
-            logger.warning(
-                "Operating Cost not implemented for generator={} model map={}", generator_name, model_map
+            logger.debug(
+                "Operating cost parsing not implemented for generator={} model map={}",
+                generator_name,
+                model_map,
             )
 
         mapped_records["vom_price"] = mapped_records.get("vom_price", 0)

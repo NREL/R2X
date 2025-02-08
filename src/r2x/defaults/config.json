@@ -90,11 +90,13 @@
     ],
     "HydroDispatch": [
       {
-        "fuel": "HYDRO",
-        "type": null
-      },
-      {
         "fuel": null,
+        "type": "HY"
+      }
+    ],
+    "HydroEnergyReservoir": [
+      {
+        "fuel": "HYDRO",
         "type": "HY"
       }
     ],
@@ -111,7 +113,7 @@
     "RenewableDispatch": [
       {
         "fuel": "SOLAR",
-        "type": "PV"
+        "type": "PVe"
       },
       {
         "fuel": "SOLAR",
@@ -215,11 +217,15 @@
       },
       {
         "fuel": "NATURAL_GAS",
-        "type": null
+        "type": "CT"
       },
       {
         "fuel": "NUCLEAR",
         "type": null
+      },
+      {
+        "fuel": "NUCLEAR",
+        "type": "ST"
       },
       {
         "fuel": "OTHER",
@@ -234,12 +240,20 @@
         "type": null
       },
       {
+        "fuel": "GEOTHERMAL",
+        "type": "ST"
+      },
+      {
         "fuel": "STORAGE",
         "type": "CE"
       },
       {
         "fuel": "MUNICIPAL_WASTE",
         "type": null
+      },
+      {
+        "fuel": "MUNICIPAL_WASTE",
+        "type": "CT"
       },
       {
         "fuel": "WOOD_WASTE",
@@ -264,6 +278,10 @@
       {
         "fuel": null,
         "type": "CA"
+      },
+      {
+        "fuel": "OTHER",
+        "type": "CT"
       },
       {
         "fuel": null,

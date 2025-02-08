@@ -8,6 +8,7 @@ from infrasys.time_series_models import SingleTimeSeries
 from infrasys.value_curves import LinearCurve
 
 from r2x.api import System
+from r2x.config_scenario import get_scenario_configuration
 from r2x.enums import ACBusTypes, PrimeMoversType, ReserveDirection, ReserveType, ThermalFuels
 from r2x.models.branch import AreaInterchange, Line, MonitoredLine
 from r2x.models.core import FromTo_ToFrom, MinMax, ReserveMap, UpDown
@@ -16,6 +17,7 @@ from r2x.models.generators import RenewableDispatch, ThermalStandard
 from r2x.models.load import PowerLoad
 from r2x.models.services import Reserve
 from r2x.models.topology import ACBus, Area, LoadZone
+from r2x.runner import run_exporter
 from r2x.units import ActivePower, Percentage, Time, Voltage, ureg
 from r2x.utils import get_enum_from_string, read_json
 
@@ -124,8 +126,8 @@ def pjm_2area() -> System:
     solar_pv_01 = RenewableDispatch(
         name="PVBus5",
         bus=system.get_component(ACBus, "Bus_nodeC_1"),
-        prime_mover_type=PrimeMoversType.PV,
-        unit_type=PrimeMoversType.PV,
+        prime_mover_type=PrimeMoversType.PVe,
+        unit_type=PrimeMoversType.PVe,
         active_power=384 * ureg.MW,
         category="solar",
     )
@@ -164,7 +166,7 @@ def pjm_2area() -> System:
     initial_time = datetime(year=2024, month=1, day=1)
     for load in pjm_2area_components["load"]:
         load_component = PowerLoad(
-            name=load["Name"],
+            name=load["BusName"],
             bus=system.get_component(ACBus, load["BusName"]),
             max_active_power=load["MaxLoad"] * ureg.MW,
         )
@@ -194,3 +196,18 @@ def pjm_2area() -> System:
     system.add_components(reserve, reserve_map)
 
     return system
+
+
+def pjm_2area_to_plexos(output_folder: pathlib.Path):
+    system = pjm_2area()
+
+    scenario = get_scenario_configuration(
+        cli_args={"name": "pjm_2area"},
+        user_dict={
+            "input_model": "infrasys",
+            "output_model": "plexos",
+            "output_folder": output_folder,
+            "model_year": 2024,
+        },
+    )
+    run_exporter(scenario["pjm_2area"], system)

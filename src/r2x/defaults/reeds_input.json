@@ -346,23 +346,23 @@
       "type": "HY"
     },
     "hydend": {
-      "fuel": null,
+      "fuel": "HYDRO",
       "type": "HY"
     },
     "hydnd": {
-      "fuel": null,
+      "fuel": "HYDRO",
       "type": "HY"
     },
     "hydnpd": {
-      "fuel": null,
+      "fuel": "HYDRO",
       "type": "HY"
     },
     "hydnpnd": {
-      "fuel": null,
+      "fuel": "HYDRO",
       "type": "HY"
     },
     "hydsnd": {
-      "fuel": null,
+      "fuel": "HYDRO",
       "type": "HY"
     },
     "hydud": {
@@ -370,7 +370,7 @@
       "type": "HY"
     },
     "hydund": {
-      "fuel": null,
+      "fuel": "HYDRO",
       "type": "HY"
     },
     "lfill-gas": {

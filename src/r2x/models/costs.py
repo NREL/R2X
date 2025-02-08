@@ -45,7 +45,7 @@ class OperationalCost(InfraSysBaseModel):
 
 class RenewableGenerationCost(OperationalCost):
     curtailment_cost: CostCurve | None = None
-    variable: CostCurve | None = None
+    variable: CostCurve = CostCurve(value_curve=LinearCurve(0), power_units=UnitSystem.NATURAL_UNITS)
 
 
 class HydroGenerationCost(OperationalCost):
@@ -73,8 +73,8 @@ class ThermalGenerationCost(OperationalCost):
     """
 
     fixed: Annotated[NonNegativeFloat, Field(description="Cost of using fuel in $ or $/hr.")] = 0.0
-    shut_down: Annotated[NonNegativeFloat | None, Field(description="Cost to turn the unit off")] = 0.0
-    start_up: Annotated[NonNegativeFloat | None, Field(description="Cost to start the unit.")] = None
+    shut_down: Annotated[NonNegativeFloat, Field(description="Cost to turn the unit off")] = 0.0
+    start_up: Annotated[NonNegativeFloat, Field(description="Cost to start the unit.")] = 0.0
     variable: Annotated[CostCurve | FuelCurve | None, Field(description="Variable production cost")] = None
 
     @classmethod
