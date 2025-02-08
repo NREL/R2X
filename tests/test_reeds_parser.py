@@ -2,7 +2,7 @@ import pytest
 from infrasys.time_series_models import SingleTimeSeries
 
 from r2x.api import System
-from r2x.config import Scenario
+from r2x.config_scenario import Scenario
 from r2x.models import MonitoredLine, Emission, Generator, PowerLoad
 from r2x.parser.handler import get_parser_data
 from r2x.parser.reeds import ReEDSParser
@@ -13,6 +13,7 @@ def scenario_instance(reeds_data_folder, default_scenario, tmp_folder):
     return Scenario.from_kwargs(
         name=default_scenario,
         input_model="reeds-US",
+        output_model="plexos",
         run_folder=reeds_data_folder,
         output_folder=tmp_folder,
         solve_year=2050,

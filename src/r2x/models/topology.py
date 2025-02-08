@@ -2,10 +2,10 @@
 
 from typing import Annotated
 
-from pydantic import Field, NonNegativeFloat, PositiveFloat, PositiveInt
+from pydantic import Field, NonNegativeFloat, PositiveInt
 
 from r2x.enums import ACBusTypes
-from r2x.models.core import BaseComponent
+from r2x.models.core import BaseComponent, MinMax
 from r2x.units import Voltage, ureg
 
 
@@ -42,6 +42,11 @@ class Area(AggregationTopology):
 class LoadZone(AggregationTopology):
     """Collection of buses for electricity price analysis."""
 
+    peak_active_power: Annotated[NonNegativeFloat, Field(description="Peak active power in the area")] = 0.0
+    peak_reactive_power: Annotated[NonNegativeFloat, Field(description="Peak reactive power in the area")] = (
+        0.0
+    )
+
     @classmethod
     def example(cls) -> "LoadZone":
         return LoadZone(name="ExampleLoadZone")
@@ -51,15 +56,16 @@ class Bus(Topology):
     """Abstract class for a bus."""
 
     number: Annotated[PositiveInt, Field(description="A unique bus identification number.")]
-    bus_type: Annotated[ACBusTypes, Field(description="Type of category of bus,")] | None = None
+    bustype: Annotated[ACBusTypes, Field(description="Type of category of bus,")] | None = None
     area: Annotated[Area, Field(description="Area containing the bus.")] | None = None
     load_zone: Annotated[LoadZone, Field(description="the load zone containing the DC bus.")] | None = None
+    voltage_limits: Annotated[MinMax, Field(description="the voltage limits")] | None = None
     base_voltage: (
         Annotated[Voltage, Field(gt=0, description="Base voltage in kV. Unit compatible with voltage.")]
         | None
     ) = None
     magnitude: (
-        Annotated[PositiveFloat, Field(description="Voltage as a multiple of base_voltage.")] | None
+        Annotated[NonNegativeFloat, Field(description="Voltage as a multiple of base_voltage.")] | None
     ) = None
 
 
@@ -74,7 +80,7 @@ class DCBus(Bus):
             load_zone=LoadZone.example(),
             area=Area.example(),
             base_voltage=20 * ureg.kV,
-            bus_type=ACBusTypes.PV,
+            bustype=ACBusTypes.PV,
         )
 
 
@@ -93,5 +99,13 @@ class ACBus(Bus):
             load_zone=LoadZone.example(),
             area=Area.example(),
             base_voltage=13 * ureg.kV,
-            bus_type=ACBusTypes.PV,
+            bustype=ACBusTypes.PV,
         )
+
+
+class Arc(Topology):
+    """Topological directed edge connecting two buses"""
+
+    name: Annotated[str, Field(frozen=True, exclude=True)] = ""
+    from_to: Annotated[Bus, Field(description="The initial bus", alias="from")]
+    to_from: Annotated[Bus, Field(description="The terminal bus", alias="to")]

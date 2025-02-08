@@ -14,7 +14,7 @@ import pandas as pd
 from r2x.api import System
 
 from r2x.models import Emission, Generator
-from r2x.config import Scenario
+from r2x.config_scenario import Scenario
 from r2x.parser.handler import BaseParser
 from r2x.units import ureg, ActivePower
 from r2x.utils import read_json
@@ -64,9 +64,10 @@ def update_system(
         **kwargs: additiona arguments.
     """
     logger.info("Dividing generators into average size generators")
+    assert config.input_config
     if pcm_defaults_fpath is None:
-        logger.debug("Using {}", config.defaults["pcm_defaults_fpath"])
-        pcm_defaults = read_json(config.defaults["pcm_defaults_fpath"])
+        logger.debug("Using {}", config.input_config.defaults["pcm_defaults_fpath"])
+        pcm_defaults = read_json(config.input_config.defaults["pcm_defaults_fpath"])
     else:
         logger.debug("Using custom defaults from {}", pcm_defaults_fpath)
         pcm_defaults: dict = read_json(pcm_defaults_fpath)
@@ -84,7 +85,7 @@ def update_system(
         .replace({np.nan: None})
         .to_dict(orient="index")
     )
-    non_break_techs = config.defaults.get("non_break_techs", [])
+    non_break_techs = config.input_config.defaults.get("non_break_techs", [])
 
     return break_generators(system, reference_generators, capacity_threshold, non_break_techs)
 

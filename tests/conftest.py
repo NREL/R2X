@@ -13,6 +13,7 @@ from tests.models.pjm import pjm_2area
 DATA_FOLDER = "tests/data"
 OUTPUT_FOLDER = "r2x_output"
 DEFAULT_SCENARIO = "pacific"
+DEFAULT_INFRASYS = "pjm_2area"
 
 
 @pytest.fixture
@@ -29,6 +30,11 @@ def tmp_folder(tmp_path_factory):
 @pytest.fixture
 def reeds_data_folder(pytestconfig):
     return pytestconfig.rootpath.joinpath(DATA_FOLDER).joinpath(DEFAULT_SCENARIO)
+
+
+@pytest.fixture
+def infrasys_data_folder(pytestconfig):
+    return pytestconfig.rootpath.joinpath(DATA_FOLDER).joinpath(DEFAULT_INFRASYS)
 
 
 @pytest.fixture

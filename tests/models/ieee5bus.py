@@ -2,12 +2,12 @@
 
 from datetime import datetime, timedelta
 
-from infrasys.cost_curves import FuelCurve
+from infrasys.cost_curves import FuelCurve, UnitSystem
 from infrasys.function_data import LinearFunctionData
 from infrasys.time_series_models import SingleTimeSeries
 from infrasys.value_curves import InputOutputCurve
 from r2x.api import System
-from r2x.enums import PrimeMoversType
+from r2x.enums import PrimeMoversType, ThermalFuels
 from r2x.models import (
     ACBus,
     Area,
@@ -78,7 +78,7 @@ def ieee5bus() -> System:
     # Thermal generators
     alta = ThermalStandard(
         name="Alta",
-        fuel="gas",
+        fuel=ThermalFuels.NATURAL_GAS,
         prime_mover_type=PrimeMoversType.CC,
         active_power=40 * ureg.MW,
         min_rated_capacity=10 * ureg.MW,
@@ -88,7 +88,7 @@ def ieee5bus() -> System:
     system.add_component(alta)
     brighton = ThermalStandard(
         name="Brighton",
-        fuel="Gas",
+        fuel=ThermalFuels.NATURAL_GAS,
         prime_mover_type=PrimeMoversType.CC,
         active_power=600 * ureg.MW,
         min_rated_capacity=150 * ureg.MW,
@@ -98,7 +98,7 @@ def ieee5bus() -> System:
     system.add_component(brighton)
     park_city = ThermalStandard(
         name="Park City",
-        fuel="Gas",
+        fuel=ThermalFuels.NATURAL_GAS,
         prime_mover_type=PrimeMoversType.CC,
         active_power=170 * ureg.MW,
         min_rated_capacity=20 * ureg.MW,
@@ -108,7 +108,8 @@ def ieee5bus() -> System:
                     function_data=LinearFunctionData(proportional_term=10, constant_term=0)
                 ),
                 fuel_cost=15,
-            )
+                power_units=UnitSystem.NATURAL_UNITS,
+            ),
         ),
         bus=bus_1,
         category="thermal",
@@ -116,7 +117,7 @@ def ieee5bus() -> System:
     system.add_component(park_city)
     solitude = ThermalStandard(
         name="Solitude",
-        fuel="Gas",
+        fuel=ThermalFuels.NATURAL_GAS,
         prime_mover_type=PrimeMoversType.CC,
         active_power=520 * ureg.MW,
         operation_cost=ThermalGenerationCost(
@@ -125,6 +126,7 @@ def ieee5bus() -> System:
                     function_data=LinearFunctionData(proportional_term=10, constant_term=0)
                 ),
                 fuel_cost=15,
+                power_units=UnitSystem.NATURAL_UNITS,
             )
         ),
         bus=bus_3,
@@ -133,7 +135,7 @@ def ieee5bus() -> System:
     system.add_component(solitude)
     sundance = ThermalStandard(
         name="Sundance",
-        fuel="Gas",
+        fuel=ThermalFuels.NATURAL_GAS,
         prime_mover_type=PrimeMoversType.CC,
         active_power=400 * ureg.MW,
         min_rated_capacity=80 * ureg.MW,

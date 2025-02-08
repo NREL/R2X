@@ -1,17 +1,17 @@
-# R2X diagram
+# R2X Workflow Diagram
 
 ```{mermaid}
     flowchart TB
-        input([Input Model]) --"Read model data"--> parser
+        input([Input Model]) --"Read Model Data"--> parser
 
-        subgraph R2X["Artex Framework"]
+        subgraph R2X["R2X Framework"]
             exporter[R2X exporter]
-            parser[R2X parser]
-            model[(DataModel)]
-            updatedmodel[(Updated\nDataModel)]
-            ext[Extensions]
+            parser[R2X Parser]
+            model[(Data Model)]
+            updatedmodel[(Updated Data Model)]
+            ext[Plugins]
 
-            parser --"Create DataModel"--> model
+            parser --"Create Data Model"--> model
             model .-> ext
             model --> exporter
             ext --> updatedmodel
@@ -19,5 +19,5 @@
             ext --"Model configuration"--> exporter
         end
 
-        exporter  --"Create output model"---> om(["Output DataModel"])
+        exporter  --"Create Output Model"---> om(["Output Data Model"])
 ```

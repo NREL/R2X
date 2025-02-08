@@ -2,9 +2,9 @@
 
 from typing import Annotated
 
-from pydantic import Field
+from pydantic import Field, NonNegativeFloat
 
-from r2x.models.core import StaticInjection
+from r2x.models.core import Complex, StaticInjection
 from r2x.models.topology import ACBus, Bus
 from r2x.units import ActivePower, ApparentPower
 
@@ -56,6 +56,22 @@ class PowerLoad(StaticLoad):
         return PowerLoad(name="ExampleLoad", bus=ACBus.example(), active_power=ActivePower(1000, "MW"))
 
 
+class StandardLoad(StaticLoad):
+    base_power: NonNegativeFloat
+    constant_active_power: float
+    constant_reactive_power: float
+    impedance_active_power: float
+    impedance_reactive_power: float
+    current_active_power: float
+    current_reactive_power: float
+    max_constant_active_power: float
+    max_constant_reactive_power: float
+    max_impedance_active_power: float
+    max_impedance_reactive_power: float
+    max_current_active_power: float
+    max_current_reactive_power: float
+
+
 class InterruptiblePowerLoad(ControllableLoad):
     """A static interruptible power load."""
 
@@ -83,3 +99,9 @@ class InterruptiblePowerLoad(ControllableLoad):
         Annotated[ActivePower, Field(gt=0, description=" Initial steady-state reactive power demand.")] | None
     ) = None
     operation_cost: float | None = None
+
+
+class FixedAdmittance(ElectricLoad):
+    """A fixed admittance."""
+
+    Y: Complex

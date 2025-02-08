@@ -1,22 +1,22 @@
 """Umbrella API for R2X model."""
 
-# System packages
 import importlib
 import inspect
+import shutil
 import sys
+from importlib.resources import files
+from pathlib import Path
 
 from loguru import logger
 
-from infrasys.system import System
 from r2x.exporter.handler import get_exporter
 
-# from r2x.models import *
-# Module level imports
-from .config import Configuration, Scenario
+from .api import System
+from .config_scenario import Scenario, get_scenario_configuration
 from .exporter import exporter_list
-from .upgrader import upgrade_handler
 from .parser import parser_list
 from .parser.handler import BaseParser, get_parser_data
+from .upgrader import upgrade_handler
 from .utils import (
     DEFAULT_PLUGIN_PATH,
 )
@@ -61,13 +61,6 @@ def run_parser(config: Scenario, **kwargs):
 
     assert system is not None, "System failed to create"
 
-    # match config.input_model:
-    #     case "reeds-US":
-    #         return system
-    #     case "plexos" | "sienna":
-    #         return parser
-    #     case _:
-    #         raise NotImplementedError(f"Parser for {config.input_model} is not defined.")
     return system, parser
 
 
@@ -134,28 +127,64 @@ def run_single_scenario(scenario: Scenario, **kwargs) -> None:
         system.to_json(output_fpath, overwrite=True)
         system = System.from_json(output_fpath)
 
+    if scenario.output_model == "infrasys":
+        logger.info("Serialize system to {}", output_fpath)
+        system.to_json(output_fpath, overwrite=True)
+        return
     run_exporter(config=scenario, system=system)
     return
 
 
-def scenario_runner(config_mgr: Configuration, **kwargs) -> None:
-    """Run the different translation for a configuration.
+def run(cli_args: dict, user_dict: dict | None = None) -> None:
+    """Run a translation.
 
-    If the config object is Configuration class, we run all the different
-    Scenarios in parallel using multiprocessing.
+    This function takes the `cli_args` dictionary to create the configuratio and run the translation process.
+    If the user specifies multiple scenarios, this function run the translation sequentially with
+    no specific order.
 
     Parameters
     ----------
-    config
-        Configuration
+    cli_args
+        Arguments for constructing the scenario.
+    user_dict
+        Optional, User custom configuration.
 
-    Other Parameters
-    ----------------
-    kwargs
-        arguments passed for convenience.
+    See Also
+    --------
+        get_config: Get configuration from arguments
+        run_single_scenario: Run a single translation scenario
+
+    Notes
+    -----
+    Currently the scenario should only have a single year to run.
     """
-    logger.debug("Running {} scenarios", len(config_mgr))
+    config_mgr = get_scenario_configuration(cli_args=cli_args, user_dict=user_dict)
+    logger.info("Running {} scenarios", len(config_mgr))
     for _, scenario in config_mgr.scenarios.items():
-        if not isinstance(scenario.solve_year, list) or len(scenario.solve_year) == 1:
-            run_single_scenario(scenario, **kwargs)
+        # NOTE: We can pass multiple years from the CLI. In those cases we want to raise not implemented.
+        if hasattr(scenario, "input_config") and isinstance(
+            getattr(scenario.input_config, "solve_year", None), list
+        ):
+            msg = "Multi year runs from the CLI is not yet supported. Use scenarios instead."
+            raise NotImplementedError(msg)
+        run_single_scenario(scenario)
+    return
+
+
+def init(cli_args: dict) -> None:
+    """Copy the default configuration file on the path that the user request.
+
+    If the user does not provide a path, the current path is used.
+
+    Parameters
+    ----------
+    cli_args
+        Arguments from the CLI
+    """
+    logger.debug("Running init command")
+    path = Path(cli_args["path"])
+
+    with files("r2x.defaults") as package_path:  # type: ignore
+        file_path = package_path / "user_dict.yaml"
+        shutil.copy(file_path, Path(path) / "user_dict.yaml")
     return

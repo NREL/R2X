@@ -12,7 +12,8 @@ import polars as pl
 from loguru import logger
 
 from r2x.api import System
-from r2x.config import Scenario
+from r2x.config_models import ReEDSConfig
+from r2x.config_scenario import Scenario
 from r2x.models.generators import HydroDispatch
 from r2x.parser.handler import BaseParser
 from r2x.units import Energy
@@ -37,10 +38,12 @@ def update_system(
     system : System
         The system object to be updated.
     """
-    assert config.weather_year
-    if not config.input_model == "reeds-US":
-        msg = "Plugin `imports.py` is not compatible with a input model that is not ReEDS."
+    assert config.input_config
+    if not isinstance(config.input_config, ReEDSConfig):
+        msg = "Plugin `imports.py` is not compatible with an input model that is not ReEDS."
         raise NotImplementedError(msg)
+    assert config.input_config.weather_year
+    weather_year = config.input_config.weather_year
 
     if parser is None:
         msg = "Missing parser information for imports. Skipping plugin."
@@ -49,9 +52,9 @@ def update_system(
 
     if parser is not None:
         # NOTE: We might change this condition once we change the imports definition on ReEDS.
-        assert all(
-            key in parser.data for key in ["canada_imports", "canada_szn_frac"]
-        ), "Missing required files for import plugin."
+        assert all(key in parser.data for key in ["canada_imports", "canada_szn_frac"]), (
+            "Missing required files for import plugin."
+        )
         assert "hour_map" in parser.data, "Missing hour map from ReEDS run."
 
     logger.info("Adding imports time series...")
@@ -72,7 +75,7 @@ def update_system(
 
     # NOTE: This will need change if we modify the model for the imports. CUrrently all is assumed to be
     # modeled as HydroEnergyReservoir. Currently we only apply it to can-imports.
-    initial_time = datetime(year=config.weather_year, month=1, day=1)
+    initial_time = datetime(year=weather_year, month=1, day=1)
     for generator in system.get_components(HydroDispatch, filter_func=lambda x: "can-imports" in x.name):
         daily_budget = (
             total_imports.filter(pl.col("r") == generator.bus.name)["value"].item()
