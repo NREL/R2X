@@ -7,7 +7,7 @@ from infrasys.function_data import LinearFunctionData
 from infrasys.time_series_models import SingleTimeSeries
 from infrasys.value_curves import InputOutputCurve
 from r2x.api import System
-from r2x.enums import PrimeMoversType, ThermalFuels
+from r2x.enums import PrimeMoversType, ThermalFuels, StorageTechs
 from r2x.models import (
     ACBus,
     Area,
@@ -19,6 +19,7 @@ from r2x.models import (
 )
 from r2x.models.costs import ThermalGenerationCost
 from r2x.units import Energy, Percentage, Time, ureg
+from r2x.models.core import MinMax, InputOutput
 
 
 def ieee5bus() -> System:
@@ -72,6 +73,11 @@ def ieee5bus() -> System:
         storage_capacity=Energy(800, "MWh"),
         storage_duration=Time(4, "h"),
         category="storage",
+        storage_technology_type=StorageTechs.LIB,
+        initial_storage_capacity_level=0.5,
+        input_active_power_limits=MinMax(min=0, max=200),
+        output_active_power_limits=MinMax(min=0, max=200),
+        efficiency=InputOutput(input=0.9, output=0.9),
     )
     system.add_component(storage)
 
