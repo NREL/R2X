@@ -11,7 +11,7 @@ from r2x.enums import PrimeMoversType, ThermalFuels
 from r2x.models import (
     ACBus,
     Area,
-    GenericBattery,
+    EnergyReservoirStorage,
     LoadZone,
     MonitoredLine,
     RenewableDispatch,
@@ -63,7 +63,7 @@ def ieee5bus() -> System:
     system.add_time_series(ts, solar_pv_01, solar_pv_02)
 
     # Storage
-    storage = GenericBattery(
+    storage = EnergyReservoirStorage(
         name="Battery1",
         bus=bus_2,
         prime_mover_type=PrimeMoversType.BA,

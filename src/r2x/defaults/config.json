@@ -33,7 +33,7 @@
   "device_name_inference_map": {},
   "distribution_losses": 1,
   "generator_models": {
-    "GenericBattery": [
+    "EnergyReservoirStorage": [
       {
         "fuel": "STORAGE",
         "type": null

@@ -30,7 +30,7 @@ from r2x.exceptions import ModelError, ParserError
 from r2x.models import (
     ACBus,
     Generator,
-    GenericBattery,
+    EnergyReservoirStorage,
     HydroDispatch,
     LoadZone,
     MonitoredLine,
@@ -801,7 +801,7 @@ class PlexosParser(PCMParser):
         )
 
         required_fields = {
-            key: value for key, value in GenericBattery.model_fields.items() if value.is_required()
+            key: value for key, value in EnergyReservoirStorage.model_fields.items() if value.is_required()
         }
 
         for battery_name, battery_data in system_batteries.group_by("name"):
@@ -818,7 +818,7 @@ class PlexosParser(PCMParser):
             if mapped_records is None:
                 continue
 
-            valid_fields, ext_data = field_filter(mapped_records, GenericBattery.model_fields)
+            valid_fields, ext_data = field_filter(mapped_records, EnergyReservoirStorage.model_fields)
 
             if not all(key in valid_fields for key in required_fields):
                 missing_fields = [key for key in required_fields if key not in valid_fields]
@@ -832,11 +832,11 @@ class PlexosParser(PCMParser):
                 continue
 
             valid_fields = prepare_ext_field(valid_fields, ext_data)
-            self.system.add_component(GenericBattery(**valid_fields))
+            self.system.add_component(EnergyReservoirStorage(**valid_fields))
         return
 
     def _add_buses_to_batteries(self):
-        batteries = [battery["name"] for battery in self.system.to_records(GenericBattery)]
+        batteries = [battery["name"] for battery in self.system.to_records(EnergyReservoirStorage)]
         if not batteries:
             msg = "No battery objects found on the system. Skipping adding membership to buses"
             logger.warning(msg)
@@ -846,7 +846,7 @@ class PlexosParser(PCMParser):
             object_class=ClassEnum.Battery,
             collection=CollectionEnum.Nodes,
         )
-        for component in self.system.get_components(GenericBattery):
+        for component in self.system.get_components(EnergyReservoirStorage):
             buses = [membership for membership in generator_memberships if membership[2] == component.name]
             if buses:
                 for bus in buses:
@@ -864,7 +864,7 @@ class PlexosParser(PCMParser):
 
     def _add_battery_reserves(self):
         reserve_map = self.system.get_component(ReserveMap, name="contributing_generators")
-        batteries = [battery["name"] for battery in self.system.to_records(GenericBattery)]
+        batteries = [battery["name"] for battery in self.system.to_records(EnergyReservoirStorage)]
         if not batteries:
             msg = "No battery objects found on the system. Skipping adding reserve memberships"
             logger.warning(msg)
@@ -876,7 +876,7 @@ class PlexosParser(PCMParser):
             collection=CollectionEnum.Batteries,
         )
 
-        for battery in self.system.get_components(GenericBattery):
+        for battery in self.system.get_components(EnergyReservoirStorage):
             reserves = [membership for membership in generator_memberships if membership[3] == battery.name]
             if reserves:
                 # NOTE: This would get replaced if we have a method on infrasys

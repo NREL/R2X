@@ -27,7 +27,7 @@ from r2x.models import (
     Bus,
     Emission,
     Generator,
-    GenericBattery,
+    EnergyReservoirStorage,
     HybridSystem,
     HydroGen,
     LoadZone,
@@ -856,13 +856,13 @@ class ReEDSParser(BaseParser):
 
             # Create storage asset for hybrid.
             storage_unit_fields = {
-                key: value for key, value in ext_dict.items() if key in GenericBattery.model_fields
+                key: value for key, value in ext_dict.items() if key in EnergyReservoirStorage.model_fields
             }
             storage_unit_fields["prime_mover_type"] = PrimeMoversType.BA
 
             # If at some point we change the power of the storage it should be here
             storage_unit = self._create_model_instance(
-                GenericBattery,
+                EnergyReservoirStorage,
                 name=f"{hybrid_name}",
                 active_power=device.active_power,  # Assume same power for the battery
                 category="pvb-storage",
