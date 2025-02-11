@@ -73,7 +73,7 @@ def ieee5bus() -> System:
         storage_capacity=Energy(800, "MWh"),
         storage_duration=Time(4, "h"),
         category="storage",
-        storage_technology_type=StorageTechs.LIB,
+        storage_technology_type=StorageTechs.OTHER_CHEM,
         initial_storage_capacity_level=0.5,
         input_active_power_limits=MinMax(min=0, max=200),
         output_active_power_limits=MinMax(min=0, max=200),
