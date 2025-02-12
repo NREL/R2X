@@ -9,6 +9,7 @@ import pathlib
 import shutil
 import zipfile
 from collections import OrderedDict
+import numpy as np
 
 import h5py
 import pandas as pd
@@ -16,7 +17,7 @@ from loguru import logger
 
 from r2x.upgrader.helpers import get_function_arguments
 from r2x.utils import get_timeindex, read_csv
-
+from datetime import datetime
 
 def rename(fpath: pathlib.Path, new_fname: str) -> pathlib.Path:
     """Apply a new filename to a file.
@@ -358,11 +359,23 @@ def convert_hdf(fpath: pathlib.Path, compression_opts=4) -> None:
     except ValueError:
         logger.debug("H5 file {} not in pandas format.", fpath)
         return
-    if not original_h5.index.name == "datetime":
-        original_h5.index.name = "datetime"
+    
+    #defining once before
+    timeindex = get_timeindex()
 
     with h5py.File(fpath, "w") as f:
-        for i in range(0, original_h5.index.nlevels):
+        if(isinstance(original_h5.index, pd.MultiIndex)):
+            for level in original_h5.index.levels:
+                if((len(level) == 7*8760) and (isinstance(level.values[0],np.int64))):
+                    assert len(level) == len(timeindex), f"H5 file {fpath} has more weather year data."
+                    timeindex = timeindex.to_series().apply(datetime.isoformat).reset_index(drop=True)
+                    f.create_dataset(f"index_datetime",data=timeindex.str.encode("utf-8"), dtype="S30")
+                else:
+                    f.create_dataset(f"index_{level.name}", data=level.values, dtype=level.dtype)
+        else:
+            f.create_dataset(f"index_datetime", data=original_h5.index.values, dtype=original_h5.index.dtype)
+
+        '''for i in range(0, original_h5.index.nlevels):
             indexvals = original_h5.index.get_level_values(i)
             if isinstance(indexvals[0], bytes):
                 f.create_dataset(f"index_{i}", data=indexvals, dtype="S30")
@@ -373,7 +386,7 @@ def convert_hdf(fpath: pathlib.Path, compression_opts=4) -> None:
                 f.create_dataset(f"index_{i}", data=timeindex.str.encode("utf-8"), dtype="S30")
             else:
                 f.create_dataset(f"index_{i}", data=indexvals, dtype=indexvals.dtype)
-
+            '''
         index_names = pd.Index(original_h5.index.names)
         f.create_dataset("index_names", data=index_names, dtype=f"S{index_names.map(len).max()}")
 
@@ -413,12 +426,17 @@ def upgrade_handler(run_folder: str | pathlib.Path):
         }
     )
 
+
+    #adding datetime index of when change happens
+    timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M")
+
     # Backup inputs_case_files for safety
-    backup_fpath = pathlib.Path(run_folder).joinpath("backup_files.zip")
+    backup_fpath = pathlib.Path(run_folder).joinpath(f"backup_files_{timestamp}.zip")
     logger.info("Creating backup of files.")
     with zipfile.ZipFile(backup_fpath, mode="w") as archive:
         for fname, fpath_name in f_dict.items():
             archive.write(fpath_name, arcname=fname)
+            
 
     for fname, f_group in file_tracker.groupby("fname", sort=False):
         if fname not in f_dict:
