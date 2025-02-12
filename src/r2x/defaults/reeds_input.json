@@ -89,7 +89,7 @@
     "sep": "M9"
   },
   "reeds_device_map": {
-    "battery": "GenericBattery",
+    "battery": "EnergyReservoirStorage",
     "beccs_mod": "ThermalStandard",
     "biopower": "ThermalStandard",
     "can-imports": "HydroDispatch",
