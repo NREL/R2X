@@ -17,7 +17,7 @@ from .costs import HydroGenerationCost, RenewableGenerationCost, StorageCost, Th
 from .generators import (
     EnergyReservoirStorage,
     Generator,
-    GenericBattery,
+    EnergyReservoirStorage,
     HybridSystem,
     HydroDispatch,
     HydroEnergyReservoir,
