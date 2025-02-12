@@ -7,6 +7,7 @@ from pint import Quantity
 # type: ignore
 
 ureg.define("MMBtu = [energy] = 293071 * [watt_hour]")
+ureg.define("MMBTu = [energy] = 293071 * [watt_hour]")
 ureg.define("usd = []")
 
 

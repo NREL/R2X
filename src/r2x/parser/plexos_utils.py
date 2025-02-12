@@ -40,6 +40,7 @@ class DATAFILE_COLUMNS(Enum):  # noqa: N801
     TS_YMDPV = ("year", "month", "day", "period", "value")
     TS_NYMDV = ("name", "year", "month", "day", "value")
     TS_NYMDPV = ("name", "year", "month", "day", "period", "value")
+    TS_NMCDH = ("Name", "M1,D1,H1")
     TS_YM = ("year", "month")
     TS_MDP = ("month", "day", "period")
     TS_NMDP = ("name", "month", "day", "period")
@@ -204,7 +205,7 @@ def filter_property_dates(system_data: pl.DataFrame, study_year: int):
     return system_data
 
 
-def parse_data_file(column_type: DATAFILE_COLUMNS, data_file):
+def parse_data_file(column_type: DATAFILE_COLUMNS, data_file: pl.DataFrame) -> pl.DataFrame:
     match column_type:
         case column_type.Y:
             data_file = parse_y(data_file)
@@ -238,6 +239,8 @@ def parse_data_file(column_type: DATAFILE_COLUMNS, data_file):
             data_file = parse_ts_nmdh(data_file)
         case column_type.TS_NYMDH:
             data_file = parse_ts_nymdh(data_file)
+        case column_type.TS_NMCDH:
+            data_file = parse_ts_nmcdh(data_file)
         case _:
             msg = f"Time series format {column_type.value} not yet supported."
             raise NotImplementedError(msg)
@@ -261,10 +264,10 @@ def parse_ts_datetime(data_file):
 
 
 def parse_ts_DateTime(data_file):
-    data_file = data_file.with_columns(datetime=pl.col("DateTime").str.to_datetime("%Y-%m-%dT%H:%M"))
-    data_file = data_file.select(pl.all().exclude("DateTime"))
-    data_file = data_file.with_columns(year=pl.col("datetime").dt.year())
-    data_file = data_file.melt(id_vars=["datetime", "year"], variable_name="name")
+    data_file = data_file.with_columns(DateTime=pl.col("DateTime").str.to_datetime("%Y-%m-%dT%H:%M"))
+    # data_file = data_file.select(pl.all().exclude("DateTime"))
+    data_file = data_file.with_columns(year=pl.col("DateTime").dt.year())
+    data_file = data_file.melt(id_vars=["DateTime", "year"], variable_name="name")
     return data_file
 
 
@@ -345,6 +348,27 @@ def parse_ts_nymdh(data_file):
     data_file = data_file.melt(id_vars=["name", "year", "month", "day"], variable_name="hour")
     data_file = data_file.with_columns(pl.col("hour").cast(pl.Int8))
     return data_file
+
+
+def parse_ts_nmcdh(data_file: pl.DataFrame) -> pl.DataFrame:
+    """
+    Parse a data file with composite headers in the format:
+    NAME, "M1,D1,H1", "M1,D1,H2", ..., "M12,D30,H24".
+
+    The function melts the wide DataFrame to long format and extracts the month,
+    day and hour from each composite header.
+    """
+    # Melt all columns except 'name'
+    melted_df = data_file.melt(id_vars="Name", variable_name="composite_time", value_name="value")
+    # Extract month, day and hour from the composite_time string, matching pattern "M(\d+),D(\d+),H(\d+)"
+    melted_df = melted_df.with_columns(
+        [
+            pl.col("composite_time").str.extract(r"M(\d+),D(\d+),H(\d+)", 1).cast(pl.Int8).alias("month"),
+            pl.col("composite_time").str.extract(r"M(\d+),D(\d+),H(\d+)", 2).cast(pl.Int8).alias("day"),
+            pl.col("composite_time").str.extract(r"M(\d+),D(\d+),H(\d+)", 3).cast(pl.Int8).alias("hour"),
+        ]
+    )
+    return melted_df
 
 
 def parse_patterns(key: str) -> list[tuple[str, list[int]]]:

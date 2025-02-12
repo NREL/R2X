@@ -184,6 +184,10 @@
         "type": null
       },
       {
+        "fuel": "COAL",
+        "type": "ST"
+      },
+      {
         "fuel": "WASTE_COAL",
         "type": null
       },
@@ -258,6 +262,10 @@
       {
         "fuel": "WOOD_WASTE",
         "type": "OT"
+      },
+      {
+        "fuel": "OTHER",
+        "type": "GT"
       },
       {
         "fuel": "WOOD_WASTE",

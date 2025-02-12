@@ -211,6 +211,7 @@ class PlexosParser(PCMParser):
         self.hourly_time_index = pl.datetime_range(
             datetime(self.year, 1, 1), datetime(self.year + 1, 1, 1), interval="1h", eager=True, closed="left"
         ).to_frame("datetime")
+        self._data_file_cache: dict[Path, pl.DataFrame] = {}
 
         return
 
@@ -230,6 +231,7 @@ class PlexosParser(PCMParser):
         self._construct_transformers()
         self._construct_interfaces()
         self._construct_reserves()
+        self._add_reserve_region_properties()
 
         # Generators
         self._construct_generators()
@@ -300,25 +302,17 @@ class PlexosParser(PCMParser):
         return fuel_prices
 
     def _construct_areas(self) -> None:
-        """Create Area representation.
+        """Create Area representation from a PLEXOS model.
 
-        Area is an aggregation of buses that could or could not be used for balancing purposes. What we are
-        parsing from PLEXOS is a the categories of the `ClassEnum.Region` as it is the most direct
-        representation of an Area.
-
+        Area is an aggregation of buses that could or could not be used for balancing purposes.
+        The equivalent of an Area from PLEXOS is a `ClassEnum.Region` category.
         """
         logger.info("Creating Area representation")
         system_regions = (pl.col("child_class_name") == ClassEnum.Region.value) & (
             pl.col("parent_class_name") == ClassEnum.System.value
         )
         regions = self._get_model_data(system_regions)
-        region_pivot = regions.pivot(
-            index=DEFAULT_INDEX,
-            on="property_name",
-            values="property_value",
-            aggregate_function="first",
-        )
-        for area in region_pivot["category"].unique():
+        for area in regions["category"].unique():
             self.system.add_component(Area(name=area))
 
     def _construct_load_zones(self, default_model=LoadZone) -> None:
@@ -486,7 +480,9 @@ class PlexosParser(PCMParser):
                 else None
             )
             mapped_records["vors"] = mapped_records.pop("vors").magnitude
-            mapped_records["duration"] = mapped_records["duration"].magnitude
+
+            if mapped_records.get("duration"):
+                mapped_records["duration"] = mapped_records["duration"].magnitude
             if mapped_records["time_frame"].units == "second":
                 mapped_records["time_frame"] = mapped_records["time_frame"].magnitude / 60
             else:
@@ -494,6 +490,12 @@ class PlexosParser(PCMParser):
 
             valid_fields, ext_data = field_filter(mapped_records, default_model.model_fields)
             valid_fields = prepare_ext_field(valid_fields, ext_data)
+
+            # NOTE: Plexos has a property called `Is Enabled` that takes either 1 or -1.
+            # Where -1 False (0) or True (-1)
+
+            if "available" in valid_fields and valid_fields["available"] == -1:
+                valid_fields["available"] = 1
 
             ts_fields = {k: v for k, v in mapped_records.items() if isinstance(v, SingleTimeSeries)}
 
@@ -517,6 +519,43 @@ class PlexosParser(PCMParser):
 
         reserve_map = ReserveMap(name="contributing_generators")
         self.system.add_component(reserve_map)
+        return
+
+    def _add_reserve_region_properties(self):
+        region_reserve_filter = (pl.col("child_class_name") == ClassEnum.Region.value) & (
+            pl.col("parent_class_name") == ClassEnum.Reserve.value
+        )
+        system_reserves = self._get_model_data(
+            (pl.col("child_class_name") == ClassEnum.Reserve.name)
+            & (pl.col("parent_class_name") == ClassEnum.System.name)
+        )
+        region_reserve_data = self._get_model_data(region_reserve_filter)
+        for reserve_object_id, reserve_data in region_reserve_data.group_by("parent_object_id"):
+            reserve_object_id = reserve_object_id[0]
+            region_names = reserve_data["name"].unique().to_list()
+
+            load_zone_name = set(
+                component.load_zone.name
+                for component in self.system.get_components(ACBus)
+                if component.name in region_names
+            )
+            if len(load_zone_name) > 1:
+                msg = "Buses have multiple load zones attached. Not supported."
+                raise NotImplementedError(msg)
+            if not len(reserve_data["property_value"].unique() == 1):
+                msg = "Multiple property values not supported for Reserve regions."
+                raise NotImplementedError
+            property_records = reserve_data.to_dicts()
+            mapped_records, _ = self._parse_property_data(property_records)
+
+            reserve_name = (
+                system_reserves.filter(pl.col("object_id") == reserve_object_id)["name"].unique().item()
+            )
+            reserve_object = self.system.get_component(Reserve, reserve_name)
+            load_zone = self.system.get_component(LoadZone, next(iter(load_zone_name)))
+            reserve_object.region = load_zone
+            if mapped_records["load_risk"]:
+                reserve_object.load_risk = mapped_records["load_risk"]
         return
 
     def _construct_branches(self, default_model=MonitoredLine):
@@ -557,7 +596,7 @@ class PlexosParser(PCMParser):
                 if (
                     membership[2] == line["name"]
                     and membership[5] == ClassEnum.Line.name
-                    and membership[6].replace(" ", "") == CollectionEnum.NodeFrom.name
+                    and membership[7].replace(" ", "") == CollectionEnum.NodeFrom.name
                 )
             )[3]
             from_bus = self.system.get_component(ACBus, from_bus_name)
@@ -567,7 +606,7 @@ class PlexosParser(PCMParser):
                 if (
                     membership[2] == line["name"]
                     and membership[5] == ClassEnum.Line.name
-                    and membership[6].replace(" ", "") == CollectionEnum.NodeTo.name
+                    and membership[7].replace(" ", "") == CollectionEnum.NodeTo.name
                 )
             )[3]
             to_bus = self.system.get_component(ACBus, to_bus_name)
@@ -1138,7 +1177,11 @@ class PlexosParser(PCMParser):
         if heat_rate_incr and heat_rate_incr.units == "british_thermal_unit / kilowatt_hour":
             heat_rate_incr = Quantity(heat_rate_incr.magnitude * 1e-3, "british_thermal_unit / watt_hour")
 
-        if heat_rate_avg and heat_rate_avg.units == "british_thermal_unit / kilowatt_hour":
+        if (
+            heat_rate_avg
+            and isinstance(heat_rate_avg, Quantity)
+            and heat_rate_avg.units == "british_thermal_unit / kilowatt_hour"
+        ):
             heat_rate_avg = Quantity(heat_rate_avg.magnitude * 1e-3, "british_thermal_unit / watt_hour")
 
         if heat_rate_avg:
@@ -1497,6 +1540,23 @@ class PlexosParser(PCMParser):
                     self.system.add_time_series(max_active_power, load, **ts_dict)
         return
 
+    def _data_file_reader(self, fpath_str):
+        if encoding := self.config.feature_flags.get("csv_file_encoding"):
+            csv_file_encoding = encoding
+
+        # Adjust for Windows type of paths
+        if "\\" in fpath_str:
+            path = self.run_folder / PureWindowsPath(fpath_str)
+        else:
+            path = self.run_folder / Path(fpath_str)
+
+        if path not in self._data_file_cache:
+            data_file = csv_handler(path, csv_file_encoding=csv_file_encoding, keep_case=True)
+            self._data_file_cache[path] = data_file
+        else:
+            data_file = self._data_file_cache.get(path)
+        return data_file, path
+
     def _data_file_handler(
         self,
         record_name: str,
@@ -1508,17 +1568,7 @@ class PlexosParser(PCMParser):
         """Read time varying data from a data file."""
         assert isinstance(self.year, int)
 
-        if encoding := self.config.feature_flags.get("csv_file_encoding"):
-            csv_file_encoding = encoding
-
-        # Adjust for Windows type of paths
-        if "\\" in fpath_str:
-            path = self.run_folder / PureWindowsPath(fpath_str)
-        else:
-            path = self.run_folder / Path(fpath_str)
-
-        data_file = csv_handler(path, csv_file_encoding=csv_file_encoding, keep_case=True)
-
+        data_file, path = self._data_file_reader(fpath_str)
         column_type = get_column_enum(data_file.columns)
         if column_type is None:
             msg = f"Time series format {data_file.columns=} not yet supported."
@@ -1552,6 +1602,7 @@ class PlexosParser(PCMParser):
 
         if not parsed_file.filter(parsed_file.select(columns_to_check).is_duplicated()).is_empty():
             logger.warning("File {} has duplicated rows. Removing duplicates.", path)
+            breakpoint()
             parsed_file = parsed_file.unique(subset=columns_to_check).sort(pl.all())
 
         # We reconcile the time series data using the hourly time stamp given by the solve year
@@ -1565,14 +1616,21 @@ class PlexosParser(PCMParser):
     def _create_columns_to_check(self, column_type: DATAFILE_COLUMNS):
         # NOTE: Some files might have duplicated data. If so, we warn the user and drop the duplicates.
         columns_to_check = [
-            column.lower()
+            column
             for column in column_type.value
-            if column in ["name", "pattern", "year", "datetime", "DateTime", "month", "day", "period", "hour"]
+            if column
+            in ["Name", "name", "pattern", "year", "datetime", "DateTime", "month", "day", "period", "hour"]
         ]
-        if column_type == DATAFILE_COLUMNS.TS_YMDH or column_type == DATAFILE_COLUMNS.TS_NMDH:
+        if (
+            column_type == DATAFILE_COLUMNS.TS_YMDH
+            or column_type == DATAFILE_COLUMNS.TS_NMDH
+            or column_type == DATAFILE_COLUMNS.TS_NMCDH
+        ):
             columns_to_check.append("hour")
-        if column_type == DATAFILE_COLUMNS.TS_NM:
+        if column_type == DATAFILE_COLUMNS.TS_NM or column_type == DATAFILE_COLUMNS.TS_NMCDH:
             columns_to_check.append("month")
+        if column_type == DATAFILE_COLUMNS.TS_NMCDH:
+            columns_to_check.append("day")
         return columns_to_check
 
     def _parse_data_file(
