@@ -3,6 +3,7 @@
 This plugin is only applicable for ReEDs, but could work with similarly arrange data
 """
 
+import pluggy
 from argparse import ArgumentParser
 
 from loguru import logger
@@ -17,6 +18,10 @@ from r2x.units import ureg
 from r2x.utils import validate_string
 
 
+hookimpl = pluggy.HookimplMarker("r2x_plugin")
+
+
+@hookimpl
 def cli_arguments(parser: ArgumentParser):
     """CLI arguments for the plugin."""
     parser.add_argument(
@@ -26,12 +31,14 @@ def cli_arguments(parser: ArgumentParser):
     )
 
 
+@hookimpl
 def update_system(
     config: Scenario,
     system: System,
-    parser: BaseParser | None = None,
-    emission_cap: float | None = None,
-    default_unit: str = "tonne",
+    parser: BaseParser | None,
+    kwargs: dict,
+    # Pluggy has no support for default values
+    # https://github.com/pytest-dev/pluggy/issues/442
 ) -> System:
     """Apply an emission cap constraint for the system.
 
@@ -62,6 +69,8 @@ def update_system(
     short ton equals 2000 lbs. For units in kg/MWh and `emission_cap` in metric tons,
     we multiply by 1000 (`Scalar` property in Plexos).
     """
+    emission_cap = kwargs.get("emission_cap", None)
+    default_unit = kwargs.get("default_unit", "tonne")
     if not config.output_model == "plexos":
         msg = "Plugin `emission_cap.py` is not compatible with a model that is not Plexos."
         raise NotImplementedError(msg)

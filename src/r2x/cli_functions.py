@@ -55,6 +55,13 @@ def get_additional_arguments(
         plugin_list: List of plugins.
         folder: Folder that contains the plugin.
     """
+    import pluggy
+    from r2x.plugins import hookspec
+
+    pm = pluggy.PluginManager("r2x_plugin")
+    pm.add_hookspecs(hookspec)
+
+    # Internal Plugins
     for package in folders:
         package_str = package.split(".")
         if not len(package_str) == 3:
@@ -70,8 +77,22 @@ def get_additional_arguments(
         except ImportError:
             continue
         if hasattr(package_script, "cli_arguments"):
+            pm.register(package_script)
             script_cli_group = parser.add_argument_group(f"{package_name.upper()}: {script_name}")
-            package_script.cli_arguments(script_cli_group)
+            pm.hook.cli_arguments(parser=script_cli_group)
+            pm.unregister(package_script)
+
+    # External Plugins
+    for entry_point in importlib.metadata.entry_points().select(group="r2x_plugin"):
+        try:
+            module = entry_point.load()
+            pm.register(module)
+            script_cli_group = parser.add_argument_group(f"PLUGINS: {entry_point.name}")
+            pm.hook.cli_arguments(parser=script_cli_group)
+            pm.unregister(module)
+
+        except ImportError:
+            continue
 
     return parser
 

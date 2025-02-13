@@ -39,6 +39,8 @@ dependencies = [
     "h5py",
     "cvxpy~=1.5.3",
     "infrasys~=0.3.2",
+    "pluggy~=1.5.0",
+
 ]
 
 [project.scripts]

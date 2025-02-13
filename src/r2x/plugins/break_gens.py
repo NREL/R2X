@@ -6,6 +6,7 @@ threshold variable, we drop the genrator entirely.
 """
 
 # System packages
+import pluggy
 import re
 from argparse import ArgumentParser
 
@@ -35,6 +36,10 @@ PROPERTIES_TO_BREAK = [
 ]
 
 
+hookimpl = pluggy.HookimplMarker("r2x_plugin")
+
+
+@hookimpl
 def cli_arguments(parser: ArgumentParser):
     """CLI arguments for the plugin."""
     parser.add_argument(
@@ -45,12 +50,14 @@ def cli_arguments(parser: ArgumentParser):
     )
 
 
+@hookimpl
 def update_system(
     config: Scenario,
-    parser: BaseParser,
     system: System,
-    pcm_defaults_fpath: str | None = None,
-    capacity_threshold: int = CAPACITY_THRESHOLD,
+    parser: BaseParser,
+    kwargs: dict | None,
+    # pcm_defaults_fpath: str | None = None,
+    # capacity_threshold: int = CAPACITY_THRESHOLD,
 ) -> System:
     """Break apart large generators based on average capacity.
 
@@ -62,6 +69,9 @@ def update_system(
         *args: additional arguments that can be passed,
         **kwargs: additiona arguments.
     """
+    pcm_defaults_fpath = kwargs.get("pcm_defaults_fpath", None)
+    capacity_threshold = kwargs.get("capacity_threshold", CAPACITY_THRESHOLD)
+
     logger.info("Dividing generators into average size generators")
     assert config.input_config
     if pcm_defaults_fpath is None:
