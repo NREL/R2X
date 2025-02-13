@@ -25,8 +25,8 @@ from r2x.enums import (
     PrimeMoversType,
     ReserveDirection,
     ReserveType,
-    ThermalFuels,
     StorageTechs,
+    ThermalFuels,
 )
 from r2x.exceptions import ParserError
 from r2x.models import (
@@ -34,8 +34,8 @@ from r2x.models import (
     Area,
     Bus,
     Emission,
-    Generator,
     EnergyReservoirStorage,
+    Generator,
     HybridSystem,
     HydroGen,
     LoadZone,
@@ -48,8 +48,8 @@ from r2x.models import (
     TransmissionInterface,
     TransmissionInterfaceMap,
 )
-from r2x.models.core import MinMax, InputOutput
-from r2x.models.costs import HydroGenerationCost, ThermalGenerationCost
+from r2x.models.core import InputOutput, MinMax
+from r2x.models.costs import HydroGenerationCost, RenewableGenerationCost, ThermalGenerationCost
 from r2x.models.generators import HydroDispatch, HydroEnergyReservoir, RenewableGen, ThermalGen
 from r2x.parser.handler import BaseParser, create_model_instance
 from r2x.units import ActivePower, EmissionRate, Energy, Percentage, Time, ureg
