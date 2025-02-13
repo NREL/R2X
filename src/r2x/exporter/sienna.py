@@ -522,7 +522,7 @@ class SiennaExporter(BaseExporter):
         logger.debug("Saving Sienna data and timeseries files.")
 
         # First export all time series objects
-        self.export_data_files(year=self.year)
+        self.time_series_to_csv(config=self.config, system=self.system, reference_year=self.year)
         logger.info("Saving time series data.")
 
 

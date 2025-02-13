@@ -127,7 +127,7 @@ class PlexosExporter(BaseExporter):
         """Run the exporter."""
         logger.info("Starting {}", self.__class__.__name__)
 
-        self.export_data_files(year=self.weather_year)
+        self.time_series_to_csv(config=self.config, system=self.system, reference_year=self.weather_year)
 
         # If starting w/o a reference file we add our custom models and objects
         if new_database:
