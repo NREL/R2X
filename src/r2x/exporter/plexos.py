@@ -2,7 +2,6 @@
 
 import string
 import uuid
-import pluggy
 from argparse import ArgumentParser
 from collections.abc import Callable
 from functools import partial
@@ -55,10 +54,6 @@ DEFAULT_XML_TEMPLATE = "master_9.2R6_btu.xml"
 EXT_PROPERTIES = {"UoS Charge", "Fixed Load"}
 KEYS_TO_FLATTEN = {"active_power_limits", "active_power_flow_limits", "storage_capacity"}
 
-hookimpl = pluggy.HookimplMarker("r2x_plugin")
-
-
-@hookimpl
 def cli_arguments(parser: ArgumentParser):
     """CLI arguments for the plugin."""
     parser.add_argument(

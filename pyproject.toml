@@ -38,10 +38,7 @@ dependencies = [
     "tables~=3.10.1",
     "h5py",
     "cvxpy~=1.5.3",
-    "infrasys~=0.3.2",
-    "pluggy~=1.5.0",
-
-]
+    "infrasys~=0.3.2",]
 
 [project.scripts]
 r2x = "r2x.__main__:cli"
