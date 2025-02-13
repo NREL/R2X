@@ -1,5 +1,6 @@
 """Plexos parser class."""
 
+import pluggy
 import importlib
 from argparse import ArgumentParser
 from collections.abc import Sequence
@@ -138,6 +139,10 @@ SIMPLE_QUERY_COLUMNS_SCHEMA = {
 }
 
 
+hookimpl = pluggy.HookimplMarker("r2x_plugin")
+
+
+@hookimpl
 def cli_arguments(parser: ArgumentParser):
     """CLI arguments for the plugin."""
     parser.add_argument(
