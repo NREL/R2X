@@ -1,22 +1,21 @@
 """Create PLEXOS model from translated ReEDS data."""
 
+import string
+import uuid
 from argparse import ArgumentParser
+from collections.abc import Callable
 from functools import partial
 from importlib.resources import files
 from typing import Any
-import uuid
-import string
-from collections.abc import Callable
-
 
 from infrasys.component import Component
 from loguru import logger
+from plexosdb import PlexosSQLite
+from plexosdb.enums import ClassEnum, CollectionEnum
 
 from r2x.config_models import PlexosConfig, ReEDSConfig
 from r2x.enums import ReserveType
 from r2x.exporter.handler import BaseExporter, get_export_properties, get_export_records
-from plexosdb import PlexosSQLite
-from plexosdb.enums import ClassEnum, CollectionEnum
 from r2x.exporter.utils import (
     apply_extract_key,
     apply_flatten_key,
@@ -28,12 +27,12 @@ from r2x.exporter.utils import (
 from r2x.models import (
     ACBus,
     Emission,
-    InterruptiblePowerLoad,
     Generator,
     EnergyReservoirStorage,
     HydroDispatch,
     HydroEnergyReservoir,
     HydroPumpedStorage,
+    InterruptiblePowerLoad,
     LoadZone,
     MonitoredLine,
     PowerLoad,

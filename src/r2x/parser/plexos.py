@@ -25,12 +25,21 @@ from plexosdb.enums import ClassEnum, CollectionEnum
 
 from r2x.api import System
 from r2x.config_models import PlexosConfig
-from r2x.enums import ACBusTypes, PrimeMoversType, ReserveDirection, ReserveType, ThermalFuels
+from r2x.enums import (
+    ACBusTypes,
+    EmissionType,
+    PrimeMoversType,
+    ReserveDirection,
+    ReserveType,
+    StorageTechs,
+    ThermalFuels,
+)
 from r2x.exceptions import ModelError, ParserError
+from r2x.exporter.utils import get_property_magnitude
 from r2x.models import (
     ACBus,
-    Generator,
     EnergyReservoirStorage,
+    Generator,
     HydroDispatch,
     LoadZone,
     MonitoredLine,
@@ -42,9 +51,12 @@ from r2x.models import (
     TransmissionInterfaceMap,
 )
 from r2x.models.branch import Transformer2W
-from r2x.models.core import MinMax
+from r2x.models.core import InputOutput, MinMax
 from r2x.models.costs import HydroGenerationCost, RenewableGenerationCost, ThermalGenerationCost
+from r2x.models.generators import HydroPumpedStorage
 from r2x.models.load import PowerLoad
+from r2x.models.services import Emission
+from r2x.models.topology import Area
 from r2x.units import ureg
 from r2x.utils import get_enum_from_string, get_pint_unit, validate_string
 
@@ -172,8 +184,8 @@ class PlexosParser(PCMParser):
         # TODO(pesap): Rename exceptions to include R2X
         # https://github.com/NREL/R2X/issues/5
         # R2X needs at least one of this maps defined to correctly work.
-        one_required = ["fuel_map", "device_map", "device_match_string", "category_map"]
-        if all(getattr(self, one_req, {}) == {} for one_req in one_required):
+        one_required = ["fuel_map", "device_map", "category_map"]
+        if all(getattr(self, one_req, {}) == {} for one_req in one_required) and self.device_match_string:
             msg = f"At least one of {', or '.join(one_required)} is required to initialize PlexosParser"
             raise ParserError(msg)
 
@@ -207,6 +219,7 @@ class PlexosParser(PCMParser):
         self.hourly_time_index = pl.datetime_range(
             datetime(self.year, 1, 1), datetime(self.year + 1, 1, 1), interval="1h", eager=True, closed="left"
         ).to_frame("datetime")
+        self._data_file_cache: dict[Path, pl.DataFrame] = {}
 
         return
 
@@ -219,12 +232,14 @@ class PlexosParser(PCMParser):
         self.plexos_data = self._polarize_data(object_data=object_data)
 
         # Construct the network
+        self._construct_areas()
         self._construct_load_zones()
         self._construct_buses()
         self._construct_branches()
         self._construct_transformers()
         self._construct_interfaces()
         self._construct_reserves()
+        self._add_reserve_region_properties()
 
         # Generators
         self._construct_generators()
@@ -237,6 +252,9 @@ class PlexosParser(PCMParser):
         self._add_battery_reserves()
 
         self._construct_load_profiles()
+
+        # Emission object_class
+        self._add_generator_emissions()
         return self.system
 
     def _collect_horizon_data(self, model_name: str) -> dict[str, float]:
@@ -291,6 +309,20 @@ class PlexosParser(PCMParser):
             fuel_prices[fuel_name] = mapped_records.get("Price", 0)
         return fuel_prices
 
+    def _construct_areas(self) -> None:
+        """Create Area representation from a PLEXOS model.
+
+        Area is an aggregation of buses that could or could not be used for balancing purposes.
+        The equivalent of an Area from PLEXOS is a `ClassEnum.Region` category.
+        """
+        logger.info("Creating `Area` representation")
+        system_regions = (pl.col("child_class_name") == ClassEnum.Region.value) & (
+            pl.col("parent_class_name") == ClassEnum.System.value
+        )
+        regions = self._get_model_data(system_regions)
+        for area in regions["category"].unique():
+            self.system.add_component(Area(name=area))
+
     def _construct_load_zones(self, default_model=LoadZone) -> None:
         """Create LoadZone representation.
 
@@ -298,8 +330,8 @@ class PlexosParser(PCMParser):
         we assume that it happens at the region level, which is a typical way
         of doing it.
         """
-        logger.info("Creating load zone representation")
-        system_regions = (pl.col("child_class_name") == ClassEnum.Region.value) & (
+        logger.info("Creating `LoadZone` representation")
+        system_regions = (pl.col("child_class_name") == ClassEnum.Zone.value) & (
             pl.col("parent_class_name") == ClassEnum.System.value
         )
         regions = self._get_model_data(system_regions)
@@ -317,11 +349,15 @@ class PlexosParser(PCMParser):
         return
 
     def _construct_buses(self, default_model=ACBus) -> None:
-        logger.info("Creating buses representation")
+        logger.info("Creating `Bus` representation")
 
         # Get list of buses that are connected to lines, because `sienna` doesn't like islanded buses
         buses_connected_to_lines = self._get_model_data(
-            (pl.col("parent_class_name") == ClassEnum.Line.value)
+            (
+                (pl.col("parent_class_name") == ClassEnum.Line.value).or_(
+                    pl.col("parent_class_name") == ClassEnum.Transformer.value
+                )
+            )
             & (pl.col("child_class_name") == ClassEnum.Node.value)
         )["name"]
 
@@ -333,8 +369,12 @@ class PlexosParser(PCMParser):
         region_buses = (pl.col("child_class_name") == ClassEnum.Region.value) & (
             pl.col("parent_class_name") == ClassEnum.Node.value
         )
+        zone_buses = (pl.col("child_class_name") == ClassEnum.Zone.value) & (
+            pl.col("parent_class_name") == ClassEnum.Node.value
+        )
         system_buses = self._get_model_data(system_buses)
         buses_region = self._get_model_data(region_buses)
+        buses_zone = self._get_model_data(zone_buses)
         for idx, (bus_name, bus_data) in enumerate(system_buses.group_by("name")):
             bus_name = bus_name[0]
             logger.trace("Parsing bus = {}", bus_name)
@@ -348,10 +388,16 @@ class PlexosParser(PCMParser):
 
             # Get region from buses region memberships
             region_name = buses_region.filter(pl.col("parent_object_id") == bus_data["object_id"].unique())[
-                "name"
+                "category"
             ].item()
+            zone_name = (
+                buses_zone.filter(pl.col("parent_object_id") == bus_data["object_id"].unique())["name"]
+                .unique()
+                .item()
+            )
 
-            valid_fields["load_zone"] = self.system.get_component(LoadZone, name=region_name)
+            valid_fields["area"] = self.system.get_component(Area, name=region_name)
+            valid_fields["load_zone"] = self.system.get_component(LoadZone, name=zone_name)
 
             # We parse all the buses as PV unless in the model someone specify a bus is a slack.
             # Plexos defines the True value of a Slack bus assigning it -1. Possible values are only 0
@@ -391,6 +437,49 @@ class PlexosParser(PCMParser):
                     self.system.add_time_series(ts, generator, **ts_dict)
         return
 
+    def _add_generator_emissions(self, default_model=Emission):
+        logger.info("Creating buses representation")
+        emission_objects = (pl.col("child_class_name") == ClassEnum.Emission.value) & (
+            pl.col("parent_class_name") == ClassEnum.System.value
+        )
+        generator_emissions = (pl.col("child_class_name") == ClassEnum.Generator.value) & (
+            pl.col("parent_class_name") == ClassEnum.Emission.value
+        )
+        emission_objects = self._get_model_data(emission_objects)
+        generator_emissions = self._get_model_data(generator_emissions)
+        generator_emissions = generator_emissions.join(
+            emission_objects, left_on="parent_object_id", right_on="object_id", suffix="_emission"
+        )
+
+        for generator_name, generator_data in generator_emissions.group_by(["name", "name_emission"]):
+            generator_name = generator_name[0]
+            logger.trace("Parsing generator emission properties = {}", generator_name)
+
+            property_records = generator_data.to_dicts()
+            mapped_records, multi_band_records = self._parse_property_data(property_records)
+            mapped_records["generator_name"] = generator_name
+            emission_name = generator_data["name_emission"].item()
+            if emission_name in EmissionType._value2member_map_:
+                mapped_records["emission_type"] = EmissionType[emission_name]
+            else:
+                mapped_records["emission_type"] = EmissionType.OTHER
+            mapped_records["name"] = f"{mapped_records['generator_name']}_{mapped_records['emission_type']}"
+            valid_fields, ext_data = field_filter(mapped_records, default_model.model_fields)
+            valid_fields = prepare_ext_field(valid_fields, ext_data)
+            required_fields = {
+                key: value for key, value in default_model.model_fields.items() if value.is_required()
+            }
+            if not all(key in mapped_records for key in required_fields):
+                missing_fields = [key for key in required_fields if key not in mapped_records]
+                logger.warning(
+                    "Skipping emission {} for generator {}. Missing Required Fields: {}",
+                    emission_name,
+                    generator_name,
+                    missing_fields,
+                )
+                continue
+            self.system.add_component(default_model(**valid_fields))
+
     def _construct_reserves(self, default_model=Reserve):
         logger.info("Creating reserve representation")
 
@@ -414,12 +503,14 @@ class PlexosParser(PCMParser):
 
             # Service model uses all floats
             mapped_records["max_requirement"] = (
-                mapped_records.pop("max_requirement").magnitude
+                get_property_magnitude(mapped_records.pop("max_requirement"))
                 if mapped_records.get("max_requirement")
                 else None
             )
             mapped_records["vors"] = mapped_records.pop("vors").magnitude
-            mapped_records["duration"] = mapped_records["duration"].magnitude
+
+            if mapped_records.get("duration"):
+                mapped_records["duration"] = mapped_records["duration"].magnitude
             if mapped_records["time_frame"].units == "second":
                 mapped_records["time_frame"] = mapped_records["time_frame"].magnitude / 60
             else:
@@ -427,10 +518,72 @@ class PlexosParser(PCMParser):
 
             valid_fields, ext_data = field_filter(mapped_records, default_model.model_fields)
             valid_fields = prepare_ext_field(valid_fields, ext_data)
+
+            # NOTE: Plexos has a property called `Is Enabled` that takes either 1 or -1.
+            # Where -1 False (0) or True (-1)
+
+            if "available" in valid_fields and valid_fields["available"] == -1:
+                valid_fields["available"] = 1
+
+            ts_fields = {k: v for k, v in mapped_records.items() if isinstance(v, SingleTimeSeries)}
+
+            valid_fields.update(
+                {
+                    ts_name: get_property_magnitude(np.mean(ts.data))
+                    for ts_name, ts in ts_fields.items()
+                    if ts_name in valid_fields.keys()
+                }
+            )
+
+            valid_fields = prepare_ext_field(valid_fields, ext_data)
             self.system.add_component(default_model(**valid_fields))
+
+            if ts_fields:
+                reserve = self.system.get_component_by_label(f"{default_model.__name__}.{reserve_name}")
+                ts_dict = {"solve_year": self.year}
+                for ts_name, ts in ts_fields.items():
+                    ts.variable_name = ts_name
+                    self.system.add_time_series(ts, reserve, **ts_dict)
 
         reserve_map = ReserveMap(name="contributing_generators")
         self.system.add_component(reserve_map)
+        return
+
+    def _add_reserve_region_properties(self):
+        region_reserve_filter = (pl.col("child_class_name") == ClassEnum.Region.value) & (
+            pl.col("parent_class_name") == ClassEnum.Reserve.value
+        )
+        system_reserves = self._get_model_data(
+            (pl.col("child_class_name") == ClassEnum.Reserve.name)
+            & (pl.col("parent_class_name") == ClassEnum.System.name)
+        )
+        region_reserve_data = self._get_model_data(region_reserve_filter)
+        for reserve_object_id, reserve_data in region_reserve_data.group_by("parent_object_id"):
+            reserve_object_id = reserve_object_id[0]
+            region_names = reserve_data["name"].unique().to_list()
+
+            load_zone_name = set(
+                component.load_zone.name
+                for component in self.system.get_components(ACBus)
+                if component.name in region_names
+            )
+            if len(load_zone_name) > 1:
+                msg = "Buses have multiple load zones attached. Not supported."
+                raise NotImplementedError(msg)
+            if not len(reserve_data["property_value"].unique() == 1):
+                msg = "Multiple property values not supported for Reserve regions."
+                raise NotImplementedError
+            property_records = reserve_data.to_dicts()
+            mapped_records, _ = self._parse_property_data(property_records)
+
+            reserve_name = (
+                system_reserves.filter(pl.col("object_id") == reserve_object_id)["name"].unique().item()
+            )
+            reserve_object = self.system.get_component(Reserve, reserve_name)
+            load_zone = self.system.get_component(LoadZone, next(iter(load_zone_name)))
+            reserve_object.region = load_zone
+            if mapped_records.get("load_risk"):
+                reserve_object.load_risk = mapped_records["load_risk"]
         return
 
     def _construct_branches(self, default_model=MonitoredLine):
@@ -471,7 +624,7 @@ class PlexosParser(PCMParser):
                 if (
                     membership[2] == line["name"]
                     and membership[5] == ClassEnum.Line.name
-                    and membership[6].replace(" ", "") == CollectionEnum.NodeFrom.name
+                    and membership[7].replace(" ", "") == CollectionEnum.NodeFrom.name
                 )
             )[3]
             from_bus = self.system.get_component(ACBus, from_bus_name)
@@ -481,7 +634,7 @@ class PlexosParser(PCMParser):
                 if (
                     membership[2] == line["name"]
                     and membership[5] == ClassEnum.Line.name
-                    and membership[6].replace(" ", "") == CollectionEnum.NodeTo.name
+                    and membership[7].replace(" ", "") == CollectionEnum.NodeTo.name
                 )
             )[3]
             to_bus = self.system.get_component(ACBus, to_bus_name)
@@ -537,7 +690,7 @@ class PlexosParser(PCMParser):
                 if (
                     membership[2] == transformer["name"]
                     and membership[5] == ClassEnum.Transformer.name
-                    and membership[6].replace(" ", "") == CollectionEnum.NodeFrom.name
+                    and membership[7].replace(" ", "") == CollectionEnum.NodeFrom.name
                 )
             )[3]
             from_bus = self.system.get_component(ACBus, from_bus_name)
@@ -547,7 +700,7 @@ class PlexosParser(PCMParser):
                 if (
                     membership[2] == transformer["name"]
                     and membership[5] == ClassEnum.Transformer.name
-                    and membership[6].replace(" ", "") == CollectionEnum.NodeTo.name
+                    and membership[7].replace(" ", "") == CollectionEnum.NodeTo.name
                 )
             )[3]
             to_bus = self.system.get_component(ACBus, to_bus_name)
@@ -580,9 +733,9 @@ class PlexosParser(PCMParser):
             Either an empty dictionary or a dictionary with fuel and prime mover type.
         """
         match_fuel_pmtype = (
-            self.category_map.get(category)
-            or self.device_map.get(generator_name)
+            self.device_map.get(generator_name)
             or self.fuel_map.get(fuel_name)
+            or self.category_map.get(category)
             or self._infer_model_type(generator_name)
         )
         if not match_fuel_pmtype:
@@ -595,7 +748,7 @@ class PlexosParser(PCMParser):
         assert isinstance(match_fuel_pmtype, dict), msg
         return match_fuel_pmtype
 
-    def _get_model_type(self, fuel_pmtype) -> str:
+    def _get_model_type(self, fuel_pmtype: dict[str, str | None]) -> str:
         """Get model type for given pair of fuel and prime mover type.
 
         Notes
@@ -611,11 +764,11 @@ class PlexosParser(PCMParser):
         assert len(self.generator_models) < 1000, "Change the data structure. Fool."
         if fuel_pmtype is None:
             return ""
-        for model, conditions in self.generator_models.items():
-            for cond in conditions:
-                if (cond["fuel"] == fuel_pmtype["fuel"] or cond["fuel"] is None) and (
-                    cond["type"] == fuel_pmtype["type"] or cond["type"] is None
-                ):
+        for model, items in self.generator_models.items():
+            if not isinstance(items, list):
+                continue
+            for item in items:
+                if item == fuel_pmtype:
                     return model
         return ""
 
@@ -659,6 +812,7 @@ class PlexosParser(PCMParser):
             generator_name = generator_name[0]
 
             category = generator_data["category"].unique()
+            object_id = generator_data["object_id"].unique().item()
             if len(category) > 1:
                 msg = "Generator has more then one category. Check the dataset"
                 logger.debug(msg)
@@ -676,7 +830,14 @@ class PlexosParser(PCMParser):
 
             # We assume that if we find the fuel, there is a model_map
             model_map = self._get_model_type(fuel_pmtype)
-            model_map = getattr(R2X_MODELS, model_map)
+            try:
+                model_map = getattr(R2X_MODELS, model_map)
+            except AttributeError:
+                msg = (
+                    f"Mapping {fuel_pmtype} does not have a corresponding generator model. "
+                    "Check that the combination of fuel and type exist on the `generator_models`"
+                )
+                raise AttributeError(msg)
 
             # property_records = generator_data[DEFAULT_PROPERTY_COLUMNS].to_dicts()
             property_records = generator_data.to_dicts()
@@ -690,15 +851,17 @@ class PlexosParser(PCMParser):
             # Get prime mover enum
             mapped_records["prime_mover_type"] = fuel_pmtype["type"]
             mapped_records["prime_mover_type"] = PrimeMoversType[mapped_records["prime_mover_type"]]
-            mapped_records["fuel"] = (
-                get_enum_from_string(fuel_pmtype["fuel"], ThermalFuels) if fuel_pmtype.get("fuel") else None
-            )
+
+            if issubclass(model_map, ThermalGen) and fuel_pmtype.get("fuel"):
+                mapped_records["fuel"] = get_enum_from_string(fuel_pmtype["fuel"], ThermalFuels)
 
             # Pumped Storage generators are not required to have Max Capacity property
             if "max_active_power" not in mapped_records and "pump_load" in mapped_records:
                 mapped_records["rating"] = mapped_records["pump_load"]
 
             mapped_records = self._set_unit_capacity(mapped_records)
+            if model_map.__name__ == HydroPumpedStorage.__name__:
+                mapped_records = self._get_storage_objects_attached(object_id, mapped_records)
             if mapped_records is None:
                 logger.trace("Skipping disabled generator {}", generator_name)
                 # When unit availability is not set, we skip the generator
@@ -741,6 +904,33 @@ class PlexosParser(PCMParser):
                     ts.variable_name = ts_name
                     self.system.add_time_series(ts, generator, **ts_dict)
         return
+
+    def _get_storage_objects_attached(self, object_id: int, mapped_records: dict[str, Any]) -> dict[str, Any]:
+        """Get head and tail objects for generators with Storage.
+
+        Currently only works for PHS type of generator where the generator appears and it has a head and tail
+        object attached to it.
+
+        Notes
+        -----
+            If the head and tail have separate values, we just get the first occurence.
+        """
+        system_storage_filter = (pl.col("child_class_name") == str(ClassEnum.Storage)) & (
+            pl.col("parent_class_name") == str(ClassEnum.System)
+        )
+        generator_storage_filter = (pl.col("child_class_name") == str(ClassEnum.Storage)) & (
+            pl.col("parent_class_name") == str(ClassEnum.Generator)
+        )
+        storage_objects = self._get_model_data(generator_storage_filter).filter(
+            pl.col("parent_object_id") == object_id
+        )["object_id"]
+
+        system_storage_data = self._get_model_data(system_storage_filter).filter(
+            pl.col("object_id").is_in(storage_objects)
+        )
+        mapped_storage_records, ext_data = self._parse_property_data(system_storage_data.to_dicts())
+
+        return mapped_storage_records | mapped_records
 
     def _add_buses_to_generators(self):
         # Add buses to generators
@@ -817,6 +1007,14 @@ class PlexosParser(PCMParser):
             mapped_records = self._set_unit_capacity(mapped_records)
             if mapped_records is None:
                 continue
+            mapped_records["storage_technology_type"] = StorageTechs.OTHER_CHEM
+
+            mapped_records["input_active_power_limits"] = MinMax(min=0, max=mapped_records["base_power"])
+            mapped_records["output_active_power_limits"] = MinMax(min=0, max=mapped_records["base_power"])
+            mapped_records["efficiency"] = InputOutput(
+                input=mapped_records.get("charge_efficiency", 1),
+                output=mapped_records.get("discharge_efficiency", 1),
+            )
 
             valid_fields, ext_data = field_filter(mapped_records, EnergyReservoirStorage.model_fields)
 
@@ -921,11 +1119,21 @@ class PlexosParser(PCMParser):
             }
             valid_fields, ext_data = field_filter(mapped_interface, default_model.model_fields)
 
+            # Add flow limits
+            if "Max Flow" in mapped_interface:
+                valid_fields["active_power_flow_limits"] = MinMax(
+                    min=mapped_interface.get("Min Flow", 0.0), max=mapped_interface["Max Flow"]
+                )
+
+            # NOTE: TransmissionInterface require a direction mapping. This basically says the direction of
+            # the flow to each of the lines contributing to the interface.
+            valid_fields["direction_mapping"] = {}
+
             # Check that the interface has all the required fields of the model.
             required_fields = {
                 key: value for key, value in default_model.model_fields.items() if value.is_required()
             }
-            if not all(key in mapped_interface for key in required_fields):
+            if not all(key in valid_fields for key in required_fields):
                 missing_fields = [key for key in required_fields if key not in mapped_interface]
                 logger.warning(
                     "{}:{} missing required fields: {}. Skipping it.",
@@ -1012,7 +1220,11 @@ class PlexosParser(PCMParser):
         if heat_rate_incr and heat_rate_incr.units == "british_thermal_unit / kilowatt_hour":
             heat_rate_incr = Quantity(heat_rate_incr.magnitude * 1e-3, "british_thermal_unit / watt_hour")
 
-        if heat_rate_avg and heat_rate_avg.units == "british_thermal_unit / kilowatt_hour":
+        if (
+            heat_rate_avg
+            and isinstance(heat_rate_avg, Quantity)
+            and heat_rate_avg.units == "british_thermal_unit / kilowatt_hour"
+        ):
             heat_rate_avg = Quantity(heat_rate_avg.magnitude * 1e-3, "british_thermal_unit / watt_hour")
 
         if heat_rate_avg:
@@ -1055,8 +1267,8 @@ class PlexosParser(PCMParser):
         elif issubclass(model_map, ThermalGen):
             heat_rate_curve = self._construct_value_curves(mapped_records, generator_name)
             fuel_cost = mapped_records.get("fuel_price", 0)
-            if isinstance(fuel_cost, SingleTimeSeries):
-                fuel_cost = np.mean(fuel_cost.data)
+            if isinstance(fuel_cost, SingleTimeSeries) and isinstance(fuel_cost.data, Quantity):
+                fuel_cost = np.mean(fuel_cost.data.magnitude)
             elif isinstance(fuel_cost, Quantity):
                 fuel_cost = fuel_cost.magnitude
             if heat_rate_curve:
@@ -1076,8 +1288,10 @@ class PlexosParser(PCMParser):
         elif issubclass(model_map, HydroDispatch):
             mapped_records["operation_cost"] = HydroGenerationCost()
         else:
-            logger.warning(
-                "Operating Cost not implemented for generator={} model map={}", generator_name, model_map
+            logger.debug(
+                "Operating cost parsing not implemented for generator={} model map={}",
+                generator_name,
+                model_map,
             )
 
         mapped_records["vom_price"] = mapped_records.get("vom_price", 0)
@@ -1369,6 +1583,21 @@ class PlexosParser(PCMParser):
                     self.system.add_time_series(max_active_power, load, **ts_dict)
         return
 
+    def _data_file_reader(self, fpath_str, csv_file_encoding="utf8"):
+        if encoding := self.config.feature_flags.get("csv_file_encoding"):
+            csv_file_encoding = encoding
+
+        path = self.run_folder / Path(fpath_str)
+        if "\\" in fpath_str:
+            path = self.run_folder / PureWindowsPath(fpath_str)
+
+        if path not in self._data_file_cache:
+            data_file = csv_handler(path, csv_file_encoding=csv_file_encoding)
+            self._data_file_cache[path] = data_file
+        else:
+            data_file = self._data_file_cache.get(path)
+        return data_file, path
+
     def _data_file_handler(
         self,
         record_name: str,
@@ -1380,17 +1609,7 @@ class PlexosParser(PCMParser):
         """Read time varying data from a data file."""
         assert isinstance(self.year, int)
 
-        if encoding := self.config.feature_flags.get("csv_file_encoding"):
-            csv_file_encoding = encoding
-
-        # Adjust for Windows type of paths
-        if "\\" in fpath_str:
-            path = self.run_folder / PureWindowsPath(fpath_str)
-        else:
-            path = self.run_folder / Path(fpath_str)
-
-        data_file = csv_handler(path, csv_file_encoding=csv_file_encoding)
-
+        data_file, path = self._data_file_reader(fpath_str)
         column_type = get_column_enum(data_file.columns)
         if column_type is None:
             msg = f"Time series format {data_file.columns=} not yet supported."
@@ -1423,7 +1642,7 @@ class PlexosParser(PCMParser):
         columns_to_check = self._create_columns_to_check(column_type)
 
         if not parsed_file.filter(parsed_file.select(columns_to_check).is_duplicated()).is_empty():
-            logger.warning("File {} has duplicated rows. Removing duplicates.", path)
+            logger.debug("File {} has duplicated rows. Removing duplicates.", path)
             parsed_file = parsed_file.unique(subset=columns_to_check).sort(pl.all())
 
         # We reconcile the time series data using the hourly time stamp given by the solve year
@@ -1439,12 +1658,30 @@ class PlexosParser(PCMParser):
         columns_to_check = [
             column
             for column in column_type.value
-            if column in ["name", "pattern", "year", "datetime", "month", "day", "period", "hour"]
+            if column
+            in [
+                "Name",
+                "name",
+                "pattern",
+                "year",
+                "datetime",
+                "DateTime",
+                "month",
+                "day",
+                "period",
+                "hour",
+            ]
         ]
-        if column_type == DATAFILE_COLUMNS.TS_YMDH or column_type == DATAFILE_COLUMNS.TS_NMDH:
+        if (
+            column_type == DATAFILE_COLUMNS.TS_YMDH
+            or column_type == DATAFILE_COLUMNS.TS_NMDH
+            or column_type == DATAFILE_COLUMNS.TS_NMCDH
+        ):
             columns_to_check.append("hour")
-        if column_type == DATAFILE_COLUMNS.TS_NM:
+        if column_type == DATAFILE_COLUMNS.TS_NM or column_type == DATAFILE_COLUMNS.TS_NMCDH:
             columns_to_check.append("month")
+        if column_type == DATAFILE_COLUMNS.TS_NMCDH:
+            columns_to_check.append("day")
         return columns_to_check
 
     def _parse_data_file(
@@ -1468,6 +1705,9 @@ class PlexosParser(PCMParser):
         if "name" in parsed_file.columns:
             cols = [col.lower() for col in [record_name, property_name, variable_name] if col]
             parsed_file = parsed_file.filter(pl.col("name").str.to_lowercase().is_in(cols))
+
+        if record_name in parsed_file.columns:
+            parsed_file = parsed_file.fiter(pl.col(record_name))
 
         return parsed_file
 
