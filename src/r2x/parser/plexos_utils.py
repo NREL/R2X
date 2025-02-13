@@ -262,7 +262,7 @@ def parse_yv(data_file):
 def parse_ts_datetime(data_file):
     data_file = data_file.with_columns(datetime=pl.col("datetime").str.to_datetime("%Y-%m-%dt%H:%M"))
     data_file = data_file.with_columns(year=pl.col("datetime").dt.year())
-    data_file = data_file.melt(id_vars="year", variable_name="name")
+    data_file = data_file.melt(id_vars=["datetime", "year"], variable_name="name")
     return data_file
 
 

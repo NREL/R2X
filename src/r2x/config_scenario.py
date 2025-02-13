@@ -87,7 +87,7 @@ class Scenario:
         # to change the default file mapping by passing a `fmap` key and passing new key value pairs for
         # predetermined files that we read for each model (see `{model}_fmap.json`}. The override only happens
         # if the exact key appears on the `user_dict.
-        if self.user_dict and (feature_flags := self.user_dict.pop("feature-flags")):
+        if self.user_dict and (feature_flags := self.user_dict.get("feature-flags")):
             self.feature_flags = feature_flags
         if self.user_dict and self.input_config:
             self.input_config.fmap = override_dict(self.input_config.fmap, self.user_dict.get("fmap", {}))
