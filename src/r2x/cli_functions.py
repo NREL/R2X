@@ -80,10 +80,7 @@ def get_additional_arguments(
         if hasattr(package_script, "cli_arguments"):
             pm.register(package_script)
             script_cli_group = parser.add_argument_group(f"{package_name.upper()}: {script_name}")
-            pm.hook.cli_arguments(parser=script_cli_group)
-            pm.unregister(package_script)
-
-
+            package_script.cli_arguments(script_cli_group)
 
     return parser
 
