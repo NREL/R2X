@@ -599,7 +599,7 @@ def apply_operation_table_data(
 
     operation_cost = component["operation_cost"]
 
-    if not (variable := operation_cost["variable"]):
+    if not (variable := operation_cost.get("variable")):
         return component
 
     if haskey(variable, ["vom_cost", "function_data"]):

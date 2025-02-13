@@ -36,10 +36,9 @@ def pjm_scenario(tmp_path, data_folder):
         output_model="sienna",
         run_folder=data_folder / "pjm_2area",
         output_folder=tmp_path,
-        model_year=2035,
-        fmap={"xml_file": {"fname": "system.xml", "model_name": "default"}},
+        model_year=2024,
         user_dict={
-            "fmap": {"xml_file": {"fname": "system.xml", "model_name": MODEL_NAME}},
+            "fmap": {"xml_file": {"fname": "pjm_2area.xml", "model_name": MODEL_NAME}},
         },
     )
 
@@ -83,8 +82,8 @@ def test_build_system(plexos_parser_instance):
 def test_parser_system(pjm_scenario):
     plexos_category_map = {
         "thermal": {"fuel": "NATURAL_GAS", "type": "CC"},
-        "solar": {"fuel": None, "type": "WT"},
-        "wind": {"fuel": None, "type": "PV"},
+        "solar": {"fuel": None, "type": "PVe"},
+        "wind": {"fuel": None, "type": "WT"},
     }
     pjm_scenario.input_config.model_name = "model_2012"
 

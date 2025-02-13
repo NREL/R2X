@@ -1,7 +1,7 @@
 {
   "xml_file": {
-    "description": "XML databse from PLEXOS.",
-    "fname": "r2x/defaults/master.xml",
+    "description": "XML database from PLEXOS.",
+    "fname": "",
     "model": "Base"
   }
 }

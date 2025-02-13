@@ -7,7 +7,7 @@ from pydantic import Field, NonNegativeFloat, PositiveFloat, field_serializer
 from r2x.enums import EmissionType, ReserveDirection, ReserveType
 from r2x.models.core import MinMax, Service
 from r2x.models.topology import LoadZone
-from r2x.units import EmissionRate
+from r2x.units import EmissionRate, Percentage
 
 
 class Reserve(Service):
@@ -38,7 +38,7 @@ class Reserve(Service):
     reserve_type: ReserveType
     load_risk: (
         Annotated[
-            NonNegativeFloat,
+            Percentage,
             Field(
                 description="Proportion of Load that contributes to the requirement.",
             ),

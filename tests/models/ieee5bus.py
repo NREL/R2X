@@ -48,14 +48,14 @@ def ieee5bus() -> System:
     solar_pv_01 = RenewableDispatch(
         name="SolarPV1",
         bus=bus_3,
-        prime_mover_type=PrimeMoversType.PV,
+        prime_mover_type=PrimeMoversType.PVe,
         active_power=384 * ureg.MW,
         category="solar",
     )
     solar_pv_02 = RenewableDispatch(
         name="SolarPV2",
         bus=bus_4,
-        prime_mover_type=PrimeMoversType.PV,
+        prime_mover_type=PrimeMoversType.PVe,
         active_power=384 * ureg.MW,
         category="solar",
     )

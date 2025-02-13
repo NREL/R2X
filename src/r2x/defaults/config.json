@@ -30,7 +30,52 @@
     "FLEXIBILITY",
     "REGULATION"
   ],
-  "device_name_inference_map": {},
+  "device_name_inference_map": {
+    "battery": {
+      "fuel": null,
+      "type": "BA"
+    },
+    "biopower": {
+      "fuel": "WOOD_WASTE",
+      "type": "GT"
+    },
+    "coal": {
+      "fuel": "COAL",
+      "type": "ST"
+    },
+    "distpv": {
+      "fuel": null,
+      "type": "RTPV"
+    },
+    "gas": {
+      "fuel": "NATURAL_GAS",
+      "type": "CC"
+    },
+    "hyd": {
+      "fuel": null,
+      "type": "HY"
+    },
+    "nuclear": {
+      "fuel": "NUCLEAR",
+      "type": "ST"
+    },
+    "pumped": {
+      "fuel": null,
+      "type": "PS"
+    },
+    "solar": {
+      "fuel": null,
+      "type": "PVe"
+    },
+    "upv": {
+      "fuel": null,
+      "type": "PVe"
+    },
+    "wind": {
+      "fuel": null,
+      "type": "WT"
+    }
+  },
   "distribution_losses": 1,
   "generator_models": {
     "EnergyReservoirStorage": [
@@ -45,11 +90,13 @@
     ],
     "HydroDispatch": [
       {
-        "fuel": "HYDRO",
-        "type": null
-      },
-      {
         "fuel": null,
+        "type": "HY"
+      }
+    ],
+    "HydroEnergyReservoir": [
+      {
+        "fuel": "HYDRO",
         "type": "HY"
       }
     ],
@@ -66,7 +113,7 @@
     "RenewableDispatch": [
       {
         "fuel": "SOLAR",
-        "type": "PV"
+        "type": "PVe"
       },
       {
         "fuel": "SOLAR",
@@ -94,7 +141,7 @@
       },
       {
         "fuel": null,
-        "type": "PV"
+        "type": "PVe"
       },
       {
         "fuel": null,
@@ -137,6 +184,10 @@
         "type": null
       },
       {
+        "fuel": "COAL",
+        "type": "ST"
+      },
+      {
         "fuel": "WASTE_COAL",
         "type": null
       },
@@ -170,11 +221,15 @@
       },
       {
         "fuel": "NATURAL_GAS",
-        "type": null
+        "type": "CT"
       },
       {
         "fuel": "NUCLEAR",
         "type": null
+      },
+      {
+        "fuel": "NUCLEAR",
+        "type": "ST"
       },
       {
         "fuel": "OTHER",
@@ -189,6 +244,10 @@
         "type": null
       },
       {
+        "fuel": "GEOTHERMAL",
+        "type": "ST"
+      },
+      {
         "fuel": "STORAGE",
         "type": "CE"
       },
@@ -197,16 +256,36 @@
         "type": null
       },
       {
+        "fuel": "MUNICIPAL_WASTE",
+        "type": "CT"
+      },
+      {
         "fuel": "WOOD_WASTE",
         "type": "OT"
+      },
+      {
+        "fuel": "NATURAL_GAS",
+        "type": "GT"
+      },
+      {
+        "fuel": "OTHER",
+        "type": "GT"
       },
       {
         "fuel": "WOOD_WASTE",
         "type": "GT"
       },
       {
+        "fuel": "OTHER_GAS",
+        "type": "OT"
+      },
+      {
         "fuel": null,
         "type": "OT"
+      },
+      {
+        "fuel": "DISTILLATE_FUEL_OIL",
+        "type": "IC"
       },
       {
         "fuel": null,
@@ -219,6 +298,10 @@
       {
         "fuel": null,
         "type": "CA"
+      },
+      {
+        "fuel": "OTHER",
+        "type": "CT"
       },
       {
         "fuel": null,
