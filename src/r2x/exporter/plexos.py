@@ -58,7 +58,6 @@ KEYS_TO_FLATTEN = {"active_power_limits", "active_power_flow_limits", "storage_c
 
 hookimpl = pluggy.HookimplMarker("r2x_plugin")
 
-
 @hookimpl
 def cli_arguments(parser: ArgumentParser):
     """CLI arguments for the plugin."""
