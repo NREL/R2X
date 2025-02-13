@@ -25,13 +25,21 @@ from plexosdb.enums import ClassEnum, CollectionEnum
 
 from r2x.api import System
 from r2x.config_models import PlexosConfig
-from r2x.enums import ACBusTypes, EmissionType, PrimeMoversType, ReserveDirection, ReserveType, ThermalFuels
+from r2x.enums import (
+    ACBusTypes,
+    EmissionType,
+    PrimeMoversType,
+    ReserveDirection,
+    ReserveType,
+    StorageTechs,
+    ThermalFuels,
+)
 from r2x.exceptions import ModelError, ParserError
 from r2x.exporter.utils import get_property_magnitude
 from r2x.models import (
     ACBus,
-    Generator,
     EnergyReservoirStorage,
+    Generator,
     HydroDispatch,
     LoadZone,
     MonitoredLine,
@@ -43,7 +51,7 @@ from r2x.models import (
     TransmissionInterfaceMap,
 )
 from r2x.models.branch import Transformer2W
-from r2x.models.core import MinMax
+from r2x.models.core import InputOutput, MinMax
 from r2x.models.costs import HydroGenerationCost, RenewableGenerationCost, ThermalGenerationCost
 from r2x.models.generators import HydroPumpedStorage
 from r2x.models.load import PowerLoad
@@ -972,6 +980,14 @@ class PlexosParser(PCMParser):
             mapped_records = self._set_unit_capacity(mapped_records)
             if mapped_records is None:
                 continue
+            mapped_records["storage_technology_type"] = StorageTechs.OTHER_CHEM
+
+            mapped_records["input_active_power_limits"] = MinMax(min=0, max=mapped_records["base_power"])
+            mapped_records["output_active_power_limits"] = MinMax(min=0, max=mapped_records["base_power"])
+            mapped_records["efficiency"] = InputOutput(
+                input=mapped_records.get("charge_efficiency", 1),
+                output=mapped_records.get("discharge_efficiency", 1),
+            )
 
             valid_fields, ext_data = field_filter(mapped_records, EnergyReservoirStorage.model_fields)
 
@@ -1540,15 +1556,13 @@ class PlexosParser(PCMParser):
                     self.system.add_time_series(max_active_power, load, **ts_dict)
         return
 
-    def _data_file_reader(self, fpath_str):
+    def _data_file_reader(self, fpath_str, csv_file_encoding="utf8"):
         if encoding := self.config.feature_flags.get("csv_file_encoding"):
             csv_file_encoding = encoding
 
-        # Adjust for Windows type of paths
+        path = self.run_folder / Path(fpath_str)
         if "\\" in fpath_str:
             path = self.run_folder / PureWindowsPath(fpath_str)
-        else:
-            path = self.run_folder / Path(fpath_str)
 
         if path not in self._data_file_cache:
             data_file = csv_handler(path, csv_file_encoding=csv_file_encoding, keep_case=True)
