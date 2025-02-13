@@ -3,6 +3,7 @@
 This plugin is only applicable for ReEDs, but could work with similarly arrange data
 """
 
+import pluggy
 from argparse import ArgumentParser
 
 from loguru import logger
@@ -13,6 +14,10 @@ from r2x.models.branch import MonitoredLine
 from r2x.parser.handler import BaseParser
 
 
+hookimpl = pluggy.HookimplMarker("r2x_plugin")
+
+
+@hookimpl
 def cli_arguments(parser: ArgumentParser):
     """CLI arguments for the plugin."""
     parser.add_argument(
@@ -22,11 +27,12 @@ def cli_arguments(parser: ArgumentParser):
     )
 
 
+@hookimpl
 def update_system(
     config: Scenario,
     system: System,
-    hurdle_rate: float | None = None,
-    parser: BaseParser | None = None,
+    parser: BaseParser | None,
+    kwargs: dict | None,
 ) -> System:
     """Apply hurdle rate between regions.
 
@@ -43,6 +49,8 @@ def update_system(
     parser : BaseParser, optional
         The parser object used for parsing.
     """
+    hurdle_rate = kwargs.get("hurdle_rate", None)
+
     if not config.output_model == "plexos" or not config.input_model == "reeds-US":
         msg = "Plugin `hurdle_rate.py` is not compatible with a model that is not Plexos."
         raise NotImplementedError(msg)

@@ -38,6 +38,7 @@ dependencies = [
     "tables~=3.10.1",
     "h5py",
     "cvxpy~=1.5.3",
+    "pluggy~=1.5.0",
     "infrasys~=0.2",
 ]
 
