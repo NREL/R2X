@@ -264,6 +264,10 @@
         "type": "OT"
       },
       {
+        "fuel": "NATURAL_GAS",
+        "type": "GT"
+      },
+      {
         "fuel": "OTHER",
         "type": "GT"
       },
@@ -272,8 +276,16 @@
         "type": "GT"
       },
       {
+        "fuel": "OTHER_GAS",
+        "type": "OT"
+      },
+      {
         "fuel": null,
         "type": "OT"
+      },
+      {
+        "fuel": "DISTILLATE_FUEL_OIL",
+        "type": "IC"
       },
       {
         "fuel": null,

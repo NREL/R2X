@@ -30,6 +30,7 @@ class DATAFILE_COLUMNS(Enum):  # noqa: N801
     NV = ("name", "value")
     Y = ("year",)
     YV = ("year", "value")
+    YearValue = ("Year", "Value")
     TS_datetime = ("datetime",)
     TS_DateTime = ("DateTime",)
     PV = ("pattern", "value")
@@ -210,6 +211,8 @@ def parse_data_file(column_type: DATAFILE_COLUMNS, data_file: pl.DataFrame) -> p
         case column_type.Y:
             data_file = parse_y(data_file)
         case column_type.YV:
+            data_file = parse_yv(data_file)
+        case column_type.YearValue:
             data_file = parse_yv(data_file)
         case column_type.TS_DateTime:
             data_file = parse_ts_DateTime(data_file)
