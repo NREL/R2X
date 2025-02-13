@@ -1,5 +1,6 @@
 """Augment results from CEM with PCM defaults."""
 
+import pluggy
 from argparse import ArgumentParser
 
 from infrasys.base_quantity import BaseQuantity
@@ -13,7 +14,10 @@ from r2x.parser.handler import BaseParser
 from r2x.units import ActivePower
 from r2x.utils import read_json
 
+hookimpl = pluggy.HookimplMarker("r2x_plugin")
 
+
+@hookimpl
 def cli_arguments(parser: ArgumentParser):
     """CLI arguments for the plugin."""
     parser.add_argument(
@@ -22,8 +26,12 @@ def cli_arguments(parser: ArgumentParser):
     )
 
 
+@hookimpl
 def update_system(
-    config: Scenario, parser: BaseParser, system: System, pcm_defaults_fpath: str | None = None
+    config: Scenario,
+    system: System,
+    parser: BaseParser,
+    kwargs: dict | None,
 ) -> System:
     """Augment data model using PCM defaults dictionary.
 
@@ -41,6 +49,9 @@ def update_system(
         System
     """
     logger.info("Augmenting generators attributes")
+
+    pcm_defaults_fpath = kwargs.get("pcm_defaults_fpath", None)
+
     assert config.input_config
     if pcm_defaults_fpath is None:
         logger.debug("Using {}", config.input_config.defaults["pcm_defaults_fpath"])

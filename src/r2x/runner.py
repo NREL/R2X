@@ -1,12 +1,12 @@
 """Umbrella API for R2X model."""
 
 import importlib
-import inspect
 import shutil
 import sys
 from importlib.resources import files
 from pathlib import Path
-
+import pluggy
+from .plugins import hookspec
 from loguru import logger
 
 from r2x.exporter.handler import get_exporter
@@ -81,15 +81,36 @@ def run_plugins(config: Scenario, parser: BaseParser, system: System) -> System:
     if not config.plugins:
         return system
 
+    pm = pluggy.PluginManager("r2x_plugin")
+    pm.add_hookspecs(hookspec)
+
     logger.info("Running the following plugins: {}", config.plugins)
+
+    config_args = {key: value for key, value in config.__dict__.items()}
+
+    external_plugins = {
+        entry_point.name: entry_point
+        for entry_point in importlib.metadata.entry_points().select(group="r2x_plugin")
+    }
+
+    # plugin cli argument determines order
+    # If plugin not in external or internal plugins, program breaks.
     for plugin in config.plugins:
-        module = importlib.import_module(f".{plugin}", DEFAULT_PLUGIN_PATH)
+        # External Plugins
+        if plugin in external_plugins:
+            module = external_plugins[plugin].load()
+        # Internal Plugins
+        else:
+            module = importlib.import_module(f".{plugin}", DEFAULT_PLUGIN_PATH)
+
         if hasattr(module, "update_system"):
-            plugin_required_args = inspect.getfullargspec(module.update_system).args
-            plugin_config_args = {
-                key: value for key, value in config.__dict__.items() if key in plugin_required_args
-            }
-            system = module.update_system(config=config, parser=parser, system=system, **plugin_config_args)
+            pm.register(module)
+            hook_results = pm.hook.update_system(
+                config=config, system=system, parser=parser, kwargs=config_args
+            )
+            system = hook_results[0]
+            pm.unregister(module)
+
     return system
 
 
