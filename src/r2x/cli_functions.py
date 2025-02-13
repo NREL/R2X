@@ -3,6 +3,7 @@
 import argparse
 import importlib
 import os
+
 from .__version__ import __version__
 
 FILES_WITH_ARGS = [
@@ -11,6 +12,7 @@ FILES_WITH_ARGS = [
     "r2x.plugins.emission_cap",
     "r2x.plugins.hurdle_rate",
     "r2x.plugins.cambium",
+    "r2x.plugins.electrolyzer",
     "r2x.parser.plexos",
     "r2x.parser.reeds",
     "r2x.exporter.plexos",

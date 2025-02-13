@@ -31,7 +31,7 @@ from r2x.models import (
     Emission,
     InterruptiblePowerLoad,
     Generator,
-    GenericBattery,
+    EnergyReservoirStorage,
     HydroDispatch,
     HydroEnergyReservoir,
     HydroPumpedStorage,
@@ -252,7 +252,7 @@ class PlexosExporter(BaseExporter):
         )
         # property_names = [key[0] for key in collection_properties]
         match component_type.__name__:
-            case "GenericBattery":
+            case "EnergyReservoirStorage":
                 custom_map = {"active_power": "Max Power", "storage_capacity": "Capacity"}
             case "Line":
                 custom_map = {"rating": "Max Flow"}
@@ -756,7 +756,7 @@ class PlexosExporter(BaseExporter):
 
         # Add generator objects excluding batteries
         def exclude_battery(component):
-            return not isinstance(component, GenericBattery)
+            return not isinstance(component, EnergyReservoirStorage)
 
         self.add_component_category(Generator, class_enum=ClassEnum.Generator, filter_func=exclude_battery)
         self.bulk_insert_objects(
@@ -834,17 +834,17 @@ class PlexosExporter(BaseExporter):
     def add_batteries(self):
         """Add battery objects to the database."""
         # Add battery objects
-        self.add_component_category(GenericBattery, class_enum=ClassEnum.Battery)
+        self.add_component_category(EnergyReservoirStorage, class_enum=ClassEnum.Battery)
         self.bulk_insert_objects(
-            GenericBattery,
+            EnergyReservoirStorage,
             class_enum=ClassEnum.Battery,
             collection_enum=CollectionEnum.Batteries,
         )
         self.insert_component_properties(
-            GenericBattery, parent_class=ClassEnum.System, collection=CollectionEnum.Batteries
+            EnergyReservoirStorage, parent_class=ClassEnum.System, collection=CollectionEnum.Batteries
         )
         # Add battery memberships
-        for battery in self.system.get_components(GenericBattery):
+        for battery in self.system.get_components(EnergyReservoirStorage):
             self._db_mgr.add_membership(
                 battery.name,
                 battery.bus.name,

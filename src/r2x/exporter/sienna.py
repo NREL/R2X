@@ -2,9 +2,9 @@
 
 # System packages
 import json
-from operator import itemgetter
 import os
 from functools import partial
+from operator import itemgetter
 from typing import Any
 from urllib.request import urlopen
 
@@ -13,6 +13,7 @@ from loguru import logger
 
 # Local imports
 from r2x.config_models import ReEDSConfig, SiennaConfig
+from r2x.config_utils import get_year
 from r2x.exporter.handler import BaseExporter, get_export_records
 from r2x.exporter.utils import (
     apply_default_value,
@@ -93,7 +94,7 @@ class SiennaExporter(BaseExporter):
         self.property_map = self.output_config.defaults.get("sienna_property_map", {})
         self.unit_map = self.output_config.defaults.get("sienna_unit_map", {})
         self.output_fields = self.output_config.defaults["table_data"]
-        self.year = self.output_config.model_year
+        self.year = get_year(self.output_config)
         assert self.year is not None
 
     def run(self, *args, path=None, **kwargs) -> "SiennaExporter":
@@ -494,22 +495,24 @@ class SiennaExporter(BaseExporter):
                 ts_instance = time_series[i]
                 resolution = ts_instance.resolution.seconds
                 variable_name = self.property_map.get(ts_instance.variable_name, ts_instance.variable_name)
-                # TODO(pedro): check if the time series data is pre normalized
-                # https://github.com/NREL/R2X/issues/417
+                # Set to None if the variable is not found in the property map
                 ts_pointers = {
                     "category": component_type.split("_", maxsplit=1)[0],  # Component_name is the first
                     "component_name": component_name,
                     "data_file": str(csv_fpath),
-                    "normalization_factor": "Max",
+                    "normalization_factor": None,
                     "resolution": resolution,
                     "name": variable_name,
                     "scaling_factor_multiplier_module": "PowerSystems",
-                    "scaling_factor_multiplier": "get_max_active_power",
+                    "scaling_factor_multiplier": None,
                 }
                 ts_pointers_list.append(ts_pointers)
 
+        # Sort the list to make it easier to visually diff
+        ts_pointers_list.sort(key=lambda x: x["component_name"])
+
         with open(os.path.join(self.output_folder, "timeseries_pointers.json"), mode="w") as f:
-            json.dump(ts_pointers_list, f)
+            json.dump(ts_pointers_list, f, indent=4)
 
         logger.info("File timeseries_pointers.json created.")
         return

@@ -1,11 +1,20 @@
 """Utilities for the configuration."""
 
 import inspect
+from functools import singledispatch
+
 from loguru import logger
 
-from .config_models import BaseModelConfig, MODEL_CONFIGS, Models, ExporterModels, ParserModels
-
-from .utils import read_json, read_fmap
+from .config_models import (
+    MODEL_CONFIGS,
+    BaseModelConfig,
+    ExporterModels,
+    Models,
+    ParserModels,
+    PlexosConfig,
+    SiennaConfig,
+)
+from .utils import read_fmap, read_json
 
 
 def get_input_defaults(model_enum: Models) -> dict:
@@ -98,3 +107,19 @@ def get_model_config_class(model_enum: Models, **kwargs) -> BaseModelConfig:
     # Add fmap and defaults
     model_config_class.fmap = get_input_model_fmap(model_enum)
     return model_config_class
+
+
+@singledispatch
+def get_year(model_class: BaseModelConfig):
+    """Extract year variable from `BaseModelConfig`."""
+    raise NotImplementedError
+
+
+@get_year.register
+def _(model_class: SiennaConfig):
+    return model_class.model_year
+
+
+@get_year.register
+def _(model_class: PlexosConfig):
+    return model_class.horizon_year

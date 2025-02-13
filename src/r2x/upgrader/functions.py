@@ -15,7 +15,7 @@ import pandas as pd
 from loguru import logger
 
 from r2x.upgrader.helpers import get_function_arguments
-from r2x.utils import read_csv
+from r2x.utils import get_timeindex, read_csv
 
 
 def rename(fpath: pathlib.Path, new_fname: str) -> pathlib.Path:
@@ -367,7 +367,9 @@ def convert_hdf(fpath: pathlib.Path, compression_opts=4) -> None:
             if isinstance(indexvals[0], bytes):
                 f.create_dataset(f"index_{i}", data=indexvals, dtype="S30")
             elif indexvals.name == "datetime":
-                timeindex = indexvals.to_series().apply(datetime.datetime.isoformat).reset_index(drop=True)
+                timeindex = get_timeindex()
+                assert len(indexvals) == len(timeindex), f"H5 file {fpath} has more weather year data."
+                timeindex = timeindex.to_series().apply(datetime.datetime.isoformat).reset_index(drop=True)
                 f.create_dataset(f"index_{i}", data=timeindex.str.encode("utf-8"), dtype="S30")
             else:
                 f.create_dataset(f"index_{i}", data=indexvals, dtype=indexvals.dtype)
@@ -390,6 +392,7 @@ def convert_hdf(fpath: pathlib.Path, compression_opts=4) -> None:
             compression="gzip",
             compression_opts=compression_opts,
         )
+    logger.debug("H5 {} converted to h5py compatible", fpath)
     return
 
 
@@ -412,11 +415,10 @@ def upgrade_handler(run_folder: str | pathlib.Path):
 
     # Backup inputs_case_files for safety
     backup_fpath = pathlib.Path(run_folder).joinpath("backup_files.zip")
-    if not backup_fpath.exists():
-        logger.info("Creating backup of files.")
-        with zipfile.ZipFile(backup_fpath, mode="w") as archive:
-            for fname, fpath_name in f_dict.items():
-                archive.write(fpath_name, arcname=fname)
+    logger.info("Creating backup of files.")
+    with zipfile.ZipFile(backup_fpath, mode="w") as archive:
+        for fname, fpath_name in f_dict.items():
+            archive.write(fpath_name, arcname=fname)
 
     for fname, f_group in file_tracker.groupby("fname", sort=False):
         if fname not in f_dict:

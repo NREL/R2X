@@ -7,7 +7,6 @@ run_folder: tests/data/pacific
 scenarios:
   - { name: test2030, solve_year: 2035 }
   - { name: test2050, solve_year: 2050 }
-
 # Example of fine level of detail for each translation
 # -------------------------------------------------
 # input_model: reeds-US
@@ -40,10 +39,10 @@ scenarios:
 #
 # Example of fully replacing an existing default
 # -------------------------------------------------
-input-model: reeds-US
-output-model: plexos
-
-static_horizons: # Key of the defaults that you want to replace
-  _replace: true # Fully replace the key instead of merge
-  Lone Mountain:
-    fuel: "GAS"
+# input-model: reeds-US
+# output-model: plexos
+#
+# static_horizons: # Key of the defaults that you want to replace
+#   _replace: true # Fully replace the key instead of merge
+#   Lone Mountain:
+#     fuel: "GAS"

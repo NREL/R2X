@@ -117,9 +117,18 @@ class BaseParser(ABC):
                 continue
             if not data.get("fname"):
                 continue
-            fpath = check_file_exists(
-                fname=data["fname"], run_folder=base_folder, optional=data.get("optional", False)
-            )
+
+            # If we pass an absolute path we check that it exists.
+            if fpath := data.get("absolute_fpath"):
+                fpath = Path(fpath)
+                logger.debug("Loading file {} from {}", dname, fpath)
+            else:
+                fpath = check_file_exists(
+                    fname=data["fname"],
+                    run_folder=base_folder,
+                    optional=data.get("optional", False),
+                    folder=data.get("folder", None),
+                )
             if fpath is not None:
                 if "fpath" in data:
                     _fpath = data.pop("fpath")

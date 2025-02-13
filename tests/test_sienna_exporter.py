@@ -1,8 +1,9 @@
 from typing import Any
+
+import pytest
 from infrasys.cost_curves import CostCurve, FuelCurve, UnitSystem
 from infrasys.function_data import PiecewiseLinearData, QuadraticFunctionData, XYCoords
 from infrasys.value_curves import InputOutputCurve, LinearCurve
-import pytest
 
 from r2x.config_scenario import Scenario
 from r2x.exporter.sienna import SiennaExporter, apply_operation_table_data, get_psy_fields
@@ -17,7 +18,7 @@ def scenario_instance(data_folder, tmp_folder):
         output_folder=tmp_folder,
         input_model="infrasys",
         output_model="sienna",
-        model_year=2010,
+        reference_year=2010,
     )
 
 
