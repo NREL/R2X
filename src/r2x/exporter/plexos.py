@@ -1,22 +1,21 @@
 """Create PLEXOS model from translated ReEDS data."""
 
+import string
+import uuid
 from argparse import ArgumentParser
+from collections.abc import Callable
 from functools import partial
 from importlib.resources import files
 from typing import Any
-import uuid
-import string
-from collections.abc import Callable
-
 
 from infrasys.component import Component
 from loguru import logger
+from plexosdb import PlexosSQLite
+from plexosdb.enums import ClassEnum, CollectionEnum
 
 from r2x.config_models import PlexosConfig, ReEDSConfig
 from r2x.enums import ReserveType
 from r2x.exporter.handler import BaseExporter, get_export_properties, get_export_records
-from plexosdb import PlexosSQLite
-from plexosdb.enums import ClassEnum, CollectionEnum
 from r2x.exporter.utils import (
     apply_extract_key,
     apply_flatten_key,
@@ -28,12 +27,12 @@ from r2x.exporter.utils import (
 from r2x.models import (
     ACBus,
     Emission,
-    InterruptiblePowerLoad,
     Generator,
-    GenericBattery,
+    EnergyReservoirStorage,
     HydroDispatch,
     HydroEnergyReservoir,
     HydroPumpedStorage,
+    InterruptiblePowerLoad,
     LoadZone,
     MonitoredLine,
     PowerLoad,
@@ -128,7 +127,7 @@ class PlexosExporter(BaseExporter):
         """Run the exporter."""
         logger.info("Starting {}", self.__class__.__name__)
 
-        self.export_data_files(year=self.weather_year)
+        self.time_series_to_csv(config=self.config, system=self.system, reference_year=self.weather_year)
 
         # If starting w/o a reference file we add our custom models and objects
         if new_database:
@@ -248,7 +247,7 @@ class PlexosExporter(BaseExporter):
         )
         # property_names = [key[0] for key in collection_properties]
         match component_type.__name__:
-            case "GenericBattery":
+            case "EnergyReservoirStorage":
                 custom_map = {"active_power": "Max Power", "storage_capacity": "Capacity"}
             case "Line":
                 custom_map = {"rating": "Max Flow"}
@@ -752,7 +751,7 @@ class PlexosExporter(BaseExporter):
 
         # Add generator objects excluding batteries
         def exclude_battery(component):
-            return not isinstance(component, GenericBattery)
+            return not isinstance(component, EnergyReservoirStorage)
 
         self.add_component_category(Generator, class_enum=ClassEnum.Generator, filter_func=exclude_battery)
         self.bulk_insert_objects(
@@ -830,17 +829,17 @@ class PlexosExporter(BaseExporter):
     def add_batteries(self):
         """Add battery objects to the database."""
         # Add battery objects
-        self.add_component_category(GenericBattery, class_enum=ClassEnum.Battery)
+        self.add_component_category(EnergyReservoirStorage, class_enum=ClassEnum.Battery)
         self.bulk_insert_objects(
-            GenericBattery,
+            EnergyReservoirStorage,
             class_enum=ClassEnum.Battery,
             collection_enum=CollectionEnum.Batteries,
         )
         self.insert_component_properties(
-            GenericBattery, parent_class=ClassEnum.System, collection=CollectionEnum.Batteries
+            EnergyReservoirStorage, parent_class=ClassEnum.System, collection=CollectionEnum.Batteries
         )
         # Add battery memberships
-        for battery in self.system.get_components(GenericBattery):
+        for battery in self.system.get_components(EnergyReservoirStorage):
             self._db_mgr.add_membership(
                 battery.name,
                 battery.bus.name,

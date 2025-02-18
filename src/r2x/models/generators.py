@@ -333,15 +333,6 @@ class Storage(Generator):
     )
 
 
-class GenericBattery(Storage):
-    """Battery energy storage model."""
-
-    charge_efficiency: Annotated[Percentage, Field(ge=0, description="Charge efficiency.")] | None = None
-    discharge_efficiency: Annotated[Percentage, Field(ge=0, description="Discharge efficiency.")] | None = (
-        None
-    )
-
-
 class EnergyReservoirStorage(Storage):
     """Battery energy storage model."""
 

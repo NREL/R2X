@@ -19,15 +19,23 @@ from pint import Quantity
 
 from r2x.api import System
 from r2x.config_models import ReEDSConfig
-from r2x.enums import ACBusTypes, EmissionType, PrimeMoversType, ReserveDirection, ReserveType, ThermalFuels
+from r2x.enums import (
+    ACBusTypes,
+    EmissionType,
+    PrimeMoversType,
+    ReserveDirection,
+    ReserveType,
+    StorageTechs,
+    ThermalFuels,
+)
 from r2x.exceptions import ParserError
 from r2x.models import (
     ACBus,
     Area,
     Bus,
     Emission,
+    EnergyReservoirStorage,
     Generator,
-    GenericBattery,
     HybridSystem,
     HydroGen,
     LoadZone,
@@ -40,8 +48,8 @@ from r2x.models import (
     TransmissionInterface,
     TransmissionInterfaceMap,
 )
-from r2x.models.core import MinMax
-from r2x.models.costs import HydroGenerationCost, ThermalGenerationCost
+from r2x.models.core import InputOutput, MinMax
+from r2x.models.costs import HydroGenerationCost, RenewableGenerationCost, ThermalGenerationCost
 from r2x.models.generators import HydroDispatch, HydroEnergyReservoir, RenewableGen, ThermalGen
 from r2x.parser.handler import BaseParser, create_model_instance
 from r2x.units import ActivePower, EmissionRate, Energy, Percentage, Time, ureg
@@ -437,6 +445,7 @@ class ReEDSParser(BaseParser):
                     name = row["tech"] + "_" + row["region"]
                 case _:
                     name = row["tech"] + "_" + row["tech_vintage"] + "_" + row["region"]
+                # case "":
 
             row["name"] = name
 
@@ -450,7 +459,15 @@ class ReEDSParser(BaseParser):
             row["prime_mover_type"] = (
                 get_enum_from_string(fuel_pm["type"], PrimeMoversType) if fuel_pm.get("type") else None
             )
-            row["fuel"] = get_enum_from_string(fuel_pm["fuel"], ThermalFuels) if fuel_pm["fuel"] else None
+            if issubclass(gen_model, ThermalGen) and fuel_pm.get("fuel"):
+                row["fuel"] = get_enum_from_string(fuel_pm["fuel"], ThermalFuels)
+
+            if gen_model.__name__ == "EnergyReservoirStorage":
+                row["storage_technology_type"] = StorageTechs.OTHER_CHEM
+                row["initial_storage_capacity_level"] = 0.5
+                row["input_active_power_limits"] = MinMax(min=0, max=row["active_power"].magnitude)
+                row["output_active_power_limits"] = MinMax(min=0, max=row["active_power"].magnitude)
+                row["efficiency"] = InputOutput(input=0.9, output=0.9)
 
             bus = self.system.get_component(ACBus, name=row["region"])
             row["bus"] = bus
@@ -478,7 +495,7 @@ class ReEDSParser(BaseParser):
             if isinstance(fuel_price, Quantity):
                 fuel_price = fuel_price.magnitude
             if issubclass(gen_model, RenewableGen):
-                row["operation_cost"] = None
+                row["operation_cost"] = RenewableGenerationCost()
             if issubclass(gen_model, ThermalGen):
                 if heat_rate := row.get("heat_rate"):
                     if isinstance(heat_rate, Quantity):
@@ -627,7 +644,8 @@ class ReEDSParser(BaseParser):
                     RenewableDispatch,
                     filter_func=lambda x: x.bus.load_zone.name == region.name
                     and (
-                        x.prime_mover_type == PrimeMoversType.PV or x.prime_mover_type == PrimeMoversType.RTPV
+                        x.prime_mover_type == PrimeMoversType.PVe
+                        or x.prime_mover_type == PrimeMoversType.RTPV
                     ),
                 )
                 if self.system.has_time_series(component)
@@ -856,19 +874,18 @@ class ReEDSParser(BaseParser):
 
             # Create storage asset for hybrid.
             storage_unit_fields = {
-                key: value for key, value in ext_dict.items() if key in GenericBattery.model_fields
+                key: value for key, value in ext_dict.items() if key in EnergyReservoirStorage.model_fields
             }
             storage_unit_fields["prime_mover_type"] = PrimeMoversType.BA
 
             # If at some point we change the power of the storage it should be here
             storage_unit = self._create_model_instance(
-                GenericBattery,
+                EnergyReservoirStorage,
                 name=f"{hybrid_name}",
                 active_power=device.active_power,  # Assume same power for the battery
                 category="pvb-storage",
                 bus=bus,
                 ext=ext_dict,
-                **storage_unit_fields,
             )
             self.system.add_component(storage_unit)
 

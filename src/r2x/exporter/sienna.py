@@ -522,7 +522,7 @@ class SiennaExporter(BaseExporter):
         logger.debug("Saving Sienna data and timeseries files.")
 
         # First export all time series objects
-        self.export_data_files(year=self.year)
+        self.time_series_to_csv(config=self.config, system=self.system, reference_year=self.year)
         logger.info("Saving time series data.")
 
 
@@ -599,7 +599,7 @@ def apply_operation_table_data(
 
     operation_cost = component["operation_cost"]
 
-    if not (variable := operation_cost["variable"]):
+    if not (variable := operation_cost.get("variable")):
         return component
 
     if haskey(variable, ["vom_cost", "function_data"]):
