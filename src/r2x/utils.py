@@ -183,18 +183,22 @@ def override_dict(base_dict: dict, override_dict: ChainMap | dict | None = None)
     if not override_dict:
         return base_dict
 
-    def recursive_update(base, overrides):
+    def recursive_update(base, overrides) -> None:
         for key, value in overrides.items():
-            if isinstance(value, dict):
-                if "_replace" in value:
-                    base[key] = value.copy()
-                    base[key].pop("_replace")
-                else:
-                    if key not in base or not isinstance(base[key], dict):
-                        base[key] = {}
-                    recursive_update(base[key], value)
+            if isinstance(value, dict) and not value.get("_replace", False):
+                if key not in base or not isinstance(base.get(key), dict):
+                    base[key] = {}
+                recursive_update(base[key], value)
             else:
-                base[key] = value
+                if isinstance(value, dict) and value.get("_replace", False):
+                    new_value = value.copy()
+                    new_value.pop("_replace")
+                    base[key] = new_value
+                else:
+                    if key in base and isinstance(base[key], dict) and isinstance(value, dict):
+                        base[key].update(value)
+                    else:
+                        base[key] = value
 
     recursive_update(base_dict, override_dict)
     return base_dict
