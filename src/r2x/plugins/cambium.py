@@ -52,6 +52,17 @@ def update_system(
 
     logger.info("Applying cambium configuration")
 
+
+    # Removing probabilistic outages
+    for generator in system.get_components(Generator):
+        if generator.planned_outage_rate is None or generator.forced_outage_rate is None:
+            continue
+
+        generator.active_power = (1-generator.planned_outage_rate)*(1-generator.forced_outage_rate)*generator.active_power
+        generator.planned_outage_rate = None
+        generator.forced_outage_rate = None
+        generator.mean_time_to_repair = None
+
     # Fixed load for Nuclear generators
     for generator in system.get_components(
         Generator,
@@ -60,17 +71,6 @@ def update_system(
         ),
     ):
         generator.ext["Fixed Load"] = generator.active_power
-
-    # Removing probabilistic outages
-    for generator in system.get_components(Generator):
-        if generator.planned_outage_rate is None or generator.forced_outage_rate is None:
-            continue
-
-        generator.active_power = (1-generator.planned_outage_rate)*(1-generator.forced_outage_rate)*generator.active_power
-        generator.ext["Fixed Load"] = generator.active_power
-        generator.planned_outage_rate = None
-        generator.forced_outage_rate = None
-        generator.mean_time_to_repair = None
 
     for zone in system.get_components(ACBus):
         zone.ext["Load Scalar"] = perturb

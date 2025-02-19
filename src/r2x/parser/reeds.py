@@ -413,7 +413,7 @@ class ReEDSParser(BaseParser):
         cf_generators = self._aggregate_renewable_generators(cf_generators)
 
         combined_data = pl.concat([non_cf_generators, cf_generators], how="align")
-
+        
         for row in combined_data.iter_rows(named=True):
             category = row["category"]
 
@@ -523,8 +523,6 @@ class ReEDSParser(BaseParser):
                         power_units=UnitSystem.NATURAL_UNITS,
                     )
                 )
-
-            row["must_run"] = 1 if row["tech"] in self.reeds_config.defaults["commit_technologies"] else 0
 
             # NOTE: If there is a point when ReEDs enforces minimum capacity for a technology here is where we
             # will need to change it.

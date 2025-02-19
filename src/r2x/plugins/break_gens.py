@@ -161,8 +161,8 @@ def break_generators(  # noqa: C901
                         emission, name=f"{component_name}_{emission.emission_type}", attach=True
                     )
                     new_emission.generator_name = component_name
-                    system.remove_component(emission)
-
+                    #system.remove_component(emission)
+                    
                 if system.has_time_series(component):
                     logger.trace(
                         "Component {} has time series attached to it. Copying first one", component.label
@@ -170,6 +170,7 @@ def break_generators(  # noqa: C901
                     ts = system.get_time_series(component)
                     system.add_time_series(ts, new_component)
                 split_no += 1
+                
             if remainder > capacity_threshold:
                 component_name = component.name + f"_{split_no:02}"
                 new_component = system.copy_component(component, name=component_name, attach=True)
@@ -193,7 +194,9 @@ def break_generators(  # noqa: C901
                         emission, name=f"{component_name}_{emission.emission_type}", attach=True
                     )
                     new_emission.generator_name = component_name
-                    system.remove_component(emission)
+                    #system.remove_component(emission)
+                    
+                    
                 if system.has_time_series(component):
                     logger.trace(
                         "Component {} has time series attached to it. Copying first one", component.label
@@ -204,7 +207,14 @@ def break_generators(  # noqa: C901
                 capacity_dropped = capacity_dropped + remainder
                 logger.debug("Dropped {} capacity for {}", remainder, component.name)
 
-            # Finally remove the component
+            # Finally remove the component and emissions
             system.remove_component(component)
+            
+            for emission in system.get_components(
+                Emission, filter_func=lambda x: x.generator_name == component.name
+            ):
+                system.remove_component(emission)
+                
+                
     logger.info("Total capacity dropped {} MW", capacity_dropped)
     return system
