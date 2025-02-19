@@ -38,6 +38,7 @@ from r2x.exceptions import ModelError, ParserError
 from r2x.exporter.utils import get_property_magnitude
 from r2x.models import (
     ACBus,
+    Emission,
     EnergyReservoirStorage,
     Generator,
     HydroDispatch,
@@ -55,7 +56,6 @@ from r2x.models.core import InputOutput, MinMax
 from r2x.models.costs import HydroGenerationCost, RenewableGenerationCost, ThermalGenerationCost
 from r2x.models.generators import HydroPumpedStorage
 from r2x.models.load import PowerLoad
-from r2x.models.services import Emission
 from r2x.models.topology import Area
 from r2x.units import ureg
 from r2x.utils import get_enum_from_string, get_pint_unit, validate_string

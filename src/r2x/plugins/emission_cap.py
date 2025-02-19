@@ -10,7 +10,7 @@ from loguru import logger
 from r2x.api import System
 from r2x.config_scenario import Scenario
 from r2x.enums import EmissionType
-from r2x.models.services import Emission
+from r2x.models import Emission
 from r2x.models.utils import Constraint, ConstraintMap
 from r2x.parser.handler import BaseParser
 from r2x.units import ureg
@@ -72,7 +72,10 @@ def update_system(
         logger.debug("Using emission cap value from CLI. Setting emission cap to {}", emission_cap)
 
     emission_object = EmissionType.CO2  #  This is the default emission object.
-    if not any(component.emission_type == emission_object for component in system.get_components(Emission)):
+    if not any(
+        component.emission_type == emission_object
+        for component in system.get_supplemental_attributes(Emission)
+    ):
         logger.warning("Did not find any emission type to apply emission_cap")
         return system
 

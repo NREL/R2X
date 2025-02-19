@@ -306,7 +306,7 @@ class ReEDSParser(BaseParser):
                 row["rate"] = EmissionRate(row["rate"], "kg/MWh")
                 row["emission_type"] = get_enum_from_string(row["emission_type"], EmissionType)
                 emission_model = self._create_model_instance(Emission, **row)
-                self.system.add_component(emission_model)
+                self.system.add_supplemental_attribute(generator, emission_model)
 
     def _construct_generators(self) -> None:  # noqa: C901
         """Construct generators objects."""
@@ -413,7 +413,7 @@ class ReEDSParser(BaseParser):
         cf_generators = self._aggregate_renewable_generators(cf_generators)
 
         combined_data = pl.concat([non_cf_generators, cf_generators], how="align")
-        
+
         for row in combined_data.iter_rows(named=True):
             category = row["category"]
 
@@ -474,12 +474,15 @@ class ReEDSParser(BaseParser):
             bus_load_zone = bus.load_zone
             assert bus_load_zone is not None
 
-            # Add reserves/services to generator if they are not excluded
+            # Add services to generator if they are not excluded
+            row["services"] = []
             if row["tech"] not in self.reeds_config.defaults["excluded_reserve_techs"]:
-                row["services"] = list(
-                    self.system.get_components(
-                        Reserve,
-                        filter_func=lambda x: x.region.name == bus_load_zone.name,
+                row["services"].extend(
+                    list(
+                        self.system.get_components(
+                            Reserve,
+                            filter_func=lambda x: x.region.name == bus_load_zone.name,
+                        )
                     )
                 )
                 reserve_map = self.system.get_component(ReserveMap, name="reserve_map")

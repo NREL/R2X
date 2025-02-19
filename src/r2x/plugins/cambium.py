@@ -1,18 +1,19 @@
-"""Plugin for Cambium specific configuration
+"""Plugin for Cambium specific configuration.
 
 This plugin is only applicable for ReEDs, but could work with similarly arrange data
 """
 
-import polars as pl
-
 from argparse import ArgumentParser
+
+import polars as pl
 from loguru import logger
 
 from r2x.api import System
 from r2x.config_scenario import Scenario
 from r2x.models.branch import MonitoredLine
+from r2x.models.core import MinMax
 from r2x.models.generators import Generator
-from r2x.models.topology import ACBus, LoadZone
+from r2x.models.topology import ACBus
 from r2x.parser.handler import BaseParser
 
 
@@ -52,30 +53,21 @@ def update_system(
 
     logger.info("Applying cambium configuration")
 
+    # Removing probabilistic outages and apply derate instead.
+    system = _derate_plants(system)
 
-    # Removing probabilistic outages
-    for generator in system.get_components(Generator):
-        if generator.planned_outage_rate is None or generator.forced_outage_rate is None:
-            continue
-
-        generator.active_power = (1-generator.planned_outage_rate)*(1-generator.forced_outage_rate)*generator.active_power
-        generator.planned_outage_rate = None
-        generator.forced_outage_rate = None
-        generator.mean_time_to_repair = None
-
-    # Fixed load for Nuclear generators
+    # Add Fixed load for certain firm technologies.
     for generator in system.get_components(
         Generator,
-        filter_func=lambda x: any(
-            tech in x.ext["reeds_tech"] for tech in ["nuclear", "lfill", "biopower"]
-        ),
+        filter_func=lambda x: any(tech in x.ext["reeds_tech"] for tech in ["nuclear", "lfill", "biopower"]),
     ):
         generator.ext["Fixed Load"] = generator.active_power
 
+    # Add load perturb scalar.
     for zone in system.get_components(ACBus):
         zone.ext["Load Scalar"] = perturb
 
-    #comment out rest of this for not including hurdle rates
+    # comment out rest of this for not including hurdle rates
     if parser is not None:
         if not (parser.data.get("hurdle_rate") is not None):
             msg = "Hurdle rate file not found. Skipping pluging."
@@ -102,6 +94,27 @@ def update_system(
                 # NOTE: This assume that we have the same hurdle rate in both directions.
                 line.ext["Wheeling Charge"] = hurdle_rate
                 line.ext["Wheeling Charge Back"] = hurdle_rate
-    #end comment out
     return system
- 
+
+
+def _derate_plants(system):
+    for generator in system.get_components(Generator):
+        if "distpv" in generator.name:
+            generator.planned_outage_rate = None
+        if generator.planned_outage_rate is None or generator.forced_outage_rate is None:
+            continue
+
+        generator.active_power = (
+            (1 - generator.planned_outage_rate) * (1 - generator.forced_outage_rate) * generator.active_power
+        )
+        if hasattr(generator, "active_power_limits") and generator.active_power_limits:
+            min_max_ratio = (
+                generator.active_power_limits.max - generator.active_power_limits.min
+            ) / generator.active_power_limits.max
+            generator.active_power_limits = MinMax(
+                min=generator.active_power_limits.min * min_max_ratio, max=generator.active_power
+            )
+        generator.planned_outage_rate = None
+        generator.forced_outage_rate = None
+        generator.mean_time_to_repair = None
+    return system
