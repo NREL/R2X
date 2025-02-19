@@ -67,7 +67,7 @@ def update_system(
             continue
 
         generator.active_power = (1-generator.planned_outage_rate)*(1-generator.forced_outage_rate)*generator.active_power
-        
+        generator.ext["Fixed Load"] = generator.active_power
         generator.planned_outage_rate = None
         generator.forced_outage_rate = None
         generator.mean_time_to_repair = None
