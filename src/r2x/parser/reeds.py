@@ -48,7 +48,7 @@ from r2x.models import (
     TransmissionInterface,
     TransmissionInterfaceMap,
 )
-from r2x.models.core import InputOutput, MinMax
+from r2x.models.core import InputOutput, MinMax, UpDown
 from r2x.models.costs import HydroGenerationCost, RenewableGenerationCost, ThermalGenerationCost
 from r2x.models.generators import HydroDispatch, HydroEnergyReservoir, RenewableGen, ThermalGen
 from r2x.parser.handler import BaseParser, create_model_instance
@@ -468,6 +468,9 @@ class ReEDSParser(BaseParser):
                 row["input_active_power_limits"] = MinMax(min=0, max=row["active_power"].magnitude)
                 row["output_active_power_limits"] = MinMax(min=0, max=row["active_power"].magnitude)
                 row["efficiency"] = InputOutput(input=0.9, output=0.9)
+
+            if gen_model.__name__ == "HydroPumpedStorage":
+                row["storage_capacity"] = UpDown(up=row["storage_capacity"], down=["storage_capacity"])
 
             bus = self.system.get_component(ACBus, name=row["region"])
             row["bus"] = bus
