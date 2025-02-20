@@ -244,8 +244,8 @@ class HydroPumpedStorage(HydroGen):
         Annotated[Energy, Field(gt=0, description="Initial water volume or percentage.")] | None
     ) = None
     storage_capacity: Annotated[
-        Energy,
-        Field(gt=0, description="Total water volume or percentage."),
+        UpDown,
+        Field(description="Total water volume or percentage."),
     ]
     min_storage_capacity: (
         Annotated[
@@ -320,10 +320,6 @@ class Storage(Generator):
         ]
         | None
     ) = None
-    storage_capacity: Annotated[
-        Energy,
-        Field(description="Maximum allowed volume or state of charge."),
-    ]
     initial_energy: Annotated[Percentage, Field(description="Initial state of charge.")] | None = None
     min_storage_capacity: Annotated[Percentage, Field(description="Minimum state of charge")] = Percentage(
         0, "%"
