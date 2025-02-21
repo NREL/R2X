@@ -470,7 +470,7 @@ class ReEDSParser(BaseParser):
                 row["efficiency"] = InputOutput(input=0.9, output=0.9)
 
             if gen_model.__name__ == "HydroPumpedStorage":
-                row["storage_capacity"] = UpDown(up=row["storage_capacity"], down=["storage_capacity"])
+                row["storage_capacity"] = UpDown(up=0, down=row["storage_capacity"].magnitude)
 
             bus = self.system.get_component(ACBus, name=row["region"])
             row["bus"] = bus

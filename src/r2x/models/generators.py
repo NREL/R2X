@@ -327,6 +327,13 @@ class Storage(Generator):
     max_storage_capacity: Annotated[Percentage, Field(description="Minimum state of charge")] = Percentage(
         100, "%"
     )
+    storage_capacity: (
+        Annotated[
+            Energy,
+            Field(description="Total water volume or percentage."),
+        ]
+        | None
+    ) = None
 
 
 class EnergyReservoirStorage(Storage):
@@ -338,7 +345,7 @@ class EnergyReservoirStorage(Storage):
     discharge_efficiency: Annotated[Percentage, Field(ge=0, description="Discharge efficiency.")] | None = (
         None
     )
-    storage_level_limits: MinMax | None = None
+    storage_level_limits: MinMax = MinMax(min=0, max=1)
     initial_storage_capacity_level: float
     input_active_power_limits: MinMax
     output_active_power_limits: MinMax
