@@ -430,9 +430,9 @@ def check_file_exists(
         logger.warning(msg)
 
     if not optional and not file_matches:
-        raise FileNotFoundError(f"Mandatory file '{fname}' not found in {run_folder}.")
+        raise FileNotFoundError(f"Mandatory file '{fname}' not found in {search_paths}.")
     elif not file_matches:
-        logger.warning(f"File: '{fname}' not found in {run_folder}.")
+        logger.warning(f"File: '{fname}' not found in {search_paths}.")
         return None
 
     match = file_matches[0]
