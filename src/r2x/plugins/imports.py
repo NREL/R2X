@@ -7,8 +7,9 @@ This plugin is only applicable for ReEDs, but could work with similarly arrange 
 """
 
 from datetime import datetime, timedelta
-from infrasys.time_series_models import SingleTimeSeries
+
 import polars as pl
+from infrasys.time_series_models import SingleTimeSeries
 from loguru import logger
 
 from r2x.api import System

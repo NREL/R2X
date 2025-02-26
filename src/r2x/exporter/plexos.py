@@ -27,8 +27,8 @@ from r2x.exporter.utils import (
 from r2x.models import (
     ACBus,
     Emission,
-    Generator,
     EnergyReservoirStorage,
+    Generator,
     HydroDispatch,
     HydroEnergyReservoir,
     HydroPumpedStorage,
@@ -603,7 +603,9 @@ class PlexosExporter(BaseExporter):
         )
         # Getting all unique emission types (e.g., CO2, NOX) from the emissions objects.
         # NOTE: On Plexos, we need to add each emission type individually to the Emission class
-        emission_types = set(map(lambda x: x.emission_type, list(self.system.get_components(Emission))))
+        emission_types = set(
+            map(lambda x: x.emission_type, list(self.system.get_supplemental_attributes(Emission)))
+        )
         for emission_type in emission_types:
             self._db_mgr.add_object(
                 emission_type,
@@ -807,24 +809,25 @@ class PlexosExporter(BaseExporter):
 
         # NOTE: This needs to be optimized. It is currently slow.
         logger.debug("Adding generator emisssions memberships")
-        for emission in self.system.get_components(Emission):
-            self._db_mgr.add_membership(
-                emission.emission_type,
-                emission.generator_name,
-                parent_class=ClassEnum.Emission,
-                child_class=ClassEnum.Generator,
-                collection=CollectionEnum.Generators,
-            )
-            self._db_mgr.add_property(
-                emission.generator_name,
-                self.property_map["rate"],
-                get_magnitude(emission.rate),
-                object_class=ClassEnum.Generator,
-                parent_class=ClassEnum.Emission,
-                parent_object_name=emission.emission_type,
-                collection=CollectionEnum.Generators,
-                scenario=self.plexos_scenario,
-            )
+        for emission in self.system.get_supplemental_attributes(Emission):
+            for generator in self.system.get_components_with_supplemental_attribute(emission):
+                self._db_mgr.add_membership(
+                    emission.emission_type,
+                    generator.name,
+                    parent_class=ClassEnum.Emission,
+                    child_class=ClassEnum.Generator,
+                    collection=CollectionEnum.Generators,
+                )
+                self._db_mgr.add_property(
+                    generator.name,
+                    self.property_map["rate"],
+                    get_magnitude(emission.rate),
+                    object_class=ClassEnum.Generator,
+                    parent_class=ClassEnum.Emission,
+                    parent_object_name=emission.emission_type,
+                    collection=CollectionEnum.Generators,
+                    scenario=self.plexos_scenario,
+                )
 
     def add_batteries(self):
         """Add battery objects to the database."""
@@ -1005,7 +1008,7 @@ class PlexosExporter(BaseExporter):
         return
 
     def _add_reports(self):
-        logger.debug("Using {} for reports.")
+        logger.debug("Using {} for reports.", self.plexos_reports_fpath)
         report_objects = read_json(self.plexos_reports_fpath)
 
         for report_object in report_objects:

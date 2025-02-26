@@ -11,6 +11,7 @@ import zipfile
 from collections import OrderedDict
 
 import h5py
+import numpy as np
 import pandas as pd
 from loguru import logger
 
@@ -358,24 +359,26 @@ def convert_hdf(fpath: pathlib.Path, compression_opts=4) -> None:
     except ValueError:
         logger.debug("H5 file {} not in pandas format.", fpath)
         return
-    if not original_h5.index.name == "datetime":
-        original_h5.index.name = "datetime"
+
+    timeindex = get_timeindex()
 
     with h5py.File(fpath, "w") as f:
-        for i in range(0, original_h5.index.nlevels):
-            indexvals = original_h5.index.get_level_values(i)
-            if isinstance(indexvals[0], bytes):
-                f.create_dataset(f"index_{i}", data=indexvals, dtype="S30")
-            elif indexvals.name == "datetime":
-                timeindex = get_timeindex()
-                assert len(indexvals) == len(timeindex), f"H5 file {fpath} has more weather year data."
-                timeindex = timeindex.to_series().apply(datetime.datetime.isoformat).reset_index(drop=True)
-                f.create_dataset(f"index_{i}", data=timeindex.str.encode("utf-8"), dtype="S30")
-            else:
-                f.create_dataset(f"index_{i}", data=indexvals, dtype=indexvals.dtype)
+        if isinstance(original_h5.index, pd.MultiIndex):
+            for level in original_h5.index.levels:
+                if (len(level) == 7 * 8760) and (isinstance(level.values[0], np.int64)):  # noqa: PD011
+                    assert len(level) == len(timeindex), f"H5 file {fpath} has more weather year data."
+                    timeindex = (
+                        timeindex.to_series().apply(datetime.datetime.isoformat).reset_index(drop=True)
+                    )
+                    f.create_dataset("index_datetime", data=timeindex.str.encode("utf-8"), dtype="S30")
+                else:
+                    f.create_dataset(f"index_{level.name}", data=level.values, dtype=level.dtype)
 
-        index_names = pd.Index(original_h5.index.names)
-        f.create_dataset("index_names", data=index_names, dtype=f"S{index_names.map(len).max()}")
+                index_names = pd.Index(original_h5.index.names)
+
+                f.create_dataset("index_names", data=index_names, dtype=f"S{index_names.map(len).max()}")
+        else:
+            f.create_dataset("index_datetime", data=original_h5.index.values, dtype=original_h5.index.dtype)
 
         f.create_dataset("columns", data=original_h5.columns, dtype=f"S{original_h5.columns.map(len).max()}")
 
@@ -384,6 +387,7 @@ def convert_hdf(fpath: pathlib.Path, compression_opts=4) -> None:
                 f"Multiple data types detected in {fpath.name}, unclear which one to use for re-saving h5."
             )
         else:
+            original_h5 = original_h5.astype(np.float32)
             dftype_out = original_h5.dtypes.unique()[0]
         f.create_dataset(
             "data",
@@ -413,12 +417,16 @@ def upgrade_handler(run_folder: str | pathlib.Path):
         }
     )
 
+    # adding datetime index of when change happens
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d")
+
     # Backup inputs_case_files for safety
-    backup_fpath = pathlib.Path(run_folder).joinpath("backup_files.zip")
-    logger.info("Creating backup of files.")
-    with zipfile.ZipFile(backup_fpath, mode="w") as archive:
-        for fname, fpath_name in f_dict.items():
-            archive.write(fpath_name, arcname=fname)
+    backup_fpath = pathlib.Path(run_folder).joinpath(f"{timestamp}-backup_files.zip")
+    if not backup_fpath.exists():
+        logger.info("Creating backup of files.")
+        with zipfile.ZipFile(backup_fpath, mode="w") as archive:
+            for fname, fpath_name in f_dict.items():
+                archive.write(fpath_name, arcname=fname)
 
     for fname, f_group in file_tracker.groupby("fname", sort=False):
         if fname not in f_dict:
