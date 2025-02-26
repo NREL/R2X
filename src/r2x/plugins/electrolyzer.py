@@ -43,7 +43,6 @@ def electrolyzer_load(config: Scenario, parser: BaseParser, system: System) -> S
         logger.warning("No electrolyzer data found on parser. Check parsing filenames.")
         return system
 
-    # load_data = parser.data[ELECTROLYZER_LOAD_FMAP].collect()
     load_data = parser.data[ELECTROLYZER_LOAD_FMAP]
 
     if load_data is None:
@@ -63,8 +62,6 @@ def electrolyzer_load(config: Scenario, parser: BaseParser, system: System) -> S
         bus = system.get_component(ACBus, name=region)
         max_active_power = ActivePower(0, "MW")
         for component in system.get_components(InterruptiblePowerLoad, filter_func=lambda x: x.bus == bus):
-            # if(component.base_power != None):
-            #    max_active_power += component.base_power
             max_active_power += component.active_power
 
         # Assert that max active power is greater than 1 MW.
@@ -98,7 +95,6 @@ def hydrogen_fuel_price(config: Scenario, parser: BaseParser, system: System) ->
     assert config.input_config.weather_year
 
     logger.debug("Adding monthly fuel prices for h2 technologies.")
-    # h2_fprice = parser.data[MONTHLY_H2_FPRICE_FMAP].collect()
     h2_fprice = parser.data[MONTHLY_H2_FPRICE_FMAP]
 
     date_time_array = np.arange(
