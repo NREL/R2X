@@ -374,23 +374,12 @@ def convert_hdf(fpath: pathlib.Path, compression_opts=4) -> None:
                     f.create_dataset("index_datetime", data=timeindex.str.encode("utf-8"), dtype="S30")
                 else:
                     f.create_dataset(f"index_{level.name}", data=level.values, dtype=level.dtype)
+
+                index_names = pd.Index(original_h5.index.names)
+
+                f.create_dataset("index_names", data=index_names, dtype=f"S{index_names.map(len).max()}")
         else:
             f.create_dataset("index_datetime", data=original_h5.index.values, dtype=original_h5.index.dtype)
-
-        """for i in range(0, original_h5.index.nlevels):
-            indexvals = original_h5.index.get_level_values(i)
-            if isinstance(indexvals[0], bytes):
-                f.create_dataset(f"index_{i}", data=indexvals, dtype="S30")
-            elif indexvals.name == "datetime":
-                timeindex = get_timeindex()
-                assert len(indexvals) == len(timeindex), f"H5 file {fpath} has more weather year data."
-                timeindex = timeindex.to_series().apply(datetime.datetime.isoformat).reset_index(drop=True)
-                f.create_dataset(f"index_{i}", data=timeindex.str.encode("utf-8"), dtype="S30")
-            else:
-                f.create_dataset(f"index_{i}", data=indexvals, dtype=indexvals.dtype)
-            """
-        index_names = pd.Index(original_h5.index.names)
-        f.create_dataset("index_names", data=index_names, dtype=f"S{index_names.map(len).max()}")
 
         f.create_dataset("columns", data=original_h5.columns, dtype=f"S{original_h5.columns.map(len).max()}")
 
@@ -399,6 +388,7 @@ def convert_hdf(fpath: pathlib.Path, compression_opts=4) -> None:
                 f"Multiple data types detected in {fpath.name}, unclear which one to use for re-saving h5."
             )
         else:
+            original_h5 = original_h5.astype(np.float32)
             dftype_out = original_h5.dtypes.unique()[0]
         f.create_dataset(
             "data",

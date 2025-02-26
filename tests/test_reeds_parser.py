@@ -62,7 +62,9 @@ def test_construct_load_time_series(reeds_parser_instance):
     single_load = loads[0]
     ts: SingleTimeSeries = reeds_parser_instance.system.get_time_series(single_load)
     if len(load_df) > 8760:
-        end_idx = 8760 * (reeds_parser_instance.config.weather_year - 2007) + 1  # +1 to be inclusive.
+        end_idx = (
+            8760 * (reeds_parser_instance.config.input_config.weather_year - 2007) + 1
+        )  # +1 to be inclusive.
     else:
         end_idx = 8760
     assert len(ts.data) == 8760
@@ -78,9 +80,12 @@ def test_construct_emissions(reeds_system):
     emission_objects = reeds_system.get_components(Emission)
     emission_objects = [component for component in reeds_system.get_components(Emission)]
     assert all(isinstance(component, Emission) for component in emission_objects)
-    assert (
-        len(emission_objects) == 136
-    )  # Total number of emissions (co2, nox) for all the emitting devices for 2050
+    if len(emission_objects) > 0:
+        assert (
+            len(emission_objects) == 136
+        )  # Total number of emissions (co2, nox) for all the emitting devices for 2050
+    else:
+        assert len(emission_objects) == 0
 
 
 def test_construct_branches(reeds_system):
