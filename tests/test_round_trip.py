@@ -40,7 +40,7 @@ def test_round_trip(tmp_folder, reeds_data_folder):
     )
 
     # Export ReEDS to infrasys
-    orignal_system_fpath = tmp_folder / reeds_infrasys_config.name / ".json"
+    orignal_system_fpath = tmp_folder / f"{reeds_infrasys_config.name}.json"
     original_system, parser = run_parser(reeds_infrasys_config)
     original_system.to_json(orignal_system_fpath)
 

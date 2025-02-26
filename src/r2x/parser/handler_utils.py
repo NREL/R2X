@@ -4,6 +4,7 @@ from pathlib import Path
 
 import h5py
 import pandas as pd
+import os
 import polars as pl
 from loguru import logger
 
@@ -102,11 +103,31 @@ def h5_handler(fpath, parser_class: str, **kwargs) -> pl.LazyFrame:
     match parser_class:
         case "ReEDSParser":
             with h5py.File(fpath, "r") as f:
-                return pl.LazyFrame(
-                    pd.DataFrame(
-                        f["data"], columns=[col.decode("utf-8") for col in f["columns"]]
-                    ).reset_index()
-                )
+                logger.info(f"Parsing h5 File: {fpath}")
+                # unique structure for recf versus load
+                if os.path.basename(fpath) == "recf.h5":
+                    pd_df = pd.DataFrame(f["data"], columns=[col.decode("utf-8") for col in f["columns"]])
+                elif os.path.basename(fpath) == "load.h5":
+                    # get index data
+                    index_year = f["index_year"][:]
+                    index_datetime = f["index_datetime"][:]
+
+                    # get data in pandas format
+                    pd_df = pd.DataFrame(f["data"], columns=[col.decode("utf-8") for col in f["columns"]])
+
+                    # creating multi level index
+                    multilevel_index = pd.MultiIndex.from_product(
+                        [index_year, index_datetime], names=["year", "datetime"]
+                    )
+
+                    # setting index then reseting
+                    pd_df = pd_df.set_index(multilevel_index).reset_index()
+
+                    # correctly formating datetime col
+                    pd_df["datetime"] = pd.to_datetime(pd_df["datetime"].astype(str))
+
+                # returning lazy dataframe
+                return pl.LazyFrame(pd_df)
         case _:
             msg = f"H5 file parsing is not implemented for {parser_class=}."
             raise NotImplementedError(msg)

@@ -160,7 +160,7 @@
     "wint": "winter"
   },
   "solar_reserves": {
-    "FLEXIBLILITY": 0.04,
+    "FLEXIBILITY": 0.04,
     "REGULATION": 0.003,
     "SPINNING": 0
   },

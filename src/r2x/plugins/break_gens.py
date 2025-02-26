@@ -8,21 +8,20 @@ threshold variable, we drop the genrator entirely.
 # System packages
 import re
 from argparse import ArgumentParser
-from infrasys.base_quantity import BaseQuantity
+
 import numpy as np
 import pandas as pd
-from r2x.api import System
-
-from r2x.models import Emission, Generator
-from r2x.config_scenario import Scenario
-from r2x.parser.handler import BaseParser
-from r2x.units import ureg, ActivePower
-from r2x.utils import read_json
+from infrasys.base_quantity import BaseQuantity
 
 # Local imports
-
 from loguru import logger
 
+from r2x.api import System
+from r2x.config_scenario import Scenario
+from r2x.models import Emission, Generator
+from r2x.parser.handler import BaseParser
+from r2x.units import ActivePower, ureg
+from r2x.utils import read_json
 
 # Constants
 CAPACITY_THRESHOLD = 5  # MW
@@ -123,88 +122,79 @@ def break_generators(  # noqa: C901
         )
         no_splits = int(reference_base_power // avg_capacity)
         remainder = reference_base_power % avg_capacity
-        if no_splits > 1:
-            split_no = 1
-            logger.trace(
-                "Breaking generator {} with active_power {} into {} generators of {} capacity",
-                component.name,
-                reference_base_power,
-                no_splits,
-                avg_capacity,
+
+        # If there is not splits, we skip the generator
+        if no_splits <= 1:
+            continue
+        split_no = 1
+        logger.trace(
+            "Breaking generator {} with active_power {} into {} generators of {} capacity",
+            component.name,
+            reference_base_power,
+            no_splits,
+            avg_capacity,
+        )
+        for _ in range(no_splits):
+            component_name = component.name + f"_{split_no:02}"
+            new_component = system.copy_component(component, name=component_name, attach=True)
+            new_base_power = (
+                ActivePower(avg_capacity, component.active_power.units)
+                if isinstance(component.active_power, BaseQuantity)
+                else avg_capacity * ureg.MW
             )
-            for _ in range(no_splits):
-                component_name = component.name + f"_{split_no:02}"
-                new_component = system.copy_component(component, name=component_name, attach=True)
-                new_base_power = (
-                    ActivePower(avg_capacity, component.active_power.units)
-                    if isinstance(component.active_power, BaseQuantity)
-                    else avg_capacity * ureg.MW
+            new_component.active_power = new_base_power
+            proportion = (
+                avg_capacity / reference_base_power
+            )  # Required to recalculate properties that depend on active_power
+            for property in PROPERTIES_TO_BREAK:
+                if attr := getattr(new_component, property, None):
+                    new_component.ext[f"{property}_original"] = attr
+                    setattr(new_component, property, attr * proportion)
+            new_component.ext["original_capacity"] = component.active_power
+            new_component.ext["original_name"] = component.name
+            new_component.ext["broken"] = True
+
+            for attribute in system.get_supplemental_attributes_with_component(component, Emission):
+                system.add_supplemental_attribute(new_component, attribute)
+            if system.has_time_series(component):
+                logger.trace(
+                    "Component {} has time series attached to it. Copying first one", component.label
                 )
-                new_component.active_power = new_base_power
-                proportion = (
-                    avg_capacity / reference_base_power
-                )  # Required to recalculate properties that depend on active_power
-                for property in PROPERTIES_TO_BREAK:
-                    if attr := getattr(new_component, property, None):
-                        new_component.ext[f"{property}_original"] = attr
-                        setattr(new_component, property, attr * proportion)
-                new_component.ext["original_capacity"] = component.active_power
-                new_component.ext["original_name"] = component.name
-                new_component.ext["broken"] = True
+                ts = system.get_time_series(component)
+                system.add_time_series(ts, new_component)
+            split_no += 1
 
-                # NOTE: This will be migrated once we implement the SQLite for the components.
-                # Add emission objects
-                for emission in system.get_components(
-                    Emission, filter_func=lambda x: x.generator_name == component.name
-                ):
-                    new_emission = system.copy_component(
-                        emission, name=f"{component_name}_{emission.emission_type}", attach=True
-                    )
-                    new_emission.generator_name = component_name
-                    system.remove_component(emission)
+        if remainder > capacity_threshold:
+            component_name = component.name + f"_{split_no:02}"
+            new_component = system.copy_component(component, name=component_name, attach=True)
+            new_component.active_power = remainder * ureg.MW
+            proportion = (
+                remainder / reference_base_power
+            )  # Required to recalculate properties that depend on active_power
+            for property in PROPERTIES_TO_BREAK:
+                if attr := getattr(new_component, property, None):
+                    new_component.ext[f"{property}_original"] = attr
+                    setattr(new_component, property, attr * proportion)
+            new_component.ext["original_capacity"] = component.active_power
+            new_component.ext["original_name"] = component.name
+            new_component.ext["broken"] = True
+            for attribute in system.get_supplemental_attributes_with_component(component, Emission):
+                system.add_supplemental_attribute(new_component, attribute)
 
-                if system.has_time_series(component):
-                    logger.trace(
-                        "Component {} has time series attached to it. Copying first one", component.label
-                    )
-                    ts = system.get_time_series(component)
-                    system.add_time_series(ts, new_component)
-                split_no += 1
-            if remainder > capacity_threshold:
-                component_name = component.name + f"_{split_no:02}"
-                new_component = system.copy_component(component, name=component_name, attach=True)
-                new_component.active_power = remainder * ureg.MW
-                proportion = (
-                    remainder / reference_base_power
-                )  # Required to recalculate properties that depend on active_power
-                for property in PROPERTIES_TO_BREAK:
-                    if attr := getattr(new_component, property, None):
-                        new_component.ext[f"{property}_original"] = attr
-                        setattr(new_component, property, attr * proportion)
-                new_component.ext["original_capacity"] = component.active_power
-                new_component.ext["original_name"] = component.name
-                new_component.ext["broken"] = True
-                # NOTE: This will be migrated once we implement the SQLite for the components.
-                # Add emission objects
-                for emission in system.get_components(
-                    Emission, filter_func=lambda x: x.generator_name == component.name
-                ):
-                    new_emission = system.copy_component(
-                        emission, name=f"{component_name}_{emission.emission_type}", attach=True
-                    )
-                    new_emission.generator_name = component_name
-                    system.remove_component(emission)
-                if system.has_time_series(component):
-                    logger.trace(
-                        "Component {} has time series attached to it. Copying first one", component.label
-                    )
-                    ts = system.get_time_series(component)
-                    system.add_time_series(ts, new_component)
-            else:
-                capacity_dropped = capacity_dropped + remainder
-                logger.debug("Dropped {} capacity for {}", remainder, component.name)
+            if system.has_time_series(component):
+                logger.trace(
+                    "Component {} has time series attached to it. Copying first one", component.label
+                )
+                ts = system.get_time_series(component)
+                system.add_time_series(ts, new_component)
+        else:
+            capacity_dropped = capacity_dropped + remainder
+            logger.debug("Dropped {} capacity for {}", remainder, component.name)
 
-            # Finally remove the component
-            system.remove_component(component)
+        # Finally remove the component and emissions from original component
+        system.remove_component(component)
+        for attribute in system.get_supplemental_attributes_with_component(component):
+            system.remove_supplemental_attribute_from_component(component, attribute)
+
     logger.info("Total capacity dropped {} MW", capacity_dropped)
     return system

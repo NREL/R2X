@@ -38,6 +38,7 @@ from r2x.exceptions import ModelError, ParserError
 from r2x.exporter.utils import get_property_magnitude
 from r2x.models import (
     ACBus,
+    Emission,
     EnergyReservoirStorage,
     Generator,
     HydroDispatch,
@@ -55,7 +56,6 @@ from r2x.models.core import InputOutput, MinMax
 from r2x.models.costs import HydroGenerationCost, RenewableGenerationCost, ThermalGenerationCost
 from r2x.models.generators import HydroPumpedStorage
 from r2x.models.load import PowerLoad
-from r2x.models.services import Emission
 from r2x.models.topology import Area
 from r2x.units import ureg
 from r2x.utils import get_enum_from_string, get_pint_unit, validate_string
@@ -463,9 +463,12 @@ class PlexosParser(PCMParser):
                 mapped_records["emission_type"] = EmissionType[emission_name]
             else:
                 mapped_records["emission_type"] = EmissionType.OTHER
-            mapped_records["name"] = f"{mapped_records['generator_name']}_{mapped_records['emission_type']}"
-            valid_fields, ext_data = field_filter(mapped_records, default_model.model_fields)
-            valid_fields = prepare_ext_field(valid_fields, ext_data)
+
+            gen_component = self.system.list_components_by_name(Generator, generator_name)
+            assert len(gen_component) == 1
+            gen_component = gen_component[0]
+            valid_fields, _ = field_filter(mapped_records, default_model.model_fields)
+
             required_fields = {
                 key: value for key, value in default_model.model_fields.items() if value.is_required()
             }
@@ -478,7 +481,7 @@ class PlexosParser(PCMParser):
                     missing_fields,
                 )
                 continue
-            self.system.add_component(default_model(**valid_fields))
+            self.system.add_supplemental_attribute(gen_component, default_model(**valid_fields))
 
     def _construct_reserves(self, default_model=Reserve):
         logger.info("Creating reserve representation")
