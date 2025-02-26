@@ -159,7 +159,7 @@ class ReEDSParser(BaseParser):
             for name in self.reeds_config.defaults["default_reserve_types"]:
                 reserve_duration = self.reeds_config.defaults["reserve_duration"].get(name)
                 time_frame = self.reeds_config.defaults["reserve_time_frame"].get(name)
-                load_risk = self.reeds_config.defaults["reserve_load_risk"].get(name)
+                # load_risk = self.reeds_config.defaults["reserve_load_risk"].get(name)
                 vors = self.reeds_config.defaults["reserve_vors"].get(name)
                 reserve_area = self.system.get_component(LoadZone, name=reserve)
                 self.system.add_component(
@@ -170,7 +170,7 @@ class ReEDSParser(BaseParser):
                         reserve_type=ReserveType[name],
                         vors=vors,
                         duration=reserve_duration,
-                        load_risk=load_risk,
+                        # load_risk=load_risk,
                         time_frame=time_frame,
                         direction=ReserveDirection.UP,
                     )
@@ -717,7 +717,7 @@ class ReEDSParser(BaseParser):
                 pa.Table.from_arrays(wind_reserves, names=wind_names)
                 .to_pandas()
                 .sum(axis=1)
-                .mul(self.reeds_config.defaults["wind_reserves"].get(reserve.reserve_type.name, 1))
+                .mul(self.reeds_config.defaults["wind_reserves"].get(reserve.reserve_type.name, 0.01))
             )
             solar_provision = (
                 pa.Table.from_arrays(solar_reserves, names=solar_names)
@@ -725,13 +725,13 @@ class ReEDSParser(BaseParser):
                 .sum(axis=1)
                 .apply(lambda x: 1 if x != 0 else 0)
                 .mul(sum(solar_capacity))
-                .mul(self.reeds_config.defaults["solar_reserves"].get(reserve.reserve_type.name, 1))
+                .mul(self.reeds_config.defaults["solar_reserves"].get(reserve.reserve_type.name, 0.01))
             )
             load_provision = (
                 pa.Table.from_arrays(load_reserves, names=load_names)
                 .to_pandas()
                 .sum(axis=1)
-                .mul(self.reeds_config.defaults["load_reserves"].get(reserve.reserve_type.name, 1))
+                .mul(self.reeds_config.defaults["load_reserves"].get(reserve.reserve_type.name, 0.01))
             )
             total_provision = load_provision.add(solar_provision, fill_value=0).add(
                 wind_provision, fill_value=0
