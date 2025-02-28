@@ -57,7 +57,7 @@
   "co2_cap": {
     "column_mapping": {
       "*t": "year",
-      "default": "value"
+      "tonne_per_year": "value"
     },
     "description": "CO2 annual cap per year",
     "fname": "co2_cap.csv",
