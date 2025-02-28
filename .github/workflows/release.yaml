@@ -127,6 +127,6 @@ jobs:
         with:
           tag_name: ${{ env.NEW_VERSION }}
           release_name: ${{ github.event.inputs.release_name || env.NEW_VERSION }}
-          body: ${{ github.event.inputs.release_body || 'Release version {{env.NEW_VERSION}} }}
+          body: ${{ github.event.inputs.release_body || 'Release version {{env.NEW_VERSION}}' }}
           draft: false
           prerelease: false
