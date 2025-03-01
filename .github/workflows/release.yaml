@@ -71,7 +71,17 @@ jobs:
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
           git add src/r2x/__version__.py
-          git commit -m "Bump version to $NEW_VERSION"
+
+      - uses: planetscale/ghcommit-action@v0.1.6
+        with:
+          commit_message: "🤖 bump version $NEW_VERSION"
+          repo: ${{ github.repository }}
+          branch: main
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Push tags
+        run: |
           git tag $NEW_VERSION
           git push origin main --tags
 
