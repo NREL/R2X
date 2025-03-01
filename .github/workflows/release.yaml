@@ -10,9 +10,9 @@ on:
         required: true
         type: choice
         options:
-          - dev
           - alpha
           - beta
+          - dev
           - patch
           - minor
           - rc
@@ -29,12 +29,15 @@ on:
 jobs:
   determine-version:
     runs-on: ubuntu-latest
+    outputs:
+      release_type: ${{ steps.release_type.RELEASE_TYPE  }}
     steps:
       - uses: actions/checkout@v4
       - name: Determine version bump
         if: github.event_name == 'workflow_dispatch'
+        id: release_type
         run: |
-          echo "RELEASE_TYPE=${{ github.event.inputs.release_type }}" >> $GITHUB_ENV
+          echo "RELEASE_TYPE=${{ github.event.inputs.release_type }}" >> $GITHUB_OUTPUT
 
   bumpversion:
     env:
@@ -60,9 +63,9 @@ jobs:
       - name: Bump version using hatch
         id: version
         run: |
-          uvx hatch version $RELEASE_TYPE
-          echo "NEW_VERSION=$(hatch version)" >> $GITHUB_ENV
-          echo "NEW_VERSION=$(hatch version)" >> $GITHUB_OUTPUT
+          hatch version ${{ needs.determine-version.outputs.release_type }}
+          echo "NEW_VERSION=$(uvx hatch version)" >> $GITHUB_ENV
+          echo "NEW_VERSION=$(uvx hatch version)" >> $GITHUB_OUTPUT
 
       - name: Commit new version
         run: |
