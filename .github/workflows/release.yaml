@@ -76,8 +76,8 @@ jobs:
       - name: Commit new version
         run: |
           git add src/r2x/__version__.py
-          git commit -m "Bump version to $NEW_VERSION"
-          git tag $NEW_VERSION
+          git commit -S -m "Bump version to $NEW_VERSION"
+          git tag v$NEW_VERSION
           git push origin main --tags
 
       - name: Export new version
