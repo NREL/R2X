@@ -69,7 +69,7 @@ jobs:
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
-          git add pyproject.toml
+          git add src/r2x/__version__.py
           git commit -m "Bump version to $NEW_VERSION"
           git tag $NEW_VERSION
           git push origin main --tags
