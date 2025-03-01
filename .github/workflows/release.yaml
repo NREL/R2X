@@ -63,7 +63,7 @@ jobs:
       - name: Bump version using hatch
         id: version
         run: |
-          hatch version ${{ needs.determine-version.outputs.release_type }}
+          uvx hatch version ${{ needs.determine-version.outputs.release_type }}
           echo "NEW_VERSION=$(uvx hatch version)" >> $GITHUB_ENV
           echo "NEW_VERSION=$(uvx hatch version)" >> $GITHUB_OUTPUT
 
