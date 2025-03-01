@@ -22,7 +22,7 @@ on:
       release_body:
         description: "Optional: Release Body"
         required: false
-        type:
+        type: string
 
 jobs:
   determine-version:
@@ -61,6 +61,7 @@ jobs:
           echo "NEW_VERSION=$(hatch version)" >> $GITHUB_OUTPUT
 
       - name: Commit new version
+        run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
           git add pyproject.toml
