@@ -67,6 +67,7 @@ jobs:
 
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@v6
+        id: import-gpg
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASS }}
@@ -75,9 +76,11 @@ jobs:
 
       - name: Commit new version
         run: |
+          git config --global user.email "${{ steps.import-gpg.outputs.email }}"
+          git config --global user.name "${{ steps.import-gpg.outputs.name }}"
           git add src/r2x/__version__.py
           git commit -S -m "Bump version to $NEW_VERSION"
-          git tag v$NEW_VERSION
+          git tag -s v$NEW_VERSION
           git push origin main --tags
 
       - name: Export new version
