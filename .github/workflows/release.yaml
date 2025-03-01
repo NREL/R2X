@@ -65,6 +65,7 @@ jobs:
           uvx hatch version ${{ needs.determine-version.outputs.RELEASE_TYPE }}
           echo "NEW_VERSION=$(uvx hatch version)" >> $GITHUB_ENV
 
+      - uses: chainguard-dev/actions/setup-gitsign@main
       - name: Commit new version
         run: |
           git config user.name "${{ github.actor }}"
