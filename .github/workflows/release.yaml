@@ -44,7 +44,7 @@ jobs:
     needs: determine-version
     runs-on: "ubuntu-latest"
     outputs:
-      version: ${{ steps.version.outputs.NEW_VERSION  }}
+      version: ${{ steps.version.outputs.version  }}
     steps:
       - uses: actions/checkout@v4
         with:
