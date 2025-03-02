@@ -81,6 +81,11 @@ jobs:
           git commit -S -m "Bump version to ${{ env.NEW_VERSION}}"
           git tag -s v${{ env.NEW_VERSION}} -m "Release version ${{ env.NEW_VERSION }}"
           git push origin main --tags
+        env:
+          GIT_AUTHOR_NAME: ${{ steps.import-gpg.outputs.name }}
+          GIT_AUTHOR_EMAIL: ${{ steps.import-gpg.outputs.email }}
+          GIT_COMMITTER_NAME: ${{ steps.import-gpg.outputs.name }}
+          GIT_COMMITTER_EMAIL: ${{ steps.import-gpg.outputs.email }}
 
       - name: Export new version
         id: version
