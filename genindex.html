@@ -1,0 +1,2242 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Index &#8212; R2X  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/autodoc_pydantic.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=6dbb43f8"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs";mermaid.registerLayoutLoaders(elkLayouts);mermaid.initialize({startOnLoad:false});</script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";
+window.addEventListener("load", () => mermaid.run());
+</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'genindex';</script>
+    <link rel="index" title="Index" href="#" />
+    <link rel="search" title="Search" href="search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">R2X  documentation</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="howtos.html">How-To’s</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshoot.html">Troubleshoot and FAQ’s</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="dev/develop.html">How To Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dev/git.html">Git Convention</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Modeling PCM</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="model/logic.html">Baseline System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model/diagram.html">R2X Workflow Diagram</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model/models.html">Translation Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model/data_models.html">PCM Modeling Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model/terminology.html">Terminology</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Zonal to Nodal</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="nodal.html">Nodal documentation</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="api/enums.html">Enums</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/config.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/system.html"><code class="docutils literal notranslate"><span class="pre">infrasys</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/plexos.html"><code class="docutils literal notranslate"><span class="pre">plexosdb</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/models.html">Component Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/parsers.html">Parsers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/exporters.html">Exporters</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+
+<h1 id="index">Index</h1>
+
+<div class="genindex-jumpbox">
+ <a href="#A"><strong>A</strong></a>
+ | <a href="#B"><strong>B</strong></a>
+ | <a href="#C"><strong>C</strong></a>
+ | <a href="#D"><strong>D</strong></a>
+ | <a href="#E"><strong>E</strong></a>
+ | <a href="#F"><strong>F</strong></a>
+ | <a href="#G"><strong>G</strong></a>
+ | <a href="#H"><strong>H</strong></a>
+ | <a href="#I"><strong>I</strong></a>
+ | <a href="#J"><strong>J</strong></a>
+ | <a href="#L"><strong>L</strong></a>
+ | <a href="#M"><strong>M</strong></a>
+ | <a href="#N"><strong>N</strong></a>
+ | <a href="#O"><strong>O</strong></a>
+ | <a href="#P"><strong>P</strong></a>
+ | <a href="#Q"><strong>Q</strong></a>
+ | <a href="#R"><strong>R</strong></a>
+ | <a href="#S"><strong>S</strong></a>
+ | <a href="#T"><strong>T</strong></a>
+ | <a href="#U"><strong>U</strong></a>
+ | <a href="#V"><strong>V</strong></a>
+ | <a href="#W"><strong>W</strong></a>
+ | <a href="#X"><strong>X</strong></a>
+ | <a href="#Z"><strong>Z</strong></a>
+ 
+</div>
+<h2 id="A">A</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/enums.html#r2x.enums.ACBusTypes">ACBusTypes (class in r2x.enums)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.active_power">active_power (r2x.models.EnergyReservoirStorage attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.active_power">(r2x.models.Generator attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroDispatch.active_power">(r2x.models.HydroDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.active_power">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.active_power">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.InterruptiblePowerLoad.active_power">(r2x.models.InterruptiblePowerLoad attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.PowerLoad.active_power">(r2x.models.PowerLoad attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableDispatch.active_power">(r2x.models.RenewableDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableNonDispatch.active_power">(r2x.models.RenewableNonDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.active_power">(r2x.models.Storage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.active_power">(r2x.models.ThermalStandard attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.Transformer2W.active_power_flow">active_power_flow (r2x.models.Transformer2W attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.TransmissionInterface.active_power_flow_limits">active_power_flow_limits (r2x.models.TransmissionInterface attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.active_power_limits">active_power_limits (r2x.models.EnergyReservoirStorage attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.active_power_limits">(r2x.models.Generator attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroDispatch.active_power_limits">(r2x.models.HydroDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.active_power_limits">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.active_power_limits">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableDispatch.active_power_limits">(r2x.models.RenewableDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableNonDispatch.active_power_limits">(r2x.models.RenewableNonDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.active_power_limits">(r2x.models.Storage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.active_power_limits">(r2x.models.ThermalStandard attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/plexos.html#plexosdb.sqlite.PlexosSQLite.add_attribute">add_attribute() (plexosdb.sqlite.PlexosSQLite method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.add_batteries">add_batteries() (r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+      <li><a href="api/plexos.html#plexosdb.sqlite.PlexosSQLite.add_category">add_category() (plexosdb.sqlite.PlexosSQLite method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.add_component">add_component() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.add_component_category">add_component_category() (r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.add_components">add_components() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.add_constraints">add_constraints() (r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.add_emissions">add_emissions() (r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.add_generators">add_generators() (r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.add_interfaces">add_interfaces() (r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.add_lines">add_lines() (r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+      <li><a href="api/plexos.html#plexosdb.sqlite.PlexosSQLite.add_membership">add_membership() (plexosdb.sqlite.PlexosSQLite method)</a>
+</li>
+      <li><a href="api/plexos.html#plexosdb.sqlite.PlexosSQLite.add_object">add_object() (plexosdb.sqlite.PlexosSQLite method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/plexos.html#plexosdb.sqlite.PlexosSQLite.add_property">add_property() (plexosdb.sqlite.PlexosSQLite method)</a>
+</li>
+      <li><a href="api/plexos.html#plexosdb.sqlite.PlexosSQLite.add_property_from_records">add_property_from_records() (plexosdb.sqlite.PlexosSQLite method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.add_reserves">add_reserves() (r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.add_storage">add_storage() (r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.add_supplemental_attribute">add_supplemental_attribute() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.add_time_series">add_time_series() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.add_topology">add_topology() (r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.add_transformers">add_transformers() (r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.ACBus.angle">angle (r2x.models.ACBus attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.ACBranch.arc">arc (r2x.models.ACBranch attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.MonitoredLine.arc">(r2x.models.MonitoredLine attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Transformer2W.arc">(r2x.models.Transformer2W attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.ACBus.area">area (r2x.models.ACBus attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.DCBus.area">(r2x.models.DCBus attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.Emission.assign_new_uuid">assign_new_uuid() (r2x.models.Emission method)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.assign_new_uuid">(r2x.models.Generator method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/system.html#r2x.api.System.auto_add_composed_components">auto_add_composed_components (r2x.api.System property)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.ACBranch.available">available (r2x.models.ACBranch attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.ACBus.available">(r2x.models.ACBus attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Area.available">(r2x.models.Area attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.DCBranch.available">(r2x.models.DCBranch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.DCBus.available">(r2x.models.DCBus attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.available">(r2x.models.EnergyReservoirStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Generator.available">(r2x.models.Generator attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroDispatch.available">(r2x.models.HydroDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.available">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.available">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.MonitoredLine.available">(r2x.models.MonitoredLine attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableDispatch.available">(r2x.models.RenewableDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableNonDispatch.available">(r2x.models.RenewableNonDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Reserve.available">(r2x.models.Reserve attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.available">(r2x.models.Storage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.available">(r2x.models.ThermalStandard attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.TModelHVDCLine.available">(r2x.models.TModelHVDCLine attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Transformer2W.available">(r2x.models.Transformer2W attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.TransmissionInterface.available">(r2x.models.TransmissionInterface attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="B">B</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/models.html#r2x.models.MonitoredLine.b">b (r2x.models.MonitoredLine attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.base_mva">base_mva (r2x.models.EnergyReservoirStorage attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.base_mva">(r2x.models.Generator attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroDispatch.base_mva">(r2x.models.HydroDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.base_mva">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.base_mva">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableDispatch.base_mva">(r2x.models.RenewableDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableNonDispatch.base_mva">(r2x.models.RenewableNonDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.base_mva">(r2x.models.Storage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.base_mva">(r2x.models.ThermalStandard attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.base_power">base_power (r2x.models.EnergyReservoirStorage attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.base_power">(r2x.models.Generator attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroDispatch.base_power">(r2x.models.HydroDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.base_power">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.base_power">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.InterruptiblePowerLoad.base_power">(r2x.models.InterruptiblePowerLoad attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.PowerLoad.base_power">(r2x.models.PowerLoad attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableDispatch.base_power">(r2x.models.RenewableDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableNonDispatch.base_power">(r2x.models.RenewableNonDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.base_power">(r2x.models.Storage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.base_power">(r2x.models.ThermalStandard attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/models.html#r2x.models.ACBus.base_voltage">base_voltage (r2x.models.ACBus attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.DCBus.base_voltage">(r2x.models.DCBus attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/exporters.html#r2x.exporter.handler.BaseExporter">BaseExporter (class in r2x.exporter.handler)</a>
+</li>
+      <li><a href="model/terminology.html#term-Baseline-capacity"><strong>Baseline capacity</strong></a>
+</li>
+      <li><a href="model/terminology.html#term-Baseline-system"><strong>Baseline system</strong></a>
+</li>
+      <li><a href="model/terminology.html#term-BESS"><strong>BESS</strong></a>
+</li>
+      <li><a href="api/parsers.html#r2x.parser.plexos.PlexosParser.build_system">build_system() (r2x.parser.plexos.PlexosParser method)</a>
+
+      <ul>
+        <li><a href="api/parsers.html#r2x.parser.reeds.ReEDSParser.build_system">(r2x.parser.reeds.ReEDSParser method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.bulk_insert_objects">bulk_insert_objects() (r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+      <li><a href="api/plexos.html#plexosdb.sqlite.PlexosSQLite.bulk_modify_properties">bulk_modify_properties() (plexosdb.sqlite.PlexosSQLite method)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.bus">bus (r2x.models.EnergyReservoirStorage attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.bus">(r2x.models.Generator attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroDispatch.bus">(r2x.models.HydroDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.bus">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.bus">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableDispatch.bus">(r2x.models.RenewableDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableNonDispatch.bus">(r2x.models.RenewableNonDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.bus">(r2x.models.Storage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.bus">(r2x.models.ThermalStandard attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.ACBus.bustype">bustype (r2x.models.ACBus attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.DCBus.bustype">(r2x.models.DCBus attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="C">C</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/models.html#r2x.models.TModelHVDCLine.capacitance">capacitance (r2x.models.TModelHVDCLine attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.ACBranch.category">category (r2x.models.ACBranch attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.ACBus.category">(r2x.models.ACBus attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Area.category">(r2x.models.Area attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.DCBranch.category">(r2x.models.DCBranch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.DCBus.category">(r2x.models.DCBus attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.category">(r2x.models.EnergyReservoirStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Generator.category">(r2x.models.Generator attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroDispatch.category">(r2x.models.HydroDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.category">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.category">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.MonitoredLine.category">(r2x.models.MonitoredLine attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableDispatch.category">(r2x.models.RenewableDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableNonDispatch.category">(r2x.models.RenewableNonDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Reserve.category">(r2x.models.Reserve attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.category">(r2x.models.Storage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.category">(r2x.models.ThermalStandard attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.TModelHVDCLine.category">(r2x.models.TModelHVDCLine attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Transformer2W.category">(r2x.models.Transformer2W attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.TransmissionInterface.category">(r2x.models.TransmissionInterface attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="model/terminology.html#term-CEM"><strong>CEM</strong></a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.change_component_uuid">change_component_uuid() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.charge_efficiency">charge_efficiency (r2x.models.EnergyReservoirStorage attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.Generator.check_component_addition">check_component_addition() (r2x.models.Generator method)</a>
+</li>
+      <li><a href="api/plexos.html#plexosdb.sqlite.PlexosSQLite.check_id_exists">check_id_exists() (plexosdb.sqlite.PlexosSQLite method)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.Emission.check_supplemental_attribute_addition">check_supplemental_attribute_addition() (r2x.models.Emission method)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.Area.class_type">class_type (r2x.models.Area property)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.class_type">(r2x.models.Generator property)</a>
+</li>
+      </ul></li>
+      <li><a href="api/parsers.html#r2x.parser.plexos.cli_arguments">cli_arguments() (in module r2x.parser.plexos)</a>
+
+      <ul>
+        <li><a href="api/parsers.html#r2x.parser.reeds.cli_arguments">(in module r2x.parser.reeds)</a>
+</li>
+      </ul></li>
+      <li><a href="api/exporters.html#r2x.exporter.handler.BaseExporter.config">config (r2x.exporter.handler.BaseExporter attribute)</a>
+</li>
+      <li><a href="api/config.html#r2x.config_scenario.Configuration">Configuration (class in r2x.config_scenario)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.Emission.construct">construct() (r2x.models.Emission class method)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.construct">(r2x.models.Generator class method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/system.html#r2x.api.System.convert_storage">convert_storage() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.Emission.copy">copy() (r2x.models.Emission method)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.copy">(r2x.models.Generator method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/system.html#r2x.api.System.copy_component">copy_component() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/plexos.html#plexosdb.sqlite.PlexosSQLite.copy_object">copy_object() (plexosdb.sqlite.PlexosSQLite method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.copy_time_series">copy_time_series() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.sienna.SiennaExporter.create_timeseries_pointers">create_timeseries_pointers() (r2x.exporter.sienna.SiennaExporter method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="D">D</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/system.html#r2x.api.System.data_format_version">data_format_version (r2x.api.System property)</a>
+</li>
+      <li><a href="model/terminology.html#term-Deactivated-capacity"><strong>Deactivated capacity</strong></a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.deepcopy_component">deepcopy_component() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/config.html#id0">defaults (r2x.config_models.BaseModelConfig attribute)</a>, <a href="api/config.html#r2x.config_models.BaseModelConfig.defaults">[1]</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.description">description (r2x.api.System property)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.deserialize_system_attributes">deserialize_system_attributes() (r2x.api.System method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/models.html#r2x.models.Emission.dict">dict() (r2x.models.Emission method)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.dict">(r2x.models.Generator method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.Reserve.direction">direction (r2x.models.Reserve attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.TransmissionInterface.direction_mapping">direction_mapping (r2x.models.TransmissionInterface attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.discharge_efficiency">discharge_efficiency (r2x.models.EnergyReservoirStorage attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.Reserve.duration">duration (r2x.models.Reserve attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="E">E</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.efficiency">efficiency (r2x.models.EnergyReservoirStorage attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.HybridSystem.electric_load">electric_load (r2x.models.HybridSystem attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.Emission.emission_type">emission_type (r2x.models.Emission attribute)</a>
+</li>
+      <li><a href="api/enums.html#r2x.enums.EmissionType">EmissionType (class in r2x.enums)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.Emission.example">example() (r2x.models.Emission class method)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.example">(r2x.models.Generator class method)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.LoadZone.example">(r2x.models.LoadZone class method)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.PowerLoad.example">(r2x.models.PowerLoad class method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/plexos.html#plexosdb.sqlite.PlexosSQLite.execute">execute() (plexosdb.sqlite.PlexosSQLite method)</a>
+</li>
+      <li><a href="api/plexos.html#plexosdb.sqlite.PlexosSQLite.execute_query">execute_query() (plexosdb.sqlite.PlexosSQLite method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.export_component_to_csv">export_component_to_csv() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.sienna.SiennaExporter.export_data">export_data() (r2x.exporter.sienna.SiennaExporter method)</a>
+</li>
+      <li><a href="api/exporters.html#id0">export_data_files() (r2x.exporter.handler.BaseExporter method)</a>, <a href="api/exporters.html#r2x.exporter.handler.BaseExporter.export_data_files">[1]</a>
+
+      <ul>
+        <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.export_data_files">(r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+        <li><a href="api/exporters.html#r2x.exporter.sienna.SiennaExporter.export_data_files">(r2x.exporter.sienna.SiennaExporter method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.ACBranch.ext">ext (r2x.models.ACBranch attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.ACBus.ext">(r2x.models.ACBus attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Area.ext">(r2x.models.Area attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.DCBranch.ext">(r2x.models.DCBranch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.DCBus.ext">(r2x.models.DCBus attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.ext">(r2x.models.EnergyReservoirStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Generator.ext">(r2x.models.Generator attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroDispatch.ext">(r2x.models.HydroDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.ext">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.ext">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.MonitoredLine.ext">(r2x.models.MonitoredLine attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableDispatch.ext">(r2x.models.RenewableDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableNonDispatch.ext">(r2x.models.RenewableNonDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Reserve.ext">(r2x.models.Reserve attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.ext">(r2x.models.Storage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.ext">(r2x.models.ThermalStandard attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.TModelHVDCLine.ext">(r2x.models.TModelHVDCLine attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Transformer2W.ext">(r2x.models.Transformer2W attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.TransmissionInterface.ext">(r2x.models.TransmissionInterface attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="F">F</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/config.html#r2x.config_scenario.Scenario.feature_flags">feature_flags (r2x.config_scenario.Scenario attribute)</a>
+</li>
+      <li><a href="api/config.html#id1">fmap (r2x.config_models.BaseModelConfig attribute)</a>, <a href="api/config.html#r2x.config_models.BaseModelConfig.fmap">[1]</a>
+</li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.forced_outage_rate">forced_outage_rate (r2x.models.EnergyReservoirStorage attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.forced_outage_rate">(r2x.models.Generator attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroDispatch.forced_outage_rate">(r2x.models.HydroDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.forced_outage_rate">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.forced_outage_rate">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableDispatch.forced_outage_rate">(r2x.models.RenewableDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableNonDispatch.forced_outage_rate">(r2x.models.RenewableNonDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.forced_outage_rate">(r2x.models.Storage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.forced_outage_rate">(r2x.models.ThermalStandard attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.ACBranch.from_bus">from_bus (r2x.models.ACBranch attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.DCBranch.from_bus">(r2x.models.DCBranch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.MonitoredLine.from_bus">(r2x.models.MonitoredLine attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.TModelHVDCLine.from_bus">(r2x.models.TModelHVDCLine attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Transformer2W.from_bus">(r2x.models.Transformer2W attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/config.html#r2x.config_scenario.Configuration.from_cli">from_cli() (r2x.config_scenario.Configuration class method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.from_dict">from_dict() (r2x.api.System class method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.from_json">from_json() (r2x.api.System class method)</a>
+</li>
+      <li><a href="api/config.html#r2x.config_scenario.Scenario.from_kwargs">from_kwargs() (r2x.config_scenario.Scenario class method)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.Emission.from_orm">from_orm() (r2x.models.Emission class method)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.from_orm">(r2x.models.Generator class method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/config.html#r2x.config_scenario.Configuration.from_scenarios">from_scenarios() (r2x.config_scenario.Configuration class method)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.ThermalStandard.fuel">fuel (r2x.models.ThermalStandard attribute)</a>
+</li>
+      <li><a href="model/terminology.html#term-Fuel-type"><strong>Fuel type</strong></a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="G">G</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/models.html#r2x.models.MonitoredLine.g">g (r2x.models.MonitoredLine attribute)</a>
+</li>
+      <li><a href="api/plexos.html#plexosdb.sqlite.PlexosSQLite.get_category_id">get_category_id() (plexosdb.sqlite.PlexosSQLite method)</a>
+</li>
+      <li><a href="api/plexos.html#plexosdb.sqlite.PlexosSQLite.get_category_max_id">get_category_max_id() (plexosdb.sqlite.PlexosSQLite method)</a>
+</li>
+      <li><a href="api/plexos.html#plexosdb.sqlite.PlexosSQLite.get_class_id">get_class_id() (plexosdb.sqlite.PlexosSQLite method)</a>
+</li>
+      <li><a href="api/plexos.html#plexosdb.sqlite.PlexosSQLite.get_collection_id">get_collection_id() (plexosdb.sqlite.PlexosSQLite method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.get_component">get_component() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.get_component_by_label">get_component_by_label() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.get_component_by_uuid">get_component_by_uuid() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.get_component_types">get_component_types() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.get_components">get_components() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.get_components_with_supplemental_attribute">get_components_with_supplemental_attribute() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.handler.BaseExporter.get_data">get_data() (r2x.exporter.handler.BaseExporter method)</a>
+
+      <ul>
+        <li><a href="api/parsers.html#r2x.parser.plexos.PlexosParser.get_data">(r2x.parser.plexos.PlexosParser method)</a>
+</li>
+        <li><a href="api/parsers.html#r2x.parser.reeds.ReEDSParser.get_data">(r2x.parser.reeds.ReEDSParser method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/config.html#r2x.config_models.BaseModelConfig.get_field_mapping">get_field_mapping() (r2x.config_models.BaseModelConfig class method)</a>
+
+      <ul>
+        <li><a href="api/config.html#r2x.config_models.InfrasysConfig.get_field_mapping">(r2x.config_models.InfrasysConfig class method)</a>
+</li>
+        <li><a href="api/config.html#r2x.config_models.PlexosConfig.get_field_mapping">(r2x.config_models.PlexosConfig class method)</a>
+</li>
+        <li><a href="api/config.html#r2x.config_models.ReEDSConfig.get_field_mapping">(r2x.config_models.ReEDSConfig class method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/plexos.html#plexosdb.sqlite.PlexosSQLite.get_membership_id">get_membership_id() (plexosdb.sqlite.PlexosSQLite method)</a>
+</li>
+      <li><a href="api/plexos.html#plexosdb.sqlite.PlexosSQLite.get_memberships">get_memberships() (plexosdb.sqlite.PlexosSQLite method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.get_num_components_with_supplemental_attributes">get_num_components_with_supplemental_attributes() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.get_num_supplemental_attributes">get_num_supplemental_attributes() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/plexos.html#plexosdb.sqlite.PlexosSQLite.get_object_id">get_object_id() (plexosdb.sqlite.PlexosSQLite method)</a>
+</li>
+      <li><a href="api/plexos.html#plexosdb.sqlite.PlexosSQLite.get_objects_properties">get_objects_properties() (plexosdb.sqlite.PlexosSQLite method)</a>
+</li>
+      <li><a href="api/plexos.html#plexosdb.sqlite.PlexosSQLite.get_property_id">get_property_id() (plexosdb.sqlite.PlexosSQLite method)</a>
+</li>
+      <li><a href="api/config.html#r2x.config_scenario.get_scenario_configuration">get_scenario_configuration() (in module r2x.config_scenario)</a>
+</li>
+      <li><a href="api/plexos.html#plexosdb.sqlite.PlexosSQLite.get_scenario_id">get_scenario_id() (plexosdb.sqlite.PlexosSQLite method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.get_supplemental_attribute_by_uuid">get_supplemental_attribute_by_uuid() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.get_supplemental_attribute_counts_by_type">get_supplemental_attribute_counts_by_type() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.get_supplemental_attributes_with_component">get_supplemental_attributes_with_component() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.get_time_series">get_time_series() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.get_time_series_directory">get_time_series_directory() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/plexos.html#plexosdb.sqlite.PlexosSQLite.get_valid_properties">get_valid_properties() (plexosdb.sqlite.PlexosSQLite method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="H">H</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/system.html#r2x.api.System.handle_data_format_upgrade">handle_data_format_upgrade() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.has_component">has_component() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.has_supplemental_attribute">has_supplemental_attribute() (r2x.api.System method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/system.html#r2x.api.System.has_supplemental_attribute_association">has_supplemental_attribute_association() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.has_time_series">has_time_series() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/config.html#r2x.config_models.PlexosConfig.horizon_year">horizon_year (r2x.config_models.PlexosConfig attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="I">I</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/models.html#r2x.models.TModelHVDCLine.inductance">inductance (r2x.models.TModelHVDCLine attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.inflow">inflow (r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+      <li><a href="api/config.html#r2x.config_scenario.Scenario.info">info() (r2x.config_scenario.Scenario method)</a>
+</li>
+      <li><a href="api/plexos.html#plexosdb.sqlite.PlexosSQLite.ingest_from_records">ingest_from_records() (plexosdb.sqlite.PlexosSQLite method)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.initial_energy">initial_energy (r2x.models.EnergyReservoirStorage attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.initial_energy">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.initial_energy">(r2x.models.Storage attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.initial_storage">initial_storage (r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.initial_storage_capacity_level">initial_storage_capacity_level (r2x.models.EnergyReservoirStorage attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.HydroPumpedStorage.initial_volume">initial_volume (r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.input_active_power_limits">input_active_power_limits (r2x.models.EnergyReservoirStorage attribute)</a>
+</li>
+      <li><a href="api/config.html#r2x.config_scenario.Scenario.input_model">input_model (r2x.config_scenario.Scenario attribute)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.insert_component_properties">insert_component_properties() (r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+      <li><a href="model/terminology.html#term-Investment-capacity"><strong>Investment capacity</strong></a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.iter_all_components">iter_all_components() (r2x.api.System method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="J">J</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/models.html#r2x.models.Emission.json">json() (r2x.models.Emission method)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.json">(r2x.models.Generator method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="L">L</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/system.html#r2x.api.System.label">label (r2x.api.System property)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Emission.label">(r2x.models.Emission property)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Generator.label">(r2x.models.Generator property)</a>
+</li>
+      </ul></li>
+      <li><a href="api/plexos.html#plexosdb.sqlite.PlexosSQLite.last_insert_rowid">last_insert_rowid() (plexosdb.sqlite.PlexosSQLite method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.list_child_components">list_child_components() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.list_components_by_name">list_components_by_name() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.list_parent_components">list_parent_components() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/config.html#r2x.config_scenario.Configuration.list_scenarios">list_scenarios() (r2x.config_scenario.Configuration method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/system.html#r2x.api.System.list_time_series">list_time_series() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.list_time_series_metadata">list_time_series_metadata() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.Area.load_response">load_response (r2x.models.Area attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.Reserve.load_risk">load_risk (r2x.models.Reserve attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.ACBus.load_zone">load_zone (r2x.models.ACBus attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.DCBus.load_zone">(r2x.models.DCBus attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.MonitoredLine.losses">losses (r2x.models.MonitoredLine attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.TModelHVDCLine.losses">(r2x.models.TModelHVDCLine attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="model/terminology.html#term-LPF"><strong>LPF</strong></a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="M">M</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/models.html#r2x.models.ACBus.magnitude">magnitude (r2x.models.ACBus attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.DCBus.magnitude">(r2x.models.DCBus attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/config.html#r2x.config_models.PlexosConfig.master_file">master_file (r2x.config_models.PlexosConfig attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.InterruptiblePowerLoad.max_active_power">max_active_power (r2x.models.InterruptiblePowerLoad attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.PowerLoad.max_active_power">(r2x.models.PowerLoad attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.InterruptiblePowerLoad.max_reactive_power">max_reactive_power (r2x.models.InterruptiblePowerLoad attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.PowerLoad.max_reactive_power">(r2x.models.PowerLoad attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.Reserve.max_requirement">max_requirement (r2x.models.Reserve attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.max_storage_capacity">max_storage_capacity (r2x.models.EnergyReservoirStorage attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Storage.max_storage_capacity">(r2x.models.Storage attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.mean_time_to_repair">mean_time_to_repair (r2x.models.EnergyReservoirStorage attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.mean_time_to_repair">(r2x.models.Generator attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroDispatch.mean_time_to_repair">(r2x.models.HydroDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.mean_time_to_repair">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.mean_time_to_repair">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableDispatch.mean_time_to_repair">(r2x.models.RenewableDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableNonDispatch.mean_time_to_repair">(r2x.models.RenewableNonDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.mean_time_to_repair">(r2x.models.Storage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.mean_time_to_repair">(r2x.models.ThermalStandard attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/system.html#r2x.api.System.merge_system">merge_system() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.min_down_time">min_down_time (r2x.models.EnergyReservoirStorage attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.min_down_time">(r2x.models.Generator attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroDispatch.min_down_time">(r2x.models.HydroDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.min_down_time">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.min_down_time">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableDispatch.min_down_time">(r2x.models.RenewableDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableNonDispatch.min_down_time">(r2x.models.RenewableNonDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.min_down_time">(r2x.models.Storage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.min_down_time">(r2x.models.ThermalStandard attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.min_rated_capacity">min_rated_capacity (r2x.models.EnergyReservoirStorage attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.min_rated_capacity">(r2x.models.Generator attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroDispatch.min_rated_capacity">(r2x.models.HydroDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.min_rated_capacity">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.min_rated_capacity">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableDispatch.min_rated_capacity">(r2x.models.RenewableDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableNonDispatch.min_rated_capacity">(r2x.models.RenewableNonDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.min_rated_capacity">(r2x.models.Storage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.min_rated_capacity">(r2x.models.ThermalStandard attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.min_storage_capacity">min_storage_capacity (r2x.models.EnergyReservoirStorage attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.min_storage_capacity">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.min_storage_capacity">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.min_storage_capacity">(r2x.models.Storage attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.min_up_time">min_up_time (r2x.models.EnergyReservoirStorage attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.min_up_time">(r2x.models.Generator attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroDispatch.min_up_time">(r2x.models.HydroDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.min_up_time">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.min_up_time">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableDispatch.min_up_time">(r2x.models.RenewableDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableNonDispatch.min_up_time">(r2x.models.RenewableNonDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.min_up_time">(r2x.models.Storage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.min_up_time">(r2x.models.ThermalStandard attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/models.html#r2x.models.Emission.model_construct">model_construct() (r2x.models.Emission class method)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.model_construct">(r2x.models.Generator class method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.Emission.model_copy">model_copy() (r2x.models.Emission method)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.model_copy">(r2x.models.Generator method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.Emission.model_dump">model_dump() (r2x.models.Emission method)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.model_dump">(r2x.models.Generator method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.Emission.model_dump_custom">model_dump_custom() (r2x.models.Emission method)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.model_dump_custom">(r2x.models.Generator method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.Emission.model_dump_json">model_dump_json() (r2x.models.Emission method)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.model_dump_json">(r2x.models.Generator method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.Emission.model_extra">model_extra (r2x.models.Emission property)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.model_extra">(r2x.models.Generator property)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.Emission.model_fields_set">model_fields_set (r2x.models.Emission property)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.model_fields_set">(r2x.models.Generator property)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.Emission.model_json_schema">model_json_schema() (r2x.models.Emission class method)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.model_json_schema">(r2x.models.Generator class method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/config.html#r2x.config_models.PlexosConfig.model_name">model_name (r2x.config_models.PlexosConfig attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.Emission.model_parametrized_name">model_parametrized_name() (r2x.models.Emission class method)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.model_parametrized_name">(r2x.models.Generator class method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.Emission.model_post_init">model_post_init() (r2x.models.Emission method)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.model_post_init">(r2x.models.Generator method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.Emission.model_rebuild">model_rebuild() (r2x.models.Emission class method)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.model_rebuild">(r2x.models.Generator class method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.Emission.model_validate">model_validate() (r2x.models.Emission class method)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.model_validate">(r2x.models.Generator class method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.Emission.model_validate_json">model_validate_json() (r2x.models.Emission class method)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.model_validate_json">(r2x.models.Generator class method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.Emission.model_validate_strings">model_validate_strings() (r2x.models.Emission class method)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.model_validate_strings">(r2x.models.Generator class method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/config.html#r2x.config_models.PlexosConfig.model_year">model_year (r2x.config_models.PlexosConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/config.html#r2x.config_models.SiennaConfig.model_year">(r2x.config_models.SiennaConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/plexos.html#plexosdb.sqlite.PlexosSQLite.modify_property">modify_property() (plexosdb.sqlite.PlexosSQLite method)</a>
+</li>
+      <li>
+    module
+
+      <ul>
+        <li><a href="api/plexos.html#module-plexosdb.sqlite">plexosdb.sqlite</a>
+</li>
+        <li><a href="api/system.html#module-r2x.api">r2x.api</a>
+</li>
+        <li><a href="api/config.html#module-r2x.config_scenario">r2x.config_scenario</a>
+</li>
+        <li><a href="api/enums.html#module-r2x.enums">r2x.enums</a>
+</li>
+        <li><a href="api/parsers.html#module-r2x.parser.plexos">r2x.parser.plexos</a>
+</li>
+        <li><a href="api/parsers.html#module-r2x.parser.reeds">r2x.parser.reeds</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.must_run">must_run (r2x.models.EnergyReservoirStorage attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.must_run">(r2x.models.Generator attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroDispatch.must_run">(r2x.models.HydroDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.must_run">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.must_run">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableDispatch.must_run">(r2x.models.RenewableDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableNonDispatch.must_run">(r2x.models.RenewableNonDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.must_run">(r2x.models.Storage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.must_run">(r2x.models.ThermalStandard attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="N">N</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/system.html#r2x.api.System.name">name (r2x.api.System property)</a>
+
+      <ul>
+        <li><a href="api/config.html#r2x.config_scenario.Scenario.name">(r2x.config_scenario.Scenario attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ACBranch.name">(r2x.models.ACBranch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ACBus.name">(r2x.models.ACBus attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Area.name">(r2x.models.Area attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.DCBranch.name">(r2x.models.DCBranch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.DCBus.name">(r2x.models.DCBus attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.name">(r2x.models.EnergyReservoirStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Generator.name">(r2x.models.Generator attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroDispatch.name">(r2x.models.HydroDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.name">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.name">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.MonitoredLine.name">(r2x.models.MonitoredLine attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableDispatch.name">(r2x.models.RenewableDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableNonDispatch.name">(r2x.models.RenewableNonDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Reserve.name">(r2x.models.Reserve attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.name">(r2x.models.Storage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.name">(r2x.models.ThermalStandard attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.TModelHVDCLine.name">(r2x.models.TModelHVDCLine attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Transformer2W.name">(r2x.models.Transformer2W attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.TransmissionInterface.name">(r2x.models.TransmissionInterface attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="model/terminology.html#term-Nodal-unit-limit"><strong>Nodal unit limit</strong></a>
+</li>
+      <li><a href="model/terminology.html#term-Node"><strong>Node</strong></a>
+</li>
+      <li><a href="api/models.html#r2x.models.ACBus.number">number (r2x.models.ACBus attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.DCBus.number">(r2x.models.DCBus attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="O">O</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.operation_cost">operation_cost (r2x.models.EnergyReservoirStorage attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.HydroDispatch.operation_cost">(r2x.models.HydroDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.operation_cost">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.operation_cost">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.InterruptiblePowerLoad.operation_cost">(r2x.models.InterruptiblePowerLoad attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.PowerLoad.operation_cost">(r2x.models.PowerLoad attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableDispatch.operation_cost">(r2x.models.RenewableDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.operation_cost">(r2x.models.ThermalStandard attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.output_active_power_limits">output_active_power_limits (r2x.models.EnergyReservoirStorage attribute)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.handler.BaseExporter.output_foder">output_foder (r2x.exporter.handler.BaseExporter attribute)</a>
+</li>
+      <li><a href="api/config.html#r2x.config_scenario.Scenario.output_folder">output_folder (r2x.config_scenario.Scenario attribute)</a>
+</li>
+      <li><a href="api/config.html#r2x.config_scenario.Scenario.output_model">output_model (r2x.config_scenario.Scenario attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="P">P</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/parsers.html#r2x.parser.plexos.PlexosParser.parse_data">parse_data() (r2x.parser.plexos.PlexosParser method)</a>
+
+      <ul>
+        <li><a href="api/parsers.html#r2x.parser.reeds.ReEDSParser.parse_data">(r2x.parser.reeds.ReEDSParser method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.Emission.parse_file">parse_file() (r2x.models.Emission class method)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.parse_file">(r2x.models.Generator class method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.Emission.parse_obj">parse_obj() (r2x.models.Emission class method)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.parse_obj">(r2x.models.Generator class method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.Emission.parse_raw">parse_raw() (r2x.models.Emission class method)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.parse_raw">(r2x.models.Generator class method)</a>
+</li>
+      </ul></li>
+      <li><a href="model/terminology.html#term-PCM"><strong>PCM</strong></a>
+</li>
+      <li><a href="api/models.html#r2x.models.Area.peak_active_power">peak_active_power (r2x.models.Area attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.LoadZone.peak_active_power">(r2x.models.LoadZone attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.Area.peak_reactive_power">peak_reactive_power (r2x.models.Area attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.LoadZone.peak_reactive_power">(r2x.models.LoadZone attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.planned_outage_rate">planned_outage_rate (r2x.models.EnergyReservoirStorage attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.planned_outage_rate">(r2x.models.Generator attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroDispatch.planned_outage_rate">(r2x.models.HydroDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.planned_outage_rate">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.planned_outage_rate">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableDispatch.planned_outage_rate">(r2x.models.RenewableDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableNonDispatch.planned_outage_rate">(r2x.models.RenewableNonDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.planned_outage_rate">(r2x.models.Storage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.planned_outage_rate">(r2x.models.ThermalStandard attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="model/terminology.html#term-Plexos"><strong>Plexos</strong></a>
+</li>
+      <li>
+    plexosdb.sqlite
+
+      <ul>
+        <li><a href="api/plexos.html#module-plexosdb.sqlite">module</a>
+</li>
+      </ul></li>
+      <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter">PlexosExporter (class in r2x.exporter.plexos)</a>
+</li>
+      <li><a href="api/parsers.html#r2x.parser.plexos.PlexosParser">PlexosParser (class in r2x.parser.plexos)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/plexos.html#plexosdb.sqlite.PlexosSQLite">PlexosSQLite (class in plexosdb.sqlite)</a>
+</li>
+      <li><a href="api/config.html#r2x.config_scenario.Scenario.plugins">plugins (r2x.config_scenario.Scenario attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.RenewableDispatch.power_factor">power_factor (r2x.models.RenewableDispatch attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.RenewableNonDispatch.power_factor">(r2x.models.RenewableNonDispatch attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.Generator.pprint">pprint() (r2x.models.Generator method)</a>
+</li>
+      <li><a href="model/terminology.html#term-Prescribed-capacity"><strong>Prescribed capacity</strong></a>
+</li>
+      <li><a href="api/models.html#r2x.models.Transformer2W.primary_shunt">primary_shunt (r2x.models.Transformer2W attribute)</a>
+</li>
+      <li><a href="model/terminology.html#term-Prime-mover-type"><strong>Prime mover type</strong></a>
+</li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.prime_mover_type">prime_mover_type (r2x.models.EnergyReservoirStorage attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.prime_mover_type">(r2x.models.Generator attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroDispatch.prime_mover_type">(r2x.models.HydroDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.prime_mover_type">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.prime_mover_type">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableDispatch.prime_mover_type">(r2x.models.RenewableDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableNonDispatch.prime_mover_type">(r2x.models.RenewableNonDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.prime_mover_type">(r2x.models.Storage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.prime_mover_type">(r2x.models.ThermalStandard attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/enums.html#r2x.enums.PrimeMoversType">PrimeMoversType (class in r2x.enums)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.sienna.SiennaExporter.process_branch_data">process_branch_data() (r2x.exporter.sienna.SiennaExporter method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.sienna.SiennaExporter.process_bus_data">process_bus_data() (r2x.exporter.sienna.SiennaExporter method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.sienna.SiennaExporter.process_dc_branch_data">process_dc_branch_data() (r2x.exporter.sienna.SiennaExporter method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.sienna.SiennaExporter.process_gen_data">process_gen_data() (r2x.exporter.sienna.SiennaExporter method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.sienna.SiennaExporter.process_load_data">process_load_data() (r2x.exporter.sienna.SiennaExporter method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.sienna.SiennaExporter.process_reserves_data">process_reserves_data() (r2x.exporter.sienna.SiennaExporter method)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.sienna.SiennaExporter.process_storage_data">process_storage_data() (r2x.exporter.sienna.SiennaExporter method)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.HydroPumpedStorage.pump_efficiency">pump_efficiency (r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.HydroPumpedStorage.pump_load">pump_load (r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="Q">Q</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/plexos.html#plexosdb.sqlite.PlexosSQLite.query">query() (plexosdb.sqlite.PlexosSQLite method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="R">R</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/models.html#r2x.models.ACBranch.r">r (r2x.models.ACBranch attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.MonitoredLine.r">(r2x.models.MonitoredLine attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Transformer2W.r">(r2x.models.Transformer2W attribute)</a>
+</li>
+      </ul></li>
+      <li>
+    r2x.api
+
+      <ul>
+        <li><a href="api/system.html#module-r2x.api">module</a>
+</li>
+      </ul></li>
+      <li>
+    r2x.config_scenario
+
+      <ul>
+        <li><a href="api/config.html#module-r2x.config_scenario">module</a>
+</li>
+      </ul></li>
+      <li>
+    r2x.enums
+
+      <ul>
+        <li><a href="api/enums.html#module-r2x.enums">module</a>
+</li>
+      </ul></li>
+      <li>
+    r2x.parser.plexos
+
+      <ul>
+        <li><a href="api/parsers.html#module-r2x.parser.plexos">module</a>
+</li>
+      </ul></li>
+      <li>
+    r2x.parser.reeds
+
+      <ul>
+        <li><a href="api/parsers.html#module-r2x.parser.reeds">module</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.ramp_down">ramp_down (r2x.models.EnergyReservoirStorage attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.ramp_down">(r2x.models.Generator attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroDispatch.ramp_down">(r2x.models.HydroDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.ramp_down">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.ramp_down">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableDispatch.ramp_down">(r2x.models.RenewableDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableNonDispatch.ramp_down">(r2x.models.RenewableNonDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.ramp_down">(r2x.models.Storage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.ramp_down">(r2x.models.ThermalStandard attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.ramp_limits">ramp_limits (r2x.models.HydroEnergyReservoir attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.ramp_limits">(r2x.models.ThermalStandard attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.ramp_up">ramp_up (r2x.models.EnergyReservoirStorage attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.ramp_up">(r2x.models.Generator attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroDispatch.ramp_up">(r2x.models.HydroDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.ramp_up">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.ramp_up">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableDispatch.ramp_up">(r2x.models.RenewableDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableNonDispatch.ramp_up">(r2x.models.RenewableNonDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.ramp_up">(r2x.models.Storage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.ramp_up">(r2x.models.ThermalStandard attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.Emission.rate">rate (r2x.models.Emission attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.ACBranch.rating">rating (r2x.models.ACBranch attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.rating">(r2x.models.EnergyReservoirStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Generator.rating">(r2x.models.Generator attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroDispatch.rating">(r2x.models.HydroDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.rating">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.rating">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.MonitoredLine.rating">(r2x.models.MonitoredLine attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableDispatch.rating">(r2x.models.RenewableDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableNonDispatch.rating">(r2x.models.RenewableNonDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.rating">(r2x.models.Storage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.rating">(r2x.models.ThermalStandard attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Transformer2W.rating">(r2x.models.Transformer2W attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.MonitoredLine.rating_down">rating_down (r2x.models.MonitoredLine attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.TModelHVDCLine.rating_down">(r2x.models.TModelHVDCLine attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/models.html#r2x.models.MonitoredLine.rating_up">rating_up (r2x.models.MonitoredLine attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.TModelHVDCLine.rating_up">(r2x.models.TModelHVDCLine attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.reactive_power">reactive_power (r2x.models.EnergyReservoirStorage attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.reactive_power">(r2x.models.Generator attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroDispatch.reactive_power">(r2x.models.HydroDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.reactive_power">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.reactive_power">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.InterruptiblePowerLoad.reactive_power">(r2x.models.InterruptiblePowerLoad attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.PowerLoad.reactive_power">(r2x.models.PowerLoad attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableDispatch.reactive_power">(r2x.models.RenewableDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableNonDispatch.reactive_power">(r2x.models.RenewableNonDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.reactive_power">(r2x.models.Storage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.reactive_power">(r2x.models.ThermalStandard attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.Transformer2W.reactive_power_flow">reactive_power_flow (r2x.models.Transformer2W attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.reactive_power_limits">reactive_power_limits (r2x.models.EnergyReservoirStorage attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.reactive_power_limits">(r2x.models.Generator attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroDispatch.reactive_power_limits">(r2x.models.HydroDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.reactive_power_limits">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.reactive_power_limits">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableDispatch.reactive_power_limits">(r2x.models.RenewableDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableNonDispatch.reactive_power_limits">(r2x.models.RenewableNonDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.reactive_power_limits">(r2x.models.Storage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.reactive_power_limits">(r2x.models.ThermalStandard attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/exporters.html#id1">read_file() (r2x.exporter.handler.BaseExporter method)</a>, <a href="api/exporters.html#r2x.exporter.handler.BaseExporter.read_file">[1]</a>
+
+      <ul>
+        <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.read_file">(r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+        <li><a href="api/exporters.html#r2x.exporter.sienna.SiennaExporter.read_file">(r2x.exporter.sienna.SiennaExporter method)</a>
+</li>
+        <li><a href="api/parsers.html#r2x.parser.plexos.PlexosParser.read_file">(r2x.parser.plexos.PlexosParser method)</a>
+</li>
+        <li><a href="api/parsers.html#r2x.parser.reeds.ReEDSParser.read_file">(r2x.parser.reeds.ReEDSParser method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/system.html#r2x.api.System.rebuild_component_associations">rebuild_component_associations() (r2x.api.System method)</a>
+</li>
+      <li><a href="model/terminology.html#term-ReEDS"><strong>ReEDS</strong></a>
+</li>
+      <li><a href="api/parsers.html#r2x.parser.reeds.ReEDSParser">ReEDSParser (class in r2x.parser.reeds)</a>
+</li>
+      <li><a href="api/config.html#r2x.config_models.InfrasysConfig.reference_year">reference_year (r2x.config_models.InfrasysConfig attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.Reserve.region">region (r2x.models.Reserve attribute)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.remove_component">remove_component() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.remove_component_by_name">remove_component_by_name() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.remove_component_by_uuid">remove_component_by_uuid() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.remove_supplemental_attribute">remove_supplemental_attribute() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.remove_supplemental_attribute_from_component">remove_supplemental_attribute_from_component() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.remove_time_series">remove_time_series() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.HybridSystem.renewable_unit">renewable_unit (r2x.models.HybridSystem attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.Reserve.reserve_type">reserve_type (r2x.models.Reserve attribute)</a>
+</li>
+      <li><a href="api/enums.html#r2x.enums.ReserveDirection">ReserveDirection (class in r2x.enums)</a>
+</li>
+      <li><a href="api/enums.html#r2x.enums.ReserveType">ReserveType (class in r2x.enums)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.TModelHVDCLine.resistance">resistance (r2x.models.TModelHVDCLine attribute)</a>
+</li>
+      <li><a href="model/terminology.html#term-reVX"><strong>reVX</strong></a>
+</li>
+      <li><a href="api/exporters.html#id2">run() (r2x.exporter.handler.BaseExporter method)</a>, <a href="api/exporters.html#r2x.exporter.handler.BaseExporter.run">[1]</a>
+
+      <ul>
+        <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.run">(r2x.exporter.plexos.PlexosExporter method)</a>
+</li>
+        <li><a href="api/exporters.html#r2x.exporter.sienna.SiennaExporter.run">(r2x.exporter.sienna.SiennaExporter method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/config.html#r2x.config_scenario.Scenario.run_folder">run_folder (r2x.config_scenario.Scenario attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="S">S</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/plexos.html#plexosdb.sqlite.PlexosSQLite.save">save() (plexosdb.sqlite.PlexosSQLite method)</a>
+
+      <ul>
+        <li><a href="api/system.html#r2x.api.System.save">(r2x.api.System method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/config.html#r2x.config_scenario.Scenario">Scenario (class in r2x.config_scenario)</a>
+</li>
+      <li><a href="api/config.html#r2x.config_scenario.Configuration.scenarios">scenarios (r2x.config_scenario.Configuration attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.Emission.schema">schema() (r2x.models.Emission class method)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.schema">(r2x.models.Generator class method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.Emission.schema_json">schema_json() (r2x.models.Emission class method)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.schema_json">(r2x.models.Generator class method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.Generator.serialize_active_power_limits">serialize_active_power_limits() (r2x.models.Generator method)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.TransmissionInterface.serialize_active_power_limits">(r2x.models.TransmissionInterface method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.Area.serialize_ext">serialize_ext() (r2x.models.Area method)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.serialize_ext">(r2x.models.Generator method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/system.html#r2x.api.System.serialize_system_attributes">serialize_system_attributes() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.ACBranch.services">services (r2x.models.ACBranch attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.DCBranch.services">(r2x.models.DCBranch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.services">(r2x.models.EnergyReservoirStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Generator.services">(r2x.models.Generator attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroDispatch.services">(r2x.models.HydroDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.services">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.services">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.MonitoredLine.services">(r2x.models.MonitoredLine attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableDispatch.services">(r2x.models.RenewableDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableNonDispatch.services">(r2x.models.RenewableNonDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.services">(r2x.models.Storage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.services">(r2x.models.ThermalStandard attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.TModelHVDCLine.services">(r2x.models.TModelHVDCLine attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Transformer2W.services">(r2x.models.Transformer2W attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.shutdown_cost">shutdown_cost (r2x.models.EnergyReservoirStorage attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.shutdown_cost">(r2x.models.Generator attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroDispatch.shutdown_cost">(r2x.models.HydroDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.shutdown_cost">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.shutdown_cost">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableDispatch.shutdown_cost">(r2x.models.RenewableDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableNonDispatch.shutdown_cost">(r2x.models.RenewableNonDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.shutdown_cost">(r2x.models.Storage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.shutdown_cost">(r2x.models.ThermalStandard attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/exporters.html#r2x.exporter.sienna.SiennaExporter">SiennaExporter (class in r2x.exporter.sienna)</a>
+</li>
+      <li><a href="api/config.html#r2x.config_models.ReEDSConfig.solve_year">solve_year (r2x.config_models.ReEDSConfig attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.startup_cost">startup_cost (r2x.models.EnergyReservoirStorage attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.startup_cost">(r2x.models.Generator attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroDispatch.startup_cost">(r2x.models.HydroDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.startup_cost">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.startup_cost">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableDispatch.startup_cost">(r2x.models.RenewableDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableNonDispatch.startup_cost">(r2x.models.RenewableNonDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.startup_cost">(r2x.models.Storage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.startup_cost">(r2x.models.ThermalStandard attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.ThermalStandard.status">status (r2x.models.ThermalStandard attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.storage_capacity">storage_capacity (r2x.models.EnergyReservoirStorage attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.storage_capacity">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.storage_capacity">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.storage_capacity">(r2x.models.Storage attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.storage_duration">storage_duration (r2x.models.EnergyReservoirStorage attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.storage_duration">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.storage_duration">(r2x.models.Storage attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.storage_level_limits">storage_level_limits (r2x.models.EnergyReservoirStorage attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.storage_target">storage_target (r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.storage_technology_type">storage_technology_type (r2x.models.EnergyReservoirStorage attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.HybridSystem.storage_unit">storage_unit (r2x.models.HybridSystem attribute)</a>
+</li>
+      <li><a href="api/enums.html#r2x.enums.StorageTechs">StorageTechs (class in r2x.enums)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System">System (class in r2x.api)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.handler.BaseExporter.system">system (r2x.exporter.handler.BaseExporter attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="T">T</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/models.html#r2x.models.HybridSystem.thermal_unit">thermal_unit (r2x.models.HybridSystem attribute)</a>
+</li>
+      <li><a href="api/enums.html#r2x.enums.ThermalFuels">ThermalFuels (class in r2x.enums)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.Reserve.time_frame">time_frame (r2x.models.Reserve attribute)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.time_limits">time_limits (r2x.models.HydroEnergyReservoir attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.time_limits">(r2x.models.ThermalStandard attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/system.html#r2x.api.System.time_series">time_series (r2x.api.System property)</a>
+</li>
+      <li><a href="api/exporters.html#r2x.exporter.handler.BaseExporter.time_series_to_csv">time_series_to_csv() (r2x.exporter.handler.BaseExporter static method)</a>
+
+      <ul>
+        <li><a href="api/exporters.html#r2x.exporter.plexos.PlexosExporter.time_series_to_csv">(r2x.exporter.plexos.PlexosExporter static method)</a>
+</li>
+        <li><a href="api/exporters.html#r2x.exporter.sienna.SiennaExporter.time_series_to_csv">(r2x.exporter.sienna.SiennaExporter static method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/models.html#r2x.models.ACBranch.to_bus">to_bus (r2x.models.ACBranch attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.DCBranch.to_bus">(r2x.models.DCBranch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.MonitoredLine.to_bus">(r2x.models.MonitoredLine attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.TModelHVDCLine.to_bus">(r2x.models.TModelHVDCLine attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Transformer2W.to_bus">(r2x.models.Transformer2W attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/config.html#r2x.config_models.BaseModelConfig.to_class">to_class() (r2x.config_models.BaseModelConfig method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.to_json">to_json() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.to_records">to_records() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/plexos.html#plexosdb.sqlite.PlexosSQLite.to_xml">to_xml() (plexosdb.sqlite.PlexosSQLite method)</a>
+</li>
+      <li><a href="api/config.html#r2x.config_models.BaseModelConfig.transform_field">transform_field() (r2x.config_models.BaseModelConfig method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="U">U</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="model/terminology.html#term-Uncategorized-technology"><strong>Uncategorized technology</strong></a>
+</li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.unit_type">unit_type (r2x.models.EnergyReservoirStorage attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.unit_type">(r2x.models.Generator attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroDispatch.unit_type">(r2x.models.HydroDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.unit_type">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.unit_type">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableDispatch.unit_type">(r2x.models.RenewableDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableNonDispatch.unit_type">(r2x.models.RenewableNonDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.unit_type">(r2x.models.Storage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.unit_type">(r2x.models.ThermalStandard attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/system.html#r2x.api.System.update_components">update_components() (r2x.api.System method)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.Emission.update_forward_refs">update_forward_refs() (r2x.models.Emission class method)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.update_forward_refs">(r2x.models.Generator class method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/config.html#r2x.config_scenario.Scenario.user_dict">user_dict (r2x.config_scenario.Scenario attribute)</a>
+</li>
+      <li><a href="api/system.html#r2x.api.System.uuid">uuid (r2x.api.System property)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.ACBranch.uuid">(r2x.models.ACBranch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ACBus.uuid">(r2x.models.ACBus attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Area.uuid">(r2x.models.Area attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.DCBranch.uuid">(r2x.models.DCBranch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.DCBus.uuid">(r2x.models.DCBus attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Emission.uuid">(r2x.models.Emission attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.uuid">(r2x.models.EnergyReservoirStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Generator.uuid">(r2x.models.Generator attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroDispatch.uuid">(r2x.models.HydroDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.uuid">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.uuid">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.MonitoredLine.uuid">(r2x.models.MonitoredLine attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableDispatch.uuid">(r2x.models.RenewableDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableNonDispatch.uuid">(r2x.models.RenewableNonDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Reserve.uuid">(r2x.models.Reserve attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.uuid">(r2x.models.Storage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.uuid">(r2x.models.ThermalStandard attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.TModelHVDCLine.uuid">(r2x.models.TModelHVDCLine attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Transformer2W.uuid">(r2x.models.Transformer2W attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.TransmissionInterface.uuid">(r2x.models.TransmissionInterface attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="V">V</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/models.html#r2x.models.Emission.validate">validate() (r2x.models.Emission class method)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.validate">(r2x.models.Generator class method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/system.html#r2x.api.System.version">version (r2x.api.System property)</a>
+</li>
+      <li><a href="api/models.html#r2x.models.ACBus.voltage_limits">voltage_limits (r2x.models.ACBus attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.DCBus.voltage_limits">(r2x.models.DCBus attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/models.html#r2x.models.EnergyReservoirStorage.vom_price">vom_price (r2x.models.EnergyReservoirStorage attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.Generator.vom_price">(r2x.models.Generator attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroDispatch.vom_price">(r2x.models.HydroDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroEnergyReservoir.vom_price">(r2x.models.HydroEnergyReservoir attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.HydroPumpedStorage.vom_price">(r2x.models.HydroPumpedStorage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableDispatch.vom_price">(r2x.models.RenewableDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.RenewableNonDispatch.vom_price">(r2x.models.RenewableNonDispatch attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Storage.vom_price">(r2x.models.Storage attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.ThermalStandard.vom_price">(r2x.models.ThermalStandard attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/models.html#r2x.models.Reserve.vors">vors (r2x.models.Reserve attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="W">W</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/config.html#r2x.config_models.ReEDSConfig.weather_year">weather_year (r2x.config_models.ReEDSConfig attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="model/terminology.html#term-WECC"><strong>WECC</strong></a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="X">X</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/models.html#r2x.models.ACBranch.x">x (r2x.models.ACBranch attribute)</a>
+
+      <ul>
+        <li><a href="api/models.html#r2x.models.MonitoredLine.x">(r2x.models.MonitoredLine attribute)</a>
+</li>
+        <li><a href="api/models.html#r2x.models.Transformer2W.x">(r2x.models.Transformer2W attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="Z">Z</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="model/terminology.html#term-Zone"><strong>Zone</strong></a>
+</li>
+  </ul></td>
+</tr></table>
+
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By R2X developers
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, Alliance for Sustainable Energy, LLC.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
