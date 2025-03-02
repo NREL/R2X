@@ -81,15 +81,13 @@ jobs:
         run: git add src/r2x/__version__.py
 
       - name: Commit new version
+        shell: bash
         run: |
+          git config --global user.email "${{ steps.import-gpg.outputs.email }}"
+          git config --global user.name "${{ steps.import-gpg.outputs.name }}"
           git commit -m "Bump version to v${{ env.NEW_VERSION}}"
           git tag v${{ env.NEW_VERSION }} -m "Release version ${{ env.NEW_VERSION }}"
           git push origin main --tags
-        env:
-          GIT_AUTHOR_NAME: ${{ steps.import-gpg.outputs.name }}
-          GIT_AUTHOR_EMAIL: ${{ steps.import-gpg.outputs.email }}
-          GIT_COMMITTER_NAME: ${{ steps.import-gpg.outputs.name }}
-          GIT_COMMITTER_EMAIL: ${{ steps.import-gpg.outputs.email }}
 
       - name: Build package
         run: |
