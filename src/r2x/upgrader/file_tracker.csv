@@ -18,4 +18,4 @@ tranloss.csv,,,,outputs/tranloss.csv,move_file,
 outage_planned.csv,planned_outage.csv,,,,rename,
 recf.h5,,,,,convert_hdf,
 load.h5,,,,,convert_hdf,
-co2_cap.csv,,,,,apply_header,"*t,tonne_per_year"
+co2_cap.csv,,,,,apply_header,"{'header': '*t,tonne_per_year'}"
