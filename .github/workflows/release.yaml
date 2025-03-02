@@ -80,7 +80,7 @@ jobs:
           git config --global user.name "${{ steps.import-gpg.outputs.name }}"
           git add src/r2x/__version__.py
           git commit -S -m "Bump version to ${{ env.NEW_VERSION}}"
-          git tag -s v${{ env.NEW_VERSION}}
+          git tag -s v${{ env.NEW_VERSION}} -m "Release version ${{ env.NEW_VERSION }}"
           git push origin main --tags
 
       - name: Export new version
