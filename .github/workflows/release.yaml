@@ -62,10 +62,11 @@ jobs:
         run: uv sync --all-extras --dev
 
       - name: Bump version using hatch
+        id: version
         run: |
           uvx hatch version ${{ needs.determine-version.outputs.RELEASE_TYPE }}
           echo "NEW_VERSION=$(uvx hatch version)" >> $GITHUB_ENV
-          echo "NEW_VERSION=$(uvx hatch version)" >> $GITHUB_OUTPUT
+          echo "version=$(uvx hatch version)" >> $GITHUB_OUTPUT
 
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@v6
@@ -84,6 +85,7 @@ jobs:
       - name: Commit new version
         shell: bash
         run: |
+          git config commit.gpgsign true
           git config --global user.email "${{ steps.import-gpg.outputs.email }}"
           git config --global user.name "${{ steps.import-gpg.outputs.name }}"
           git commit -S -m "Bump version to v${{ env.NEW_VERSION}}"
