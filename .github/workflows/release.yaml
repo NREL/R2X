@@ -78,7 +78,7 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           git add src/r2x/__version__.py
-          git commit -S -m "Bump version to ${{ env.NEW_VERSION}}"
+          git commit -S -m "Bump version to v${{ env.NEW_VERSION}}"
           git tag -s v${{ env.NEW_VERSION}} -m "Release version ${{ env.NEW_VERSION }}"
           git push origin main --tags
 
@@ -99,8 +99,8 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v3
 
-      - name: Set up Python {{ env.python_version }}
-        run: uv python install {{ env.python_version }}
+      - name: Set up Python ${{ env.python_version }}
+        run: uv python install ${{ env.python_version }}
 
       - name: Build and Publish to TestPyPI
         run: |
@@ -120,8 +120,8 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v3
 
-      - name: Set up Python {{ env.python_version }}
-        run: uv python install {{ env.python_version }}
+      - name: Set up Python ${{ env.python_version }}
+        run: uv python install ${{ env.python_version }}
 
       - name: Build and Publish to TestPyPI
         run: |
