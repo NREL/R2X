@@ -1,6 +1,7 @@
 name: Release
 permissions:
   contents: write
+  id-token: write
 
 on:
   workflow_dispatch:
@@ -75,59 +76,89 @@ jobs:
 
       - name: Commit new version
         run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email 'github-actions[bot]@users.noreply.github.com'
           git add src/r2x/__version__.py
           git commit -S -m "Bump version to v${{ env.NEW_VERSION}}"
           git tag -s v${{ env.NEW_VERSION}} -m "Release version ${{ env.NEW_VERSION }}"
           git push origin main --tags
 
-      - name: Export new version
-        id: version
-        run: echo "version=$(uvx hatch version)" >> $GITHUB_OUTPUT
+      - name: Build and Publish to TestPyPI
+        run: |
+          uv build
+
+      - name: Store the distribution packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
 
   publish-testpypi:
-    needs: bumpversion
+    needs:
+      - bumpversion
     runs-on: ubuntu-latest
-    env:
-      python_version: 3.11
-      TEST_PYPI_TOKEN: ${{ secrets.TEST_PYPI_TOKEN }}
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/r2x
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - name: Download all the dists
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
-
-      - name: Set up Python ${{ env.python_version }}
-        run: uv python install ${{ env.python_version }}
-
-      - name: Build and Publish to TestPyPI
-        run: |
-          uv build
-          uv publish --publish-url https://test.pypi.org/legacy/ --username __token__ --token  ${{ env.TEST_PYPI_TOKEN}}
+      - name: Publish package to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
 
   publish-pypi:
-    needs: [bumpversion, publish-testpypi]
+    needs:
+      - bumpversion
+      - publish-testpypi
     runs-on: ubuntu-latest
-    env:
-      python_version: 3.11
-      PYPI_TOKEN: ${{ secrets.TEST_PYPI_TOKEN }}
+    environment:
+      name: pypi
+      url: https://pypi.org/p/r2x
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - name: Download all the dists
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
+  github-release:
+    name: >-
+      Sign the Python 🐍 distribution 📦 with Sigstore
+      and upload them to GitHub Release
+    needs:
+      - publish-to-pypi
+    runs-on: ubuntu-latest
 
-      - name: Set up Python ${{ env.python_version }}
-        run: uv python install ${{ env.python_version }}
-
-      - name: Build and Publish to TestPyPI
-        run: |
-          uv build
-          uv publish --token ${{ env.PYPI_TOKEN}}
-
-      - name: Create GitHub release
-        run: |
-          gh release create "v${needs.bumpversion.outputs.version}" -t "v${needs.bumpversion.outputs.version}" --generate-notes
+    steps:
+      - name: Download all the dists
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+      - name: Sign the dists with Sigstore
+        uses: sigstore/gh-action-sigstore-python@v3.0.0
+        with:
+          inputs: >-
+            ./dist/*.tar.gz
+            ./dist/*.whl
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create
+          "$GITHUB_REF_NAME"
+          --repo "$GITHUB_REPOSITORY"
+          --notes ""
+      - name: Upload artifact signatures to GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          gh release upload
+          "$GITHUB_REF_NAME" dist/**
+          --repo "$GITHUB_REPOSITORY"
