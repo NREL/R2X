@@ -65,7 +65,7 @@ jobs:
         run: |
           uvx hatch version ${{ needs.determine-version.outputs.RELEASE_TYPE }}
           echo "NEW_VERSION=$(uvx hatch version)" >> $GITHUB_ENV
-          echo "NEW_VERSION=$(uvx hatch version)" >> $GITHUB_OUTPUTT
+          echo "NEW_VERSION=$(uvx hatch version)" >> $GITHUB_OUTPUT
 
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@v6
