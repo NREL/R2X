@@ -105,7 +105,7 @@ jobs:
       - name: Build and Publish to TestPyPI
         run: |
           uv build
-          uv publish -r testpypi --token $TEST_PYPI_TOKEN
+          uv publish --publish-url https://test.pypi.org/legacy/ --username __token__ --token  $TEST_PYPI_TOKEN
 
   publish-pypi:
     needs: [bumpversion, publish-testpypi]
