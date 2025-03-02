@@ -65,6 +65,7 @@ jobs:
         run: |
           uvx hatch version ${{ needs.determine-version.outputs.RELEASE_TYPE }}
           echo "NEW_VERSION=$(uvx hatch version)" >> $GITHUB_ENV
+          echo "NEW_VERSION=$(uvx hatch version)" >> $GITHUB_OUTPUTT
 
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@v6
@@ -85,8 +86,8 @@ jobs:
         run: |
           git config --global user.email "${{ steps.import-gpg.outputs.email }}"
           git config --global user.name "${{ steps.import-gpg.outputs.name }}"
-          git commit -m "Bump version to v${{ env.NEW_VERSION}}"
-          git tag v${{ env.NEW_VERSION }} -m "Release version ${{ env.NEW_VERSION }}"
+          git commit -S -m "Bump version to v${{ env.NEW_VERSION}}"
+          git tag -s v${{ env.NEW_VERSION }} -m "Release version ${{ env.NEW_VERSION }}"
           git push origin main --tags
 
       - name: Build package
