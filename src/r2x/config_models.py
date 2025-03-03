@@ -118,6 +118,7 @@ class Models(StrEnum):
     PLEXOS = "PLEXOS"
     SIENNA = "SIENNA"
     PRAS = "PRAS"
+    REEDS_INDIA = "REEDS-INDIA"
 
 
 class ParserModels(StrEnum):
@@ -127,6 +128,7 @@ class ParserModels(StrEnum):
     REEDS = "REEDS-US"
     PLEXOS = "PLEXOS"
     SIENNA = "SIENNA"
+    REEDS_INDIA = "REEDS-INDIA"
 
 
 class ExporterModels(StrEnum):
@@ -142,4 +144,5 @@ MODEL_CONFIGS = {
     Models.PLEXOS: PlexosConfig,
     Models.SIENNA: SiennaConfig,
     Models.INFRASYS: InfrasysConfig,
+    Models.REEDS_INDIA: ReEDSConfig,
 }
