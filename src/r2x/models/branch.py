@@ -76,8 +76,8 @@ class Line(ACBranch):
 class Transformer2W(ACBranch):
     """Class representing a 2-W transformer."""
 
-    active_power_flow: NonNegativeFloat
-    reactive_power_flow: NonNegativeFloat
+    active_power_flow: NonNegativeFloat = 0.0
+    reactive_power_flow: NonNegativeFloat = 0.0
     primary_shunt: float | None = None
 
     @classmethod

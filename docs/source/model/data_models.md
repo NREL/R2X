@@ -44,7 +44,7 @@ Here is the list of available representations:
 ```{eval-rst}
 .. autosummary::
     ~r2x.models.Storage
-    ~r2x.models.GenericBattery
+    ~r2x.models.EnergyReservoirStorage
     ~r2x.models.HydroPumpedStorage
 ```
 

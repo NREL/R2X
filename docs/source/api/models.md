@@ -69,7 +69,7 @@
 .. autopydantic_model:: r2x.models.Storage
    :inherited-members: Generator
 
-.. autopydantic_model:: r2x.models.GenericBattery
+.. autopydantic_model:: r2x.models.EnergyReservoirStorage
    :inherited-members: Storage
 
 .. autopydantic_model:: r2x.models.HydroPumpedStorage

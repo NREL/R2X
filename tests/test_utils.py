@@ -70,9 +70,9 @@ def test_read_user_dict(tmp_path):
     "original, override, expected",
     [
         (
-            {"bio_fuel_price": {"fname": "oldfile.csv"}},
+            {"bio_fuel_price": {"fname": "oldfile.csv", "old-key": True}},
             {"bio_fuel_price": {"fname": "repbioprice_2030.csv"}},
-            {"bio_fuel_price": {"fname": "repbioprice_2030.csv"}},
+            {"bio_fuel_price": {"fname": "repbioprice_2030.csv", "old-key": True}},
         ),
         (
             {"bio_fuel_price": {"fname": "oldfile.csv"}},
@@ -80,9 +80,9 @@ def test_read_user_dict(tmp_path):
             {"bio_fuel_price": {"fname": "repbioprice_2030.csv", "new_key": True}},
         ),
         (
-            {"plexos_device_map": {}},
+            {"plexos_device_map": {"old-key": True}},
             {"plexos_device_map": {"Lone Mountain": {"fuel": "GAS"}}},
-            {"plexos_device_map": {"Lone Mountain": {"fuel": "GAS"}}},
+            {"plexos_device_map": {"Lone Mountain": {"fuel": "GAS"}, "old-key": True}},
         ),
         (
             {"tech_to_fuel_pm": {"gas": {"fuel": "GAS", "type": "BA"}}},

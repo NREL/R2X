@@ -248,7 +248,7 @@ def test_update_defaults():
 
 
 def test_correct_update_fmap():
-    cli_args = {}
+    cli_args = {"upgrade": True}
     user_dict = {
         "name": "test",
         "input_model": "reeds-US",

@@ -325,6 +325,6 @@
     "RenewableFix",
     "HydroDispatch",
     "HydroPumpedStorage",
-    "GenericBattery"
+    "EnergyReservoirStorage"
   ]
 }

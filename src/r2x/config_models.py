@@ -80,6 +80,13 @@ class PlexosConfig(BaseModelConfig):
     model_year: int | None = None
     horizon_year: int | None = None
 
+    @classmethod
+    def get_field_mapping(cls) -> dict[type[BaseModel], dict[str, str]]:
+        """Return a dict of {target_class: {target_field: source_field}}."""
+        return {
+            SiennaConfig: {"model_year": "model_year"},
+        }
+
 
 class SiennaConfig(BaseModelConfig):
     """Sienna specific configuration."""

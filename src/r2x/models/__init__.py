@@ -1,4 +1,5 @@
 # ruff: noqa
+from .attributes import Emission
 from .branch import (
     ACBranch,
     AreaInterchange,
@@ -17,7 +18,7 @@ from .costs import HydroGenerationCost, RenewableGenerationCost, StorageCost, Th
 from .generators import (
     EnergyReservoirStorage,
     Generator,
-    GenericBattery,
+    EnergyReservoirStorage,
     HybridSystem,
     HydroDispatch,
     HydroEnergyReservoir,
@@ -31,6 +32,6 @@ from .generators import (
     ThermalStandard,
 )
 from .load import FixedAdmittance, InterruptiblePowerLoad, PowerLoad, StandardLoad
-from .services import Emission, Reserve, TransmissionInterface, VariableReserve
+from .services import Reserve, TransmissionInterface, VariableReserve
 from .topology import ACBus, Arc, Area, Bus, DCBus, LoadZone
 from .utils import GeoLocation, GeographicInfo

@@ -1,22 +1,21 @@
 """Create PLEXOS model from translated ReEDS data."""
 
+import string
+import uuid
 from argparse import ArgumentParser
+from collections.abc import Callable
 from functools import partial
 from importlib.resources import files
 from typing import Any
-import uuid
-import string
-from collections.abc import Callable
-
 
 from infrasys.component import Component
 from loguru import logger
+from plexosdb import PlexosSQLite
+from plexosdb.enums import ClassEnum, CollectionEnum
 
 from r2x.config_models import PlexosConfig, ReEDSConfig
 from r2x.enums import ReserveType
 from r2x.exporter.handler import BaseExporter, get_export_properties, get_export_records
-from plexosdb import PlexosSQLite
-from plexosdb.enums import ClassEnum, CollectionEnum
 from r2x.exporter.utils import (
     apply_extract_key,
     apply_flatten_key,
@@ -28,12 +27,12 @@ from r2x.exporter.utils import (
 from r2x.models import (
     ACBus,
     Emission,
-    InterruptiblePowerLoad,
+    EnergyReservoirStorage,
     Generator,
-    GenericBattery,
     HydroDispatch,
     HydroEnergyReservoir,
     HydroPumpedStorage,
+    InterruptiblePowerLoad,
     LoadZone,
     MonitoredLine,
     PowerLoad,
@@ -128,7 +127,7 @@ class PlexosExporter(BaseExporter):
         """Run the exporter."""
         logger.info("Starting {}", self.__class__.__name__)
 
-        self.export_data_files(year=self.weather_year)
+        self.time_series_to_csv(config=self.config, system=self.system, reference_year=self.weather_year)
 
         # If starting w/o a reference file we add our custom models and objects
         if new_database:
@@ -248,7 +247,7 @@ class PlexosExporter(BaseExporter):
         )
         # property_names = [key[0] for key in collection_properties]
         match component_type.__name__:
-            case "GenericBattery":
+            case "EnergyReservoirStorage":
                 custom_map = {"active_power": "Max Power", "storage_capacity": "Capacity"}
             case "Line":
                 custom_map = {"rating": "Max Flow"}
@@ -604,7 +603,9 @@ class PlexosExporter(BaseExporter):
         )
         # Getting all unique emission types (e.g., CO2, NOX) from the emissions objects.
         # NOTE: On Plexos, we need to add each emission type individually to the Emission class
-        emission_types = set(map(lambda x: x.emission_type, list(self.system.get_components(Emission))))
+        emission_types = set(
+            map(lambda x: x.emission_type, list(self.system.get_supplemental_attributes(Emission)))
+        )
         for emission_type in emission_types:
             self._db_mgr.add_object(
                 emission_type,
@@ -752,7 +753,7 @@ class PlexosExporter(BaseExporter):
 
         # Add generator objects excluding batteries
         def exclude_battery(component):
-            return not isinstance(component, GenericBattery)
+            return not isinstance(component, EnergyReservoirStorage)
 
         self.add_component_category(Generator, class_enum=ClassEnum.Generator, filter_func=exclude_battery)
         self.bulk_insert_objects(
@@ -808,39 +809,40 @@ class PlexosExporter(BaseExporter):
 
         # NOTE: This needs to be optimized. It is currently slow.
         logger.debug("Adding generator emisssions memberships")
-        for emission in self.system.get_components(Emission):
-            self._db_mgr.add_membership(
-                emission.emission_type,
-                emission.generator_name,
-                parent_class=ClassEnum.Emission,
-                child_class=ClassEnum.Generator,
-                collection=CollectionEnum.Generators,
-            )
-            self._db_mgr.add_property(
-                emission.generator_name,
-                self.property_map["rate"],
-                get_magnitude(emission.rate),
-                object_class=ClassEnum.Generator,
-                parent_class=ClassEnum.Emission,
-                parent_object_name=emission.emission_type,
-                collection=CollectionEnum.Generators,
-                scenario=self.plexos_scenario,
-            )
+        for emission in self.system.get_supplemental_attributes(Emission):
+            for generator in self.system.get_components_with_supplemental_attribute(emission):
+                self._db_mgr.add_membership(
+                    emission.emission_type,
+                    generator.name,
+                    parent_class=ClassEnum.Emission,
+                    child_class=ClassEnum.Generator,
+                    collection=CollectionEnum.Generators,
+                )
+                self._db_mgr.add_property(
+                    generator.name,
+                    self.property_map["rate"],
+                    get_magnitude(emission.rate),
+                    object_class=ClassEnum.Generator,
+                    parent_class=ClassEnum.Emission,
+                    parent_object_name=emission.emission_type,
+                    collection=CollectionEnum.Generators,
+                    scenario=self.plexos_scenario,
+                )
 
     def add_batteries(self):
         """Add battery objects to the database."""
         # Add battery objects
-        self.add_component_category(GenericBattery, class_enum=ClassEnum.Battery)
+        self.add_component_category(EnergyReservoirStorage, class_enum=ClassEnum.Battery)
         self.bulk_insert_objects(
-            GenericBattery,
+            EnergyReservoirStorage,
             class_enum=ClassEnum.Battery,
             collection_enum=CollectionEnum.Batteries,
         )
         self.insert_component_properties(
-            GenericBattery, parent_class=ClassEnum.System, collection=CollectionEnum.Batteries
+            EnergyReservoirStorage, parent_class=ClassEnum.System, collection=CollectionEnum.Batteries
         )
         # Add battery memberships
-        for battery in self.system.get_components(GenericBattery):
+        for battery in self.system.get_components(EnergyReservoirStorage):
             self._db_mgr.add_membership(
                 battery.name,
                 battery.bus.name,
@@ -1006,7 +1008,7 @@ class PlexosExporter(BaseExporter):
         return
 
     def _add_reports(self):
-        logger.debug("Using {} for reports.")
+        logger.debug("Using {} for reports.", self.plexos_reports_fpath)
         report_objects = read_json(self.plexos_reports_fpath)
 
         for report_object in report_objects:

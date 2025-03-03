@@ -5,8 +5,8 @@ from r2x.runner import init, run
 def test_runner(tmp_path, reeds_data_folder):
     cli_input = {
         "name": "Test",
-        "weather_year": 2015,
-        "solve_year": [2055],
+        "weather_year": 2012,
+        "solve_year": [2050],
         "input_model": "reeds-US",
         "output_model": "sienna",
         "output_folder": str(tmp_path),
@@ -36,8 +36,8 @@ def test_runner_exceptions(tmp_path, reeds_data_folder):
 def test_runner_serialization(tmp_path, reeds_data_folder):
     cli_input = {
         "name": "Test",
-        "weather_year": 2015,
-        "solve_year": [2055],
+        "weather_year": 2012,
+        "solve_year": [2050],
         "input_model": "reeds-US",
         "output_model": "sienna",
         "output_folder": str(tmp_path),

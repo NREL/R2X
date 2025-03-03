@@ -1,10 +1,12 @@
 import numpy
 import pytest
 from pint import Quantity
+
 from r2x.api import System
 from r2x.config_scenario import Scenario
 from r2x.enums import EmissionType
-from r2x.models.services import Emission
+from r2x.models import Emission
+from r2x.models.generators import ThermalStandard
 from r2x.models.utils import Constraint, ConstraintMap
 from r2x.plugins.emission_cap import update_system
 from r2x.runner import run_parser, run_plugins
@@ -73,10 +75,9 @@ def test_no_emission(caplog, infrasys_test_system):
 
 def test_emission_but_no_cap(caplog):
     system = System(name="Test")
-    emission = Emission(
-        name="co2_emission", rate=10, generator_name="test_generator", emission_type=EmissionType.CO2
-    )
-    system.add_component(emission)
+    gen1 = ThermalStandard.example()
+    emission = Emission(rate=10, emission_type=EmissionType.CO2)
+    system.add_supplemental_attribute(gen1, emission)
     config = Scenario.from_kwargs(
         name="Pacific",
         input_model="reeds-US",
@@ -92,13 +93,12 @@ def test_emission_but_no_cap(caplog):
 
 def test_multiple_constraint_maps():
     system = System(name="Test")
-    emission = Emission(
-        name="co2_emission", rate=10, generator_name="test_generator", emission_type=EmissionType.CO2
-    )
+    gen1 = ThermalStandard.example()
+    emission = Emission(rate=10, emission_type=EmissionType.CO2)
     constraint_map = ConstraintMap(name="Constraints")
     constraint_map2 = ConstraintMap(name="Constraints")
     system.add_components(constraint_map, constraint_map2)
-    system.add_component(emission)
+    system.add_supplemental_attribute(gen1, emission)
     config = Scenario.from_kwargs(
         name="Pacific",
         input_model="reeds-US",

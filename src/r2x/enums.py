@@ -57,7 +57,6 @@ class PrimeMoversType(StrEnum):
     PS = "PS"
     OT = "OT"
     ST = "ST"
-    PV = "PV"
     PVe = "PVe"
     WT = "WT"
     WS = "WS"
@@ -93,6 +92,7 @@ class EmissionType(StrEnum):
     SOX = "SOX"
     SO2 = "SO2"
     N2O = "N2O"
+    OTHER = "OTHER"
 
 
 class StorageTechs(StrEnum):
