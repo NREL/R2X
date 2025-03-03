@@ -1,7 +1,9 @@
 """Create PLEXOS model from translated ReEDS data."""
 
+
 import string
 import uuid
+import pluggy
 from argparse import ArgumentParser
 from collections.abc import Callable
 from functools import partial
@@ -53,7 +55,10 @@ TIME_SERIES_PROPERTIES = ["Min Provision", "Static Risk"]
 DEFAULT_XML_TEMPLATE = "master_9.2R6_btu.xml"
 EXT_PROPERTIES = {"UoS Charge", "Fixed Load"}
 
+hookimpl = pluggy.HookimplMarker("r2x_plugin")
 
+
+@hookimpl
 def cli_arguments(parser: ArgumentParser):
     """CLI arguments for the plugin."""
     parser.add_argument(

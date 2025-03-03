@@ -1,5 +1,6 @@
 """Functions related to parsers."""
 
+import pluggy
 import importlib
 from argparse import ArgumentParser
 from collections import defaultdict
@@ -62,6 +63,10 @@ UNITS = importlib.import_module("r2x.units")
 BASE_WEATHER_YEAR = 2007
 
 
+hookimpl = pluggy.HookimplMarker("r2x_plugin")
+
+
+@hookimpl
 def cli_arguments(parser: ArgumentParser):
     """CLI arguments for the plugin."""
     parser.add_argument(
