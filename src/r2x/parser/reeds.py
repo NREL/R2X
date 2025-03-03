@@ -738,7 +738,7 @@ class ReEDSParser(BaseParser):
     def _construct_hydro_budgets(self) -> None:
         """Hydro budgets in ReEDS."""
         logger.debug("Adding hydro budgets.")
-        month_hrs = read_csv("month_hrs.csv").collect()
+        month_hrs = read_csv("month_hrs.csv").collect().filter(pl.col("model") == self.config.input_model)
         month_map = self.reeds_config.defaults["month_map"]
 
         hydro_cf = self.get_data("hydro_cf")

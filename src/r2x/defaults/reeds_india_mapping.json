@@ -1,0 +1,243 @@
+{
+  "bfuel_price": {
+    "column_mapping": {
+      "r": "region",
+      "t": "year",
+      "Value": "fuel_price"
+    },
+    "description": "Fuel price for biomass fuel generators per solve year and region.",
+    "fname": "repbioprice.csv",
+    "input": false,
+    "optional": false,
+    "units": "usd/MMBtu",
+    "keep_case": true
+  },
+  "cf": {
+    "description": "Time series profiles for renewable generators.",
+    "fname": "recf.h5",
+    "input": true,
+    "optional": false,
+    "units": "-",
+    "keep_case": true
+  },
+  "cf_adjustment": {
+    "column_mapping": {
+      "i": "tech",
+      "t": "year",
+      "v": "tech_vintage",
+      "value": "cf_adj"
+    },
+    "description": "Adjustment factor by technology vintage.",
+    "fname": "cf_adj_t.csv",
+    "input": false,
+    "optional": false,
+    "keep_case": true
+  },
+  "cost_vom": {
+    "column_mapping": {
+      "i": "tech",
+      "r": "region",
+      "t": "year",
+      "v": "tech_vintage",
+      "Value": "vom_price"
+    },
+    "description": "Variable O&M in $/MWh",
+    "fname": "cost_vom.csv",
+    "input": false,
+    "optional": false,
+    "units": "$/MWh",
+    "keep_case": true
+  },
+  "emission_rates": {
+    "column_mapping": {
+      "eall": "emission_type",
+      "i": "tech",
+      "r": "region",
+      "t": "year",
+      "v": "tech_vintage",
+      "Value": "rate"
+    },
+    "description": "Emission rate per technology.",
+    "fname": "emit_rate.csv",
+    "input": false,
+    "optional": false,
+    "units": "kg/MWh",
+    "keep_case": true
+  },
+  "forced_outages": {
+    "column_mapping": {
+      "i": "tech",
+      "Value": "forced_outage_rate"
+    },
+    "description": "Un-planned outage rate per technology.",
+    "fname": "forced_outage.csv",
+    "input": false,
+    "optional": false,
+    "units": "%",
+    "keep_case": true
+  },
+  "fuel_price": {
+    "column_mapping": {
+      "i": "tech",
+      "r": "region",
+      "t": "year",
+      "Value": "fuel_price"
+    },
+    "description": "Fuel price per technology",
+    "fname": "fuel_price.csv",
+    "input": false,
+    "optional": false,
+    "units": "$/MMBtu",
+    "keep_case": true
+  },
+  "fuels": {
+    "column_mapping": {
+      "f": "fuel",
+      "i": "tech"
+    },
+    "description": "Fuel to technology mapping.",
+    "fname": "fuel2tech.csv",
+    "input": false,
+    "optional": false,
+    "keep_case": true
+  },
+  "heat_rate": {
+    "column_mapping": {
+      "i": "tech",
+      "r": "region",
+      "t": "year",
+      "v": "tech_vintage",
+      "Value": "heat_rate"
+    },
+    "description": "Heat rate per technology vintage.",
+    "fname": "heat_rate.csv",
+    "input": false,
+    "optional": false,
+    "units": "MMBTu/MWh",
+    "keep_case": true
+  },
+  "hierarchy": {
+    "column_mapping": {
+      "region": "transmission_region",
+      "r": "region",
+      "state": "state"
+    },
+    "description": "ReEDS region hierarchy.",
+    "fname": "hierarchy.csv",
+    "input": false,
+    "optional": false,
+    "keep_case": true
+  },
+  "hydro_cf": {
+    "column_mapping": {
+      "i": "tech",
+      "month": "month",
+      "r": "region",
+      "t": "year",
+      "Value": "hydro_cf"
+    },
+    "description": "Seasonal capacity factor for hydro technologies.",
+    "fname": "hydcf.csv",
+    "input": true,
+    "optional": false,
+    "keep_case": true
+  },
+  "ilr": {
+    "column_mapping": {
+      "i": "tech",
+      "value": "ilr"
+    },
+    "description": "Inverter-loading-ratio per technology.",
+    "fname": "ilr.csv",
+    "input": false,
+    "note": "Different from 1 for inverter-based technologies. 1 otherwise.",
+    "optional": false,
+    "units": "-",
+    "keep_case": true
+  },
+  "load": {
+    "description": "Load profile per ReEDS region.",
+    "fname": "load.h5",
+    "input": true,
+    "optional": false,
+    "units": "MW",
+    "keep_case": true
+  },
+  "online_capacity": {
+    "column_mapping": {
+      "i": "tech",
+      "r": "region",
+      "t": "year",
+      "v": "tech_vintage",
+      "Level": "active_power"
+    },
+    "description": "Online capacity in MW",
+    "fname": "cap_ivrt.csv",
+    "input": false,
+    "optional": true,
+    "units": "MW",
+    "keep_case": true
+  },
+  "planned_outages": {
+    "column_mapping": {
+      "i": "tech",
+      "Value": "planned_outage_rate"
+    },
+    "description": "Planned outages per technology.",
+    "fname": "planned_outage.csv",
+    "input": true,
+    "optional": true,
+    "units": "%",
+    "keep_case": true
+  },
+  "storage_duration": {
+    "column_mapping": {
+      "i": "tech",
+      "Value": "storage_duration"
+    },
+    "dtype": {
+      "duration": "float32"
+    },
+    "fname": "storage_duration.csv",
+    "input": false,
+    "optional": false,
+    "units": "h",
+    "keep_case": true
+  },
+  "storage_eff": {
+    "column_mapping": {
+      "i": "tech",
+      "t": "year",
+      "Value": "charge_efficiency"
+    },
+    "fname": "storage_eff.csv",
+    "input": false,
+    "optional": false,
+    "units": "%",
+    "keep_case": true
+  },
+  "tx_cap": {
+    "column_mapping": {
+      "r": "from_bus",
+      "rr": "to_bus",
+      "t": "year",
+      "trtype": "kind",
+      "Level": "max_active_power"
+    },
+    "fname": "tran_cap_energy.csv",
+    "units": "MW",
+    "keep_case": true
+  },
+  "tx_losses": {
+    "column_mapping": {
+      "r": "from_bus",
+      "rr": "to_bus",
+      "Value": "losses"
+    },
+    "fname": "tranloss.csv",
+    "input": false,
+    "optional": false,
+    "units": "%",
+    "keep_case": true
+  }
+}
