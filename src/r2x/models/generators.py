@@ -6,9 +6,10 @@ from pint import Quantity
 from pydantic import Field, NonNegativeFloat, field_serializer
 
 from r2x.enums import PrimeMoversType, StorageTechs, ThermalFuels
-from r2x.models.core import Device, InputOutput, MinMax, UpDown
+from r2x.models.core import Device
 from r2x.models.costs import HydroGenerationCost, RenewableGenerationCost, StorageCost, ThermalGenerationCost
 from r2x.models.load import PowerLoad
+from r2x.models.named_tuples import InputOutput, MinMax, UpDown
 from r2x.models.topology import ACBus
 from r2x.units import (
     ActivePower,
@@ -272,7 +273,7 @@ class HydroPumpedStorage(HydroGen):
             bus=ACBus.example(),
             prime_mover_type=PrimeMoversType.PS,
             storage_duration=Time(10, "h"),
-            storage_capacity=Energy(1000, "MWh"),
+            storage_capacity=UpDown(up=100, down=100),
             min_storage_capacity=Energy(10, "MWh"),
             pump_efficiency=Percentage(85, "%"),
             initial_volume=Energy(500, "MWh"),
