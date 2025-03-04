@@ -5,7 +5,8 @@ from typing import Annotated
 from infrasys.value_curves import InputOutputCurve
 from pydantic import Field, NonNegativeFloat, NonPositiveFloat
 
-from r2x.models.core import Device, FromTo_ToFrom, MinMax
+from r2x.models.core import Device
+from r2x.models.named_tuples import FromTo_ToFrom, MinMax
 from r2x.models.topology import ACBus, Arc, Area, DCBus
 from r2x.units import ActivePower, Percentage
 

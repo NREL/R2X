@@ -52,6 +52,7 @@ NESTED_ATTRIBUTES = {"ext", "bus", "services"}
 TIME_SERIES_PROPERTIES = ["Min Provision", "Static Risk"]
 DEFAULT_XML_TEMPLATE = "master_9.2R6_btu.xml"
 EXT_PROPERTIES = {"UoS Charge", "Fixed Load"}
+KEYS_TO_FLATTEN = {"active_power_limits", "active_power_flow_limits", "storage_capacity"}
 
 
 def cli_arguments(parser: ArgumentParser):
@@ -259,7 +260,10 @@ class PlexosExporter(BaseExporter):
             records,
             partial(apply_operation_cost),
             partial(apply_extract_key, key="ext", keys_to_extract=EXT_PROPERTIES),
-            partial(apply_flatten_key, keys_to_flatten={"active_power_limits", "active_power_flow_limits"}),
+            partial(
+                apply_flatten_key,
+                keys_to_flatten=KEYS_TO_FLATTEN,
+            ),
             partial(apply_property_map, property_map=property_map),
             partial(apply_pint_deconstruction, unit_map=self.default_units),
             partial(apply_valid_properties, valid_properties=collection_properties, add_name=True),

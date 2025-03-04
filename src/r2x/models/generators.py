@@ -6,9 +6,10 @@ from pint import Quantity
 from pydantic import Field, NonNegativeFloat, field_serializer
 
 from r2x.enums import PrimeMoversType, StorageTechs, ThermalFuels
-from r2x.models.core import Device, InputOutput, MinMax, UpDown
+from r2x.models.core import Device
 from r2x.models.costs import HydroGenerationCost, RenewableGenerationCost, StorageCost, ThermalGenerationCost
 from r2x.models.load import PowerLoad
+from r2x.models.named_tuples import InputOutput, MinMax, UpDown
 from r2x.models.topology import ACBus
 from r2x.units import (
     ActivePower,
@@ -244,8 +245,8 @@ class HydroPumpedStorage(HydroGen):
         Annotated[Energy, Field(gt=0, description="Initial water volume or percentage.")] | None
     ) = None
     storage_capacity: Annotated[
-        Energy,
-        Field(gt=0, description="Total water volume or percentage."),
+        UpDown,
+        Field(description="Total water volume or percentage."),
     ]
     min_storage_capacity: (
         Annotated[
@@ -272,7 +273,7 @@ class HydroPumpedStorage(HydroGen):
             bus=ACBus.example(),
             prime_mover_type=PrimeMoversType.PS,
             storage_duration=Time(10, "h"),
-            storage_capacity=Energy(1000, "MWh"),
+            storage_capacity=UpDown(up=100, down=100),
             min_storage_capacity=Energy(10, "MWh"),
             pump_efficiency=Percentage(85, "%"),
             initial_volume=Energy(500, "MWh"),
@@ -320,10 +321,6 @@ class Storage(Generator):
         ]
         | None
     ) = None
-    storage_capacity: Annotated[
-        Energy,
-        Field(description="Maximum allowed volume or state of charge."),
-    ]
     initial_energy: Annotated[Percentage, Field(description="Initial state of charge.")] | None = None
     min_storage_capacity: Annotated[Percentage, Field(description="Minimum state of charge")] = Percentage(
         0, "%"
@@ -331,6 +328,13 @@ class Storage(Generator):
     max_storage_capacity: Annotated[Percentage, Field(description="Minimum state of charge")] = Percentage(
         100, "%"
     )
+    storage_capacity: (
+        Annotated[
+            Energy,
+            Field(description="Total water volume or percentage."),
+        ]
+        | None
+    ) = None
 
 
 class EnergyReservoirStorage(Storage):
@@ -342,7 +346,7 @@ class EnergyReservoirStorage(Storage):
     discharge_efficiency: Annotated[Percentage, Field(ge=0, description="Discharge efficiency.")] | None = (
         None
     )
-    storage_level_limits: MinMax | None = None
+    storage_level_limits: MinMax = MinMax(min=0, max=1)
     initial_storage_capacity_level: float
     input_active_power_limits: MinMax
     output_active_power_limits: MinMax

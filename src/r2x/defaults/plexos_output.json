@@ -120,6 +120,8 @@
     "rating_up": "Max Flow",
     "startup_cost": "Start Cost",
     "storage_capacity": "Max Volume",
+    "storage_capacity_down": "Max Volume",
+    "storage_capacity_up": "Max Volume",
     "time_frame": "Timeframe",
     "voll": "VoLL",
     "vom_price": "VO&M Charge",

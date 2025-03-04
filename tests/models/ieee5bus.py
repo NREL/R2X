@@ -6,20 +6,22 @@ from infrasys.cost_curves import FuelCurve, UnitSystem
 from infrasys.function_data import LinearFunctionData
 from infrasys.time_series_models import SingleTimeSeries
 from infrasys.value_curves import InputOutputCurve
+
 from r2x.api import System
-from r2x.enums import PrimeMoversType, ThermalFuels, StorageTechs
+from r2x.enums import PrimeMoversType, StorageTechs, ThermalFuels
 from r2x.models import (
     ACBus,
     Area,
     EnergyReservoirStorage,
+    InputOutput,
     LoadZone,
+    MinMax,
     MonitoredLine,
     RenewableDispatch,
     ThermalStandard,
 )
 from r2x.models.costs import ThermalGenerationCost
 from r2x.units import Energy, Percentage, Time, ureg
-from r2x.models.core import MinMax, InputOutput
 
 
 def ieee5bus() -> System:

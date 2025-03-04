@@ -1,11 +1,12 @@
 """Models related to services."""
 
-from typing import Annotated, Any
+from typing import Annotated
 
-from pydantic import Field, NonNegativeFloat, PositiveFloat, field_serializer
+from pydantic import Field, NonNegativeFloat, PositiveFloat
 
 from r2x.enums import ReserveDirection, ReserveType
-from r2x.models.core import MinMax, Service
+from r2x.models.core import Service
+from r2x.models.named_tuples import MinMax
 from r2x.models.topology import LoadZone
 from r2x.units import Percentage
 
@@ -124,11 +125,6 @@ class TransmissionInterface(Service):
     def example(cls) -> "TransmissionInterface":
         return TransmissionInterface(
             name="ExampleTransmissionInterface",
-            active_power_flow_limits=MinMax(-100, 100),
+            active_power_flow_limits=MinMax(min=-100, max=100),
             direction_mapping={"line-01": 1, "line-02": -2},
         )
-
-    @field_serializer("active_power_flow_limits")
-    def serialize_active_power_limits(self, min_max: MinMax) -> dict[str, Any]:
-        if min_max is not None:
-            return {"min": min_max.min, "max": min_max.max}
