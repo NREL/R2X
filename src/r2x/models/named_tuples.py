@@ -25,3 +25,14 @@ class InputOutput(InfraSysBaseModel):
 class FromTo_ToFrom(InfraSysBaseModel):  # type: ignore  # noqa: N801
     from_to: float
     to_from: float
+
+
+class StartShut(InfraSysBaseModel):
+    startup: float | Quantity
+    shutdown: float | Quantity
+
+
+class StartTimeLimits(InfraSysBaseModel):
+    hot: float | Quantity
+    warm: float | Quantity
+    cold: float | Quantity

@@ -9,7 +9,7 @@ from r2x.enums import PrimeMoversType, StorageTechs, ThermalFuels
 from r2x.models.core import Device
 from r2x.models.costs import HydroGenerationCost, RenewableGenerationCost, StorageCost, ThermalGenerationCost
 from r2x.models.load import PowerLoad
-from r2x.models.named_tuples import InputOutput, MinMax, UpDown
+from r2x.models.named_tuples import InputOutput, MinMax, UpDown, StartShut, StartTimeLimits
 from r2x.models.topology import ACBus
 from r2x.units import (
     ActivePower,
@@ -308,7 +308,31 @@ class ThermalStandard(ThermalGen):
 
 
 class ThermalMultiStart(ThermalGen):
-    """We will fill this class once we have the need for it."""
+    """Class representing a MultiStart thermal generator."""
+
+    # TODO(jwright2): Enhance #146 Update to include more comprehensive treatment of ThermalMultiStart
+    # start_time_limits and start_types
+
+    status: bool = True
+    ramp_limits: UpDown | None = None
+    time_limits: UpDown | None = None
+    fuel: ThermalFuels = ThermalFuels.OTHER
+    power_trajectory: StartShut | None = None
+    start_time_limits: StartTimeLimits | None = None
+    start_types: int | None = None
+
+    @classmethod
+    def example(cls) -> "ThermalMultiStart":
+        return ThermalMultiStart(
+            name="ThermalMultiStart",
+            bus=ACBus.example(),
+            fuel=ThermalFuels.COAL,
+            active_power=100.0 * ureg.MW,
+            power_trajectory=StartShut(startup=4.0, shutdown=4.0),
+            start_time_limits=StartTimeLimits(hot=2.0, warm=6.0, cold=12.0),
+            start_types=1,
+            ext={"Additional data": "Additional value"},
+        )
 
 
 class Storage(Generator):
