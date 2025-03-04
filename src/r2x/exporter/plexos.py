@@ -191,7 +191,7 @@ class PlexosExporter(BaseExporter):
                     case ReserveType.FLEXIBILITY:
                         time_series_property["Min Provision"] = "0"
                     case ReserveType.REGULATION:
-                        time_series_property["Static Risk"] = "0"
+                        time_series_property["Min Provision"] = "0"
                     case _:
                         raise NotImplementedError(f"Reserve {component.type} not supported")
             case HydroDispatch():
