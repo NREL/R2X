@@ -38,20 +38,27 @@ from r2x.models import (
     EnergyReservoirStorage,
     Generator,
     HybridSystem,
+    HydroDispatch,
+    HydroEnergyReservoir,
     HydroGen,
+    HydroGenerationCost,
+    InputOutput,
     LoadZone,
+    MinMax,
     MonitoredLine,
     PowerLoad,
     RenewableDispatch,
+    RenewableGen,
+    RenewableGenerationCost,
     RenewableNonDispatch,
     Reserve,
     ReserveMap,
+    ThermalGen,
+    ThermalGenerationCost,
     TransmissionInterface,
     TransmissionInterfaceMap,
+    UpDown,
 )
-from r2x.models.core import InputOutput, MinMax
-from r2x.models.costs import HydroGenerationCost, RenewableGenerationCost, ThermalGenerationCost
-from r2x.models.generators import HydroDispatch, HydroEnergyReservoir, RenewableGen, ThermalGen
 from r2x.parser.handler import BaseParser, create_model_instance
 from r2x.units import ActivePower, EmissionRate, Energy, Percentage, Time, ureg
 from r2x.utils import get_enum_from_string, match_category, read_csv
@@ -273,7 +280,7 @@ class ReEDSParser(BaseParser):
                 self._create_model_instance(
                     TransmissionInterface,
                     name=interface_name,
-                    active_power_flow_limits=MinMax(-max_power_flow, max_power_flow),
+                    active_power_flow_limits=MinMax(min=-max_power_flow, max=max_power_flow),
                     direction_mapping={},  # TBD
                     ext={
                         "ramp_up": max_power_flow * ramp_multiplier * ureg.Unit("MW/min"),
@@ -473,6 +480,11 @@ class ReEDSParser(BaseParser):
                 row["input_active_power_limits"] = MinMax(min=0, max=row["active_power"].magnitude)
                 row["output_active_power_limits"] = MinMax(min=0, max=row["active_power"].magnitude)
                 row["efficiency"] = InputOutput(input=0.9, output=0.9)
+
+            if gen_model.__name__ == "HydroPumpedStorage":
+                row["storage_capacity"] = UpDown(
+                    up=row["storage_capacity"].magnitude, down=row["storage_capacity"].magnitude
+                )
 
             bus = self.system.get_component(ACBus, name=row["region"])
             row["bus"] = bus

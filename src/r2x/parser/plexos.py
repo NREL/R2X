@@ -39,25 +39,29 @@ from r2x.exceptions import ModelError, ParserError
 from r2x.exporter.utils import get_property_magnitude
 from r2x.models import (
     ACBus,
+    Area,
     Emission,
     EnergyReservoirStorage,
     Generator,
     HydroDispatch,
+    HydroGenerationCost,
+    HydroPumpedStorage,
+    InputOutput,
     LoadZone,
+    MinMax,
     MonitoredLine,
+    PowerLoad,
     RenewableGen,
+    RenewableGenerationCost,
     Reserve,
     ReserveMap,
     ThermalGen,
+    ThermalGenerationCost,
+    Transformer2W,
     TransmissionInterface,
     TransmissionInterfaceMap,
+    UpDown,
 )
-from r2x.models.branch import Transformer2W
-from r2x.models.core import InputOutput, MinMax
-from r2x.models.costs import HydroGenerationCost, RenewableGenerationCost, ThermalGenerationCost
-from r2x.models.generators import HydroPumpedStorage
-from r2x.models.load import PowerLoad
-from r2x.models.topology import Area
 from r2x.units import ureg
 from r2x.utils import get_enum_from_string, get_pint_unit, validate_string
 
@@ -870,6 +874,12 @@ class PlexosParser(PCMParser):
             mapped_records = self._set_unit_capacity(mapped_records)
             if model_map.__name__ == HydroPumpedStorage.__name__:
                 mapped_records = self._get_storage_objects_attached(object_id, mapped_records)
+
+                # NOTE: Some Plexos models mighy have different up and down capacities. We need to parse those
+                # at some point as well.
+                mapped_records["storage_capacity"] = UpDown(
+                    up=mapped_records["storage_capacity"], down=mapped_records["storage_capacity"]
+                )
             if mapped_records is None:
                 logger.trace("Skipping disabled generator {}", generator_name)
                 # When unit availability is not set, we skip the generator
@@ -1483,7 +1493,7 @@ class PlexosParser(PCMParser):
             if isinstance(active_power_max, SingleTimeSeries):
                 active_power_max = np.nanmax(active_power_max.data)
         active_power_limits_max = (active_power_max or record["base_power"]) * record["available"]
-        return MinMax(active_power_limits_min, active_power_limits_max)
+        return MinMax(min=active_power_limits_min, max=active_power_limits_max)
 
     def _plexos_table_data(self) -> list[tuple]:
         sql_query = files("plexosdb.queries").joinpath("simple_object_query.sql").read_text()
