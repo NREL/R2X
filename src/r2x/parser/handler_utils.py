@@ -1,10 +1,10 @@
 """Helper functions for base parser."""
 
+import os
 from pathlib import Path
 
 import h5py
 import pandas as pd
-import os
 import polars as pl
 from loguru import logger
 
@@ -109,15 +109,19 @@ def h5_handler(fpath, parser_class: str, **kwargs) -> pl.LazyFrame:
                     pd_df = pd.DataFrame(f["data"], columns=[col.decode("utf-8") for col in f["columns"]])
                 elif os.path.basename(fpath) == "load.h5":
                     # get index data
-                    index_year = f["index_year"][:]
-                    index_datetime = f["index_datetime"][:]
+                    index_year = f["index_year"][:] if "index_year" in f.keys() else f["index_0"][:]
+                    index_datetime = (
+                        f["index_datetime"][:] if "index_datetime" in f.keys() else f["index_1"][:]
+                    )
 
                     # get data in pandas format
                     pd_df = pd.DataFrame(f["data"], columns=[col.decode("utf-8") for col in f["columns"]])
 
                     # creating multi level index
+                    unique_year_sorted = sorted(set(index_year))
+                    unique_datetime_sorted = sorted(set(index_datetime))
                     multilevel_index = pd.MultiIndex.from_product(
-                        [index_year, index_datetime], names=["year", "datetime"]
+                        [unique_year_sorted, unique_datetime_sorted], names=["year", "datetime"]
                     )
 
                     # setting index then reseting
