@@ -14,7 +14,6 @@ from r2x.exporter.handler import get_exporter
 from .api import System
 from .config_scenario import Scenario, get_scenario_configuration
 from .exporter import exporter_list
-from .parser import parser_list
 from .parser.handler import BaseParser, get_parser_data
 from .upgrader import upgrade_handler
 from .utils import (
@@ -51,7 +50,38 @@ def run_parser(config: Scenario, **kwargs):
     if getattr(config, "upgrade", None):
         upgrade_handler(config.run_folder)
 
+    # Load plugins first to ensure any external parsers are registered
+    if config.plugins:
+        pm = pluggy.PluginManager("r2x_plugin")
+        pm.add_hookspecs(hookspec)
+
+        external_plugins = {
+            entry_point.name: entry_point
+            for entry_point in importlib.metadata.entry_points().select(group="r2x_plugin")
+        }
+
+        for plugin in config.plugins:
+            if plugin in external_plugins:
+                module = external_plugins[plugin].load()
+            else:
+                module = importlib.import_module(f".{plugin}", DEFAULT_PLUGIN_PATH)
+
+            pm.register(module)
+
+            # Call the register_parser hook if it exists
+            if hasattr(module, "register_parser"):
+                logger.debug(f"Calling register_parser hook for plugin {plugin}")
+                hook_results = pm.hook.register_parser()
+                for result in hook_results:
+                    if result and isinstance(result, dict):
+                        from r2x.parser import register_external_parser
+                        for parser_name, parser_class in result.items():
+                            logger.info(f"Registering external parser: {parser_name}")
+                            register_external_parser(parser_name, parser_class)
+
     # Initialize parser
+    from r2x.parser import parser_list
+    logger.debug(f"Available parsers: {list(parser_list.keys())}")
     parser_class = parser_list.get(config.input_model)
     if not parser_class:
         raise KeyError(f"Parser for {config.input_model} not found")
