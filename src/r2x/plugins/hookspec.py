@@ -20,3 +20,14 @@ def cli_arguments(parser: ArgumentParser):
 def update_system(config: Scenario, system: System, parser: BaseParser, kwargs: dict) -> System:
     """Update the system object."""
     pass
+
+@hooskpec
+def register_parser() -> dict:
+    """Register external parser implementations.
+
+    Returns
+    -------
+    dict
+        A dictionary mapping parser names to parser classes
+    """
+    pass
