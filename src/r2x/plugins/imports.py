@@ -6,6 +6,7 @@ on ReEDS.
 This plugin is only applicable for ReEDs, but could work with similarly arrange data
 """
 
+import pluggy
 from datetime import datetime, timedelta
 
 import polars as pl
@@ -20,10 +21,15 @@ from r2x.parser.handler import BaseParser
 from r2x.units import Energy
 
 
+hookimpl = pluggy.HookimplMarker("r2x_plugin")
+
+
+@hookimpl
 def update_system(
     config: Scenario,
     system: System,
-    parser: BaseParser | None = None,
+    parser: BaseParser | None,
+    kwargs: dict | None,
 ) -> System:
     """Apply an emission cap constraint for the system.
 
