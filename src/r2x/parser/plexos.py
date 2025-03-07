@@ -1638,7 +1638,7 @@ class PlexosParser(PCMParser):
             self._data_file_cache[path] = parsed_file
             self._data_file_column_types[path] = column_type
 
-        return parsed_file, path, column_type
+        return path, parsed_file, column_type
 
     def _data_file_handler(
         self,
