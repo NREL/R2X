@@ -302,8 +302,10 @@ def parse_ts_nymdpv(data_file):
 
 
 def parse_ts_nmdh(data_file):
-    data_file = data_file.melt(id_vars=["name", "month", "day"], variable_name="hour")
-    return data_file
+    output_data_file = data_file.melt(id_vars=["name", "month", "day"], variable_name="hour")
+    output_data_file = output_data_file.with_columns(pl.col("hour").cast(pl.Int8))
+    output_data_file = output_data_file.sort(["name", "month", "day", "hour"])
+    return output_data_file
 
 
 def parse_ts_ym(data_file):
