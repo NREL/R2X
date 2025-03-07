@@ -30,7 +30,7 @@
       "frac": "value"
     },
     "description": "fraction of annual imports that occur in each season",
-    "fname": "can_imports_szn_frac.csv",
+    "fname": "can_imports_quarter_frac.csv",
     "input": true,
     "optional": true,
     "units": "-"
