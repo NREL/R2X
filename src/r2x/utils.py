@@ -38,6 +38,7 @@ DEFAULT_SEARCH_FOLDERS = [
     "inputs_case",
     "outputs_perturb",
     "inputs_case/supplycurve_metadata",
+    "inputs_case/rep",
     ".",
 ]
 

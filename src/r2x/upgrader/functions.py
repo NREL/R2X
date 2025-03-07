@@ -130,6 +130,8 @@ def move_file(fpath: pathlib.Path, new_fpath: str | pathlib.Path) -> pathlib.Pat
     if not isinstance(new_fpath, pathlib.Path):
         new_fpath = fpath.parent.parent / new_fpath
 
+    os.makedirs(os.path.dirname(new_fpath), exist_ok=True)
+
     if os.path.exists(new_fpath):
         logger.debug(f"File {fpath.name} already exists in the right place.")
         return None
