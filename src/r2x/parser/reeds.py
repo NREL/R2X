@@ -28,7 +28,7 @@ from r2x.enums import (
     StorageTechs,
     ThermalFuels,
 )
-from r2x.exceptions import ParserError
+from r2x.exceptions import R2XParserError
 from r2x.models import (
     ACBus,
     Area,
@@ -461,7 +461,7 @@ class ReEDSParser(BaseParser):
                     f"Could not find a fuel and prime mover map for `{row['category']}`."
                     " Check `reeds_input_config.json`"
                 )
-                raise ParserError(msg)
+                raise R2XParserError(msg)
 
             row["prime_mover_type"] = (
                 get_enum_from_string(fuel_pm["type"], PrimeMoversType) if fuel_pm.get("type") else None

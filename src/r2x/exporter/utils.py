@@ -5,7 +5,7 @@ from collections.abc import Callable
 import copy
 from functools import wraps
 from r2x.enums import ReserveType, ReserveDirection
-from r2x.exceptions import FieldRemovalError
+from r2x.exceptions import R2XFieldRemovalError
 import pint
 from infrasys.base_quantity import BaseQuantity
 
@@ -40,7 +40,7 @@ def required_fields(*fields: str | list[str] | set):
             removed_fields = set(original_data.keys()) - set(result.keys())
             if removed_fields & set(fields):
                 removed_required = removed_fields & set(fields)
-                raise FieldRemovalError(
+                raise R2XFieldRemovalError(
                     f"Transformation {func.__name__} removed required fields: {removed_required}"
                 )
             return result

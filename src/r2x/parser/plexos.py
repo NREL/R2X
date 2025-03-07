@@ -34,7 +34,7 @@ from r2x.enums import (
     StorageTechs,
     ThermalFuels,
 )
-from r2x.exceptions import ModelError, ParserError
+from r2x.exceptions import R2XModelError, R2XParserError
 from r2x.exporter.utils import get_property_magnitude
 from r2x.models import (
     ACBus,
@@ -191,7 +191,7 @@ class PlexosParser(PCMParser):
         one_required = ["fuel_map", "device_map", "category_map"]
         if all(getattr(self, one_req, {}) == {} for one_req in one_required) and self.device_match_string:
             msg = f"At least one of {', or '.join(one_required)} is required to initialize PlexosParser"
-            raise ParserError(msg)
+            raise R2XParserError(msg)
 
         # Populate databse from XML file.
         # If xml file is not specified, check user_dict["fmap"]["xml_file"] or use
@@ -1352,7 +1352,7 @@ class PlexosParser(PCMParser):
         """Create a SQLite representation of the XML."""
         if model_name is None:
             msg = "Required model name not found. Parser requires a model to parse from the Plexos database"
-            raise ModelError(msg)
+            raise R2XModelError(msg)
         # self.db = PlexosSQLite(xml_fname=xml_fpath)
 
         logger.trace("Getting object_id for model={}", model_name)
@@ -1372,10 +1372,10 @@ class PlexosParser(PCMParser):
         if len(model_id) > 1:
             msg = f"Multiple models with the same {model_name} returned. Check database or spelling."
             logger.debug(model_id)
-            raise ModelError(msg)
+            raise R2XModelError(msg)
         if not model_id:
             msg = f"Model `{model_name}` not found on the XML. Check spelling of the `model_name`."
-            raise ParserError(msg)
+            raise R2XParserError(msg)
         self.model_id = model_id[0][0]  # Unpacking tuple [(model_id,)]
 
         # NOTE: When doing performance updates this query could get some love.
