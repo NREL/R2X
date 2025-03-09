@@ -265,6 +265,10 @@
       "fuel": "COAL",
       "type": "ST"
     },
+    "coalolduns_coal-ccs_mod": {
+      "fuel": "COAL",
+      "type": "ST"
+    },
     "csp": {
       "fuel": null,
       "type": "CP"
@@ -318,6 +322,10 @@
       "type": "CC"
     },
     "gas-cc-ccs_mod": {
+      "fuel": "NATURAL_GAS",
+      "type": "CC"
+    },
+    "gas-cc_gas-cc-ccs_mod": {
       "fuel": "NATURAL_GAS",
       "type": "CC"
     },
