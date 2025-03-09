@@ -106,11 +106,14 @@ def h5_handler(fpath, parser_class: str, **kwargs) -> pl.LazyFrame:
                 logger.info(f"Parsing h5 File: {fpath}")
                 # unique structure for recf versus load
                 if os.path.basename(fpath) == "recf.h5":
+                    index_datetime = (
+                        f["index_datetime"][:] if "index_datetime" in f.keys() else f["index_0"][:]
+                    )
                     pd_df = pd.DataFrame(
                         f["data"],
                         index=pd.Index(
                             pd.to_datetime(
-                                f["index_0"][:].astype(str),
+                                index_datetime.astype(str),
                             ),
                             name="datetime",
                         ),

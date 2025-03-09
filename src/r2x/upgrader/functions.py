@@ -379,7 +379,7 @@ def convert_hdf(fpath: pathlib.Path, compression_opts=4) -> None:
             index_names = pd.Index(original_h5.index.names)
             f.create_dataset("index_names", data=index_names, dtype=f"S{index_names.map(len).max()}")
         else:
-            f.create_dataset("index_datetime", data=original_h5.index.values, dtype=original_h5.index.dtype)
+            f.create_dataset("index_datetime", data=timeindex.str.encode("utf-8"), dtype="S30")
 
         f.create_dataset("columns", data=original_h5.columns, dtype=f"S{original_h5.columns.map(len).max()}")
 
