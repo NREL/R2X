@@ -615,7 +615,8 @@ class ReEDSParser(BaseParser):
             if profile_name not in cf_data.columns:
                 msg = (
                     f"{generator.__class__.__name__}:{generator.name} do not "
-                    "have a corresponding time series. Consider changing the model to `RenewableGen`"
+                    f"have a corresponding time series `{profile_name}`. "
+                    " Consider changing the model to `RenewableGen`"
                 )
                 logger.warning(msg)
                 continue
