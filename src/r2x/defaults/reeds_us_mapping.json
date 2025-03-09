@@ -26,11 +26,11 @@
   },
   "canada_szn_frac": {
     "column_mapping": {
-      "*quarter": "season",
-      "frac": "value"
+      "*szn": "season",
+      "frac_weighted": "value"
     },
     "description": "fraction of annual imports that occur in each season",
-    "fname": "can_imports_quarter_frac.csv",
+    "fname": "can_import_szn_frac.csv",
     "input": true,
     "optional": true,
     "units": "-"
