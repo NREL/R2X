@@ -2,7 +2,7 @@
 minhyd.csv,hydro_mingen.csv,,,,"melt,rename",
 reeds_ba_tz_map.csv,reeds_region_tz_map.csv,,,,rename,
 hydcfadj.csv,hydcapadj.csv,,,,rename,
-can_imports_szn_frac.csv,can_imports_quarter_frac.csv,"*quarter,frac",,,"apply_header,move_file","{'header': '*quarter,frac'}"
+can_imports_szn_frac.csv,,"*szn,frac_weighted",,,apply_header,
 can_imports.csv,,,r,,"set_index,melt","{'melt_id_vars':['r'], 'var_name': 't'}"
 storage_duration.csv,,"i,value",,outputs/storage_duration.csv,"apply_header,move_file",
 storage_eff.csv,,,,outputs/storage_eff.csv,move_file,
