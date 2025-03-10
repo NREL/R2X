@@ -5,6 +5,7 @@ import importlib
 import os
 
 from .__version__ import __version__
+from .plugin_manager import plugin_manager
 
 FILES_WITH_ARGS = [
     "r2x.plugins.pcm_defaults",
@@ -82,17 +83,7 @@ def get_additional_arguments(
             pm.hook.cli_arguments(parser=script_cli_group)
             pm.unregister(package_script)
 
-    # External Plugins
-    for entry_point in importlib.metadata.entry_points().select(group="r2x_plugin"):
-        try:
-            module = entry_point.load()
-            pm.register(module)
-            script_cli_group = parser.add_argument_group(f"PLUGINS: {entry_point.name}")
-            pm.hook.cli_arguments(parser=script_cli_group)
-            pm.unregister(module)
 
-        except ImportError:
-            continue
 
     return parser
 
@@ -137,15 +128,11 @@ def base_cli() -> argparse.ArgumentParser:
         dest="name",
         help="Scenario name",
     )
+
     group_cli.add_argument(
         "--input-model",
         dest="input_model",
-        choices=[
-            "plexos",
-            "reeds-US",
-            "plexos",
-            "infrasys",
-        ],
+        choices=plugin_manager.registered_parsers,
         help="Input model to convert from",
     )
     group_cli.add_argument(
