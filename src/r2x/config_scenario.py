@@ -158,6 +158,7 @@ class Scenario:
         """Create Scenario instance from key arguments."""
         cls_fields = {field for field in inspect.signature(cls).parameters}
 
+        breakpoint()
         input_model_enum = get_enum_from_string(input_model, Models)
         input_config = get_model_config_class(input_model_enum)
 
