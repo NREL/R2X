@@ -2,33 +2,33 @@
 # ruff: noqa: D101
 
 
-class DuplicateUUIDError(Exception):
+class R2XDuplicateUUIDError(Exception):
     pass
 
 
-class DuplicateNameError(Exception):
+class R2XDuplicateNameError(Exception):
     pass
 
 
-class NotFoundError(Exception):
+class R2XNotFoundError(Exception):
     pass
 
 
-class MultlipleElementsError(Exception):
+class R2XMultlipleElementsError(Exception):
     pass
 
 
-class ModelError(Exception):
+class R2XModelError(Exception):
     pass
 
 
-class MultipleFilesError(Exception):
+class R2XMultipleFilesError(Exception):
     pass
 
 
-class ParserError(Exception):
+class R2XParserError(Exception):
     pass
 
 
-class FieldRemovalError(Exception):
+class R2XFieldRemovalError(Exception):
     pass
