@@ -41,6 +41,7 @@ def test_system_creation(reeds_parser_instance):
 
 def test_construct_generators(reeds_parser_instance):
     reeds_parser_instance.system = System(name="Test", auto_add_composed_components=True)
+    reeds_parser_instance._check_solve_year()
     reeds_parser_instance._construct_buses()
     reeds_parser_instance._construct_reserves()
     reeds_parser_instance._construct_generators()
