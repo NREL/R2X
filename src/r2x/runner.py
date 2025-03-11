@@ -10,17 +10,15 @@ from .plugins import hookspec
 from loguru import logger
 
 from r2x.exporter.handler import get_exporter
+from r2x.plugin_manager import manager as pm
 
 from .api import System
 from .config_scenario import Scenario, get_scenario_configuration
-from .exporter import exporter_list
 from .parser.handler import BaseParser, get_parser_data
 from .upgrader import upgrade_handler
 from .utils import (
     DEFAULT_PLUGIN_PATH,
 )
-
-from .plugin_manager import plugin_manager as pm
 
 def run_parser(config: Scenario, **kwargs):
     """Call get parser for parser selected.
@@ -116,7 +114,7 @@ def run_plugins(config: Scenario, parser: BaseParser, system: System) -> System:
 def run_exporter(config: Scenario, system: System) -> None:
     """Create exporter model."""
     assert config.output_model
-    exporter_class = exporter_list.get(config.output_model, None)
+    exporter_class = pm.load_exporter(config.output_model)
     if not exporter_class:
         raise KeyError(f"Exporter for {config.output_model} not found")
 

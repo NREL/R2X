@@ -5,7 +5,7 @@ import importlib
 import os
 
 from .__version__ import __version__
-from .plugin_manager import plugin_manager
+from r2x.plugin_manager import manager as pm
 
 FILES_WITH_ARGS = [
     "r2x.plugins.pcm_defaults",
@@ -129,13 +129,13 @@ def base_cli() -> argparse.ArgumentParser:
     group_cli.add_argument(
         "--input-model",
         dest="input_model",
-        choices=plugin_manager.registered_parsers,
+        choices=[model for model in pm.registered_input_models.keys()],
         help="Input model to convert from",
     )
     group_cli.add_argument(
         "--output-model",
         dest="output_model",
-        choices=["plexos", "sienna", "infrasys"],
+        choices=[model for model in pm.registered_output_models.keys()],
         help="Output model to convert to",
     )
     group_cli.add_argument(

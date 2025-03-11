@@ -1,5 +1,14 @@
 import importlib.metadata
 import inspect
+from typing import Dict, TypeVar, Union, Any
+
+#from r2x.parser.handler import BaseParser
+#from r2x.exporter.handler import BaseExporter
+#from r2x.config_models import BaseModelConfig
+ParserClass = TypeVar('ParserClass', bound='BaseParser')
+ExporterClass = TypeVar('ExporterClass', bound='BaseExporter')
+ModelClass = TypeVar("ModelClass", bound='BaseModelConfig')
+
 
 def find_subclasses(module_name:str, base_class):
     """
@@ -35,7 +44,8 @@ def find_subclasses(module_name:str, base_class):
         return []
 
 # Using with entry points
-def find_subclasses_from_entry_points(group_name: str, base_class):
+# TODO what if this returns multiple valid classes.
+def find_subclasses_from_entry_points(group_name: str, base_class) -> Dict[str, Any]:
     """
     Find subclasses from entry points with a specific group name.
 
@@ -66,12 +76,10 @@ def find_subclasses_from_entry_points(group_name: str, base_class):
                     results[ep.name] = loaded
             # If it's a module, inspect its classes
             elif inspect.ismodule(loaded):
-                classes = [
-                    obj for name, obj in inspect.getmembers(loaded, inspect.isclass)
-                    if issubclass(obj, base_class) and obj != base_class
-                ]
-                if classes:
-                    results[ep.name] = classes
+
+                for name, obj in inspect.getmembers(loaded, inspect.isclass):
+                    if issubclass(obj, base_class) and obj != base_class:
+                        results[name] = obj
 
         except Exception as e:
             print(f"Error loading entry point {ep.name}: {e}")

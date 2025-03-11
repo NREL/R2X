@@ -5,7 +5,6 @@ It can either read the information directly or throught a cases file.
 """
 
 from dataclasses import field
-from enum import StrEnum
 from typing import Any, TypeVar
 
 from pydantic import BaseModel
@@ -108,38 +107,3 @@ class InfrasysConfig(BaseModelConfig):
             },
             SiennaConfig: {"model_year": "reference_year"},
         }
-
-
-class Models(StrEnum):
-    """Enum of valid models supported."""
-
-    INFRASYS = "INFRASYS"
-    REEDS = "REEDS-US"
-    PLEXOS = "PLEXOS"
-    SIENNA = "SIENNA"
-    PRAS = "PRAS"
-
-
-class ParserModels(StrEnum):
-    """Enum of valid parser models supported."""
-
-    INFRASYS = "INFRASYS"
-    REEDS = "REEDS-US"
-    PLEXOS = "PLEXOS"
-    SIENNA = "SIENNA"
-
-
-class ExporterModels(StrEnum):
-    """Enum of valid exporter models supported."""
-
-    PLEXOS = "PLEXOS"
-    SIENNA = "SIENNA"
-    INFRASYS = "INFRASYS"
-
-
-MODEL_CONFIGS = {
-    Models.REEDS: ReEDSConfig,
-    Models.PLEXOS: PlexosConfig,
-    Models.SIENNA: SiennaConfig,
-    Models.INFRASYS: InfrasysConfig,
-}
