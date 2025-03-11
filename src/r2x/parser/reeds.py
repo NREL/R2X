@@ -158,25 +158,17 @@ class ReEDSParser(BaseParser):
                 )
             )
 
-    def _check_solve_year(self):
-        self.reeds_config = self.config.input_config
+    def _check_solve_year(self) -> bool:
         solve_year = self.reeds_config.solve_year
-        if not solve_year:
-            raise AttributeError("Missing solve year from the configuration class.")
-
-        base_folder = self.config.run_folder
-        input_folder = "inputs_case"
-        modeled_years = "modeledyears.csv"
-
-        modeled_years_file = base_folder / input_folder / modeled_years
+        modeled_years_file = self.reeds_config.fmap["years"]["fname"]
         solve_years_csv = pd.read_csv(modeled_years_file)
-        years = list(solve_years_csv.columns)
-        years_int = [int(x) for x in years]
+        years = [int(x) for x in list(solve_years_csv.columns)]
 
-        if solve_year not in years_int:
-            raise FileNotFoundError(f"Solve year not found in {modeled_years} file.")
-        else:
-            logger.info(f"Solve year found in {modeled_years} file.")
+        if solve_year not in years:
+            raise FileNotFoundError("Solve year not found in {} file.", modeled_years_file)
+
+        logger.debug("Solve year {} found in {} file.", solve_year, modeled_years_file)
+        return True
 
     def _construct_reserves(self):
         logger.info("Creating reserves objects.")
