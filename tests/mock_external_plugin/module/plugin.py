@@ -1,12 +1,12 @@
 from pluggy import HookimplMarker
 from argparse import ArgumentParser
 from loguru import logger
-from pydantic import Base64Str
+from r2x.config_models import BaseModel
+from r2x.parser.handler import BaseParser
 
 from r2x.api import System
 from r2x.config_scenario import Scenario
-from r2x.parser.handler import BaseParser
-from r2x.parser.reeds import ReEDSParser
+
 
 hookimpl = HookimplMarker("r2x_plugin")
 
@@ -25,6 +25,7 @@ class TestExternalParser(BaseParser):
 
     def __init__(self, *args, **kwargs):
         logger.info("👋 Initializing TestExternalParser - this is the external parser plugin")
+        from r2x.parser.reeds import ReEDSParser
         self.reeds = ReEDSParser(*args, **kwargs)
         #super().__init__(*args, **kwargs)
 

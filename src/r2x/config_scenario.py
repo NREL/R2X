@@ -15,11 +15,10 @@ import rich
 from loguru import logger
 from rich.table import Table
 
-from r2x.config_utils import get_input_defaults, get_model_config_class, get_output_defaults
-from r2x.utils import get_enum_from_string, override_dict
 
-from .config_models import BaseModelConfig, Models
+from r2x.utils import override_dict
 
+from .config_models import BaseModelConfig
 
 @dataclass
 class Scenario:
@@ -119,14 +118,14 @@ class Scenario:
         return None
 
     def _load_model_config(self) -> None:
-        if self.input_model:
-            self._input_model_enum = get_enum_from_string(self.input_model, Models)
-            self.input_config = get_model_config_class(self._input_model_enum)
-            self.input_config.defaults = get_input_defaults(self._input_model_enum)
+        from r2x.plugin_manager import manager as pm
+        if self.input_model:            
+            self.input_config = pm.get_model_config_class(self.input_model)            
+            self.input_config.defaults = pm.get_model_input_defaults(self.input_model)
         if self.output_model:
-            self._output_model_enum = get_enum_from_string(self.output_model, Models)
-            self.output_config = get_model_config_class(self._output_model_enum)
-            self.output_config.defaults = get_output_defaults(self._output_model_enum)
+
+            self.output_config = pm.get_model_config_class(self.output_model)
+            self.output_config.defaults = pm.get_model_output_defaults(self.output_model)
         return None
 
     def info(self) -> None:
@@ -158,12 +157,9 @@ class Scenario:
         """Create Scenario instance from key arguments."""
         cls_fields = {field for field in inspect.signature(cls).parameters}
 
-        breakpoint()
-        input_model_enum = get_enum_from_string(input_model, Models)
-        input_config = get_model_config_class(input_model_enum)
-
-        output_model_enum = get_enum_from_string(output_model, Models)
-        output_config = get_model_config_class(output_model_enum)
+        from r2x.plugin_manager import manager as pm
+        input_config = pm.get_model_config_class(input_model)
+        output_config = pm.get_model_config_class(output_model)
 
         input_config_fields = {
             field for field in input_config.model_fields if field not in input_config.model_fields_set
