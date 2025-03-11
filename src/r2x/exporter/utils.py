@@ -2,10 +2,7 @@
 
 from typing import Any
 from collections.abc import Callable
-import copy
-from functools import wraps
 from r2x.enums import ReserveType, ReserveDirection
-from r2x.exceptions import FieldRemovalError
 import pint
 from infrasys.base_quantity import BaseQuantity
 
@@ -25,29 +22,6 @@ def get_reserve_type(
         ReserveDirection[reserve_types["default"]["direction"]],
         reserve_types,
     )
-
-
-def required_fields(*fields: str | list[str] | set):
-    """Specify required fields for the transformation."""
-
-    def decorator(
-        func: Callable,
-    ) -> Callable:
-        @wraps(func)
-        def wrapper(component_data, *args, **kwargs):
-            original_data = copy.deepcopy(component_data)
-            result = func(component_data)
-            removed_fields = set(original_data.keys()) - set(result.keys())
-            if removed_fields & set(fields):
-                removed_required = removed_fields & set(fields)
-                raise FieldRemovalError(
-                    f"Transformation {func.__name__} removed required fields: {removed_required}"
-                )
-            return result
-
-        return wrapper
-
-    return decorator
 
 
 def compose(
