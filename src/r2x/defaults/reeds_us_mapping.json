@@ -27,10 +27,10 @@
   "canada_szn_frac": {
     "column_mapping": {
       "*szn": "season",
-      "frac": "value"
+      "frac_weighted": "value"
     },
     "description": "fraction of annual imports that occur in each season",
-    "fname": "can_imports_szn_frac.csv",
+    "fname": "can_import_szn_frac.csv",
     "input": true,
     "optional": true,
     "units": "-"
@@ -500,7 +500,6 @@
   "years": {
     "column_mapping": {},
     "fname": "modeledyears.csv",
-    "input": true,
-    "optional": true
+    "use_filter_functions": false
   }
 }

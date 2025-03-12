@@ -4,7 +4,7 @@ from plexosdb.sqlite import PlexosSQLite
 
 from r2x.api import System
 from r2x.config_scenario import Scenario
-from r2x.exceptions import ParserError
+from r2x.exceptions import R2XParserError
 from r2x.parser.handler import get_parser_data
 from r2x.parser.plexos import PlexosParser
 from r2x.models import Generator
@@ -87,7 +87,7 @@ def test_parser_system(pjm_scenario):
     }
     pjm_scenario.input_config.model_name = "model_2012"
 
-    with pytest.raises(ParserError):
+    with pytest.raises(R2XParserError):
         parser = get_parser_data(pjm_scenario, parser_class=PlexosParser)
 
     pjm_scenario.input_config.defaults["plexos_category_map"] = plexos_category_map

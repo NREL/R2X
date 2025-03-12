@@ -34,7 +34,7 @@ from r2x.enums import (
     StorageTechs,
     ThermalFuels,
 )
-from r2x.exceptions import ModelError, ParserError
+from r2x.exceptions import R2XModelError, R2XParserError
 from r2x.exporter.utils import get_property_magnitude
 from r2x.models import (
     ACBus,
@@ -191,7 +191,7 @@ class PlexosParser(PCMParser):
         one_required = ["fuel_map", "device_map", "category_map"]
         if all(getattr(self, one_req, {}) == {} for one_req in one_required) and self.device_match_string:
             msg = f"At least one of {', or '.join(one_required)} is required to initialize PlexosParser"
-            raise ParserError(msg)
+            raise R2XParserError(msg)
 
         # Populate databse from XML file.
         # If xml file is not specified, check user_dict["fmap"]["xml_file"] or use
@@ -224,6 +224,7 @@ class PlexosParser(PCMParser):
             datetime(self.year, 1, 1), datetime(self.year + 1, 1, 1), interval="1h", eager=True, closed="left"
         ).to_frame("datetime")
         self._data_file_cache: dict[Path, pl.DataFrame] = {}
+        self._data_file_column_types: dict[Path, DATAFILE_COLUMNS] = {}
 
         return
 
@@ -469,6 +470,12 @@ class PlexosParser(PCMParser):
                 mapped_records["emission_type"] = EmissionType.OTHER
 
             gen_component = self.system.list_components_by_name(Generator, generator_name)
+
+            # If there is not gen_component at this point it means the generator is not activated on the model
+            # or we could not parse it.
+            if not gen_component:
+                continue
+
             assert len(gen_component) == 1
             gen_component = gen_component[0]
             valid_fields, _ = field_filter(mapped_records, default_model.model_fields)
@@ -915,6 +922,11 @@ class PlexosParser(PCMParser):
                 ts_dict = {"solve_year": self.year}
                 for ts_name, ts in ts_fields.items():
                     ts.variable_name = ts_name
+
+                    # NOTE: This is fix to avoid mismatch with unit registry for custom units.
+                    if isinstance(ts.data, Quantity):
+                        # ts_dict["units"] = str(ts.data.units)
+                        ts.data = ts.data.magnitude
                     self.system.add_time_series(ts, generator, **ts_dict)
         return
 
@@ -1340,7 +1352,7 @@ class PlexosParser(PCMParser):
         """Create a SQLite representation of the XML."""
         if model_name is None:
             msg = "Required model name not found. Parser requires a model to parse from the Plexos database"
-            raise ModelError(msg)
+            raise R2XModelError(msg)
         # self.db = PlexosSQLite(xml_fname=xml_fpath)
 
         logger.trace("Getting object_id for model={}", model_name)
@@ -1360,10 +1372,10 @@ class PlexosParser(PCMParser):
         if len(model_id) > 1:
             msg = f"Multiple models with the same {model_name} returned. Check database or spelling."
             logger.debug(model_id)
-            raise ModelError(msg)
+            raise R2XModelError(msg)
         if not model_id:
             msg = f"Model `{model_name}` not found on the XML. Check spelling of the `model_name`."
-            raise ParserError(msg)
+            raise R2XParserError(msg)
         self.model_id = model_id[0][0]  # Unpacking tuple [(model_id,)]
 
         # NOTE: When doing performance updates this query could get some love.
@@ -1596,20 +1608,37 @@ class PlexosParser(PCMParser):
                     self.system.add_time_series(max_active_power, load, **ts_dict)
         return
 
-    def _data_file_reader(self, fpath_str, csv_file_encoding="utf8"):
-        if encoding := self.config.feature_flags.get("csv_file_encoding"):
-            csv_file_encoding = encoding
-
+    def _data_file_reader(self, fpath_str: str, csv_file_encoding="utf8"):
         path = self.run_folder / Path(fpath_str)
         if "\\" in fpath_str:
             path = self.run_folder / PureWindowsPath(fpath_str)
 
+        if path in self._data_file_cache:
+            return path, self._data_file_cache[path], self._data_file_column_types[path]
+
+        if encoding := self.config.feature_flags.get("csv_file_encoding"):
+            csv_file_encoding = encoding
+
+        data_file = csv_handler(path, csv_file_encoding=csv_file_encoding)
+
+        column_type: DATAFILE_COLUMNS | None = get_column_enum(data_file.columns)
+        if column_type is None:
+            msg = f"Could not parse {path}. Time series format {data_file.columns=} not yet supported."
+            raise NotImplementedError(msg)
+
+        parsed_file = parse_data_file(column_type, data_file)
+
+        if "year" in parsed_file.columns:
+            parsed_file = pl_filter_year(parsed_file, year=self.year)
+
+            if parsed_file.is_empty():
+                logger.warning("No time series data specified for year filter. Year passed {}", self.year)
+
         if path not in self._data_file_cache:
-            data_file = csv_handler(path, csv_file_encoding=csv_file_encoding)
-            self._data_file_cache[path] = data_file
-        else:
-            data_file = self._data_file_cache.get(path)
-        return data_file, path
+            self._data_file_cache[path] = parsed_file
+            self._data_file_column_types[path] = column_type
+
+        return path, parsed_file, column_type
 
     def _data_file_handler(
         self,
@@ -1621,14 +1650,14 @@ class PlexosParser(PCMParser):
     ):
         """Read time varying data from a data file."""
         assert isinstance(self.year, int)
+        path, parsed_file, column_type = self._data_file_reader(fpath_str)
 
-        data_file, path = self._data_file_reader(fpath_str)
-        column_type = get_column_enum(data_file.columns)
-        if column_type is None:
-            msg = f"Time series format {data_file.columns=} not yet supported."
-            raise NotImplementedError(msg)
+        if "name" in parsed_file.columns:
+            cols = [col.lower() for col in [record_name, property_name, variable_name] if col]
+            parsed_file = parsed_file.filter(pl.col("name").str.to_lowercase().is_in(cols))
 
-        parsed_file = self._parse_data_file(data_file, record_name, property_name, column_type, variable_name)
+        if record_name in parsed_file.columns:
+            parsed_file = parsed_file.fiter(pl.col(record_name))
 
         if parsed_file.is_empty():
             msg = "Could not find record_name = {} or property_name = {} in fpath = {}. Check data file."
@@ -1689,6 +1718,7 @@ class PlexosParser(PCMParser):
             column_type == DATAFILE_COLUMNS.TS_YMDH
             or column_type == DATAFILE_COLUMNS.TS_NMDH
             or column_type == DATAFILE_COLUMNS.TS_NMCDH
+            or column_type == DATAFILE_COLUMNS.TS_NYMDH
         ):
             columns_to_check.append("hour")
         if column_type == DATAFILE_COLUMNS.TS_NM or column_type == DATAFILE_COLUMNS.TS_NMCDH:
@@ -1696,33 +1726,6 @@ class PlexosParser(PCMParser):
         if column_type == DATAFILE_COLUMNS.TS_NMCDH:
             columns_to_check.append("day")
         return columns_to_check
-
-    def _parse_data_file(
-        self,
-        data_file,
-        record_name: str,
-        property_name: str,
-        column_type: DATAFILE_COLUMNS,
-        variable_name: str | None = None,
-    ) -> pl.DataFrame:
-        """Parse and filter data based on record and property names."""
-        assert isinstance(self.year, int)
-        parsed_file = parse_data_file(column_type, data_file)
-
-        if "year" in parsed_file.columns:
-            parsed_file = pl_filter_year(parsed_file, year=self.year)
-
-            if parsed_file.is_empty():
-                logger.warning("No time series data specified for year filter. Year passed {}", self.year)
-
-        if "name" in parsed_file.columns:
-            cols = [col.lower() for col in [record_name, property_name, variable_name] if col]
-            parsed_file = parsed_file.filter(pl.col("name").str.to_lowercase().is_in(cols))
-
-        if record_name in parsed_file.columns:
-            parsed_file = parsed_file.fiter(pl.col(record_name))
-
-        return parsed_file
 
     def _get_single_value(
         self,

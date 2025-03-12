@@ -29,7 +29,7 @@ from r2x.enums import (
     StorageTechs,
     ThermalFuels,
 )
-from r2x.exceptions import ParserError
+from r2x.exceptions import R2XParserError
 from r2x.models import (
     ACBus,
     Area,
@@ -112,7 +112,21 @@ class ReEDSParser(BaseParser):
 
     def build_system(self) -> System:
         """Create IS system for the ReEDS model."""
-        self.system = System(name=self.config.name, auto_add_composed_components=True)
+        self.system = System(
+            name=self.config.name,
+            auto_add_composed_components=True,
+            description=(
+                f"ReEDS translation for {self.reeds_config.solve_year=} and {self.reeds_config.weather_year=}"
+            ),
+        )
+
+        solve_year_found = self._check_solve_year()
+        if not solve_year_found:
+            msg = (
+                "Solve year not found on scenario. "
+                f"Select one of the available modeled years = {self.solve_years}"
+            )
+            raise R2XParserError(msg)
 
         # Construct transmission network and buses
         self._construct_buses()
@@ -133,6 +147,15 @@ class ReEDSParser(BaseParser):
         self._construct_hybrid_systems()
 
         return self.system
+
+    def _check_solve_year(self) -> bool:
+        solve_years = self.get_data("years")
+        years = list(solve_years.columns)
+        years_int = [int(x) for x in years]
+        self.solve_years = years_int
+        if self.reeds_config.solve_year not in years_int:
+            return False
+        return True
 
     # NOTE: Rename to create topology
     def _construct_buses(self):
@@ -474,7 +497,7 @@ class ReEDSParser(BaseParser):
                     f"Could not find a fuel and prime mover map for `{row['category']}`."
                     " Check `reeds_input_config.json`"
                 )
-                raise ParserError(msg)
+                raise R2XParserError(msg)
 
             row["prime_mover_type"] = (
                 get_enum_from_string(fuel_pm["type"], PrimeMoversType) if fuel_pm.get("type") else None
@@ -628,7 +651,8 @@ class ReEDSParser(BaseParser):
             if profile_name not in cf_data.columns:
                 msg = (
                     f"{generator.__class__.__name__}:{generator.name} do not "
-                    "have a corresponding time series. Consider changing the model to `RenewableGen`"
+                    f"have a corresponding time series `{profile_name}`. "
+                    " Consider changing the model to `RenewableGen`"
                 )
                 logger.warning(msg)
                 continue

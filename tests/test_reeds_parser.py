@@ -6,6 +6,7 @@ from r2x.config_scenario import Scenario
 from r2x.models import MonitoredLine, Emission, Generator, PowerLoad
 from r2x.parser.handler import get_parser_data
 from r2x.parser.reeds import ReEDSParser
+from r2x.exceptions import R2XParserError
 
 
 @pytest.fixture
@@ -37,6 +38,19 @@ def test_parser_has_data(reeds_parser_instance):
 def test_system_creation(reeds_parser_instance):
     system = reeds_parser_instance.build_system()
     assert isinstance(system, System)
+
+
+def test_r2x_parser_error(reeds_parser_instance):
+    reeds_parser_instance.system = System(name="Test", auto_add_composed_components=True)
+    reeds_parser_instance._construct_buses()
+    reeds_parser_instance._construct_reserves()
+
+    reeds_parser_instance.tech_to_fuel_pm = {
+        key: None for key, value in reeds_parser_instance.tech_to_fuel_pm.items()
+    }
+
+    with pytest.raises(R2XParserError):
+        reeds_parser_instance._construct_generators()
 
 
 def test_construct_generators(reeds_parser_instance):

@@ -253,11 +253,19 @@
       "fuel": "COAL",
       "type": "ST"
     },
+    "coal-new_coal-ccs_mod": {
+      "fuel": "COAL",
+      "type": "ST"
+    },
     "coaloldscr": {
       "fuel": "COAL",
       "type": "ST"
     },
     "coalolduns": {
+      "fuel": "COAL",
+      "type": "ST"
+    },
+    "coalolduns_coal-ccs_mod": {
       "fuel": "COAL",
       "type": "ST"
     },
@@ -314,6 +322,10 @@
       "type": "CC"
     },
     "gas-cc-ccs_mod": {
+      "fuel": "NATURAL_GAS",
+      "type": "CC"
+    },
+    "gas-cc_gas-cc-ccs_mod": {
       "fuel": "NATURAL_GAS",
       "type": "CC"
     },
