@@ -390,54 +390,63 @@ def clean_folder(path) -> None:
 
 
 def check_file_exists(
-    fname: str, run_folder: str | os.PathLike, optional: bool = False, folder: str | None = None
+    fname: str, run_folder: str | os.PathLike, folder: str | None = None
 ) -> os.PathLike | None:
     """Return file path for a given filename if exists in folders.
 
-    If it does not exists and is mandatory, it raises an FileNotFoundError
+    1. Check directly in the specified folder if provided
+    2. Check in run_folder + folder if folder is provided
+    3. Try default search locations as a fallbacks mandatory,
 
-    Args:
-        fname: Filename with extension of the desired file
-        run_folder: Base folder of the run
-        folders: Root folder name to start looking. Default: run_folder
-        default_folders: Default location to look for files
-        mandatory: Flag to identify needed files
-
+    Parameters
+    ----------
+    fname : str
+        Filename with extension to find
+    run_folder : str or os.PathLike[str]
+        Base folder path
+    optional : bool, default=False
+        If True, return None when file not found instead of raising error
+    folder : str or None, default=None
+        Specific subfolder to check within run_folder
     Returns
     -------
         fpath or None
     """
     run_folder = Path(run_folder)
-    # Set run_folder as default folder to look
     if folder:
-        search_paths = [run_folder / folder]
-    else:
-        search_paths = [run_folder / folder for folder in DEFAULT_SEARCH_FOLDERS]
+        target_path = run_folder / folder / fname
+        if target_path.exists():
+            logger.trace("File {} found at {}", fname, target_path)
+            return target_path
 
-    file_matches = []
-    for search_path in search_paths:
-        if search_path.is_file():
-            file_matches.append(search_path)
-        for fpath in search_path.glob(fname):  # Rglob search recursively
-            if fpath.name == fname:
-                logger.trace("File '{}' found in {}", fname, fpath.parent)
-                file_matches.append(fpath)
+    search_folders = [folder] if folder else DEFAULT_SEARCH_FOLDERS
+    file_match = None
+    for search_folder in search_folders:
+        target_path = run_folder / search_folder / fname
+        if target_path.exists() and target_path.is_file():
+            logger.trace("File {} found at {}", fname, target_path.parent)
+            file_match = target_path
+            break
 
-    if len(file_matches) > 1:
-        msg = (
-            f"Multiple files found for {fname}. Returning first match. "
-            f"Check for copies of the files in the {file_matches}"
-        )
-        logger.warning(msg)
+    # If we still do not find the file we try to recurse
+    if not file_match:
+        search_paths = [run_folder / search_folder for search_folder in search_folders]
+        for search_path in search_paths:
+            if not search_path.exists():
+                continue
 
-    if not optional and not file_matches:
-        raise FileNotFoundError(f"Mandatory file '{fname}' not found in {search_paths}.")
-    elif not file_matches:
-        logger.warning(f"File: '{fname}' not found in {search_paths}.")
-        return None
-
-    match = file_matches[0]
-    return match
+            matches = list(search_path.glob(f"**/{fname}"))
+            if matches:
+                file_match = matches[0]
+                if len(matches) > 1:
+                    logger.warning(
+                        f"Multiple files found for {fname}. Using {file_match}. "
+                        f"Check for duplicates in: {[str(m) for m in matches]}"
+                    )
+                break
+    if not file_match:
+        logger.trace("File {} could not be found.", fname)
+    return file_match
 
 
 def get_csv(fpath: str, fname: str, fmap: dict[str, str | dict | list] = {}, **kwargs) -> None | pd.DataFrame:

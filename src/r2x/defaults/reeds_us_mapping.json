@@ -500,7 +500,6 @@
   "years": {
     "column_mapping": {},
     "fname": "modeledyears.csv",
-    "input": true,
-    "optional": true
+    "use_filter_functions": false
   }
 }
