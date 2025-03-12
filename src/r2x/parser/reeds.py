@@ -10,7 +10,6 @@ from operator import attrgetter
 import numpy as np
 import polars as pl
 import pyarrow as pa
-import pandas as pd
 from infrasys.cost_curves import CostCurve, FuelCurve, UnitSystem
 from infrasys.function_data import LinearFunctionData
 from infrasys.time_series_models import SingleTimeSeries
@@ -180,18 +179,6 @@ class ReEDSParser(BaseParser):
                     bus_type=ACBusTypes.PV,
                 )
             )
-
-    def _check_solve_year(self) -> bool:
-        solve_year = self.reeds_config.solve_year
-        modeled_years_file = self.reeds_config.fmap["years"]["fname"]
-        solve_years_csv = pd.read_csv(modeled_years_file)
-        years = [int(x) for x in list(solve_years_csv.columns)]
-
-        if solve_year not in years:
-            raise FileNotFoundError("Solve year not found in {} file.", modeled_years_file)
-
-        logger.debug("Solve year {} found in {} file.", solve_year, modeled_years_file)
-        return True
 
     def _construct_reserves(self):
         logger.info("Creating reserves objects.")
