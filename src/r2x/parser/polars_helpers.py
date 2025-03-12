@@ -11,7 +11,7 @@ from r2x.parser.plexos_utils import DATAFILE_COLUMNS
 
 
 def pl_filter_year(
-    data: pl.DataFrame, year: int | None = None, year_columns: list[str] = ["t", "year"], **kwargs
+    data: pl.DataFrame, year: int | None = None, year_columns: set[str] = {"t", "year", "datetime"}, **kwargs
 ) -> pl.DataFrame:
     """Filter the DataFrame by a specific year.
 
@@ -36,20 +36,27 @@ def pl_filter_year(
     KeyError
         If more than one column is identified as year.
     """
-    if year is None and kwargs.get("solve_year"):
-        year = kwargs["solve_year"]
-
-    if year is None:
-        return data
-
     matching_names = list(set(year_columns).intersection(data.collect_schema()))
     if not matching_names:
         return data
 
-    if len(matching_names) > 1:
-        raise KeyError(f"More than one column identified as year. {matching_names=}")
-    logger.trace("Filtering data for year {}", year)
-    return data.filter(pl.col(matching_names[0]) == year)
+    if year is None and kwargs.get("solve_year"):
+        year = kwargs["solve_year"]
+
+    weather_year = kwargs.get("weather_year")
+    if year is None and weather_year is None:
+        return data
+
+    filter_data = data.clone()
+    if year and matching_names[0] in {"t", "year"}:
+        logger.trace("Filtering data for year {}", year)
+        filter_data = filter_data.filter(pl.col(matching_names[0]) == year)
+
+    if kwargs.get("filter_by_weather_year") and weather_year:
+        logger.trace("Filtering data for weather year {}", weather_year)
+        filter_data = filter_data.filter(pl.col("datetime").dt.year() == weather_year)
+
+    return filter_data
 
 
 def pl_remove_duplicates(data: pl.DataFrame, columns: DATAFILE_COLUMNS | list[str]) -> pl.DataFrame:

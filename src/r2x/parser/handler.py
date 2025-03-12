@@ -37,6 +37,7 @@ FILE_PARSING_KWARGS = {
     "column_mapping",
     "solve_year",
     "weather_year",
+    "filter_by_weather_year",
 }
 
 

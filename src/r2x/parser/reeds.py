@@ -111,14 +111,6 @@ class ReEDSParser(BaseParser):
 
     def build_system(self) -> System:
         """Create IS system for the ReEDS model."""
-        self.system = System(
-            name=self.config.name,
-            auto_add_composed_components=True,
-            description=(
-                f"ReEDS translation for {self.reeds_config.solve_year=} and {self.reeds_config.weather_year=}"
-            ),
-        )
-
         solve_year_found = self._check_solve_year()
         if not solve_year_found:
             msg = (
@@ -126,6 +118,13 @@ class ReEDSParser(BaseParser):
                 f"Select one of the available modeled years = {self.solve_years}"
             )
             raise R2XParserError(msg)
+        self.system = System(
+            name=self.config.name,
+            auto_add_composed_components=True,
+            description=(
+                f"ReEDS translation for {self.reeds_config.solve_year=} and {self.reeds_config.weather_year=}"
+            ),
+        )
 
         # Construct transmission network and buses
         self._construct_buses()
@@ -579,24 +578,19 @@ class ReEDSParser(BaseParser):
 
         bus_data = self.get_data("hierarchy")
         load_df = self.get_data("load").collect()
-        start = datetime(year=self.weather_year, month=1, day=1)
+        start = load_df["datetime"].item(0)
         resolution = timedelta(hours=1)
 
-        # Calculate starting index for the weather year
-        if len(load_df) > 8760:
-            end_idx = 8760 * (self.weather_year - BASE_WEATHER_YEAR + 1)  # +1 to be inclusive.
-        else:
-            end_idx = 8760
         for _, bus_data in enumerate(bus_data.iter_rows(named=True)):
             bus_name = bus_data["region"]
             bus = self.system.get_component(ACBus, name=bus_name)
             ts = SingleTimeSeries.from_array(
-                data=ActivePower(load_df[bus_name][end_idx - 8760 : end_idx].to_numpy(), "MW"),
+                data=ActivePower(load_df[bus_name].to_numpy(), "MW"),
                 variable_name="max_active_power",
                 initial_time=start,
                 resolution=resolution,
             )
-            user_dict = {"solve_year": self.reeds_config.weather_year}
+            user_dict = {"solve_year": self.reeds_config.weather_year, "weather_year": self.weather_year}
             max_load = np.max(ts.data)
             load = self._create_model_instance(
                 PowerLoad, name=f"{bus.name}", bus=bus, max_active_power=max_load
@@ -618,14 +612,8 @@ class ReEDSParser(BaseParser):
         ilr = dict(
             ilr.group_by("tech").agg(pl.col("ilr").sum()).iter_rows()
         )  # Dict is more useful here than series
-        start = datetime(year=self.weather_year, month=1, day=1)
+        start = cf_data["datetime"].item(0)
         resolution = timedelta(hours=1)
-
-        # Calculate starting index for the weather year starting
-        if len(cf_data) > 8760:
-            end_idx = 8760 * (self.weather_year - BASE_WEATHER_YEAR + 1)  # +1 to be inclusive.
-        else:
-            end_idx = 8760
 
         counter = 0
         # NOTE: At some point, I would like to create a single time series per
@@ -646,19 +634,14 @@ class ReEDSParser(BaseParser):
 
             cf_adj = cf_adjustment.filter(pl.col("tech") == generator.ext["reeds_tech"])["cf_adj"]
             ilr_value = ilr.get(generator.ext["reeds_tech"], 1)
-            rating_profile = (
-                generator.active_power
-                * ilr_value
-                * cf_adj
-                * cf_data[profile_name][end_idx - 8760 : end_idx].to_numpy()
-            )
+            rating_profile = generator.active_power * ilr_value * cf_adj * cf_data[profile_name].to_numpy()
             ts = SingleTimeSeries.from_array(
                 data=rating_profile,
                 variable_name="max_active_power",
                 initial_time=start,
                 resolution=resolution,
             )
-            user_dict = {"solve_year": self.weather_year}
+            user_dict = {"weather_year": self.weather_year}
             self.system.add_time_series(ts, generator, **user_dict)
             counter += 1
         logger.debug("Added {} time series objects", counter)
