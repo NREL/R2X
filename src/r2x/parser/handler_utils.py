@@ -54,8 +54,6 @@ def csv_handler(fpath: Path, csv_file_encoding="utf8", **kwargs) -> pl.DataFrame
     │ 2   │ Bob    │ 24   │
     └─────┴────────┴──────┘
     """
-    if absolute_path := kwargs.get("absolute_fpath"):
-        fpath = Path(absolute_path)
     logger.trace("Attempting reading file {}", fpath)
     logger.trace("Parsing file {}", fpath)
     try:
@@ -71,10 +69,6 @@ def csv_handler(fpath: Path, csv_file_encoding="utf8", **kwargs) -> pl.DataFrame
     except pl.exceptions.PolarsError:
         logger.warning("File {} could not be parse due to dtype problems. See error.", fpath)
         raise
-
-    if data_file.is_empty():
-        logger.debug("File {} is empty. Skipping it.", fpath)
-        return
 
     if kwargs.get("keep_case") is None:
         data_file = pl_lowercase(data_file)

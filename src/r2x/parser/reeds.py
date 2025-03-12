@@ -111,7 +111,21 @@ class ReEDSParser(BaseParser):
 
     def build_system(self) -> System:
         """Create IS system for the ReEDS model."""
-        self.system = System(name=self.config.name, auto_add_composed_components=True)
+        self.system = System(
+            name=self.config.name,
+            auto_add_composed_components=True,
+            description=(
+                f"ReEDS translation for {self.reeds_config.solve_year=} and {self.reeds_config.weather_year=}"
+            ),
+        )
+
+        solve_year_found = self._check_solve_year()
+        if not solve_year_found:
+            msg = (
+                "Solve year not found on scenario. "
+                f"Select one of the available modeled years = {self.solve_years}"
+            )
+            raise R2XParserError(msg)
 
         # Construct transmission network and buses
         self._construct_buses()
@@ -132,6 +146,15 @@ class ReEDSParser(BaseParser):
         self._construct_hybrid_systems()
 
         return self.system
+
+    def _check_solve_year(self) -> bool:
+        solve_years = self.get_data("years")
+        years = list(solve_years.columns)
+        years_int = [int(x) for x in years]
+        self.solve_years = years_int
+        if self.reeds_config.solve_year not in years_int:
+            return False
+        return True
 
     # NOTE: Rename to create topology
     def _construct_buses(self):

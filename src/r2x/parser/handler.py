@@ -24,10 +24,20 @@ from pydantic import ValidationError
 # Local packages
 from r2x.api import System
 from r2x.config_scenario import Scenario
+from r2x.exceptions import R2XParserError
+from r2x.utils import check_file_exists
 
-from ..utils import check_file_exists
 from .handler_utils import csv_handler, h5_handler
 from .polars_helpers import pl_filter_year, pl_rename
+
+FILE_PARSING_KWARGS = {
+    "absolute_fpath",
+    "keep_case",
+    "use_filter_functions",
+    "column_mapping",
+    "solve_year",
+    "weather_year",
+}
 
 
 @dataclass
@@ -71,6 +81,7 @@ class BaseParser(ABC):
         self,
         fpath: Path | str,
         filter_funcs: list[Callable] | None = None,
+        use_filter_functions: bool = True,
         **kwargs,
     ):
         """Read input model data from the file system.
@@ -93,7 +104,7 @@ class BaseParser(ABC):
         if data is None:
             return
 
-        if isinstance(filter_funcs, list):
+        if use_filter_functions and isinstance(filter_funcs, list):
             for func in filter_funcs:
                 data = func(data, **kwargs)
         return data
@@ -101,44 +112,44 @@ class BaseParser(ABC):
     def parse_data(
         self,
         *,
-        base_folder: str | Path | None,
+        folder: Path,
         fmap: dict,
-        filter_func: list[Callable] | None = None,
+        filter_funcs: list[Callable] | None = None,
         **kwargs,
-    ) -> None:
+    ) -> bool:
         """Parse all the data for the given translation."""
-        _fmap = deepcopy(fmap)
-        if base_folder is None:
-            logger.warning("Missing base folder for {}", self.config.name)
-            return None
         logger.trace("Parsing data for {}", self.__class__.__name__)
-        for dname, data in _fmap.items():
-            if not isinstance(data, dict):
-                continue
-            if not data.get("fname"):
-                continue
+        _fmap = deepcopy(fmap)
+
+        files_to_parse = {key: value for key, value in _fmap.items() if value is not None}
+        if not len(files_to_parse) > 0:
+            msg = "Not a single valid entry found on the fmap configuration."
+            raise R2XParserError(msg)
+
+        for dname, data in files_to_parse.items():
+            fname = data["fname"]
+            is_optional = data.get("optional")
+            data = {**data, **kwargs}
+            file_parsing_kwargs = {key: value for key, value in data.items() if key in FILE_PARSING_KWARGS}
 
             # If we pass an absolute path we check that it exists.
             if fpath := data.get("absolute_fpath"):
                 fpath = Path(fpath)
-                logger.debug("Loading file {} from {}", dname, fpath)
-            else:
-                fpath = check_file_exists(
-                    fname=data["fname"],
-                    run_folder=base_folder,
-                    optional=data.get("optional", False),
-                    folder=data.get("folder", None),
+
+            if not fpath:
+                fpath = check_file_exists(fname=fname, run_folder=folder, folder=data.get("folder"))
+
+            if not fpath and not is_optional:
+                msg = (
+                    f"Mandatory file {data['fname']} not found at {fpath}. "
+                    "Check that the provided path is correct."
                 )
+                raise R2XParserError(msg)
+
             if fpath is not None:
-                if "fpath" in data:
-                    _fpath = data.pop("fpath")
-                    # assert fpath == _fpath, f"Multiple files found. {fpath} and {_fpath}"
-                    fpath = _fpath
-                assert isinstance(fpath, Path) or isinstance(fpath, str)
-                fmap[dname]["fpath"] = fpath
-                self.data[dname] = self.read_file(fpath=fpath, filter_funcs=filter_func, **{**data, **kwargs})
-                logger.debug("Loaded file for {} from {}", dname, fpath)
-        return None
+                logger.debug("Loading file {} from {}", dname, fpath)
+                self.data[dname] = self.read_file(fpath, filter_funcs=filter_funcs, **file_parsing_kwargs)
+        return True
 
     @abstractmethod
     def build_system(self) -> System:
@@ -166,10 +177,6 @@ def file_handler(
     logger.trace("Attempting to read: {}", fpath)
     if not isinstance(fpath, Path):
         fpath = Path(fpath)
-
-    if optional and not fpath.exists():
-        logger.debug("Could not find optional file {}", fpath)
-        return None
 
     logger.trace("Reading {}", fpath)
     match fpath.suffix:
@@ -248,8 +255,8 @@ def get_parser_data(
     # Parser data
     assert config.input_config
     parser.parse_data(
-        base_folder=config.run_folder,
-        filter_func=filter_funcs,
+        folder=config.run_folder,
+        filter_funcs=filter_funcs,
         **{**config.input_config.__dict__, **kwargs},
     )
 
