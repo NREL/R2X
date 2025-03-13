@@ -7,6 +7,7 @@ import polars as pl
 from loguru import logger
 from polars.lazyframe import LazyFrame
 
+from r2x.exceptions import R2XParserError
 from r2x.parser.plexos_utils import DATAFILE_COLUMNS
 
 
@@ -21,7 +22,7 @@ def pl_filter_by_year(
         The DataFrame to filter.
     year : int | None, optional
         The year to filter by, default is None.
-    year_column : Literal[str] = 'year', optional
+    year_column : str, optional
         The columns to filter by year
     **kwargs : dict, optional
         Additional arguments, can contain 'solve_year' to override the year.
@@ -33,53 +34,84 @@ def pl_filter_by_year(
 
     Raises
     ------
-    KeyError
-        If more than one column is identified as year.
+    R2XParserError
+        If the year provided is not in the set of available years.
+
+    See Also
+    --------
+    pl_filter_by_year
     """
     if isinstance(data, pl.DataFrame) and data.is_empty():
+        return data
+
+    if year_column not in data.collect_schema():
         return data
 
     if kwargs.get("solve_year"):
         year = kwargs["solve_year"]
 
-    if year_column not in data.collect_schema():
-        return data
-
     filter_data = data.clone()
+
+    available_years = filter_data[year_column].unique()
+    assert len(available_years) > 1
+
+    if year not in available_years:
+        msg = f"{year=} not in dataset. Select one of the available years {available_years=}"
+        raise R2XParserError(msg)
+
     return filter_data.filter(pl.col(year_column) == year)
 
 
 def pl_filter_by_weather_year(
-    data: pl.DataFrame, weather_year: int | None = None, year_column: str = "datetime", **kwargs
+    data: pl.LazyFrame,
+    weather_year: int | None = None,
+    year_column: str = "datetime",
+    **kwargs,
 ) -> pl.DataFrame:
     """Filter the DataFrame by a specific year.
 
+    This function is tailored for datasets that are big, hecen why we use a LazyFrame. Examples of this
+    dataframes are h5 files that were parsed to polars or any other big csv file.
+
     Parameters
     ----------
-    df : pl.DataFrame
+    data : pl.LazyFrame
         The DataFrame to filter.
-    year : int | None, optional
+    weather_year : int | None, optional
         The year to filter by, default is None.
     year_column : Literal[str] = 'year', optional
         The columns to filter by year
     **kwargs : dict, optional
-        Additional arguments, can contain 'solve_year' to override the year.
+        Additional arguments
 
     Returns
     -------
-    pl.DataFrame
+    pl.LazyFrame
         The filtered DataFrame.
 
     Raises
     ------
-    KeyError
-        If more than one column is identified as year.
+    R2XParserError
+        If the year provided is not in the set of available years.
+
+    See Also
+    --------
+    pl_filter_by_year
     """
+    if not isinstance(data, pl.LazyFrame):
+        return data
+
     if year_column not in data.collect_schema():
         return data
 
-    filter_data = data.clone()
-    return filter_data.filter(pl.col(year_column).dt.year() == weather_year)
+    available_years = data.select(pl.col(year_column).dt.year()).unique().collect()
+    assert len(available_years) > 1
+
+    if weather_year not in available_years:
+        msg = f"{weather_year=} not in dataset. Select one of the available years {available_years=}"
+        raise R2XParserError(msg)
+
+    return data.filter(pl.col(year_column).dt.year() == weather_year)
 
 
 def pl_remove_duplicates(data: pl.DataFrame, columns: DATAFILE_COLUMNS | list[str]) -> pl.DataFrame:
