@@ -28,7 +28,7 @@ from r2x.exceptions import R2XParserError
 from r2x.utils import check_file_exists
 
 from .handler_utils import csv_handler, h5_handler
-from .polars_helpers import pl_filter_year, pl_rename
+from .polars_helpers import pl_filter_by_weather_year, pl_filter_by_year, pl_rename
 
 FILE_PARSING_KWARGS = {
     "absolute_fpath",
@@ -37,6 +37,7 @@ FILE_PARSING_KWARGS = {
     "column_mapping",
     "solve_year",
     "weather_year",
+    "filter_by_weather_year",
 }
 
 
@@ -103,6 +104,9 @@ class BaseParser(ABC):
         data = file_handler(fpath, parser_class=type(self).__name__, **kwargs)
         if data is None:
             return
+
+        if kwargs.get("filter_by_weather_year") and isinstance(filter_funcs, list):
+            filter_funcs.append(pl_filter_by_weather_year)
 
         if use_filter_functions and isinstance(filter_funcs, list):
             for func in filter_funcs:
@@ -246,7 +250,7 @@ def get_parser_data(
     # NOTE: At some point we are going to migrate this out, but this sound like a good standard set
     if filter_funcs is None and config.input_model == "reeds-US":
         logger.trace("Using default filter functions")
-        filter_funcs = [pl_rename, pl_filter_year]
+        filter_funcs = [pl_rename, pl_filter_by_year]
 
     # Adding special case for Plexos parser
     if model := getattr(config, "model", False):

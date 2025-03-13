@@ -80,7 +80,7 @@ from .plexos_utils import (
     parse_data_file,
     time_slice_handler,
 )
-from .polars_helpers import pl_filter_year
+from .polars_helpers import pl_filter_by_year
 
 models = importlib.import_module("r2x.models")
 
@@ -1629,7 +1629,7 @@ class PlexosParser(PCMParser):
         parsed_file = parse_data_file(column_type, data_file)
 
         if "year" in parsed_file.columns:
-            parsed_file = pl_filter_year(parsed_file, year=self.year)
+            parsed_file = pl_filter_by_year(parsed_file, year=self.year)
 
             if parsed_file.is_empty():
                 logger.warning("No time series data specified for year filter. Year passed {}", self.year)

@@ -7,11 +7,12 @@ import polars as pl
 from loguru import logger
 from polars.lazyframe import LazyFrame
 
+from r2x.exceptions import R2XParserError
 from r2x.parser.plexos_utils import DATAFILE_COLUMNS
 
 
-def pl_filter_year(
-    data: pl.DataFrame, year: int | None = None, year_columns: list[str] = ["t", "year"], **kwargs
+def pl_filter_by_year(
+    data: pl.DataFrame | pl.LazyFrame, year: int | None = None, year_column: str = "year", **kwargs
 ) -> pl.DataFrame:
     """Filter the DataFrame by a specific year.
 
@@ -21,8 +22,8 @@ def pl_filter_year(
         The DataFrame to filter.
     year : int | None, optional
         The year to filter by, default is None.
-    year_columns : list[str], optional
-        The columns to check for year filtering, by default ['t', 'year'].
+    year_column : str, optional
+        The columns to filter by year
     **kwargs : dict, optional
         Additional arguments, can contain 'solve_year' to override the year.
 
@@ -33,23 +34,89 @@ def pl_filter_year(
 
     Raises
     ------
-    KeyError
-        If more than one column is identified as year.
+    R2XParserError
+        If the year provided is not in the set of available years.
+
+    See Also
+    --------
+    pl_filter_by_year
     """
-    if year is None and kwargs.get("solve_year"):
+    if isinstance(data, pl.DataFrame) and data.is_empty():
+        return data
+
+    if year_column not in data.collect_schema():
+        return data
+
+    if kwargs.get("solve_year"):
         year = kwargs["solve_year"]
 
-    if year is None:
+    filter_data = data.clone()
+
+    available_years = filter_data.select(pl.col(year_column)).unique()
+
+    if isinstance(data, pl.LazyFrame):
+        available_years = available_years.collect()
+
+    assert len(available_years) >= 1
+    assert isinstance(available_years, pl.DataFrame)
+
+    if year not in available_years[year_column].to_list():
+        logger.debug("{} not in available years {}. Returning unfiltered file.", year, available_years)
         return data
 
-    matching_names = list(set(year_columns).intersection(data.collect_schema()))
-    if not matching_names:
+    return filter_data.filter(pl.col(year_column) == year)
+
+
+def pl_filter_by_weather_year(
+    data: pl.LazyFrame,
+    weather_year: int | None = None,
+    year_column: str = "datetime",
+    **kwargs,
+) -> pl.DataFrame:
+    """Filter the DataFrame by a specific year.
+
+    This function is tailored for datasets that are big, hecen why we use a LazyFrame. Examples of this
+    dataframes are h5 files that were parsed to polars or any other big csv file.
+
+    Parameters
+    ----------
+    data : pl.LazyFrame
+        The DataFrame to filter.
+    weather_year : int | None, optional
+        The year to filter by, default is None.
+    year_column : Literal[str] = 'year', optional
+        The columns to filter by year
+    **kwargs : dict, optional
+        Additional arguments
+
+    Returns
+    -------
+    pl.LazyFrame
+        The filtered DataFrame.
+
+    Raises
+    ------
+    R2XParserError
+        If the year provided is not in the set of available years.
+
+    See Also
+    --------
+    pl_filter_by_year
+    """
+    if not isinstance(data, pl.LazyFrame):
         return data
 
-    if len(matching_names) > 1:
-        raise KeyError(f"More than one column identified as year. {matching_names=}")
-    logger.trace("Filtering data for year {}", year)
-    return data.filter(pl.col(matching_names[0]) == year)
+    if year_column not in data.collect_schema():
+        return data
+
+    available_years = data.select(pl.col(year_column).dt.year()).unique().collect()[year_column].to_list()
+    assert len(available_years) >= 1
+
+    if weather_year not in available_years:
+        msg = f"{weather_year=} not in dataset. Select one of the available years {available_years=}"
+        raise R2XParserError(msg)
+
+    return data.filter(pl.col(year_column).dt.year() == weather_year)
 
 
 def pl_remove_duplicates(data: pl.DataFrame, columns: DATAFILE_COLUMNS | list[str]) -> pl.DataFrame:
