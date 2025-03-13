@@ -52,12 +52,17 @@ def pl_filter_by_year(
 
     filter_data = data.clone()
 
-    available_years = filter_data[year_column].unique()
-    assert len(available_years) > 1
+    available_years = filter_data.select(pl.col(year_column)).unique()
 
-    if year not in available_years:
-        msg = f"{year=} not in dataset. Select one of the available years {available_years=}"
-        raise R2XParserError(msg)
+    if isinstance(data, pl.LazyFrame):
+        available_years = available_years.collect()
+
+    assert len(available_years) >= 1
+    assert isinstance(available_years, pl.DataFrame)
+
+    if year not in available_years[year_column].to_list():
+        logger.debug("{} not in available years {}. Returning unfiltered file.", year, available_years)
+        return data
 
     return filter_data.filter(pl.col(year_column) == year)
 
@@ -104,8 +109,8 @@ def pl_filter_by_weather_year(
     if year_column not in data.collect_schema():
         return data
 
-    available_years = data.select(pl.col(year_column).dt.year()).unique().collect()
-    assert len(available_years) > 1
+    available_years = data.select(pl.col(year_column).dt.year()).unique().collect()[year_column].to_list()
+    assert len(available_years) >= 1
 
     if weather_year not in available_years:
         msg = f"{weather_year=} not in dataset. Select one of the available years {available_years=}"
