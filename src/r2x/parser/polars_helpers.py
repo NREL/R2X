@@ -10,8 +10,8 @@ from polars.lazyframe import LazyFrame
 from r2x.parser.plexos_utils import DATAFILE_COLUMNS
 
 
-def pl_filter_year(
-    data: pl.DataFrame, year: int | None = None, year_columns: set[str] = {"t", "year", "datetime"}, **kwargs
+def pl_filter_by_year(
+    data: pl.DataFrame | pl.LazyFrame, year: int | None = None, year_column: str = "year", **kwargs
 ) -> pl.DataFrame:
     """Filter the DataFrame by a specific year.
 
@@ -21,8 +21,8 @@ def pl_filter_year(
         The DataFrame to filter.
     year : int | None, optional
         The year to filter by, default is None.
-    year_columns : list[str], optional
-        The columns to check for year filtering, by default ['t', 'year'].
+    year_column : Literal[str] = 'year', optional
+        The columns to filter by year
     **kwargs : dict, optional
         Additional arguments, can contain 'solve_year' to override the year.
 
@@ -36,27 +36,50 @@ def pl_filter_year(
     KeyError
         If more than one column is identified as year.
     """
-    matching_names = list(set(year_columns).intersection(data.collect_schema()))
-    if not matching_names:
+    if isinstance(data, pl.DataFrame) and data.is_empty():
         return data
 
-    if year is None and kwargs.get("solve_year"):
+    if kwargs.get("solve_year"):
         year = kwargs["solve_year"]
 
-    weather_year = kwargs.get("weather_year")
-    if year is None and weather_year is None:
+    if year_column not in data.collect_schema():
         return data
 
     filter_data = data.clone()
-    if year and matching_names[0] in {"t", "year"}:
-        logger.trace("Filtering data for year {}", year)
-        filter_data = filter_data.filter(pl.col(matching_names[0]) == year)
+    return filter_data.filter(pl.col(year_column) == year)
 
-    if kwargs.get("filter_by_weather_year") and weather_year:
-        logger.trace("Filtering data for weather year {}", weather_year)
-        filter_data = filter_data.filter(pl.col("datetime").dt.year() == weather_year)
 
-    return filter_data
+def pl_filter_by_weather_year(
+    data: pl.DataFrame, weather_year: int | None = None, year_column: str = "datetime", **kwargs
+) -> pl.DataFrame:
+    """Filter the DataFrame by a specific year.
+
+    Parameters
+    ----------
+    df : pl.DataFrame
+        The DataFrame to filter.
+    year : int | None, optional
+        The year to filter by, default is None.
+    year_column : Literal[str] = 'year', optional
+        The columns to filter by year
+    **kwargs : dict, optional
+        Additional arguments, can contain 'solve_year' to override the year.
+
+    Returns
+    -------
+    pl.DataFrame
+        The filtered DataFrame.
+
+    Raises
+    ------
+    KeyError
+        If more than one column is identified as year.
+    """
+    if year_column not in data.collect_schema():
+        return data
+
+    filter_data = data.clone()
+    return filter_data.filter(pl.col(year_column).dt.year() == weather_year)
 
 
 def pl_remove_duplicates(data: pl.DataFrame, columns: DATAFILE_COLUMNS | list[str]) -> pl.DataFrame:
