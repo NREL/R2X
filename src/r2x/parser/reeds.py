@@ -1,6 +1,5 @@
 """Functions related to parsers."""
 
-import pluggy
 import importlib
 from argparse import ArgumentParser
 from collections import defaultdict
@@ -62,6 +61,7 @@ from r2x.models import (
 from r2x.parser.handler import BaseParser, create_model_instance
 from r2x.units import ActivePower, EmissionRate, Energy, Percentage, Time, ureg
 from r2x.utils import get_enum_from_string, match_category, read_csv
+from r2x.plugin_manager import PluginManager
 
 from .polars_helpers import pl_left_multi_join
 
@@ -69,12 +69,8 @@ R2X_MODELS = importlib.import_module("r2x.models")
 UNITS = importlib.import_module("r2x.units")
 BASE_WEATHER_YEAR = 2007
 
-
-hookimpl = pluggy.HookimplMarker("r2x_plugin")
-
-
-@hookimpl
-def cli_arguments(parser: ArgumentParser):
+@PluginManager.register_cli("parser","reeds")
+def cli_arguments(parser: ArgumentParser)->None:
     """CLI arguments for the plugin."""
     parser.add_argument(
         "--weather-year",
@@ -101,7 +97,6 @@ class ReEDSParser(BaseParser):
         self.excluded_categories = self.reeds_config.defaults["excluded_categories"]
         self.weather_year: int = self.reeds_config.weather_year
         self.skip_validation: bool = getattr(self.reeds_config, "skip_validation", False)
-
         # Add hourly_time_index
         self.hourly_time_index = np.arange(
             f"{self.weather_year}",
@@ -142,7 +137,7 @@ class ReEDSParser(BaseParser):
     def _construct_buses(self):
         logger.info("Creating bus objects.")
         bus_data = self.get_data("hierarchy")
-
+        breakpoint()
         zones = bus_data["transmission_region"].unique()
         for zone in zones:
             self.system.add_component(self._create_model_instance(LoadZone, name=zone))

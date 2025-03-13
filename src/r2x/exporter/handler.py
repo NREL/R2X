@@ -19,7 +19,7 @@ from pint import Quantity
 
 from r2x.api import System
 from r2x.config_scenario import Scenario
-from r2x.config_utils import get_year
+from r2x.config_models import get_year
 from r2x.exporter.utils import modify_components
 from r2x.parser.handler import file_handler
 

@@ -8,8 +8,9 @@ from loguru import logger
 from polars.lazyframe import LazyFrame
 
 from r2x.parser.plexos_utils import DATAFILE_COLUMNS
+from r2x.plugin_manager import PluginManager
 
-
+@PluginManager.register_filter("pl_filter_year")
 def pl_filter_year(
     data: pl.DataFrame, year: int | None = None, year_columns: list[str] = ["t", "year"], **kwargs
 ) -> pl.DataFrame:
@@ -51,7 +52,7 @@ def pl_filter_year(
     logger.trace("Filtering data for year {}", year)
     return data.filter(pl.col(matching_names[0]) == year)
 
-
+@PluginManager.register_filter("pl_remove_duplicates")
 def pl_remove_duplicates(data: pl.DataFrame, columns: DATAFILE_COLUMNS | list[str]) -> pl.DataFrame:
     """Remove duplicate rows from the DataFrame based on certain columns.
 
@@ -80,7 +81,7 @@ def pl_remove_duplicates(data: pl.DataFrame, columns: DATAFILE_COLUMNS | list[st
 
     return data
 
-
+@PluginManager.register_filter("pl_lowercase")
 def pl_lowercase(data: pl.DataFrame, **kwargs):
     """Convert all string columns to lowercase.
 
@@ -104,6 +105,7 @@ def pl_lowercase(data: pl.DataFrame, **kwargs):
     return result
 
 
+@PluginManager.register_filter("pl_rename")
 def pl_rename(
     data: pl.DataFrame,
     column_mapping: dict[str, str] | None = None,
@@ -133,7 +135,7 @@ def pl_rename(
         pl.all().name.map(lambda col_name: column_mapping.get(col_name, col_name))
     )
 
-
+@PluginManager.register_filter("pl_left_multi_join")
 def pl_left_multi_join(l_df: pl.LazyFrame, *r_dfs: pl.DataFrame, **kwargs):
     """Perform a left join on multiple DataFrames.
 
@@ -178,7 +180,7 @@ def pl_left_multi_join(l_df: pl.LazyFrame, *r_dfs: pl.DataFrame, **kwargs):
     )
     return output_df
 
-
+@PluginManager.register_filter("pl_create_date_range")
 def pl_create_date_range(year: int, interval: str = "1h"):
     """Create a DataFrame with a date range for the given year.
 
