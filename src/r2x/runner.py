@@ -10,7 +10,7 @@ from .plugins import hookspec
 from loguru import logger
 
 from r2x.exporter.handler import get_exporter
-from r2x.plugin_manager import manager as pm
+from r2x.plugin_manager import PluginManager
 
 from .api import System
 from .config_scenario import Scenario, get_scenario_configuration
@@ -19,6 +19,8 @@ from .upgrader import upgrade_handler
 from .utils import (
     DEFAULT_PLUGIN_PATH,
 )
+
+pm = PluginManager()
 
 def run_parser(config: Scenario, **kwargs):
     """Call get parser for parser selected.
@@ -53,6 +55,7 @@ def run_parser(config: Scenario, **kwargs):
     if not parser_class:
         raise KeyError(f"Parser for {config.input_model} not found")
 
+    breakpoint()
     parser = get_parser_data(config, parser_class, **kwargs)
     system = parser.build_system()
 

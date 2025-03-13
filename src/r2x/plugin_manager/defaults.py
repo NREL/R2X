@@ -1,46 +1,5 @@
-from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Dict, List, Optional, Type, Union
-
-from r2x.parser.handler import BaseParser
-from r2x.exporter.handler import BaseExporter
-from r2x.config_models import BaseModelConfig
-
 from loguru import logger
-
-
-@dataclass
-class DefaultFile:
-    """Represents a default configuration file."""
-    name: str
-    path: Path
-
-    @classmethod
-    def from_path(cls, path: str) -> "DefaultFile":
-        """Create a DefaultFile from a path string."""
-        path_obj = Path(path)
-        return cls(name=path_obj.name, path=path_obj)
-
-@dataclass
-class PluginComponent:
-    """Components associated with a model."""
-    config: Type[BaseModelConfig]  # Required
-    parser: Optional[Type[BaseParser]] = None
-    exporter: Optional[Type[BaseExporter]] = None
-    input_defaults: List[DefaultFile] = field(default_factory=list)
-    export_defaults: List[DefaultFile] = field(default_factory=list)
-    fmap: Optional[DefaultFile] = None
-
-    @property
-    def is_input_model(self) -> bool:
-        """Check if this is an input model (has parser)."""
-        return self.parser is not None
-
-    @property
-    def is_export_model(self) -> bool:
-        """Check if this is an export model (has exporter)."""
-
-        return self.exporter is not None
+from r2x.plugin_manager.interfaces import DefaultFile, PluginComponent, Dict
 
 
 # Common default files that apply to all or many models
@@ -49,13 +8,14 @@ def get_common_default_files() -> Dict[str, DefaultFile]:
     common_files = {}
 
     try:
-        config_path = "r2x/defaults/config.json"
+        config_path = "defaults/config.json"
+
         common_files["config"] = DefaultFile.from_path(config_path)
     except Exception as e:
         logger.warning(f"Error loading common config file: {e}")
 
     try:
-        plugins_path = "r2x/defaults/plugins_config.json"
+        plugins_path = "defaults/plugins_config.json"
         common_files["plugins"] = DefaultFile.from_path(plugins_path)
     except Exception as e:
         logger.warning(f"Error loading plugins config file: {e}")
@@ -68,7 +28,7 @@ def create_reeds_plugin() -> PluginComponent:
     """Create components for the REEDS-US model."""
     from r2x.config_models import ReEDSConfig
     from r2x.parser import ReEDSParser
-
+    from r2x.parser.reeds import cli_arguments
     # Get common defaults
     common_files = get_common_default_files()
 
@@ -76,16 +36,17 @@ def create_reeds_plugin() -> PluginComponent:
     input_defaults = [common_files["config"], common_files["plugins"]]
     input_defaults.extend(
         [
-            DefaultFile.from_path("r2x/defaults/reeds_input.json")
+            DefaultFile.from_path("defaults/reeds_input.json")
         ]
     )
 
-    fmap = DefaultFile.from_path("r2x/defaults/reeds_us_mapping.json")
+    fmap = DefaultFile.from_path("defaults/reeds_us_mapping.json")
     # REEDS is input-only
     return PluginComponent(
         config=ReEDSConfig,
         parser=ReEDSParser,
-        input_defaults=input_defaults,
+        parser_defaults=input_defaults,
+        parser_cli=cli_arguments,
         fmap=fmap
     )
 
@@ -94,6 +55,10 @@ def create_plexos_plugin() -> PluginComponent:
     from r2x.config_models import PlexosConfig
     from r2x.parser import PlexosParser
     from r2x.exporter import PlexosExporter
+    # register the cli arguments by importing them.
+    from r2x.parser.plexos import cli_arguments as input_cli
+    from r2x.exporter.plexos import cli_arguments as export_cli
+
     # Get common defaults
     common_files = get_common_default_files()
 
@@ -101,25 +66,25 @@ def create_plexos_plugin() -> PluginComponent:
     input_defaults = [common_files["config"], common_files["plugins"]]
     input_defaults.extend(
         [
-            DefaultFile.from_path("r2x/defaults/plexos_input.json"),
+            DefaultFile.from_path("defaults/plexos_input.json"),
         ]
     )
     # Create PLEXOS-specific export defaults
     export_defaults =[
-        DefaultFile.from_path("r2x/defaults/plexos_output.json"),
-        DefaultFile.from_path("r2x/defaults/plexos_simulation_objects.json"),
-        DefaultFile.from_path("r2x/defaults/plexos_horizons.json"),
-        DefaultFile.from_path("r2x/defaults/plexos_models.json")
+        DefaultFile.from_path("defaults/plexos_output.json"),
+        DefaultFile.from_path("defaults/plexos_simulation_objects.json"),
+        DefaultFile.from_path("defaults/plexos_horizons.json"),
+        DefaultFile.from_path("defaults/plexos_models.json")
     ]
 
-    fmap = DefaultFile.from_path("r2x/defaults/plexos_mapping.json")
+    fmap = DefaultFile.from_path("defaults/plexos_mapping.json")
 
     # PLEXOS is both input and export
     return PluginComponent(
         config=PlexosConfig,
         parser=PlexosParser,
+        parser_defaults=input_defaults,
         exporter=PlexosExporter,
-        input_defaults=input_defaults,
         export_defaults=export_defaults,
         fmap=fmap
     )
@@ -128,24 +93,25 @@ def create_sienna_plugin() -> PluginComponent:
     """Create components for the SIENNA model."""
     from r2x.config_models import SiennaConfig
     from r2x.exporter import SiennaExporter
+
     # Get common defaults
     common_files = get_common_default_files()
     # Create SIENNA-specific input defaults
     input_defaults = [common_files["config"], common_files["plugins"]]
     input_defaults = [
-        DefaultFile.from_path("r2x/defaults/sienna_config.json"),
+        DefaultFile.from_path("defaults/sienna_config.json"),
 
     ]
     # Create SIENNA-specific export defaults
     export_defaults = [
-        DefaultFile.from_path("r2x/defaults/sienna_config.json"),
+        DefaultFile.from_path("defaults/sienna_config.json"),
     ]
 
     # SIENNA is both input and export
     return PluginComponent(
         config=SiennaConfig,
+        parser_defaults=input_defaults,
         exporter=SiennaExporter,
-        input_defaults=input_defaults,
         export_defaults=export_defaults
     )
 
@@ -156,11 +122,10 @@ def create_infrasys_plugin() -> PluginComponent:
     # Get common defaults
     common_files = get_common_default_files()
 
-
     # INFRASYS is both input and export
     return PluginComponent(
         config=InfrasysConfig,
-        input_defaults=[common_files["config"], common_files["plugins"]],
+        parser_defaults=[common_files["config"], common_files["plugins"]],
     )
 
 # Dictionary mapping model names to their component creation functions

@@ -5,7 +5,10 @@ import importlib
 import os
 
 from .__version__ import __version__
-from r2x.plugin_manager import manager as pm
+
+from r2x.plugin_manager import PluginManager
+
+pm = PluginManager()
 
 FILES_WITH_ARGS = [
     "r2x.plugins.pcm_defaults",
@@ -44,45 +47,30 @@ class Flags(argparse.Action):
             # assign into dictionary
             getattr(namespace, self.dest)[key] = value
 
-
 def get_additional_arguments(
-    parser: argparse.ArgumentParser,
-    folders: list[str] = FILES_WITH_ARGS,
-) -> argparse.ArgumentParser:
-    """Add plugin arguments to CLI.
+    parser: argparse.ArgumentParser
+)->argparse.ArgumentParser:
+    """Add cli arguments found in input_models, output_models and system_modifiers"""
 
-    Args:
-        parser: CLI parser object.
-        plugin_list: List of plugins.
-        folder: Folder that contains the plugin.
-    """
-    import pluggy
-    from r2x.plugins import hookspec
+    cli_types = [
+        ("parser", "PARSER"),
+        ("exporter", "EXPORTER"),
+        ("system_update", "SYSTEM UPDATER")
+    ]
+    # Input Models
+    for cli_type, group_prefix in cli_types:
+        relevant_clis = {
+            key: entry for key, entry in pm._cli_registry.items()
+            if key.startswith(f"{cli_type}_")
+        }
+        for key, entry in relevant_clis.items():
+            name = entry["group_name"]
+            script_cli_group = parser.add_argument_group(f"{group_prefix}: {name}")
+            entry["func"](script_cli_group)
 
-    pm = pluggy.PluginManager("r2x_plugin")
-    pm.add_hookspecs(hookspec)
-
-    # Internal Plugins
-    for package in folders:
-        package_str = package.split(".")
-        if not len(package_str) == 3:
-            msg = (
-                "Format of `FILES_WITH_ARGS` should be `r2x.package.script` but received {package_name}."
-                "Modify `FILES_WITH_ARGS` to match the format."
-            )
-            raise NotImplementedError(msg)
-
-        _, package_name, script_name = package_str
-        try:
-            package_script = importlib.import_module(f"{package}")
-        except ImportError:
-            continue
-        if hasattr(package_script, "cli_arguments"):
-            pm.register(package_script)
-            script_cli_group = parser.add_argument_group(f"{package_name.upper()}: {script_name}")
-            package_script.cli_arguments(script_cli_group)
 
     return parser
+
 
 
 def base_cli() -> argparse.ArgumentParser:

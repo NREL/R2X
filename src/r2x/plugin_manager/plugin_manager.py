@@ -1,28 +1,32 @@
-from dataclasses import dataclass
-
 import inspect
 import importlib
 import importlib.metadata
-from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Type, TypeVar, Union, Mapping
+from typing import Dict, Type, Generator, Tuple, Callable, Optional
+from argparse import ArgumentParser
 
 from loguru import logger
 
-from r2x.utils import read_json, read_fmap
-from .utils import find_subclasses_from_entry_points
-from .defaults import PluginComponent, DefaultFile, create_default_registry
-
+from r2x.utils import validate_fmap
+from .defaults import PluginComponent, create_default_registry
 
 from r2x.parser.handler import BaseParser
 from r2x.exporter.handler import BaseExporter
 from r2x.config_models import BaseModelConfig
+from r2x.api import System
+from polars import DataFrame
+
+
 
 class PluginManager:
     """Centralized manager for R2X plugins."""
 
     _instance = None
     _registry: Dict[str, PluginComponent] = {}
+    _plugin_factories: Dict[str, Callable[[], PluginComponent]] = {}  # Lazy-loaded factories
+    _plugin_cache: Dict[str, PluginComponent] = {}  # Cache for instantiated plugins
+    _filter_registry: Dict[str, Callable[[DataFrame, dict], DataFrame]] = {}
+    _cli_registry: Dict[str, Dict[str, Callable[[ArgumentParser], None]]] = {}
+    _system_update_registry: Dict[str, Callable[[System], System]] = {}
 
     def __new__(cls):
         """Singleton pattern implementation."""
@@ -35,115 +39,129 @@ class PluginManager:
         """Initialize the plugin manager if not already initialized."""
         if not getattr(self, "_initialized", False):
             self._initialized = True
-            self._initialize_registry()
+            self._initialize_registries()
 
-    def _initialize_registry(self):
+    #Decorator Methods for registering functions
+    @classmethod
+    def register_cli(cls, cli_type: str, name: str, group_name: Optional[str] = None):
+        valid_types = {"parser", "exporter", "system_update"}
+        if cli_type not in valid_types:
+            raise ValueError(f"cli_type must be one of {valid_types}")
+        key = f"{cli_type}_{name}"
+
+        def decorator(func: Callable[[ArgumentParser], None]):
+            cls._cli_registry[key] = {"func": func, "group_name": group_name or name}
+            return func
+        return decorator
+
+    @classmethod
+    def register_filter(cls, name: str):
+        def decorator(func: Callable[[DataFrame, dict], DataFrame]):
+            cls._filter_registry[name] = func
+            return func
+        return decorator
+
+    @classmethod
+    def register_system_update(cls, name: str):
+        def decorator(func: Callable[[System], System]):
+            cls._system_update_registry[name] = func
+            return func
+        return decorator
+
+
+    def _initialize_registries(self):
+        """Initialize registries with factories and eager-loaded functions."""
+        # Built-in plugins (factories only)
+        from .defaults import DEFAULT_MODEL_CREATORS  # Assuming this exists
+        self._plugin_factories.update(DEFAULT_MODEL_CREATORS)
+
+        # External plugins (factories via entry points)
+        for entry_point in importlib.metadata.entry_points().select(group='r2x_plugin'):
+            try:
+                # Store the loader as a factory, not the result
+                self._plugin_factories[entry_point.name] = lambda ep=entry_point: ep.load()()
+                # Import the module to register filters, CLIs, and system updates
+                importlib.import_module(entry_point.module)
+            except Exception as e:
+                logger.error(f"Error registering plugin {entry_point.name}: {e}")
+
+    def _initialize_registry_old(self):
         """Initialize the registry with built-in models."""
         # Load built-in models
         self._registry.update(create_default_registry())
         # Load external plugins
-        # self._load_external_plugins()
+        self._load_external_plugins()
 
-    '''
     def _load_external_plugins(self):
-        """Discover and load external plugins."""
-        # Discover parsers
+        """Load external plugins."""
+        # Load external plugins
+        external_plugins = {}
 
-
-        external_parsers = self.discover_parsers()
-        for name, parser_class in external_parsers.items():
-            if name not in self._registry:
-                # Create a new entry
-                from r2x.config_models import BaseModelConfig
-                self._registry[name] = PluginComponent(
-                    config=BaseModelConfig,
-                    parser=parser_class
-                )
-            else:
-                # Update existing entry
-                self._registry[name].parser = parser_class
-
-        # Discover exporters
-        for entry_point in importlib.metadata.entry_points().select(group="r2x_exporter"):
+        # search for importlib metadata group names for entry points of r2x_plugins
+        for entry_point in importlib.metadata.entry_points().select(group='r2x_plugin'):
             try:
-                name = entry_point.name
-                exporter_class = entry_point.load()
+                plugin_loader = entry_point.load()
+                # inpsect loader to ensure it returns the correct type.
 
-                if name not in self._registry:
-                    # Create a new entry
-                    from r2x.config_models import BaseModelConfig
-                    self._registry[name] = PluginComponent(
-                        config=BaseModelConfig,
-                        exporter=exporter_class
-                    )
-                else:
-                    # Update existing entry
-                    self._registry[name].exporter = exporter_class
+                # More type checking for each component?
+                plugin_components = plugin_loader()
+
+                external_plugins.update(plugin_components)
 
             except Exception as e:
-                logger.error(f"Error loading exporter {entry_point.name}: {e}")
+                print(f"Error loading plugin {entry_point.name}: {e}")
 
-        # Discover model configs
-        model_configs = self.discover_models()
-        for name, config_class in model_configs.items():
-            if name not in self._registry:
-                # Create a new entry
-                self._registry[name] = PluginComponent(config=config_class)
-            else:
-                # Update existing entry
-                self._registry[name].config = config_class
+        self._registry.update(external_plugins)
 
-        pass
+    def get_plugin(self, name: str) -> PluginComponent:
+        """Lazily load and cache a PluginComponent."""
+        if name not in self._plugin_cache:
+            if name not in self._plugin_factories:
+                raise ValueError(f"Plugin '{name}' not found")
+            self._plugin_cache[name] = self._plugin_factories[name]()
+        return self._plugin_cache[name]
 
-    def register_model(self,
-                       name: str,
-                       config_class: Type[BaseModelConfig],
-                       parser_class: Optional[Type[BaseParser]] = None,
-                       exporter_class: Optional[Type[BaseExporter]] = None,
-                       input_defaults: List[DefaultFile] = None,
-                       export_defaults: List[DefaultFile] = None):
-        """
-        Register a model with its components.
+    def get_filter(self, name: str) -> Callable[[DataFrame, dict], DataFrame]:
+        return self._filter_registry.get(name)
 
-        Parameters
-        ----------
-        name : str
-            Name of the model
-        config_class : Type[BaseModelConfig]
-            Configuration class for the model
-        parser_class : Optional[Type[BaseParser]]
-            Parser class for the model
-        exporter_class : Optional[Type[BaseExporter]]
-            Exporter class for the model
-        input_defaults : List[DefaultFile]
-            Default configuration files for input
-        export_defaults : List[DefaultFile]
-            Default configuration files for export
-        """
-        components = PluginComponent(
-            config=config_class,
-            parser=parser_class,
-            exporter=exporter_class,
-            input_defaults=input_defaults or [],
-            export_defaults=export_defaults or []
-        )
-        self._registry[name] = components
-        '''
+    def get_cli(self, cli_type: str, name: str) -> Callable[[ArgumentParser], None]:
+        key = f"{cli_type}_{name}"
+        entry = self._cli_registry.get(key)
+        return entry["func"] if entry else None
+
+    def get_system_update(self, name: str) -> Callable[[System], System]:
+        return self._system_update_registry.get(name)
+
+    @property
+    def available_plugins(self) -> Dict[str, dict]:
+        """Return metadata about available plugins without loading them."""
+        return {
+            name: {
+                "has_parser": bool(self.get_cli("parser", name)),
+                "has_exporter": bool(self.get_cli("exporter", name))
+            }
+            for name in self._plugin_factories.keys()
+        }
+
+    @property
+    def plugins(self)->Generator[Tuple[str, PluginComponent], None, None]:
+        for name, plugin in self._registry.items():
+            yield name, plugin
 
     def get_model_config_class(self, config_name:str, **kwargs)->BaseModelConfig:
         model_config = self._registry[config_name].config
         cls_fields = {field for field in inspect.signature(model_config).parameters}
         model_kwargs = {key: value for key, value in kwargs.items() if key in cls_fields}
 
-        model_config_instance = model_config(**kwargs)
+        model_config_instance = model_config(**model_kwargs)
 
         model_config_instance.fmap = self.get_model_input_fmap(config_name)
         return model_config_instance
 
     def get_model_input_defaults(self, model_name:str)->dict:
         defaults = {}
-        for file in self._registry[model_name].input_defaults:
-            defaults = defaults | read_json(str(file.path))
+        for file in self._registry[model_name].parser_defaults:
+            defaults = defaults | file.read()
 
         return defaults
 
@@ -151,17 +169,17 @@ class PluginManager:
         defaults = {}
         # TODO: We need to handle default files found in external plugins
         for file in self._registry[model_name].export_defaults:
-            defaults = defaults | read_json(str(file.path))
+            defaults = defaults | file.read()
         return defaults
 
-    # TODO this method could probably be removed
     def get_model_input_fmap(self, config_name:str)->dict:
 
         try:
-            fmap = self._registry[config_name].fmap
-            if fmap is not None:
-                fmap_path = fmap.path
-                return read_fmap(str(fmap_path))
+            fmap_file = self._registry[config_name].fmap
+            if fmap_file is not None:
+                fmap = fmap_file.read()
+                fmap = validate_fmap(fmap)
+                return fmap
             else:
                 raise ValueError(f"No fmap path specified for model '{config_name}'")
         except FileNotFoundError:
@@ -305,16 +323,3 @@ class PluginManager:
                 logger.warning(f"Error loading export defaults {default_file.name}: {e}")
 
         return defaults_dict
-
-
-    # Original methods for plugin discovery
-    def discover_parsers(self):
-        return find_subclasses_from_entry_points(
-            group_name="r2x_parser",
-            base_class=BaseParser)
-
-    def discover_models(self):
-        return find_subclasses_from_entry_points(
-            group_name="r2x_parser",
-            base_class=BaseModelConfig
-        )

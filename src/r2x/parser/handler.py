@@ -122,6 +122,8 @@ class BaseParser(ABC):
         **kwargs,
     ) -> bool:
         """Parse all the data for the given translation."""
+
+        
         logger.trace("Parsing data for {}", self.__class__.__name__)
         _fmap = deepcopy(fmap)
 
@@ -251,6 +253,7 @@ def get_parser_data(
     if filter_funcs is None and config.input_model == "reeds-US":
         logger.trace("Using default filter functions")
         filter_funcs = [pl_rename, pl_filter_by_year]
+
 
     # Adding special case for Plexos parser
     if model := getattr(config, "model", False):

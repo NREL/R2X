@@ -8,7 +8,7 @@ import pandas as pd
 import polars as pl
 from loguru import logger
 
-from .polars_helpers import pl_lowercase
+#from .polars_helpers import pl_lowercase
 
 
 def csv_handler(fpath: Path, csv_file_encoding="utf8", **kwargs) -> pl.DataFrame:
@@ -54,6 +54,9 @@ def csv_handler(fpath: Path, csv_file_encoding="utf8", **kwargs) -> pl.DataFrame
     │ 2   │ Bob    │ 24   │
     └─────┴────────┴──────┘
     """
+    from .polars_helpers import pl_lowercase
+    if absolute_path := kwargs.get("absolute_fpath"):
+        fpath = Path(absolute_path)
     logger.trace("Attempting reading file {}", fpath)
     logger.trace("Parsing file {}", fpath)
     try:
@@ -94,6 +97,8 @@ def h5_handler(fpath, parser_class: str, **kwargs) -> pl.LazyFrame:
     NotImplementedError
         Raised if a non supported parser request a h5 file.
     """
+    # TODO might be able to use the plugin manager here but not necessary.
+    from .polars_helpers import pl_lowercase
     match parser_class:
         case "ReEDSParser":
             with h5py.File(fpath, "r") as f:

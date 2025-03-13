@@ -1,6 +1,5 @@
 """Plexos parser class."""
 
-import pluggy
 import importlib
 from argparse import ArgumentParser
 from collections.abc import Sequence
@@ -82,6 +81,9 @@ from .plexos_utils import (
     time_slice_handler,
 )
 from .polars_helpers import pl_filter_by_year
+from r2x.plugin_manager import PluginManager
+
+
 
 models = importlib.import_module("r2x.models")
 
@@ -154,19 +156,15 @@ SIMPLE_QUERY_COLUMNS_SCHEMA = {
     "scenario": pl.String,
 }
 
-
-hookimpl = pluggy.HookimplMarker("r2x_plugin")
-
-
-@hookimpl
-def cli_arguments(parser: ArgumentParser):
+@PluginManager.register_cli("parser","plexos")
+def cli_arguments(parser: ArgumentParser)->None:
     """CLI arguments for the plugin."""
     parser.add_argument(
         "--model",
         required=False,
         help="Plexos model to translate",
     )
-    return parser
+
 
 
 class PlexosParser(PCMParser):

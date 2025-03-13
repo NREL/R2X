@@ -5,7 +5,8 @@ It can either read the information directly or throught a cases file.
 """
 
 from dataclasses import field
-from typing import Any, TypeVar
+from typing import Any, TypeVar, Union
+from functools import singledispatch
 
 from pydantic import BaseModel
 
@@ -107,3 +108,18 @@ class InfrasysConfig(BaseModelConfig):
             },
             SiennaConfig: {"model_year": "reference_year"},
         }
+
+
+@singledispatch
+def get_year(model_class: BaseModelConfig) -> Union[int, None]:
+    """Extract year variable from `BaseModelConfig`."""
+    raise NotImplementedError("No get_year implementation for this type")
+
+@get_year.register
+def _(model_class: SiennaConfig):
+    return model_class.model_year
+
+
+@get_year.register
+def _(model_class: PlexosConfig):
+    return model_class.horizon_year

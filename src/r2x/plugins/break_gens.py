@@ -6,7 +6,6 @@ threshold variable, we drop the genrator entirely.
 """
 
 # System packages
-import pluggy
 import re
 from argparse import ArgumentParser
 
@@ -23,7 +22,7 @@ from r2x.models import Emission, Generator
 from r2x.parser.handler import BaseParser
 from r2x.units import ActivePower, ureg
 from r2x.utils import read_json
-
+from r2x.plugin_manager import PluginManager
 # Constants
 CAPACITY_THRESHOLD = 5  # MW
 PROPERTIES_TO_BREAK = [
@@ -36,10 +35,9 @@ PROPERTIES_TO_BREAK = [
 ]
 
 
-hookimpl = pluggy.HookimplMarker("r2x_plugin")
 
 
-@hookimpl
+@PluginManager.register_cli("system_update","break_gens")
 def cli_arguments(parser: ArgumentParser):
     """CLI arguments for the plugin."""
     parser.add_argument(
@@ -50,7 +48,7 @@ def cli_arguments(parser: ArgumentParser):
     )
 
 
-@hookimpl
+@PluginManager.register_system_update("break_gens")
 def update_system(
     config: Scenario,
     system: System,
