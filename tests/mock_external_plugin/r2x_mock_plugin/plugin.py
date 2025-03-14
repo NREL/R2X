@@ -35,6 +35,7 @@ def create_external_parser()->PluginComponent:
         config=TestExternalConfig,
         parser=TestExternalParser,
         parser_defaults=input_defaults,
+        parser_filters=['pl_rename','pl_filter_year'],
         fmap=fmap
     )
 
