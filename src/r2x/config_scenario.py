@@ -118,9 +118,11 @@ class Scenario:
         return None
 
     def _load_model_config(self) -> None:
-        from r2x.plugin_manager import manager as pm
-        if self.input_model:            
-            self.input_config = pm.get_model_config_class(self.input_model)            
+        from r2x.plugin_manager import PluginManager
+        pm = PluginManager()
+
+        if self.input_model:
+            self.input_config = pm.get_model_config_class(self.input_model)
             self.input_config.defaults = pm.get_model_input_defaults(self.input_model)
         if self.output_model:
 
@@ -157,7 +159,9 @@ class Scenario:
         """Create Scenario instance from key arguments."""
         cls_fields = {field for field in inspect.signature(cls).parameters}
 
-        from r2x.plugin_manager import manager as pm
+        from r2x.plugin_manager import PluginManager
+        pm = PluginManager()
+
         input_config = pm.get_model_config_class(input_model)
         output_config = pm.get_model_config_class(output_model)
 

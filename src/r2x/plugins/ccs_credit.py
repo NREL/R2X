@@ -3,7 +3,6 @@
 This plugin is only applicable for ReEDs, but could work with similarly arrange data
 """
 
-import pluggy
 import polars as pl
 from loguru import logger
 
@@ -12,12 +11,9 @@ from r2x.units import ureg
 from r2x.config_scenario import Scenario
 from r2x.models.generators import Generator
 from r2x.parser.handler import BaseParser
+from r2x.plugin_manager import PluginManager
 
-
-hookimpl = pluggy.HookimplMarker("r2x_plugin")
-
-
-@hookimpl
+@PluginManager.register_system_update("ccs_credit")
 def update_system(
     config: Scenario,
     system: System,

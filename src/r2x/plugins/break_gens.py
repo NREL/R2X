@@ -4,6 +4,7 @@ This plugin breaks apart generators that are to big in conmparisson with the
 WECC database. If the generator is to small after the breakup than the capacity
 threshold variable, we drop the genrator entirely.
 """
+from __future__ import annotations
 
 # System packages
 import re
@@ -53,9 +54,8 @@ def update_system(
     config: Scenario,
     system: System,
     parser: BaseParser,
-    kwargs: dict | None,
-    # pcm_defaults_fpath: str | None = None,
-    # capacity_threshold: int = CAPACITY_THRESHOLD,
+    pcm_defaults_fpath: str | None = None,
+    capacity_threshold: int = CAPACITY_THRESHOLD,
 ) -> System:
     """Break apart large generators based on average capacity.
 
@@ -67,8 +67,6 @@ def update_system(
         *args: additional arguments that can be passed,
         **kwargs: additiona arguments.
     """
-    pcm_defaults_fpath = kwargs.get("pcm_defaults_fpath", None)
-    capacity_threshold = kwargs.get("capacity_threshold", CAPACITY_THRESHOLD)
 
     logger.info("Dividing generators into average size generators")
     assert config.input_config

@@ -55,7 +55,7 @@ def get_additional_arguments(
     cli_types = [
         ("parser", "PARSER"),
         ("exporter", "EXPORTER"),
-        ("system_update", "SYSTEM UPDATER")
+        ("system_update", "SYSTEM MODIFIER")
     ]
     # Input Models
     for cli_type, group_prefix in cli_types:
@@ -117,13 +117,13 @@ def base_cli() -> argparse.ArgumentParser:
     group_cli.add_argument(
         "--input-model",
         dest="input_model",
-        choices=[model for model in pm.registered_input_models.keys()],
+        choices=pm.registered_parsers,
         help="Input model to convert from",
     )
     group_cli.add_argument(
         "--output-model",
         dest="output_model",
-        choices=[model for model in pm.registered_output_models.keys()],
+        choices=pm.registered_exporters,
         help="Output model to convert to",
     )
     group_cli.add_argument(
@@ -155,6 +155,7 @@ def base_cli() -> argparse.ArgumentParser:
         "-p",
         "--plugins",
         dest="plugins",
+        choices=pm.system_modifiers,
         nargs="*",
         help="Plugins to be included in the translation",
     )

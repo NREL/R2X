@@ -1,12 +1,11 @@
 """Umbrella API for R2X model."""
 
-import importlib
-import shutil
+import inspect
 import sys
+import shutil
 from importlib.resources import files
 from pathlib import Path
-import pluggy
-from .plugins import hookspec
+
 from loguru import logger
 
 from r2x.exporter.handler import get_exporter
@@ -15,10 +14,8 @@ from r2x.plugin_manager import PluginManager
 from .api import System
 from .config_scenario import Scenario, get_scenario_configuration
 from .parser.handler import BaseParser, get_parser_data
+from .parser.handler import get_parser_data
 from .upgrader import upgrade_handler
-from .utils import (
-    DEFAULT_PLUGIN_PATH,
-)
 
 pm = PluginManager()
 
@@ -51,12 +48,29 @@ def run_parser(config: Scenario, **kwargs):
     if getattr(config, "upgrade", None):
         upgrade_handler(config.run_folder)
 
-    parser_class = pm.load_parser(config.input_model)
+
+    plugin = pm.get_plugin(config.input_model)
+
+    parser_class = plugin.parser
+    parser_filters = plugin.parser_filters
+
+    filter_funcs = []
+    if parser_filters is not None:
+        for filter_func in parser_filters:
+            if type(filter_func) is str:
+                filter_func_call = pm.get_filter(str(filter_func))
+                filter_funcs.append(filter_func_call)
+            elif callable(filter_func):
+                filter_funcs.append(filter_func)
+            else:
+                raise TypeError(f"Filter function must be a string or callable, not {type(filter_func)}")
+    else:
+        filter_funcs = None
+
     if not parser_class:
         raise KeyError(f"Parser for {config.input_model} not found")
 
-    breakpoint()
-    parser = get_parser_data(config, parser_class, **kwargs)
+    parser = get_parser_data(config, parser_class, filter_funcs=filter_funcs, **kwargs)
     system = parser.build_system()
 
     assert system is not None, "System failed to create"
@@ -65,7 +79,7 @@ def run_parser(config: Scenario, **kwargs):
 
 
 def run_plugins(config: Scenario, parser: BaseParser, system: System) -> System:
-    """Run selected plugins.
+    """Run selected system modifiers.
 
     Parameters
     ----------
@@ -81,35 +95,18 @@ def run_plugins(config: Scenario, parser: BaseParser, system: System) -> System:
     if not config.plugins:
         return system
 
-    pm = pluggy.PluginManager("r2x_plugin")
-    pm.add_hookspecs(hookspec)
-
     logger.info("Running the following plugins: {}", config.plugins)
-
-    config_args = {key: value for key, value in config.__dict__.items()}
-
-    external_plugins = {
-        entry_point.name: entry_point
-        for entry_point in importlib.metadata.entry_points().select(group="r2x_plugin")
-    }
-
-    # plugin cli argument determines order
-    # If plugin not in external or internal plugins, program breaks.
-    for plugin in config.plugins:
-        # External Plugins
-        if plugin in external_plugins:
-            module = external_plugins[plugin].load()
-        # Internal Plugins
-        else:
-            module = importlib.import_module(f".{plugin}", DEFAULT_PLUGIN_PATH)
-
-        if hasattr(module, "update_system"):
-            pm.register(module)
-            hook_results = pm.hook.update_system(
-                config=config, system=system, parser=parser, kwargs=config_args
-            )
-            system = hook_results[0]
-            pm.unregister(module)
+    for sysmod_name in config.plugins:
+        # Load the system modifier function
+        sysmod_func = pm.get_system_modifier(sysmod_name)
+        # Inspect the system modifier function for arguments
+        sysmod_required_args = inspect.getfullargspec(sysmod_func).args
+        # Lookup the required arguments in the config
+        sysmod_config_args = {
+            key: value for key, value in config.__dict__.items() if key in sysmod_required_args
+        }
+        # update the system
+        system = sysmod_func(config=config, system=system, parser=parser, **sysmod_config_args)
 
     return system
 

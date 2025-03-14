@@ -2,6 +2,7 @@
 
 This module provides the abstract class to create parser objects.
 """
+from __future__ import annotations
 
 # System packages
 import inspect
@@ -11,12 +12,10 @@ from collections.abc import Callable, Sequence
 from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any, TypeVar, List, TYPE_CHECKING
 
-import polars as pl
 
 # Third-party packages
-from infrasys.component import Component
 from loguru import logger
 from plexosdb import XMLHandler
 from pydantic import ValidationError
@@ -210,7 +209,7 @@ ParserClass = TypeVar("ParserClass", bound=BaseParser)
 def get_parser_data(
     config: Scenario,
     parser_class: Callable,
-    filter_funcs: list[Callable] | None = None,
+    filter_funcs: List[Callable] | None = None,
     **kwargs,
 ) -> BaseParser:
     """Return parsed system.

@@ -13,11 +13,9 @@ from r2x.config_scenario import Scenario
 from r2x.parser.handler import BaseParser
 from r2x.units import ActivePower
 from r2x.utils import read_json
+from r2x.plugin_manager import PluginManager
 
-hookimpl = pluggy.HookimplMarker("r2x_plugin")
-
-
-@hookimpl
+@PluginManager.register_cli("system_update","pcm_defaults")
 def cli_arguments(parser: ArgumentParser):
     """CLI arguments for the plugin."""
     parser.add_argument(
@@ -25,13 +23,12 @@ def cli_arguments(parser: ArgumentParser):
         help="File containing the defaults",
     )
 
-
-@hookimpl
+@PluginManager.register_system_update("pcm_defaults")
 def update_system(
     config: Scenario,
     system: System,
     parser: BaseParser,
-    kwargs: dict | None,
+    pcm_defaults_fpath: str | None = None
 ) -> System:
     """Augment data model using PCM defaults dictionary.
 
@@ -49,8 +46,6 @@ def update_system(
         System
     """
     logger.info("Augmenting generators attributes")
-
-    pcm_defaults_fpath = kwargs.get("pcm_defaults_fpath", None)
 
     assert config.input_config
     if pcm_defaults_fpath is None:

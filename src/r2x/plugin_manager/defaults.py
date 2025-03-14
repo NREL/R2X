@@ -2,6 +2,8 @@ from loguru import logger
 from r2x.plugin_manager.interfaces import DefaultFile, PluginComponent, Dict
 
 
+
+
 # Common default files that apply to all or many models
 def get_common_default_files() -> Dict[str, DefaultFile]:
     """Get default files common to all models."""
@@ -27,8 +29,8 @@ def get_common_default_files() -> Dict[str, DefaultFile]:
 def create_reeds_plugin() -> PluginComponent:
     """Create components for the REEDS-US model."""
     from r2x.config_models import ReEDSConfig
-    from r2x.parser import ReEDSParser
-    from r2x.parser.reeds import cli_arguments
+    from r2x.parser.reeds import ReEDSParser
+
     # Get common defaults
     common_files = get_common_default_files()
 
@@ -46,18 +48,16 @@ def create_reeds_plugin() -> PluginComponent:
         config=ReEDSConfig,
         parser=ReEDSParser,
         parser_defaults=input_defaults,
-        parser_cli=cli_arguments,
+        parser_filters=['pl_rename','pl_filter_year'],
         fmap=fmap
     )
 
 def create_plexos_plugin() -> PluginComponent:
     """Create components for the PLEXOS model."""
     from r2x.config_models import PlexosConfig
-    from r2x.parser import PlexosParser
-    from r2x.exporter import PlexosExporter
-    # register the cli arguments by importing them.
-    from r2x.parser.plexos import cli_arguments as input_cli
-    from r2x.exporter.plexos import cli_arguments as export_cli
+    from r2x.parser.plexos import PlexosParser
+    from r2x.exporter.plexos import PlexosExporter
+
 
     # Get common defaults
     common_files = get_common_default_files()
@@ -92,7 +92,7 @@ def create_plexos_plugin() -> PluginComponent:
 def create_sienna_plugin() -> PluginComponent:
     """Create components for the SIENNA model."""
     from r2x.config_models import SiennaConfig
-    from r2x.exporter import SiennaExporter
+    from r2x.exporter.sienna import SiennaExporter
 
     # Get common defaults
     common_files = get_common_default_files()

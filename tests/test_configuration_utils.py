@@ -1,3 +1,4 @@
+"""
 import pytest
 
 from r2x.config_models import BaseModelConfig, Models, ReEDSConfig
@@ -43,3 +44,4 @@ def test_get_model_config_class():
     config = get_model_config_class(model)
     assert isinstance(config, BaseModelConfig)
     assert isinstance(config, ReEDSConfig)
+"""

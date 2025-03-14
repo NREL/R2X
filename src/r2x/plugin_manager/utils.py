@@ -1,87 +1,44 @@
+"""
+Utility functions for R2X plugin management.
+"""
 import importlib.metadata
 import inspect
-from typing import Dict, TypeVar, Union, Any
-
-#from r2x.parser.handler import BaseParser
-#from r2x.exporter.handler import BaseExporter
-#from r2x.config_models import BaseModelConfig
-ParserClass = TypeVar('ParserClass', bound='BaseParser')
-ExporterClass = TypeVar('ExporterClass', bound='BaseExporter')
-ModelClass = TypeVar("ModelClass", bound='BaseModelConfig')
+from typing import Dict, TypeVar, Any
+import os
+import sys
+from pathlib import Path
+from loguru import logger
 
 
-def find_subclasses(module_name:str, base_class):
+def register_functions_from_folder(folder_path:str|Path):
     """
-    Find all classes in a module that inherit from a specific base class.
+    Dynamically register specific functions from Python files in a folder.
+
+    Looks for functions with the @register_function decorator and registers them.
+
+    Internal Use Only
 
     Args:
-        module_name (str): Name of the module to inspect
-        base_class (type): Base class to check inheritance against
-
-    Returns:
-        list: List of classes that inherit from base_class
+        folder_path (str): Path to the folder containing Python files
     """
-    try:
-        # Load the module
-        module = importlib.import_module(module_name)
+    folder_path = Path(folder_path)
+    # Ensure folder path exists
+    if not os.path.exists(folder_path):
+        raise FileNotFoundError(f"Folder not found: {folder_path}")
 
-        # Get all members of the module that are classes
-        classes = [
-            obj for name, obj in inspect.getmembers(module, inspect.isclass)
-            if obj.__module__ == module_name  # Only include classes defined in this module
-        ]
+    # Loop through files in the folder
+    for filename in os.listdir(folder_path):
+        # Check if file is a Python file (ends with .py) and not __init__.py
+        if filename.endswith('.py') and filename != '__init__.py':
+            # Remove .py extension to get module name
+            module_name = str(folder_path).replace('src/', '').replace('/', '.') + '.' + filename[:-3]
 
-        # Filter for subclasses of base_class
-        subclasses = [
-            cls for cls in classes
-            if issubclass(cls, base_class) and cls != base_class
-        ]
+            try:
+                # Dynamically import the module. Functions will be registered automatically
+                module = importlib.import_module(module_name)
+                #logger.debug(f"Successfully registered {module.__name__}")
 
-        return subclasses
-
-    except ImportError as e:
-        print(f"Could not import module {module_name}: {e}")
-        return []
-
-# Using with entry points
-# TODO what if this returns multiple valid classes.
-def find_subclasses_from_entry_points(group_name: str, base_class) -> Dict[str, Any]:
-    """
-    Find subclasses from entry points with a specific group name.
-
-    Args:
-        group_name (str): Entry point group name
-        base_class (type): Base class to check inheritance against
-
-    Returns:
-        dict: Mapping of entry point names to their matching classes
-    """
-    results = {}
-
-    # Get all entry points for the specified group
-    entry_points = importlib.metadata.entry_points()
-
-    # Handle Python 3.10+ vs older versions
-    if hasattr(entry_points, 'select'):  # Python 3.10+
-        eps = entry_points.select(group=group_name)
-
-    for ep in eps:
-        try:
-            # Load the entry point
-            loaded = ep.load()
-
-            # If it's a class, check it directly
-            if inspect.isclass(loaded):
-                if issubclass(loaded, base_class) and loaded != base_class:
-                    results[ep.name] = loaded
-            # If it's a module, inspect its classes
-            elif inspect.ismodule(loaded):
-
-                for name, obj in inspect.getmembers(loaded, inspect.isclass):
-                    if issubclass(obj, base_class) and obj != base_class:
-                        results[name] = obj
-
-        except Exception as e:
-            print(f"Error loading entry point {ep.name}: {e}")
-
-    return results
+            except ImportError as e:
+                logger.error(f"Error importing {module_name}: {str(e)}")
+            except Exception as e:
+                logger.error(f"Unexpected error with {module_name}: {str(e)}")
