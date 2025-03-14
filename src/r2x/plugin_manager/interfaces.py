@@ -1,14 +1,18 @@
+from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Type, Callable, Any
-from argparse import ArgumentParser
-from r2x.api import System
-from r2x.parser.handler import BaseParser
-from r2x.exporter.handler import BaseExporter
-from r2x.config_models import BaseModelConfig
+from typing import Dict, List, Optional, Type, Callable, Any, Union, TYPE_CHECKING
 import json
 from pathlib import Path
 from importlib import resources
-from polars import DataFrame
+#from polars import DataFrame
+
+if TYPE_CHECKING:
+    from polars import DataFrame
+    from r2x.parser.handler import BaseParser
+    from r2x.exporter.handler import BaseExporter
+    from r2x.config_models import BaseModelConfig
+
+
 
 @dataclass
 class DefaultFile:
@@ -58,13 +62,20 @@ class DefaultFile:
 
 @dataclass
 class PluginComponent:
+
     """Components associated with a model."""
     config: Type[BaseModelConfig]  # Required
     parser: Optional[Type[BaseParser]] = None
     parser_defaults: List[DefaultFile] = field(default_factory=list)
+
     # TODO this could also be a list of string. If it is a string, we should check if that function
     # is avaialable first.
-    parser_filters: Optional[Callable[[DataFrame, dict], DataFrame]] = None
+    parser_filters: Optional[
+        Union[
+            List[str],
+            List[Callable[[DataFrame, dict], DataFrame]]
+        ]
+    ] = None
     exporter: Optional[Type[BaseExporter]] = None
     export_defaults: List[DefaultFile] = field(default_factory=list)
     fmap: Optional[DefaultFile] = None

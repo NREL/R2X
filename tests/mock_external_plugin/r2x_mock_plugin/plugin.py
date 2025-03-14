@@ -4,7 +4,7 @@ from typing import Dict
 # Register the cli arguments by loading them into the entry point module at the top.
 from .parser import cli_arguments as parser_cli
 from .exporter import cli_arguments as exporter_cli
-
+from .sysmod import cli_arguments as sysmod_cli, update_system
 # expect a function that returns Dict[str, PluginComponent]
 def get_common_files():
     return {

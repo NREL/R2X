@@ -2,6 +2,7 @@
 
 This module provides the abstract class to create parser objects.
 """
+from __future__ import annotations
 
 # System packages
 import inspect
@@ -11,23 +12,24 @@ from collections.abc import Callable, Sequence
 from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any, TypeVar, List, TYPE_CHECKING
 
-import polars as pl
 
 # Third-party packages
-from infrasys.component import Component
 from loguru import logger
 from plexosdb import XMLHandler
 from pydantic import ValidationError
 
 # Local packages
-from r2x.api import System
-from r2x.config_scenario import Scenario
-
 from ..utils import check_file_exists
 from .handler_utils import csv_handler, h5_handler
-#from .polars_helpers import pl_filter_year, pl_rename
+
+# Imports needed for type checking, not at runtime
+if TYPE_CHECKING:
+    import polars as pl
+    from infrasys.component import Component
+    from r2x.api import System
+    from r2x.config_scenario import Scenario
 
 
 @dataclass
@@ -109,7 +111,6 @@ class BaseParser(ABC):
         """Parse all the data for the given translation."""
 
         _fmap = deepcopy(fmap)
-        breakpoint()
         if base_folder is None:
             logger.warning("Missing base folder for {}", self.config.name)
             return None
@@ -140,7 +141,6 @@ class BaseParser(ABC):
                 fmap[dname]["fpath"] = fpath
                 self.data[dname] = self.read_file(fpath=fpath, filter_funcs=filter_func, **{**data, **kwargs})
                 logger.debug("Loaded file for {} from {}", dname, fpath)
-        breakpoint()
         return None
 
     @abstractmethod
@@ -200,7 +200,7 @@ ParserClass = TypeVar("ParserClass", bound=BaseParser)
 def get_parser_data(
     config: Scenario,
     parser_class: Callable,
-    filter_funcs: list[Callable] | None = None,
+    filter_funcs: List[Callable] | None = None,
     **kwargs,
 ) -> BaseParser:
     """Return parsed system.
@@ -237,14 +237,6 @@ def get_parser_data(
     logger.debug("Creating {} instance.", parser_class.__name__)
 
     parser = parser_class(config=config, **kwargs)
-
-    # Functions relative to the parser.
-    # NOTE: At some point we are going to migrate this out, but this sound like a good standard set
-    breakpoint()
-    if filter_funcs is None and config.input_model == "reeds-US":
-        logger.trace("Using default filter functions")
-        #filter_funcs = [pl_rename, pl_filter_year]
-
 
     # Adding special case for Plexos parser
     if model := getattr(config, "model", False):

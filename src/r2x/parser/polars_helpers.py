@@ -135,7 +135,6 @@ def pl_rename(
         pl.all().name.map(lambda col_name: column_mapping.get(col_name, col_name))
     )
 
-@PluginManager.register_filter("pl_left_multi_join")
 def pl_left_multi_join(l_df: pl.LazyFrame, *r_dfs: pl.DataFrame, **kwargs):
     """Perform a left join on multiple DataFrames.
 
@@ -180,7 +179,7 @@ def pl_left_multi_join(l_df: pl.LazyFrame, *r_dfs: pl.DataFrame, **kwargs):
     )
     return output_df
 
-@PluginManager.register_filter("pl_create_date_range")
+
 def pl_create_date_range(year: int, interval: str = "1h"):
     """Create a DataFrame with a date range for the given year.
 
