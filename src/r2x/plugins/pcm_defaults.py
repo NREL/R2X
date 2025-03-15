@@ -1,6 +1,5 @@
 """Augment results from CEM with PCM defaults."""
 
-import pluggy
 from argparse import ArgumentParser
 
 from infrasys.base_quantity import BaseQuantity

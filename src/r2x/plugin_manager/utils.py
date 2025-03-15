@@ -1,11 +1,7 @@
-"""
-Utility functions for R2X plugin management.
-"""
+"""Utility functions for R2X plugin management."""
+
 import importlib.metadata
-import inspect
-from typing import Dict, TypeVar, Any
 import os
-import sys
 from pathlib import Path
 from loguru import logger
 
@@ -35,10 +31,10 @@ def register_functions_from_folder(folder_path:str|Path):
 
             try:
                 # Dynamically import the module. Functions will be registered automatically
-                module = importlib.import_module(module_name)
+                _ = importlib.import_module(module_name)
                 #logger.debug(f"Successfully registered {module.__name__}")
 
             except ImportError as e:
-                logger.error(f"Error importing {module_name}: {str(e)}")
+                logger.error(f"Error importing {module_name}: {e!s}")
             except Exception as e:
-                logger.error(f"Unexpected error with {module_name}: {str(e)}")
+                logger.error(f"Unexpected error with {module_name}: {e!s}")

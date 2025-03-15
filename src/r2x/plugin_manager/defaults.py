@@ -1,11 +1,18 @@
+"""Default plugin components for R2X.
+
+This module defines a PluginComponent as an optional combination of Parsers,
+Configurations, Exporters, default files, filter functions, field mappings.
+
+This file is imported by the plugin manager to load default plugins
+and make them available system-wide.
+"""
+
 from loguru import logger
-from r2x.plugin_manager.interfaces import DefaultFile, PluginComponent, Dict
-
-
+from r2x.plugin_manager.interfaces import DefaultFile, PluginComponent
 
 
 # Common default files that apply to all or many models
-def get_common_default_files() -> Dict[str, DefaultFile]:
+def get_common_default_files() -> dict[str, DefaultFile]:
     """Get default files common to all models."""
     common_files = {}
 
@@ -48,7 +55,7 @@ def create_reeds_plugin() -> PluginComponent:
         config=ReEDSConfig,
         parser=ReEDSParser,
         parser_defaults=input_defaults,
-        parser_filters=['pl_rename','pl_filter_year'],
+        parser_filters=['pl_rename','pl_filter_by_year'],
         fmap=fmap
     )
 
@@ -106,13 +113,15 @@ def create_sienna_plugin() -> PluginComponent:
     export_defaults = [
         DefaultFile.from_path("defaults/sienna_config.json"),
     ]
+    fmap = DefaultFile.from_path("defaults/sienna_mapping.json")
 
     # SIENNA is both input and export
     return PluginComponent(
         config=SiennaConfig,
         parser_defaults=input_defaults,
         exporter=SiennaExporter,
-        export_defaults=export_defaults
+        export_defaults=export_defaults,
+        fmap=fmap
     )
 
 def create_infrasys_plugin() -> PluginComponent:
@@ -136,8 +145,14 @@ DEFAULT_MODEL_CREATORS = {
     "infrasys": create_infrasys_plugin,
 }
 
-def create_default_registry() -> Dict[str, PluginComponent]:
-    """Create the default registry with built-in models."""
+def create_default_registry() -> dict[str, PluginComponent]:
+    """
+    Create the default registry with built-in models.
+
+    Returns
+    -------
+        dict[str, PluginComponent]: A lookup of plugins by name.
+    """
     registry = {}
 
     # Create components for each default model

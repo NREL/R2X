@@ -1,5 +1,4 @@
 
-from r2x.exporter.plexos import PlexosExporter as TestExternalExporter
 from r2x.config_models import PlexosConfig as TestExternalConfig, get_year
 from argparse import ArgumentParser
 from r2x.plugin_manager import PluginManager

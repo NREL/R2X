@@ -5,7 +5,7 @@ It can either read the information directly or throught a cases file.
 """
 
 from dataclasses import field
-from typing import Any, TypeVar, Union
+from typing import Any, TypeVar
 from functools import singledispatch
 
 from pydantic import BaseModel
@@ -111,7 +111,7 @@ class InfrasysConfig(BaseModelConfig):
 
 
 @singledispatch
-def get_year(model_class: BaseModelConfig) -> Union[int, None]:
+def get_year(model_class: BaseModelConfig) -> int | None:
     """Extract year variable from `BaseModelConfig`."""
     raise NotImplementedError("No get_year implementation for this type")
 

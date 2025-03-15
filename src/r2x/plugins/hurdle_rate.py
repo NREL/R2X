@@ -45,7 +45,6 @@ def update_system(
     parser : BaseParser, optional
         The parser object used for parsing.
     """
-
     if not config.output_model == "plexos" or not config.input_model == "reeds-US":
         msg = "Plugin `hurdle_rate.py` is not compatible with a model that is not Plexos."
         raise NotImplementedError(msg)

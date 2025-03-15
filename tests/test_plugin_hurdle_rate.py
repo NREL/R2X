@@ -44,9 +44,8 @@ def test_hurdle_rate():
         weather_year=2012,
     )
     hurdle_rate_value = 0.006
-    kwargs = {key: value for key, value in config.__dict__.items()}
-    kwargs["hurdle_rate"] = hurdle_rate_value
-    new_system = update_system(config=config, system=system, parser=None, kwargs=kwargs)
+
+    new_system = update_system(config=config, system=system, parser=None, hurdle_rate=hurdle_rate_value)
     assert isinstance(new_system, System)
 
     # Check line between regions
@@ -64,7 +63,7 @@ def test_hurdle_rate():
     # Test invalid models
     config.output_model = "sienna"
     with pytest.raises(NotImplementedError):
-        _ = update_system(config=config, system=system, parser=None, kwargs=kwargs)
+        _ = update_system(config=config, system=system, parser=None, hurdle_rate=hurdle_rate_value)
 
 
 def test_hurdle_rate_with_parser(reeds_data_folder, tmp_folder):
@@ -80,7 +79,5 @@ def test_hurdle_rate_with_parser(reeds_data_folder, tmp_folder):
 
     system, parser = run_parser(config)
 
-    kwargs = {key: value for key, value in config.__dict__.items()}
-    kwargs["hurdle_rate"] = 0.006
-    new_system = update_system(config=config, parser=parser, system=system, kwargs=kwargs)
+    new_system = update_system(config=config, parser=parser, system=system, hurdle_rate=0.006)
     assert isinstance(new_system, System)

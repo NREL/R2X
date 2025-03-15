@@ -64,7 +64,6 @@ def update_system(
     short ton equals 2000 lbs. For units in kg/MWh and `emission_cap` in metric tons,
     we multiply by 1000 (`Scalar` property in Plexos).
     """
-
     if not config.output_model == "plexos":
         msg = "Plugin `emission_cap.py` is not compatible with a model that is not Plexos."
         raise NotImplementedError(msg)

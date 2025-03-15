@@ -25,7 +25,7 @@ def test_update_system_default(reeds_data_folder, tmp_folder):
 
     system, parser = run_parser(config)
 
-    new_system = update_system(config=config, parser=parser, system=system, kwargs={})
+    new_system = update_system(config=config, parser=parser, system=system)
     assert isinstance(new_system, System)
 
     constraint = next(iter(new_system.get_components(Constraint)))
@@ -42,7 +42,7 @@ def test_update_system_default(reeds_data_folder, tmp_folder):
     assert EmissionType.CO2 in constraint_map.mapping[constraint.name]
 
     system, parser = run_parser(config)
-    new_system = update_system(config=config, parser=parser, system=system, kwargs={"emission_cap": 0.0})
+    new_system = update_system(config=config, parser=parser, system=system, emission_cap=0.0)
     assert isinstance(new_system, System)
     constraint = next(iter(new_system.get_components(Constraint)))
     assert constraint
@@ -55,7 +55,7 @@ def test_update_system_default(reeds_data_folder, tmp_folder):
     # Test invalid models
     config.output_model = "sienna"
     with pytest.raises(NotImplementedError):
-        _ = update_system(config=config, parser=parser, system=system, kwargs={})
+        _ = update_system(config=config, parser=parser, system=system)
 
 
 def test_no_emission(caplog, infrasys_test_system):
@@ -69,8 +69,7 @@ def test_no_emission(caplog, infrasys_test_system):
         plugins=["emission_cap"],
     )
 
-    kwargs = {key: value for key, value in config.__dict__.items()}
-    _ = update_system(config=config, system=infrasys_test_system, parser=None, kwargs=kwargs)
+    _ = update_system(config=config, system=infrasys_test_system, parser=None)
     assert "Did not find any emission" in caplog.text
 
 
@@ -87,9 +86,8 @@ def test_emission_but_no_cap(caplog):
         weather_year=2012,
         plugins=["emission_cap"],
     )
-
-    kwargs = {key: value for key, value in config.__dict__.items()}
-    _ = update_system(config=config, system=system, parser=None, kwargs=kwargs)
+    
+    _ = update_system(config=config, system=system, parser=None)
     assert "Could not set emission cap value" in caplog.text
 
 
@@ -110,10 +108,8 @@ def test_multiple_constraint_maps():
         plugins=["emission_cap"],
     )
 
-    kwargs = {key: value for key, value in config.__dict__.items()}
-    kwargs["emission_cap"] = 0.0
     with pytest.raises(NotImplementedError):
-        _ = update_system(config=config, system=system, parser=None, kwargs=kwargs)
+        _ = update_system(config=config, system=system, emission_cap=0.0)
 
 
 def test_update_system_using_cli(reeds_data_folder, tmp_folder):

@@ -1,11 +1,11 @@
 from r2x.plugin_manager.defaults import PluginComponent, DefaultFile
-from typing import Dict
 
-# Register the cli arguments by loading them into the entry point module at the top.
+# These will get registered into the plugin manager on module load.
 from .parser import cli_arguments as parser_cli
 from .exporter import cli_arguments as exporter_cli
 from .sysmod import cli_arguments as sysmod_cli, update_system
-# expect a function that returns Dict[str, PluginComponent]
+_ = (parser_cli, exporter_cli, sysmod_cli, update_system)
+
 def get_common_files():
     return {
         "config": DefaultFile.from_path("defaults/config_ext.json", module="r2x_mock_plugin"),
@@ -16,8 +16,8 @@ def create_external_parser()->PluginComponent:
 
     # Functions to create ModelComponents for each default model
     """Create components for the REEDS-US model."""
-    from .parser import TestExternalParser, TestExternalConfig
-
+    from r2x.parser.reeds import ReEDSParser as TestExternalParser
+    from r2x.config_models import  ReEDSConfig as TestExternalConfig
         # Get common defaults
     common_files = get_common_files()
 
@@ -43,8 +43,8 @@ def create_external_exporter()->PluginComponent:
 
     # Functions to create ModelComponents for each default model
     """Create components for the PLEXOS model."""
-    from .exporter import TestExternalExporter, TestExternalConfig
-
+    from .exporter import TestExternalConfig
+    from r2x.exporter.plexos import PlexosExporter as TestExternalExporter
         # Get common defaults
     common_files = get_common_files()
 
@@ -73,8 +73,8 @@ def create_external_exporter()->PluginComponent:
         fmap=fmap
     )
 
-
-def create_plugin_components()->Dict[str, PluginComponent]:
+# R2X expects a function that returns Dict[str, PluginComponent]
+def create_plugin_components()->dict[str, PluginComponent]:
 
     components = {
         "ExternalParser": create_external_parser(),

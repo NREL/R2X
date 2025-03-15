@@ -67,7 +67,6 @@ def update_system(
         *args: additional arguments that can be passed,
         **kwargs: additiona arguments.
     """
-
     logger.info("Dividing generators into average size generators")
     assert config.input_config
     if pcm_defaults_fpath is None:

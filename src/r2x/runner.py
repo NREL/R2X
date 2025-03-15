@@ -14,7 +14,6 @@ from r2x.plugin_manager import PluginManager
 from .api import System
 from .config_scenario import Scenario, get_scenario_configuration
 from .parser.handler import BaseParser, get_parser_data
-from .parser.handler import get_parser_data
 from .upgrader import upgrade_handler
 
 pm = PluginManager()

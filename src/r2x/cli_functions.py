@@ -1,7 +1,6 @@
 """CLI helper functions."""
 
 import argparse
-import importlib
 import os
 
 from .__version__ import __version__
@@ -50,8 +49,7 @@ class Flags(argparse.Action):
 def get_additional_arguments(
     parser: argparse.ArgumentParser
 )->argparse.ArgumentParser:
-    """Add cli arguments found in input_models, output_models and system_modifiers"""
-
+    """Add cli arguments found in input_models, output_models and system_modifiers."""
     cli_types = [
         ("parser", "PARSER"),
         ("exporter", "EXPORTER"),
@@ -67,7 +65,6 @@ def get_additional_arguments(
             name = entry["group_name"]
             script_cli_group = parser.add_argument_group(f"{group_prefix}: {name}")
             entry["func"](script_cli_group)
-
 
     return parser
 

@@ -12,7 +12,7 @@ from collections.abc import Callable, Sequence
 from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, TypeVar, List, TYPE_CHECKING
+from typing import Any, TypeVar, TYPE_CHECKING
 
 
 # Third-party packages
@@ -124,8 +124,6 @@ class BaseParser(ABC):
         **kwargs,
     ) -> bool:
         """Parse all the data for the given translation."""
-
-
         logger.trace("Parsing data for {}", self.__class__.__name__)
         _fmap = deepcopy(fmap)
 
@@ -212,7 +210,7 @@ ParserClass = TypeVar("ParserClass", bound=BaseParser)
 def get_parser_data(
     config: Scenario,
     parser_class: Callable,
-    filter_funcs: List[Callable] | None = None,
+    filter_funcs: list[Callable] | None = None,
     **kwargs,
 ) -> BaseParser:
     """Return parsed system.
@@ -269,7 +267,7 @@ def get_parser_data(
 
 
 def create_model_instance(
-    model_class: type["Component"], skip_validation: bool = False, **field_values
+    model_class: type[Component], skip_validation: bool = False, **field_values
 ) -> Any:
     """Create R2X model instance."""
     valid_fields = {
