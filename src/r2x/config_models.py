@@ -5,8 +5,8 @@ It can either read the information directly or throught a cases file.
 """
 
 from dataclasses import field
-from enum import StrEnum
 from typing import Any, TypeVar
+from functools import singledispatch
 
 from pydantic import BaseModel
 
@@ -110,36 +110,16 @@ class InfrasysConfig(BaseModelConfig):
         }
 
 
-class Models(StrEnum):
-    """Enum of valid models supported."""
+@singledispatch
+def get_year(model_class: BaseModelConfig) -> int | None:
+    """Extract year variable from `BaseModelConfig`."""
+    raise NotImplementedError("No get_year implementation for this type")
 
-    INFRASYS = "INFRASYS"
-    REEDS = "REEDS-US"
-    PLEXOS = "PLEXOS"
-    SIENNA = "SIENNA"
-    PRAS = "PRAS"
-
-
-class ParserModels(StrEnum):
-    """Enum of valid parser models supported."""
-
-    INFRASYS = "INFRASYS"
-    REEDS = "REEDS-US"
-    PLEXOS = "PLEXOS"
-    SIENNA = "SIENNA"
+@get_year.register
+def _(model_class: SiennaConfig):
+    return model_class.model_year
 
 
-class ExporterModels(StrEnum):
-    """Enum of valid exporter models supported."""
-
-    PLEXOS = "PLEXOS"
-    SIENNA = "SIENNA"
-    INFRASYS = "INFRASYS"
-
-
-MODEL_CONFIGS = {
-    Models.REEDS: ReEDSConfig,
-    Models.PLEXOS: PlexosConfig,
-    Models.SIENNA: SiennaConfig,
-    Models.INFRASYS: InfrasysConfig,
-}
+@get_year.register
+def _(model_class: PlexosConfig):
+    return model_class.horizon_year

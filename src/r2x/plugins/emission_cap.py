@@ -15,8 +15,9 @@ from r2x.models.utils import Constraint, ConstraintMap
 from r2x.parser.handler import BaseParser
 from r2x.units import ureg
 from r2x.utils import validate_string
+from r2x.plugin_manager import PluginManager
 
-
+@PluginManager.register_cli("system_update", "emission_cap")
 def cli_arguments(parser: ArgumentParser):
     """CLI arguments for the plugin."""
     parser.add_argument(
@@ -26,6 +27,7 @@ def cli_arguments(parser: ArgumentParser):
     )
 
 
+@PluginManager.register_system_update("emission_cap")
 def update_system(
     config: Scenario,
     system: System,

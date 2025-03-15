@@ -20,11 +20,13 @@ from r2x.models import ACBus, Generator, InterruptiblePowerLoad
 from r2x.parser.handler import BaseParser
 from r2x.parser.polars_helpers import pl_left_multi_join
 from r2x.units import ActivePower, FuelPrice
+from r2x.plugin_manager import PluginManager
 
 ELECTROLYZER_LOAD_FMAP = "electrolyzer_load"
 MONTHLY_H2_FPRICE_FMAP = "h2_fuel_price"
 
 
+@PluginManager.register_system_update("electrolyzer")
 def update_system(parser: BaseParser, config: Scenario, system: System, **_):
     """Modify infrasys system to include electrolyzer load and monthly hydrogen fuel price."""
     logger.info("Adding electrolyzer representation to the system")

@@ -15,8 +15,9 @@ from r2x.models.core import MinMax
 from r2x.models.generators import Generator
 from r2x.models.topology import ACBus
 from r2x.parser.handler import BaseParser
+from r2x.plugin_manager import PluginManager
 
-
+@PluginManager.register_cli("system_update","cambium")
 def cli_arguments(parser: ArgumentParser):
     """CLI arguments for the plugin."""
     parser.add_argument(
@@ -25,12 +26,13 @@ def cli_arguments(parser: ArgumentParser):
         help="Load perturbation scalar",
     )
 
-
+@PluginManager.register_system_update("cambium")
 def update_system(
     config: Scenario,
     system: System,
     perturb: float,
     parser: BaseParser | None = None,
+    **kwargs
 ) -> System:
     """Apply hurdle rate between regions.
 
