@@ -23,6 +23,8 @@ from pydantic import ValidationError
 # Local packages
 from ..utils import check_file_exists
 from .handler_utils import csv_handler, h5_handler
+from .polars_helpers import pl_filter_by_weather_year
+from r2x.exceptions import R2XParserError
 
 # Imports needed for type checking, not at runtime
 if TYPE_CHECKING:
@@ -31,6 +33,15 @@ if TYPE_CHECKING:
     from r2x.api import System
     from r2x.config_scenario import Scenario
 
+FILE_PARSING_KWARGS = {
+    "absolute_fpath",
+    "keep_case",
+    "use_filter_functions",
+    "column_mapping",
+    "solve_year",
+    "weather_year",
+    "filter_by_weather_year",
+}
 
 @dataclass
 class BaseParser(ABC):
@@ -121,8 +132,7 @@ class BaseParser(ABC):
         files_to_parse = {key: value for key, value in _fmap.items() if value is not None}
         if not len(files_to_parse) > 0:
             msg = "Not a single valid entry found on the fmap configuration."
-            # FIXME
-            #raise R2XParserError(msg)
+            raise R2XParserError(msg)
 
         for dname, data in files_to_parse.items():
             fname = data["fname"]
