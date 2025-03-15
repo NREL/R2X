@@ -11,7 +11,7 @@ from r2x.exceptions import R2XParserError
 from r2x.parser.plexos_utils import DATAFILE_COLUMNS
 from r2x.plugin_manager import PluginManager
 
-
+@PluginManager.register_filter("pl_filter_year")
 def pl_filter_by_year(
     data: pl.DataFrame | pl.LazyFrame, year: int | None = None, year_column: str = "year", **kwargs
 ) -> pl.DataFrame:

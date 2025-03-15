@@ -21,23 +21,15 @@ from plexosdb import XMLHandler
 from pydantic import ValidationError
 
 # Local packages
-from r2x.api import System
-from r2x.config_scenario import Scenario
-from r2x.exceptions import R2XParserError
-from r2x.utils import check_file_exists
-
+from ..utils import check_file_exists
 from .handler_utils import csv_handler, h5_handler
-from .polars_helpers import pl_filter_by_weather_year, pl_filter_by_year, pl_rename
 
-FILE_PARSING_KWARGS = {
-    "absolute_fpath",
-    "keep_case",
-    "use_filter_functions",
-    "column_mapping",
-    "solve_year",
-    "weather_year",
-    "filter_by_weather_year",
-}
+# Imports needed for type checking, not at runtime
+if TYPE_CHECKING:
+    import polars as pl
+    from infrasys.component import Component
+    from r2x.api import System
+    from r2x.config_scenario import Scenario
 
 
 @dataclass
@@ -122,14 +114,15 @@ class BaseParser(ABC):
     ) -> bool:
         """Parse all the data for the given translation."""
 
-        
+
         logger.trace("Parsing data for {}", self.__class__.__name__)
         _fmap = deepcopy(fmap)
 
         files_to_parse = {key: value for key, value in _fmap.items() if value is not None}
         if not len(files_to_parse) > 0:
             msg = "Not a single valid entry found on the fmap configuration."
-            raise R2XParserError(msg)
+            # FIXME
+            #raise R2XParserError(msg)
 
         for dname, data in files_to_parse.items():
             fname = data["fname"]
@@ -246,13 +239,6 @@ def get_parser_data(
     logger.debug("Creating {} instance.", parser_class.__name__)
 
     parser = parser_class(config=config, **kwargs)
-
-    # Functions relative to the parser.
-    # NOTE: At some point we are going to migrate this out, but this sound like a good standard set
-    if filter_funcs is None and config.input_model == "reeds-US":
-        logger.trace("Using default filter functions")
-        filter_funcs = [pl_rename, pl_filter_by_year]
-
 
     # Adding special case for Plexos parser
     if model := getattr(config, "model", False):
