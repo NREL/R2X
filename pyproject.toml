@@ -43,7 +43,7 @@ dependencies = [
 [project.scripts]
 r2x = "r2x.__main__:cli"
 
-[dependency-groups]
+[project.optional-dependencies]
 dev = [
     "ipython>=8.28.0",
     "mypy~=1.11.0",
