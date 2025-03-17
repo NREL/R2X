@@ -3,6 +3,7 @@
 This plugin is only applicable for ReEDs, but could work with similarly arrange data
 """
 
+import pluggy
 import polars as pl
 from loguru import logger
 
@@ -13,10 +14,14 @@ from r2x.models.generators import Generator
 from r2x.parser.handler import BaseParser
 
 
+hookimpl = pluggy.HookimplMarker("r2x_plugin")
+
+
+@hookimpl
 def update_system(
     config: Scenario,
     system: System,
-    parser: BaseParser | None = None,
+    parser: BaseParser | None,
 ) -> System:
     """Apply CCS incentive to CCS eligible technologies.
 
