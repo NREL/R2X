@@ -24,12 +24,12 @@
         "HYDRO-ROR"
     ],
     "reeds_device_map": {
-        "BATTERY": "GenericBattery",
-        "BATTERY_2": "GenericBattery",
-        "BATTERY_4": "GenericBattery",
-        "BATTERY_6": "GenericBattery",
-        "BATTERY_8": "GenericBattery",
-        "BATTERY_10": "GenericBattery",
+        "BATTERY": "EnergyReservoirStorage",
+        "BATTERY_2": "EnergyReservoirStorage",
+        "BATTERY_4": "EnergyReservoirStorage",
+        "BATTERY_6": "EnergyReservoirStorage",
+        "BATTERY_8": "EnergyReservoirStorage",
+        "BATTERY_10": "EnergyReservoirStorage",
         "COGENERATION-BAGASSE": "ThermalStandard",
         "DISTPV": "RenewableNonDispatch",
         "CCGT-GAS": "ThermalStandard",
@@ -119,7 +119,7 @@
         },
         "UPV": {
             "fuel": null,
-            "type": "PV"
+            "type": "PVe"
         },
         "OFSWIND": {
             "fuel": null,

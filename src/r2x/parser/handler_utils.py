@@ -1,10 +1,10 @@
 """Helper functions for base parser."""
 
+import os
 from pathlib import Path
 
 import h5py
 import pandas as pd
-import os
 import polars as pl
 from loguru import logger
 
@@ -54,8 +54,6 @@ def csv_handler(fpath: Path, csv_file_encoding="utf8", **kwargs) -> pl.DataFrame
     │ 2   │ Bob    │ 24   │
     └─────┴────────┴──────┘
     """
-    if absolute_path := kwargs.get("absolute_fpath"):
-        fpath = Path(absolute_path)
     logger.trace("Attempting reading file {}", fpath)
     logger.trace("Parsing file {}", fpath)
     try:
@@ -71,10 +69,6 @@ def csv_handler(fpath: Path, csv_file_encoding="utf8", **kwargs) -> pl.DataFrame
     except pl.exceptions.PolarsError:
         logger.warning("File {} could not be parse due to dtype problems. See error.", fpath)
         raise
-
-    if data_file.is_empty():
-        logger.debug("File {} is empty. Skipping it.", fpath)
-        return
 
     if kwargs.get("keep_case") is None:
         data_file = pl_lowercase(data_file)
@@ -106,18 +100,35 @@ def h5_handler(fpath, parser_class: str, **kwargs) -> pl.LazyFrame:
                 logger.info(f"Parsing h5 File: {fpath}")
                 # unique structure for recf versus load
                 if os.path.basename(fpath) == "recf.h5":
-                    pd_df = pd.DataFrame(f["data"], columns=[col.decode("utf-8") for col in f["columns"]])
+                    index_datetime = (
+                        f["index_datetime"][:] if "index_datetime" in f.keys() else f["index_0"][:]
+                    )
+                    pd_df = pd.DataFrame(
+                        f["data"],
+                        index=pd.Index(
+                            pd.to_datetime(
+                                index_datetime.astype(str),
+                            ),
+                            name="datetime",
+                        ),
+                        columns=[col.decode("utf-8") for col in f["columns"]],
+                    )
+                    pd_df = pd_df.reset_index()
                 elif os.path.basename(fpath) == "load.h5":
                     # get index data
-                    index_year = f["index_year"][:]
-                    index_datetime = f["index_datetime"][:]
+                    index_year = f["index_year"][:] if "index_year" in f.keys() else f["index_0"][:]
+                    index_datetime = (
+                        f["index_datetime"][:] if "index_datetime" in f.keys() else f["index_1"][:]
+                    )
 
                     # get data in pandas format
                     pd_df = pd.DataFrame(f["data"], columns=[col.decode("utf-8") for col in f["columns"]])
 
                     # creating multi level index
+                    unique_year_sorted = sorted(set(index_year))
+                    unique_datetime_sorted = sorted(set(index_datetime))
                     multilevel_index = pd.MultiIndex.from_product(
-                        [index_year, index_datetime], names=["year", "datetime"]
+                        [unique_year_sorted, unique_datetime_sorted], names=["year", "datetime"]
                     )
 
                     # setting index then reseting
@@ -125,9 +136,11 @@ def h5_handler(fpath, parser_class: str, **kwargs) -> pl.LazyFrame:
 
                     # correctly formating datetime col
                     pd_df["datetime"] = pd.to_datetime(pd_df["datetime"].astype(str))
-
-                # returning lazy dataframe
-                return pl.LazyFrame(pd_df)
+                pl_df = pl.LazyFrame(pd_df)
         case _:
             msg = f"H5 file parsing is not implemented for {parser_class=}."
             raise NotImplementedError(msg)
+
+    if kwargs.get("keep_case") is None:
+        pl_df = pl_lowercase(pl_df)
+    return pl_df

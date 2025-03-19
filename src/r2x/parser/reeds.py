@@ -28,7 +28,7 @@ from r2x.enums import (
     StorageTechs,
     ThermalFuels,
 )
-from r2x.exceptions import ParserError
+from r2x.exceptions import R2XParserError
 from r2x.models import (
     ACBus,
     Area,
@@ -37,20 +37,27 @@ from r2x.models import (
     EnergyReservoirStorage,
     Generator,
     HybridSystem,
+    HydroDispatch,
+    HydroEnergyReservoir,
     HydroGen,
+    HydroGenerationCost,
+    InputOutput,
     LoadZone,
+    MinMax,
     MonitoredLine,
     PowerLoad,
     RenewableDispatch,
+    RenewableGen,
+    RenewableGenerationCost,
     RenewableNonDispatch,
     Reserve,
     ReserveMap,
+    ThermalGen,
+    ThermalGenerationCost,
     TransmissionInterface,
     TransmissionInterfaceMap,
+    UpDown,
 )
-from r2x.models.core import InputOutput, MinMax
-from r2x.models.costs import HydroGenerationCost, RenewableGenerationCost, ThermalGenerationCost
-from r2x.models.generators import HydroDispatch, HydroEnergyReservoir, RenewableGen, ThermalGen
 from r2x.parser.handler import BaseParser, create_model_instance
 from r2x.units import ActivePower, EmissionRate, Energy, Percentage, Time, ureg
 from r2x.utils import get_enum_from_string, match_category, read_csv
@@ -104,7 +111,20 @@ class ReEDSParser(BaseParser):
 
     def build_system(self) -> System:
         """Create IS system for the ReEDS model."""
-        self.system = System(name=self.config.name, auto_add_composed_components=True)
+        solve_year_found = self._check_solve_year()
+        if not solve_year_found:
+            msg = (
+                "Solve year not found on scenario. "
+                f"Select one of the available modeled years = {self.solve_years}"
+            )
+            raise R2XParserError(msg)
+        self.system = System(
+            name=self.config.name,
+            auto_add_composed_components=True,
+            description=(
+                f"ReEDS translation for {self.reeds_config.solve_year=} and {self.reeds_config.weather_year=}"
+            ),
+        )
 
         # Construct transmission network and buses
         self._construct_buses()
@@ -125,6 +145,15 @@ class ReEDSParser(BaseParser):
         self._construct_hybrid_systems()
 
         return self.system
+
+    def _check_solve_year(self) -> bool:
+        solve_years = self.get_data("years")
+        years = list(solve_years.columns)
+        years_int = [int(x) for x in years]
+        self.solve_years = years_int
+        if self.reeds_config.solve_year not in years_int:
+            return False
+        return True
 
     # NOTE: Rename to create topology
     def _construct_buses(self):
@@ -268,7 +297,7 @@ class ReEDSParser(BaseParser):
                 self._create_model_instance(
                     TransmissionInterface,
                     name=interface_name,
-                    active_power_flow_limits=MinMax(-max_power_flow, max_power_flow),
+                    active_power_flow_limits=MinMax(min=-max_power_flow, max=max_power_flow),
                     direction_mapping={},  # TBD
                     ext={
                         "ramp_up": max_power_flow * ramp_multiplier * ureg.Unit("MW/min"),
@@ -454,7 +483,7 @@ class ReEDSParser(BaseParser):
                     f"Could not find a fuel and prime mover map for `{row['category']}`."
                     " Check `reeds_input_config.json`"
                 )
-                raise ParserError(msg)
+                raise R2XParserError(msg)
 
             row["prime_mover_type"] = (
                 get_enum_from_string(fuel_pm["type"], PrimeMoversType) if fuel_pm.get("type") else None
@@ -468,6 +497,11 @@ class ReEDSParser(BaseParser):
                 row["input_active_power_limits"] = MinMax(min=0, max=row["active_power"].magnitude)
                 row["output_active_power_limits"] = MinMax(min=0, max=row["active_power"].magnitude)
                 row["efficiency"] = InputOutput(input=0.9, output=0.9)
+
+            if gen_model.__name__ == "HydroPumpedStorage":
+                row["storage_capacity"] = UpDown(
+                    up=row["storage_capacity"].magnitude, down=row["storage_capacity"].magnitude
+                )
 
             bus = self.system.get_component(ACBus, name=row["region"])
             row["bus"] = bus
@@ -544,24 +578,19 @@ class ReEDSParser(BaseParser):
 
         bus_data = self.get_data("hierarchy")
         load_df = self.get_data("load").collect()
-        start = datetime(year=self.weather_year, month=1, day=1)
+        start = load_df["datetime"].item(0)
         resolution = timedelta(hours=1)
 
-        # Calculate starting index for the weather year
-        if len(load_df) > 8760:
-            end_idx = 8760 * (self.weather_year - BASE_WEATHER_YEAR + 1)  # +1 to be inclusive.
-        else:
-            end_idx = 8760
         for _, bus_data in enumerate(bus_data.iter_rows(named=True)):
             bus_name = bus_data["region"]
             bus = self.system.get_component(ACBus, name=bus_name)
             ts = SingleTimeSeries.from_array(
-                data=ActivePower(load_df[bus_name][end_idx - 8760 : end_idx].to_numpy(), "MW"),
+                data=ActivePower(load_df[bus_name].to_numpy(), "MW"),
                 variable_name="max_active_power",
                 initial_time=start,
                 resolution=resolution,
             )
-            user_dict = {"solve_year": self.reeds_config.weather_year}
+            user_dict = {"solve_year": self.reeds_config.weather_year, "weather_year": self.weather_year}
             max_load = np.max(ts.data)
             load = self._create_model_instance(
                 PowerLoad, name=f"{bus.name}", bus=bus, max_active_power=max_load
@@ -583,14 +612,8 @@ class ReEDSParser(BaseParser):
         ilr = dict(
             ilr.group_by("tech").agg(pl.col("ilr").sum()).iter_rows()
         )  # Dict is more useful here than series
-        start = datetime(year=self.weather_year, month=1, day=1)
+        start = cf_data["datetime"].item(0)
         resolution = timedelta(hours=1)
-
-        # Calculate starting index for the weather year starting
-        if len(cf_data) > 8760:
-            end_idx = 8760 * (self.weather_year - BASE_WEATHER_YEAR + 1)  # +1 to be inclusive.
-        else:
-            end_idx = 8760
 
         counter = 0
         # NOTE: At some point, I would like to create a single time series per
@@ -603,26 +626,22 @@ class ReEDSParser(BaseParser):
             if profile_name not in cf_data.columns:
                 msg = (
                     f"{generator.__class__.__name__}:{generator.name} do not "
-                    "have a corresponding time series. Consider changing the model to `RenewableGen`"
+                    f"have a corresponding time series `{profile_name}`. "
+                    " Consider changing the model to `RenewableGen`"
                 )
                 logger.warning(msg)
                 continue
 
             cf_adj = cf_adjustment.filter(pl.col("tech") == generator.ext["reeds_tech"])["cf_adj"]
             ilr_value = ilr.get(generator.ext["reeds_tech"], 1)
-            rating_profile = (
-                generator.active_power
-                * ilr_value
-                * cf_adj
-                * cf_data[profile_name][end_idx - 8760 : end_idx].to_numpy()
-            )
+            rating_profile = generator.active_power * ilr_value * cf_adj * cf_data[profile_name].to_numpy()
             ts = SingleTimeSeries.from_array(
                 data=rating_profile,
                 variable_name="max_active_power",
                 initial_time=start,
                 resolution=resolution,
             )
-            user_dict = {"solve_year": self.weather_year}
+            user_dict = {"weather_year": self.weather_year}
             self.system.add_time_series(ts, generator, **user_dict)
             counter += 1
         logger.debug("Added {} time series objects", counter)
@@ -810,6 +829,7 @@ class ReEDSParser(BaseParser):
     def _construct_hydro_rating_profiles(self) -> None:
         logger.debug("Adding hydro rating profiles.")
         month_hrs = read_csv("month_hrs.csv").collect()
+        month_hrs = month_hrs.filter(pl.col("model") == self.config.input_model)
         month_map = self.reeds_config.defaults["month_map"]
 
         hydro_cf = self.get_data("hydro_cf")
