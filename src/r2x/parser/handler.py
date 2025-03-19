@@ -248,7 +248,7 @@ def get_parser_data(
 
     # Functions relative to the parser.
     # NOTE: At some point we are going to migrate this out, but this sound like a good standard set
-    if filter_funcs is None and config.input_model in ["reeds-US", "reeds-India"]:
+    if (filter_funcs is None) and (parser_class.__name__ == "ReEDSParser"):
         logger.trace("Using default filter functions")
         filter_funcs = [pl_rename, pl_filter_by_year]
 
