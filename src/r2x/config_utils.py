@@ -29,6 +29,9 @@ def get_input_defaults(model_enum: Models) -> dict:
         case Models.REEDS:
             defaults_dict = defaults_dict | read_json("r2x/defaults/reeds_input.json")
             logger.debug("Returning reeds defaults")
+        case Models.REEDS_INDIA:
+            defaults_dict = defaults_dict | read_json("r2x/defaults/reeds_india_input.json")
+            logger.debug("Returning reeds-India defaults")
         case Models.SIENNA:
             defaults_dict = defaults_dict | read_json("r2x/defaults/sienna_config.json")
             logger.debug("Returning sienna defaults")
@@ -82,6 +85,8 @@ def get_input_model_fmap(model_enum: Models) -> dict:
             fmap = {}
         case Models.REEDS:
             fmap = read_fmap("r2x/defaults/reeds_us_mapping.json")
+        case Models.REEDS_INDIA:
+            fmap = read_fmap("r2x/defaults/reeds_india_mapping.json")
         case Models.SIENNA:
             fmap = read_fmap("r2x/defaults/sienna_mapping.json")
         case Models.PLEXOS:
