@@ -1,0 +1,1833 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>infrasys &#8212; R2X  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/autodoc_pydantic.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=6dbb43f8"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api/system';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="plexosdb" href="plexos.html" />
+    <link rel="prev" title="Configuration" href="config.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">R2X  documentation</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../howtos.html">How-To’s</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../troubleshoot.html">Troubleshoot and FAQ’s</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../dev/develop.html">How To Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/git.html">Git Convention</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Modeling PCM</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../model/logic.html">Baseline System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../model/diagram.html">R2X Workflow Diagram</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../model/models.html">Translation Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../model/data_models.html">PCM Modeling Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../model/terminology.html">Terminology</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Zonal to Nodal</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../nodal.html">Nodal documentation</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="enums.html">Enums</a></li>
+<li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">infrasys</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="plexos.html"><code class="docutils literal notranslate"><span class="pre">plexosdb</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">Component Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="parsers.html">Parsers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="exporters.html">Exporters</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/NREL/R2X/blob/main/docs/source/api/system.md?plain=1" target="_blank"
+   class="btn btn-sm btn-source-file-button dropdown-item"
+   title="Show source"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-code"></i>
+  </span>
+<span class="btn__text-container">Show source</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/NREL/R2X/edit/main/docs/source/api/system.md" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/api/system.md" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.md</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>infrasys</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System"><code class="docutils literal notranslate"><span class="pre">System</span></code></a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.add_component"><code class="docutils literal notranslate"><span class="pre">System.add_component()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.add_components"><code class="docutils literal notranslate"><span class="pre">System.add_components()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.add_supplemental_attribute"><code class="docutils literal notranslate"><span class="pre">System.add_supplemental_attribute()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.add_time_series"><code class="docutils literal notranslate"><span class="pre">System.add_time_series()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.auto_add_composed_components"><code class="docutils literal notranslate"><span class="pre">System.auto_add_composed_components</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.change_component_uuid"><code class="docutils literal notranslate"><span class="pre">System.change_component_uuid()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.convert_storage"><code class="docutils literal notranslate"><span class="pre">System.convert_storage()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.copy_component"><code class="docutils literal notranslate"><span class="pre">System.copy_component()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.copy_time_series"><code class="docutils literal notranslate"><span class="pre">System.copy_time_series()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.data_format_version"><code class="docutils literal notranslate"><span class="pre">System.data_format_version</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.deepcopy_component"><code class="docutils literal notranslate"><span class="pre">System.deepcopy_component()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.description"><code class="docutils literal notranslate"><span class="pre">System.description</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.deserialize_system_attributes"><code class="docutils literal notranslate"><span class="pre">System.deserialize_system_attributes()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.export_component_to_csv"><code class="docutils literal notranslate"><span class="pre">System.export_component_to_csv()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.from_dict"><code class="docutils literal notranslate"><span class="pre">System.from_dict()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.from_json"><code class="docutils literal notranslate"><span class="pre">System.from_json()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.get_component"><code class="docutils literal notranslate"><span class="pre">System.get_component()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.get_component_by_label"><code class="docutils literal notranslate"><span class="pre">System.get_component_by_label()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.get_component_by_uuid"><code class="docutils literal notranslate"><span class="pre">System.get_component_by_uuid()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.get_component_types"><code class="docutils literal notranslate"><span class="pre">System.get_component_types()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.get_components"><code class="docutils literal notranslate"><span class="pre">System.get_components()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.get_components_with_supplemental_attribute"><code class="docutils literal notranslate"><span class="pre">System.get_components_with_supplemental_attribute()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.get_num_components_with_supplemental_attributes"><code class="docutils literal notranslate"><span class="pre">System.get_num_components_with_supplemental_attributes()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.get_num_supplemental_attributes"><code class="docutils literal notranslate"><span class="pre">System.get_num_supplemental_attributes()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.get_supplemental_attribute_by_uuid"><code class="docutils literal notranslate"><span class="pre">System.get_supplemental_attribute_by_uuid()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.get_supplemental_attribute_counts_by_type"><code class="docutils literal notranslate"><span class="pre">System.get_supplemental_attribute_counts_by_type()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.get_supplemental_attributes_with_component"><code class="docutils literal notranslate"><span class="pre">System.get_supplemental_attributes_with_component()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.get_time_series"><code class="docutils literal notranslate"><span class="pre">System.get_time_series()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.get_time_series_directory"><code class="docutils literal notranslate"><span class="pre">System.get_time_series_directory()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.handle_data_format_upgrade"><code class="docutils literal notranslate"><span class="pre">System.handle_data_format_upgrade()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.has_component"><code class="docutils literal notranslate"><span class="pre">System.has_component()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.has_supplemental_attribute"><code class="docutils literal notranslate"><span class="pre">System.has_supplemental_attribute()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.has_supplemental_attribute_association"><code class="docutils literal notranslate"><span class="pre">System.has_supplemental_attribute_association()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.has_time_series"><code class="docutils literal notranslate"><span class="pre">System.has_time_series()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.iter_all_components"><code class="docutils literal notranslate"><span class="pre">System.iter_all_components()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.label"><code class="docutils literal notranslate"><span class="pre">System.label</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.list_child_components"><code class="docutils literal notranslate"><span class="pre">System.list_child_components()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.list_components_by_name"><code class="docutils literal notranslate"><span class="pre">System.list_components_by_name()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.list_parent_components"><code class="docutils literal notranslate"><span class="pre">System.list_parent_components()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.list_time_series"><code class="docutils literal notranslate"><span class="pre">System.list_time_series()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.list_time_series_metadata"><code class="docutils literal notranslate"><span class="pre">System.list_time_series_metadata()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.merge_system"><code class="docutils literal notranslate"><span class="pre">System.merge_system()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.name"><code class="docutils literal notranslate"><span class="pre">System.name</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.rebuild_component_associations"><code class="docutils literal notranslate"><span class="pre">System.rebuild_component_associations()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.remove_component"><code class="docutils literal notranslate"><span class="pre">System.remove_component()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.remove_component_by_name"><code class="docutils literal notranslate"><span class="pre">System.remove_component_by_name()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.remove_component_by_uuid"><code class="docutils literal notranslate"><span class="pre">System.remove_component_by_uuid()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.remove_supplemental_attribute"><code class="docutils literal notranslate"><span class="pre">System.remove_supplemental_attribute()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.remove_supplemental_attribute_from_component"><code class="docutils literal notranslate"><span class="pre">System.remove_supplemental_attribute_from_component()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.remove_time_series"><code class="docutils literal notranslate"><span class="pre">System.remove_time_series()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.save"><code class="docutils literal notranslate"><span class="pre">System.save()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.serialize_system_attributes"><code class="docutils literal notranslate"><span class="pre">System.serialize_system_attributes()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.time_series"><code class="docutils literal notranslate"><span class="pre">System.time_series</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.to_json"><code class="docutils literal notranslate"><span class="pre">System.to_json()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.to_records"><code class="docutils literal notranslate"><span class="pre">System.to_records()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.update_components"><code class="docutils literal notranslate"><span class="pre">System.update_components()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.uuid"><code class="docutils literal notranslate"><span class="pre">System.uuid</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.version"><code class="docutils literal notranslate"><span class="pre">System.version</span></code></a></li>
+</ul>
+</li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="module-r2x.api">
+<span id="infrasys"></span><h1><code class="docutils literal notranslate"><span class="pre">infrasys</span></code><a class="headerlink" href="#module-r2x.api" title="Link to this heading">#</a></h1>
+<p>R2X API for data model.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="r2x.api.System">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">r2x.api.</span></span><span class="sig-name descname"><span class="pre">System</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System" title="Link to this definition">#</a></dt>
+<dd><p>API to interact with the SystemModel.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.add_component">
+<span class="sig-name descname"><span class="pre">add_component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.add_component" title="Link to this definition">#</a></dt>
+<dd><p>Add one component to the system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>component</strong> (<em>Component</em>) – Component to add to the system.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ISAlreadyAttached</strong> – Raised if a component is already attached to a system.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">system</span><span class="o">.</span><span class="n">add_component</span><span class="p">(</span><span class="n">Bus</span><span class="o">.</span><span class="n">example</span><span class="p">())</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#r2x.api.System.add_components" title="r2x.api.System.add_components"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_components</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.add_components">
+<span class="sig-name descname"><span class="pre">add_components</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">components</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.add_components" title="Link to this definition">#</a></dt>
+<dd><p>Add one or more components to the system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>components</strong> (<em>Component</em>) – Component(s) to add to the system.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ISAlreadyAttached</strong> – Raised if a component is already attached to a system.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">system</span><span class="o">.</span><span class="n">add_components</span><span class="p">(</span><span class="n">Bus</span><span class="o">.</span><span class="n">example</span><span class="p">(),</span> <span class="n">Generator</span><span class="o">.</span><span class="n">example</span><span class="p">())</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#r2x.api.System.add_component" title="r2x.api.System.add_component"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_component</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.add_supplemental_attribute">
+<span class="sig-name descname"><span class="pre">add_supplemental_attribute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attribute</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.add_supplemental_attribute" title="Link to this definition">#</a></dt>
+<dd><p>Attach a supplemental attribute to a component. The attribute will get added to the
+system if it is not already stored.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>component</strong> (<a class="reference external" href="https://nrel.github.io/infrasys/reference/api/components.html#infrasys.component.Component" title="(in Infrastructure Systems)"><em>Component</em></a>) – Existing component</p></li>
+<li><p><strong>attribute</strong> (<em>SupplementalAttribute</em>) – Supplemental attribute to attach to the component</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ISAlreadyAttached</strong> – Raised if the component and attribute are already attached.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">bus</span> <span class="o">=</span> <span class="n">Bus</span><span class="o">.</span><span class="n">example</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">system</span><span class="o">.</span><span class="n">add_component</span><span class="p">(</span><span class="n">bus</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">geo_json</span> <span class="o">=</span> <span class="n">GeographicInfo</span><span class="o">.</span><span class="n">example</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">system</span><span class="o">.</span><span class="n">add_supplemental_attribute</span><span class="p">(</span><span class="n">bus</span><span class="p">,</span> <span class="n">geo_json</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.add_time_series">
+<span class="sig-name descname"><span class="pre">add_time_series</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_series</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">owners</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">user_attributes</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.add_time_series" title="Link to this definition">#</a></dt>
+<dd><p>Store a time series array for one or more components or supplemental attributes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>time_series</strong> (<em>TimeSeriesData</em>) – Time series data to store.</p></li>
+<li><p><strong>owners</strong> (<em>Component</em><em> | </em><em>SupplementalAttribute</em>) – Add the time series to all of these components or supplemental attributes.</p></li>
+<li><p><strong>user_attributes</strong> (<em>Any</em>) – Key/value pairs to store with the time series data. Must be JSON-serializable.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ISAlreadyAttached</strong> – Raised if the variable name and user attributes match any time series already
+    attached to one of the owners.</p></li>
+<li><p><strong>ISOperationNotAllowed</strong> – Raised if the manager was created in read-only mode.</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">gen1</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">get_component</span><span class="p">(</span><span class="n">Generator</span><span class="p">,</span> <span class="s2">&quot;gen1&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gen2</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">get_component</span><span class="p">(</span><span class="n">Generator</span><span class="p">,</span> <span class="s2">&quot;gen2&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span> <span class="o">=</span> <span class="n">SingleTimeSeries</span><span class="o">.</span><span class="n">from_array</span><span class="p">(</span>
+<span class="go">    data=[0.86, 0.78, 0.81, 0.85, 0.79],</span>
+<span class="go">    variable_name=&quot;active_power&quot;,</span>
+<span class="go">    start_time=datetime(year=2030, month=1, day=1),</span>
+<span class="go">    resolution=timedelta(hours=1),</span>
+<span class="go">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">system</span><span class="o">.</span><span class="n">add_time_series</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">gen1</span><span class="p">,</span> <span class="n">gen2</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="r2x.api.System.auto_add_composed_components">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">auto_add_composed_components</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></em><a class="headerlink" href="#r2x.api.System.auto_add_composed_components" title="Link to this definition">#</a></dt>
+<dd><p>Return the setting for auto_add_composed_components.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.change_component_uuid">
+<span class="sig-name descname"><span class="pre">change_component_uuid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.change_component_uuid" title="Link to this definition">#</a></dt>
+<dd><p>Change the component UUID.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>component</strong> (<em>Component</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.convert_storage">
+<span class="sig-name descname"><span class="pre">convert_storage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.convert_storage" title="Link to this definition">#</a></dt>
+<dd><p>Converts the time series storage medium.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>**kwargs</strong> – <p>The same keys as TIME_SERIES_KWARGS in time_series_manager.py
+{</p>
+<blockquote>
+<div><p>”time_series_in_memory”: bool = False,
+“time_series_read_only”: bool = False,
+“time_series_directory”: Path | None = None,</p>
+</div></blockquote>
+<p>}</p>
+<p>Only arguments that need to be changed from the default TIME_SERIES_KWARGS
+need to be passed</p>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p># Initialize the system (defaults to Arrow storage)
+&gt;&gt;&gt; system = infrasys.System(auto_add_composed_components=True)</p>
+<p># Add components and time series data
+&gt;&gt;&gt; generator, bus, load_data = create_some_data()
+&gt;&gt;&gt; system.add_components(generator, bus)
+&gt;&gt;&gt; system.add_time_series(load_data, generator)</p>
+<p># Convert the storage to in_memory
+&gt;&gt;&gt; kwargs = {“time_series_in_memory”: True}
+&gt;&gt;&gt; system.convert_storage(<a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs)</p>
+<p># Check the time series storage type
+&gt;&gt;&gt; isinstance(system._time_series_mgr._storage, InMemoryTimeSeriesStorage)
+True</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.copy_component">
+<span class="sig-name descname"><span class="pre">copy_component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attach</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.copy_component" title="Link to this definition">#</a></dt>
+<dd><p>Create a copy of the component. Time series data is excluded.</p>
+<ul class="simple">
+<li><p>The new component will have a different UUID than the original.</p></li>
+<li><p>The copied component will have shared references to any composed components.</p></li>
+</ul>
+<p>The intention of this method is to provide a way to create variants of a component that
+will be added to the same system. Please refer to :<cite>deepcopy_component</cite>: to create
+copies that are suitable for addition to a different system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>component</strong> (<em>Component</em>) – Source component</p></li>
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Optional, if None, keep the original name.</p></li>
+<li><p><strong>attach</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – Optional, if True, attach the new component to the system.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><em>Any</em></a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">gen1</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">get_component</span><span class="p">(</span><span class="n">Generator</span><span class="p">,</span> <span class="s2">&quot;gen1&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gen2</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">copy_component</span><span class="p">(</span><span class="n">gen</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;gen2&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gen3</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">copy_component</span><span class="p">(</span><span class="n">gen</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;gen3&quot;</span><span class="p">,</span> <span class="n">attach</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#r2x.api.System.deepcopy_component" title="r2x.api.System.deepcopy_component"><code class="xref py py-obj docutils literal notranslate"><span class="pre">deepcopy_component</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.copy_time_series">
+<span class="sig-name descname"><span class="pre">copy_time_series</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dst</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name_mapping</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.copy_time_series" title="Link to this definition">#</a></dt>
+<dd><p>Copy all time series from src to dst.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dst</strong> (<em>Component</em>) – Destination component</p></li>
+<li><p><strong>src</strong> (<em>Component</em>) – Source component</p></li>
+<li><p><strong>name_mapping</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>]</em>) – Optionally map src names to different dst names.
+If provided and src has a time_series with a name not present in name_mapping, that
+time_series will not copied. If name_mapping is nothing then all time_series will be
+copied with src’s names.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>name_mapping is currently not implemented.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">gen1</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">get_component</span><span class="p">(</span><span class="n">Generator</span><span class="p">,</span> <span class="s2">&quot;gen1&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gen2</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">get_component</span><span class="p">(</span><span class="n">Generator</span><span class="p">,</span> <span class="s2">&quot;gen2&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">system</span><span class="o">.</span><span class="n">copy_time_series</span><span class="p">(</span><span class="n">gen1</span><span class="p">,</span> <span class="n">gen2</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="r2x.api.System.data_format_version">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data_format_version</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></em><a class="headerlink" href="#r2x.api.System.data_format_version" title="Link to this definition">#</a></dt>
+<dd><p>Return the data format version of the component models.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.deepcopy_component">
+<span class="sig-name descname"><span class="pre">deepcopy_component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.deepcopy_component" title="Link to this definition">#</a></dt>
+<dd><p>Create a deep copy of the component and all composed components. All attributes,
+including names and UUIDs, will be identical to the original. Unlike
+<a class="reference internal" href="#r2x.api.System.copy_component" title="r2x.api.System.copy_component"><code class="xref py py-meth docutils literal notranslate"><span class="pre">copy_component()</span></code></a>, there will be no shared references to composed components.</p>
+<p>The intention of this method is to provide a way to create variants of a component that
+will be added to a different system. Please refer to :<cite>copy_component</cite>: to create
+copies that are suitable for addition to the same system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>component</strong> (<em>Component</em>) – Source component</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><em>Any</em></a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">gen1</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">get_component</span><span class="p">(</span><span class="n">Generator</span><span class="p">,</span> <span class="s2">&quot;gen1&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gen2</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">deepcopy_component</span><span class="p">(</span><span class="n">gen</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#r2x.api.System.copy_component" title="r2x.api.System.copy_component"><code class="xref py py-obj docutils literal notranslate"><span class="pre">copy_component</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="r2x.api.System.description">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">description</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></em><a class="headerlink" href="#r2x.api.System.description" title="Link to this definition">#</a></dt>
+<dd><p>Return the description of the system.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.deserialize_system_attributes">
+<span class="sig-name descname"><span class="pre">deserialize_system_attributes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.deserialize_system_attributes" title="Link to this definition">#</a></dt>
+<dd><p>Allows subclasses to deserialize attributes stored in the JSON at the root level.</p>
+<p>The method should modify self with its custom attributes in data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><em>Any</em></a><em>]</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.export_component_to_csv">
+<span class="sig-name descname"><span class="pre">export_component_to_csv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fields</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fpath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_mapping</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unnest_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'name'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">dict_writer_kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.export_component_to_csv" title="Link to this definition">#</a></dt>
+<dd><p>Export components into a csv.</p>
+<dl class="simple">
+<dt>component:</dt><dd><p>Component type to get from the system</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>component</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#type" title="(in Python v3.13)"><em>type</em></a><em>[</em><a class="reference external" href="https://nrel.github.io/infrasys/reference/api/components.html#infrasys.component.Component" title="(in Infrastructure Systems)"><em>Component</em></a><em>]</em>)</p></li>
+<li><p><strong>fields</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>filter_func</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.13)"><em>Callable</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>fpath</strong> (<a class="reference external" href="https://docs.python.org/3/library/os.html#os.PathLike" title="(in Python v3.13)"><em>PathLike</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>key_mapping</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>unnest_key</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.from_dict">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_series_parent_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upgrade_handler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.from_dict" title="Link to this definition">#</a></dt>
+<dd><p>Deserialize a System from a dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><em>Any</em><em>]</em>) – System data in serialized form.</p></li>
+<li><p><strong>time_series_parent_dir</strong> (<em>Path</em><em> | </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Directory that contains the system’s time series directory.</p></li>
+<li><p><strong>upgrade_handler</strong> (<em>Callable</em><em> | </em><em>None</em>) – Optional function to handle data format upgrades. Should only be set when the parent
+package composes this package. If set, it will be called before de-serialization of
+the components.</p></li>
+<li><p><strong>kwargs</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><em>Any</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://nrel.github.io/infrasys/reference/api/system.html#infrasys.system.System" title="(in Infrastructure Systems)"><em>System</em></a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">system</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;systems&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.from_json">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upgrade_handler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.from_json" title="Link to this definition">#</a></dt>
+<dd><p>Deserialize a System from a JSON file. Refer to System constructor for kwargs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>Path</em><em> | </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – JSON file containing the system data.</p></li>
+<li><p><strong>upgrade_handler</strong> (<em>Callable</em><em> | </em><em>None</em>) – Optional function to handle data format upgrades. Should only be set when the parent
+package composes this package. If set, it will be called before de-serialization of
+the components.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#r2x.api.System" title="r2x.api.System"><em>System</em></a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">system</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="s2">&quot;systems/system1.json&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.get_component">
+<span class="sig-name descname"><span class="pre">get_component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.get_component" title="Link to this definition">#</a></dt>
+<dd><p>Return the component with the passed type and name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>component_type</strong> (<em>Type</em><em>[</em><em>T</em><em>]</em>) – Generic component type</p></li>
+<li><p><strong>name</strong> (<em>Type</em>) – Name of component</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ISDuplicateNames</strong> – Raised if more than one component match the inputs.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>T</em></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">system</span><span class="o">.</span><span class="n">get_component</span><span class="p">(</span><span class="n">Generator</span><span class="p">,</span> <span class="s2">&quot;gen1&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><code class="xref py py-obj docutils literal notranslate"><span class="pre">list_by_name</span></code></p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.get_component_by_label">
+<span class="sig-name descname"><span class="pre">get_component_by_label</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.get_component_by_label" title="Link to this definition">#</a></dt>
+<dd><p>Return the component with the label.</p>
+<p>Note that this method is slower than <a class="reference internal" href="#r2x.api.System.get_component" title="r2x.api.System.get_component"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_component()</span></code></a> because the
+component type cannot be looked up directly. Code that is looping over components
+repeatedly should not use this method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>label</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ISNotStored</strong> – Raised if the UUID is not stored.</p></li>
+<li><p><strong>ISOperationNotAllowed</strong> – Raised if there is more than one matching component.</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><em>Any</em></a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">component</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">get_component_by_label</span><span class="p">(</span><span class="s2">&quot;Bus.bus1&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.get_component_by_uuid">
+<span class="sig-name descname"><span class="pre">get_component_by_uuid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uuid</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.get_component_by_uuid" title="Link to this definition">#</a></dt>
+<dd><p>Return the component with the input UUID.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>uuid</strong> (<em>UUID</em>)</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ISNotStored</strong> – Raised if the UUID is not stored.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><em>Any</em></a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">uuid</span> <span class="o">=</span> <span class="n">UUID</span><span class="p">(</span><span class="s2">&quot;714c8311-8dff-4ae2-aa2e-30779a317d42&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">component</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">get_component_by_uuid</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.get_component_types">
+<span class="sig-name descname"><span class="pre">get_component_types</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.get_component_types" title="Link to this definition">#</a></dt>
+<dd><p>Return an iterable of all component types stored in the system.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">component_type</span> <span class="ow">in</span> <span class="n">system</span><span class="o">.</span><span class="n">get_component_types</span><span class="p">():</span>
+<span class="go">print(component_type)</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterable" title="(in Python v3.13)"><em>Iterable</em></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Type" title="(in Python v3.13)"><em>Type</em></a>[<a class="reference external" href="https://nrel.github.io/infrasys/reference/api/components.html#infrasys.component.Component" title="(in Infrastructure Systems)"><em>Component</em></a>]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.get_components">
+<span class="sig-name descname"><span class="pre">get_components</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">component_types</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.get_components" title="Link to this definition">#</a></dt>
+<dd><p>Return the components with the passed type(s) and that optionally match filter_func.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>component_type</strong> (<em>Type</em><em>[</em><em>T</em><em>]</em>) – If component_type is an abstract type, all matching subtypes will be returned.
+The function will return all the matching <cite>component_type</cite> passed.</p></li>
+<li><p><strong>filter_func</strong> (<em>Callable</em><em> | </em><em>None</em>) – Optional function to filter the returned values. The function must accept a component
+as a single argument.</p></li>
+<li><p><strong>component_types</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Type" title="(in Python v3.13)"><em>Type</em></a><em>[</em><em>T</em><em>]</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterable" title="(in Python v3.13)"><em>Iterable</em></a>[<em>T</em>]</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">component</span> <span class="ow">in</span> <span class="n">system</span><span class="o">.</span><span class="n">get_components</span><span class="p">(</span><span class="n">Component</span><span class="p">)</span>
+<span class="go">    print(component.label)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">names</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;bus1&quot;</span><span class="p">,</span> <span class="s2">&quot;bus2&quot;</span><span class="p">,</span> <span class="s2">&quot;gen1&quot;</span><span class="p">,</span> <span class="s2">&quot;gen2&quot;</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">component</span> <span class="ow">in</span> <span class="n">system</span><span class="o">.</span><span class="n">get_components</span><span class="p">(</span>
+<span class="go">    Component,</span>
+<span class="go">    filter_func=lambda x: x.name in names,</span>
+<span class="go">):</span>
+<span class="go">    print(component.label)</span>
+</pre></div>
+</div>
+<p>To request multiple component types:
+&gt;&gt;&gt; for component in system.get_components(SimpleGenerator, SimpleBus)
+print(component.label)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.get_components_with_supplemental_attribute">
+<span class="sig-name descname"><span class="pre">get_components_with_supplemental_attribute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attribute</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.get_components_with_supplemental_attribute" title="Link to this definition">#</a></dt>
+<dd><p>Return all components attached to the given supplemental attribute.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>attribute</strong> (<em>SupplementalAttribute</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)">list</a>[<a class="reference external" href="https://nrel.github.io/infrasys/reference/api/components.html#infrasys.component.Component" title="(in Infrastructure Systems)"><em>Component</em></a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.get_num_components_with_supplemental_attributes">
+<span class="sig-name descname"><span class="pre">get_num_components_with_supplemental_attributes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.get_num_components_with_supplemental_attributes" title="Link to this definition">#</a></dt>
+<dd><p>Return the number of supplemental attributes stored in the system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.get_num_supplemental_attributes">
+<span class="sig-name descname"><span class="pre">get_num_supplemental_attributes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.get_num_supplemental_attributes" title="Link to this definition">#</a></dt>
+<dd><p>Return the number of supplemental attributes stored in the system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.get_supplemental_attribute_by_uuid">
+<span class="sig-name descname"><span class="pre">get_supplemental_attribute_by_uuid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uuid</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.get_supplemental_attribute_by_uuid" title="Link to this definition">#</a></dt>
+<dd><p>Return the supplemental attribute with the given UUID.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>uuid</strong> (<a class="reference external" href="https://docs.python.org/3/library/uuid.html#uuid.UUID" title="(in Python v3.13)"><em>UUID</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>SupplementalAttribute</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.get_supplemental_attribute_counts_by_type">
+<span class="sig-name descname"><span class="pre">get_supplemental_attribute_counts_by_type</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.get_supplemental_attribute_counts_by_type" title="Link to this definition">#</a></dt>
+<dd><p>Return a list of dicts of stored supplemental attribute counts by type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><em>Any</em></a>]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.get_supplemental_attributes_with_component">
+<span class="sig-name descname"><span class="pre">get_supplemental_attributes_with_component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">supplemental_attribute_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.get_supplemental_attributes_with_component" title="Link to this definition">#</a></dt>
+<dd><p>Return all supplemental attributes attached to the given component and optionally,
+with the given attribute type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>component</strong> (<a class="reference external" href="https://nrel.github.io/infrasys/reference/api/components.html#infrasys.component.Component" title="(in Infrastructure Systems)"><em>Component</em></a>)</p></li>
+<li><p><strong>supplemental_attribute_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Type" title="(in Python v3.13)"><em>Type</em></a><em>[</em><em>U</em><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>filter_func</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.13)"><em>Callable</em></a><em>[</em><em>[</em><em>U</em><em>]</em><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>] </em><em>| </em><em>None</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)">list</a>[<em>U</em>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.get_time_series">
+<span class="sig-name descname"><span class="pre">get_time_series</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_name=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_series_type=&lt;class</span> <span class="pre">'infrasys.time_series_models.SingleTimeSeries'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_time=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**user_attributes</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.get_time_series" title="Link to this definition">#</a></dt>
+<dd><p>Return a time series array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>component</strong> (<em>Component</em>) – Component to which the time series must be attached.</p></li>
+<li><p><strong>variable_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em> | </em><em>None</em>) – Optional, search for time series with this name.</p></li>
+<li><p><strong>time_series_type</strong> (<em>Type</em><em>[</em><em>TimeSeriesData</em><em>]</em>) – Optional, search for time series with this type.</p></li>
+<li><p><strong>start_time</strong> (<em>datetime</em><em> | </em><em>None</em>) – If not None, take a slice of the time series starting at this time.</p></li>
+<li><p><strong>length</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em> | </em><em>None</em>) – If not None, take a slice of the time series with this length.</p></li>
+<li><p><strong>user_attributes</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Optional, search for time series with these attributes.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ISNotStored</strong> – Raised if no time series matches the inputs.
+    Raised if the inputs match more than one time series.</p></li>
+<li><p><strong>ISOperationNotAllowed</strong> – Raised if the inputs match more than one time series.</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><em>Any</em></a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">gen1</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">get_component</span><span class="p">(</span><span class="n">Generator</span><span class="p">,</span> <span class="s2">&quot;gen1&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ts_full</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">get_time_series</span><span class="p">(</span><span class="n">gen1</span><span class="p">,</span> <span class="s2">&quot;active_power&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ts_slice</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">get_time_series</span><span class="p">(</span>
+<span class="go">    gen1,</span>
+<span class="go">    &quot;active_power&quot;,</span>
+<span class="go">    start_time=datetime(year=2030, month=1, day=1, hour=5),</span>
+<span class="go">    length=5,</span>
+<span class="go">)</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#r2x.api.System.list_time_series" title="r2x.api.System.list_time_series"><code class="xref py py-obj docutils literal notranslate"><span class="pre">list_time_series</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.get_time_series_directory">
+<span class="sig-name descname"><span class="pre">get_time_series_directory</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.get_time_series_directory" title="Link to this definition">#</a></dt>
+<dd><p>Return the directory containing time series files. Will be none for in-memory time
+series.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.13)"><em>Path</em></a> | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.handle_data_format_upgrade">
+<span class="sig-name descname"><span class="pre">handle_data_format_upgrade</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">from_version</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_version</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.handle_data_format_upgrade" title="Link to this definition">#</a></dt>
+<dd><p>Allows subclasses to upgrade data models.</p>
+<p>The parameter data contains the full contents of the serialized JSON file.
+The method should modify the data models in-place.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><em>Any</em></a><em>]</em>)</p></li>
+<li><p><strong>from_version</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>to_version</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.has_component">
+<span class="sig-name descname"><span class="pre">has_component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.has_component" title="Link to this definition">#</a></dt>
+<dd><p>Return True if the component is attached.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.has_supplemental_attribute">
+<span class="sig-name descname"><span class="pre">has_supplemental_attribute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">supplemental_attribute_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.has_supplemental_attribute" title="Link to this definition">#</a></dt>
+<dd><p>Return True if the component has a supplemental attribute, optionally of the given
+type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>component</strong> (<a class="reference external" href="https://nrel.github.io/infrasys/reference/api/components.html#infrasys.component.Component" title="(in Infrastructure Systems)"><em>Component</em></a>)</p></li>
+<li><p><strong>supplemental_attribute_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Type" title="(in Python v3.13)"><em>Type</em></a><em>[</em><em>SupplementalAttribute</em><em>] </em><em>| </em><em>None</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.has_supplemental_attribute_association">
+<span class="sig-name descname"><span class="pre">has_supplemental_attribute_association</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">supplemental_attribute</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.has_supplemental_attribute_association" title="Link to this definition">#</a></dt>
+<dd><p>Return True if the component and supplemental attribute have an association.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>component</strong> (<a class="reference external" href="https://nrel.github.io/infrasys/reference/api/components.html#infrasys.component.Component" title="(in Infrastructure Systems)"><em>Component</em></a>)</p></li>
+<li><p><strong>supplemental_attribute</strong> (<em>SupplementalAttribute</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.has_time_series">
+<span class="sig-name descname"><span class="pre">has_time_series</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">owner</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_name=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_series_type=&lt;class</span> <span class="pre">'infrasys.time_series_models.SingleTimeSeries'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**user_attributes</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.has_time_series" title="Link to this definition">#</a></dt>
+<dd><p>Return True if the component has time series matching the inputs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>component</strong> (<em>Component</em>) – Component to check for matching time series.</p></li>
+<li><p><strong>variable_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em> | </em><em>None</em>) – Optional, search for time series with this name.</p></li>
+<li><p><strong>time_series_type</strong> (<em>Type</em><em>[</em><em>TimeSeriesData</em><em>]</em>) – Optional, search for time series with this type.</p></li>
+<li><p><strong>user_attributes</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Optional, search for time series with these attributes.</p></li>
+<li><p><strong>owner</strong> (<a class="reference external" href="https://nrel.github.io/infrasys/reference/api/components.html#infrasys.component.Component" title="(in Infrastructure Systems)"><em>Component</em></a><em> | </em><em>SupplementalAttribute</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.iter_all_components">
+<span class="sig-name descname"><span class="pre">iter_all_components</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.iter_all_components" title="Link to this definition">#</a></dt>
+<dd><p>Return an iterator over all components.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">component</span> <span class="ow">in</span> <span class="n">system</span><span class="o">.</span><span class="n">iter_all_components</span><span class="p">()</span>
+<span class="go">    print(component.label)</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#r2x.api.System.get_components" title="r2x.api.System.get_components"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_components</span></code></a></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterable" title="(in Python v3.13)"><em>Iterable</em></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><em>Any</em></a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="r2x.api.System.label">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">label</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></em><a class="headerlink" href="#r2x.api.System.label" title="Link to this definition">#</a></dt>
+<dd><p>Provides a description of the system.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.list_child_components">
+<span class="sig-name descname"><span class="pre">list_child_components</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.list_child_components" title="Link to this definition">#</a></dt>
+<dd><p>Return a list of all components that this component composes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>component</strong> (<em>Component</em>)</p></li>
+<li><p><strong>component_type</strong> (<em>Optional</em><em>[</em><em>Type</em><em>[</em><em>Component</em><em>]</em><em>]</em>) – Filter the returned list to components of this type.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)">list</a>[<a class="reference external" href="https://nrel.github.io/infrasys/reference/api/components.html#infrasys.component.Component" title="(in Infrastructure Systems)"><em>Component</em></a>]</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#r2x.api.System.list_parent_components" title="r2x.api.System.list_parent_components"><code class="xref py py-obj docutils literal notranslate"><span class="pre">list_parent_components</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.list_components_by_name">
+<span class="sig-name descname"><span class="pre">list_components_by_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.list_components_by_name" title="Link to this definition">#</a></dt>
+<dd><p>Return all components that match component_type and name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>component_type</strong> (<em>Type</em>)</p></li>
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><em>Any</em></a>]</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>system.list_components_by_name(Generator, “gen1”)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.list_parent_components">
+<span class="sig-name descname"><span class="pre">list_parent_components</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.list_parent_components" title="Link to this definition">#</a></dt>
+<dd><p>Return a list of all components that compose this component.</p>
+<p>An example usage is where you need to find all components connected to a bus and the Bus
+class does not contain that information. The system tracks these connections internally
+and can find those components quickly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>component</strong> (<em>Component</em>)</p></li>
+<li><p><strong>component_type</strong> (<em>Optional</em><em>[</em><em>Type</em><em>[</em><em>Component</em><em>]</em><em>]</em>) – Filter the returned list to components of this type.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)">list</a>[<a class="reference external" href="https://nrel.github.io/infrasys/reference/api/components.html#infrasys.component.Component" title="(in Infrastructure Systems)"><em>Component</em></a>]</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">components</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">list_parent_components</span><span class="p">(</span><span class="n">bus</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;These components are connected to </span><span class="si">{</span><span class="n">bus</span><span class="o">.</span><span class="n">label</span><span class="si">}</span><span class="s2">: &quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">components</span><span class="p">))</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#r2x.api.System.list_child_components" title="r2x.api.System.list_child_components"><code class="xref py py-obj docutils literal notranslate"><span class="pre">list_child_components</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.list_time_series">
+<span class="sig-name descname"><span class="pre">list_time_series</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_name=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_series_type=&lt;class</span> <span class="pre">'infrasys.time_series_models.SingleTimeSeries'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_time=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**user_attributes</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.list_time_series" title="Link to this definition">#</a></dt>
+<dd><p>Return all time series that match the inputs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>component</strong> (<em>Component</em>) – Component to which the time series must be attached.</p></li>
+<li><p><strong>variable_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em> | </em><em>None</em>) – Optional, search for time series with this name.</p></li>
+<li><p><strong>time_series_type</strong> (<em>Type</em><em>[</em><em>TimeSeriesData</em><em>]</em>) – Optional, search for time series with this type.</p></li>
+<li><p><strong>start_time</strong> (<em>datetime</em><em> | </em><em>None</em>) – If not None, take a slice of the time series starting at this time.</p></li>
+<li><p><strong>length</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em> | </em><em>None</em>) – If not None, take a slice of the time series with this length.</p></li>
+<li><p><strong>user_attributes</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Optional, search for time series with these attributes.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)">list</a>[<a class="reference external" href="https://nrel.github.io/infrasys/reference/api/time_series.html#infrasys.time_series_models.TimeSeriesData" title="(in Infrastructure Systems)"><em>TimeSeriesData</em></a>]</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">gen1</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">get_component</span><span class="p">(</span><span class="n">Generator</span><span class="p">,</span> <span class="s2">&quot;gen1&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">ts</span> <span class="ow">in</span> <span class="n">system</span><span class="o">.</span><span class="n">list_time_series</span><span class="p">(</span><span class="n">gen1</span><span class="p">):</span>
+<span class="go">    print(ts)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.list_time_series_metadata">
+<span class="sig-name descname"><span class="pre">list_time_series_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_name=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_series_type=&lt;class</span> <span class="pre">'infrasys.time_series_models.SingleTimeSeries'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**user_attributes</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.list_time_series_metadata" title="Link to this definition">#</a></dt>
+<dd><p>Return all time series metadata that match the inputs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>component</strong> (<em>Component</em>) – Component to which the time series must be attached.</p></li>
+<li><p><strong>variable_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em> | </em><em>None</em>) – Optional, search for time series with this name.</p></li>
+<li><p><strong>time_series_type</strong> (<em>Type</em><em>[</em><em>TimeSeriesData</em><em>]</em>) – Optional, search for time series with this type.</p></li>
+<li><p><strong>user_attributes</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Optional, search for time series with these attributes.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)">list</a>[<em>TimeSeriesMetadata</em>]</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">gen1</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">get_component</span><span class="p">(</span><span class="n">Generator</span><span class="p">,</span> <span class="s2">&quot;gen1&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">metadata</span> <span class="ow">in</span> <span class="n">system</span><span class="o">.</span><span class="n">list_time_series_metadata</span><span class="p">(</span><span class="n">gen1</span><span class="p">):</span>
+<span class="go">    print(metadata)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.merge_system">
+<span class="sig-name descname"><span class="pre">merge_system</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.merge_system" title="Link to this definition">#</a></dt>
+<dd><p>Merge the contents of another system into this one.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other</strong> (<a class="reference external" href="https://nrel.github.io/infrasys/reference/api/system.html#infrasys.system.System" title="(in Infrastructure Systems)"><em>System</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="r2x.api.System.name">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></em><a class="headerlink" href="#r2x.api.System.name" title="Link to this definition">#</a></dt>
+<dd><p>Return the name of the system.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.rebuild_component_associations">
+<span class="sig-name descname"><span class="pre">rebuild_component_associations</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.rebuild_component_associations" title="Link to this definition">#</a></dt>
+<dd><p>Clear the component associations and rebuild the table. This may be necessary
+if a user reassigns connected components that are part of a system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.remove_component">
+<span class="sig-name descname"><span class="pre">remove_component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cascade_down</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.remove_component" title="Link to this definition">#</a></dt>
+<dd><p>Remove the component from the system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>component</strong> (<em>Component</em>)</p></li>
+<li><p><strong>cascade_down</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – If True, remove all child components if they have no other parents. Defaults to True.
+For example, if a generator has a bus, no other component holds a reference to that
+bus, and you call remove_component on that generator, the bus will get removed as well.</p></li>
+<li><p><strong>force</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – If True, remove the component even if other components hold references to this
+component. Defaults to False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ISNotStored</strong> – Raised if the component is not stored in the system.</p></li>
+<li><p><strong>ISOperationNotAllowed</strong> – Raised if the other components hold references to this component and force=False.</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">gen</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">get_component</span><span class="p">(</span><span class="n">Generator</span><span class="p">,</span> <span class="s2">&quot;gen1&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">system</span><span class="o">.</span><span class="n">remove_component</span><span class="p">(</span><span class="n">gen</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.remove_component_by_name">
+<span class="sig-name descname"><span class="pre">remove_component_by_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cascade_down</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.remove_component_by_name" title="Link to this definition">#</a></dt>
+<dd><p>Remove the component with component_type and name from the system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>component_type</strong> (<em>Type</em>)</p></li>
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+<li><p><strong>cascade_down</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – Refer <a class="reference internal" href="#r2x.api.System.remove_component" title="r2x.api.System.remove_component"><code class="xref py py-meth docutils literal notranslate"><span class="pre">remove_component()</span></code></a>.</p></li>
+<li><p><strong>force</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – Refer <a class="reference internal" href="#r2x.api.System.remove_component" title="r2x.api.System.remove_component"><code class="xref py py-meth docutils literal notranslate"><span class="pre">remove_component()</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ISNotStored</strong> – Raised if the inputs do not match any components in the system.</p></li>
+<li><p><strong>ISOperationNotAllowed</strong> – Raised if there is more than one component with component type and name.</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">generators</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">remove_by_name</span><span class="p">(</span><span class="n">Generator</span><span class="p">,</span> <span class="s2">&quot;gen1&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.remove_component_by_uuid">
+<span class="sig-name descname"><span class="pre">remove_component_by_uuid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uuid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cascade_down</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.remove_component_by_uuid" title="Link to this definition">#</a></dt>
+<dd><p>Remove the component with uuid from the system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>uuid</strong> (<em>UUID</em>)</p></li>
+<li><p><strong>cascade_down</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – Refer <a class="reference internal" href="#r2x.api.System.remove_component" title="r2x.api.System.remove_component"><code class="xref py py-meth docutils literal notranslate"><span class="pre">remove_component()</span></code></a>.</p></li>
+<li><p><strong>force</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – Refer <a class="reference internal" href="#r2x.api.System.remove_component" title="r2x.api.System.remove_component"><code class="xref py py-meth docutils literal notranslate"><span class="pre">remove_component()</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ISNotStored</strong> – Raised if the UUID is not stored in the system.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">uuid</span> <span class="o">=</span> <span class="n">UUID</span><span class="p">(</span><span class="s2">&quot;714c8311-8dff-4ae2-aa2e-30779a317d42&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">generator</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">remove_component_by_uuid</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.remove_supplemental_attribute">
+<span class="sig-name descname"><span class="pre">remove_supplemental_attribute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attribute</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.remove_supplemental_attribute" title="Link to this definition">#</a></dt>
+<dd><p>Remove the supplemental attribute from the system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>attribute</strong> (<em>SupplementalAttribute</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.remove_supplemental_attribute_from_component">
+<span class="sig-name descname"><span class="pre">remove_supplemental_attribute_from_component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attribute</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.remove_supplemental_attribute_from_component" title="Link to this definition">#</a></dt>
+<dd><p>Remove the association between the component and supplemental attribute.
+If the attribute is not attached to any other components, remove it from the system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>component</strong> (<a class="reference external" href="https://nrel.github.io/infrasys/reference/api/components.html#infrasys.component.Component" title="(in Infrastructure Systems)"><em>Component</em></a>)</p></li>
+<li><p><strong>attribute</strong> (<em>SupplementalAttribute</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.remove_time_series">
+<span class="sig-name descname"><span class="pre">remove_time_series</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*owners</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_name=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_series_type=&lt;class</span> <span class="pre">'infrasys.time_series_models.SingleTimeSeries'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**user_attributes</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.remove_time_series" title="Link to this definition">#</a></dt>
+<dd><p>Remove all time series arrays attached to the components or supplemental attributes
+matching the inputs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>owners</strong> (<a class="reference external" href="https://nrel.github.io/infrasys/reference/api/components.html#infrasys.component.Component" title="(in Infrastructure Systems)"><em>Component</em></a><em> | </em><em>SupplementalAttribute</em>) – Affected components or supplemental attributes</p></li>
+<li><p><strong>variable_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em> | </em><em>None</em>) – Optional, search for time series with this name.</p></li>
+<li><p><strong>time_series_type</strong> (<em>Type</em><em>[</em><em>TimeSeriesData</em><em>]</em>) – Optional, search for time series with this type.</p></li>
+<li><p><strong>user_attributes</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Optional, search for time series with these attributes.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ISNotStored</strong> – Raised if no time series match the inputs.</p></li>
+<li><p><strong>ISOperationNotAllowed</strong> – Raised if the manager was created in read-only mode.</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">gen1</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">get_component</span><span class="p">(</span><span class="n">Generator</span><span class="p">,</span> <span class="s2">&quot;gen1&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">system</span><span class="o">.</span><span class="n">remove_time_series</span><span class="p">(</span><span class="n">gen1</span><span class="p">,</span> <span class="s2">&quot;active_power&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fpath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'system.json'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.save" title="Link to this definition">#</a></dt>
+<dd><p>Save the contents of a system and the Time series in a single directory.</p>
+<p>By default, this method creates the user specified folder using the
+<cite>to_json</cite> method. If user sets <cite>zip = True</cite>, we create the folder of
+the user (if it does not exists), zip it to the same location specified
+and delete the folder.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fpath</strong> (<em>Path</em><em> | </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Filepath to write the contents of the system.</p></li>
+<li><p><strong>zip</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – Set to True if you want to archive to a zip file.</p></li>
+<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Name of the sytem to serialize. Default value: “system.json”.</p></li>
+<li><p><strong>overwrite</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – Overwrites the system if it already exist on the fpath.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#FileExistsError" title="(in Python v3.13)"><strong>FileExistsError</strong></a> – Raised if the folder provided exists and the overwrite flag was not provided.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">fpath</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;folder/subfolder/&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">system</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">fpath</span><span class="p">)</span>
+<span class="go">INFO: Wrote system data to folder/subfolder/system.json</span>
+<span class="go">INFO: Copied time series data to folder/subfolder/system_time_series</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">system_fname</span> <span class="o">=</span> <span class="s2">&quot;my_system.json&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fpath</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;folder/subfolder/&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">system</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">system_fname</span><span class="p">,</span> <span class="nb">zip</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">INFO: Wrote system data to folder/subfolder/my_system.json</span>
+<span class="go">INFO: Copied time series data to folder/subfolder/my_system_time_series</span>
+<span class="go">INFO: System archived at folder/subfolder/my_system.zip</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#r2x.api.System.to_json" title="r2x.api.System.to_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_json</span></code></a></dt><dd><p>System serialization</p>
+</dd>
+</dl>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.serialize_system_attributes">
+<span class="sig-name descname"><span class="pre">serialize_system_attributes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.serialize_system_attributes" title="Link to this definition">#</a></dt>
+<dd><p>Allows subclasses to serialize attributes at the root level.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><em>Any</em></a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="r2x.api.System.time_series">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">time_series</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">TimeSeriesManager</span></em><a class="headerlink" href="#r2x.api.System.time_series" title="Link to this definition">#</a></dt>
+<dd><p>Return the time series manager.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.to_json">
+<span class="sig-name descname"><span class="pre">to_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.to_json" title="Link to this definition">#</a></dt>
+<dd><p>Write the contents of a system to a JSON file. Time series will be written to a
+directory at the same level as filename.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>Path</em><em> | </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Filename to write. If the parent directory does not exist, it will be created.</p></li>
+<li><p><strong>overwrite</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – Set to True to overwrite the file if it already exists.</p></li>
+<li><p><strong>indent</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em> | </em><em>None</em>) – Indentation level in the JSON file. Defaults to no indentation.</p></li>
+<li><p><strong>data</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em> | </em><em>None</em>) – This is an override for packages that compose this System inside a parent System
+class. If set, it will be the outer object in the JSON file. It must not set the
+key ‘system’. Packages that derive a custom instance of this class should leave this
+field unset.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">system</span><span class="o">.</span><span class="n">to_json</span><span class="p">(</span><span class="s2">&quot;systems/system1.json&quot;</span><span class="p">)</span>
+<span class="go">INFO: Wrote system data to systems/system1.json</span>
+<span class="go">INFO: Copied time series data to systems/system1_time_series</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.to_records">
+<span class="sig-name descname"><span class="pre">to_records</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.to_records" title="Link to this definition">#</a></dt>
+<dd><p>Return a list of dictionaries of components (records) with the requested type(s) and
+optionally match filter_func.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>components</strong> – Component types to get as dictionaries</p></li>
+<li><p><strong>filter_func</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.13)"><em>Callable</em></a><em> | </em><em>None</em>) – A function to filter components. Default is None</p></li>
+<li><p><strong>kwargs</strong> – <dl class="simple">
+<dt>Configures Pydantic model_dump behaviour</dt><dd><ul>
+<li><p>exclude: List or dict of excluded fields.</p></li>
+</ul>
+</dd>
+</dl>
+</p></li>
+<li><p><strong>component_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Type" title="(in Python v3.13)"><em>Type</em></a><em>[</em><a class="reference external" href="https://nrel.github.io/infrasys/reference/api/components.html#infrasys.component.Component" title="(in Infrastructure Systems)"><em>Component</em></a><em>]</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterable" title="(in Python v3.13)"><em>Iterable</em></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a>]</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>If a component type is an abstract type, all matching concrete subtypes will be included in the output.</p>
+<p>It is only recommended to use this function on a single “concrete” types. For example, if
+you have an abstract type called Generator and you create two subtypes called
+ThermalGenerator and RenewableGenerator where some fields are different, if you pass the
+return of System.to_records(Generator) to pandas.DataFrame.from_records, each
+ThermalGenerator row will have NaN values for RenewableGenerator-specific fields.</p>
+<p class="rubric">Examples</p>
+<p>To get a tabular representation of a certain type you can use:
+&gt;&gt;&gt; import pandas as pd
+&gt;&gt;&gt; df = pd.DataFrame.from_records(System.to_records(SimpleGen))</p>
+<p>With polars:
+&gt;&gt;&gt; import polars as pl
+&gt;&gt;&gt; df = pl.DataFrame(System.to_records(SimpleGen))</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="r2x.api.System.update_components">
+<span class="sig-name descname"><span class="pre">update_components</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#r2x.api.System.update_components" title="Link to this definition">#</a></dt>
+<dd><p>Update multiple components of a given type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>component_type</strong> (<em>Type</em><em>[</em><em>Component</em><em>]</em>) – Type of component to update. Can be abstract.</p></li>
+<li><p><strong>update_func</strong> (<em>Callable</em>) – Function to call on each component. Must take a component as a single argument.</p></li>
+<li><p><strong>filter_func</strong> (<em>Callable</em><em> | </em><em>None</em>) – Optional function to filter the components to update. Must take a component as a
+single argument.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">system</span><span class="o">.</span><span class="n">update_components</span><span class="p">(</span><span class="n">Generator</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">active_power</span> <span class="o">*=</span> <span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="r2x.api.System.uuid">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">uuid</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/uuid.html#uuid.UUID" title="(in Python v3.13)"><span class="pre">UUID</span></a></em><a class="headerlink" href="#r2x.api.System.uuid" title="Link to this definition">#</a></dt>
+<dd><p>Return the UUID of the system.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="r2x.api.System.version">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">version</span></span><a class="headerlink" href="#r2x.api.System.version" title="Link to this definition">#</a></dt>
+<dd><p>The version property.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="config.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Configuration</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="plexos.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title"><code class="docutils literal notranslate"><span class="pre">plexosdb</span></code></p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System"><code class="docutils literal notranslate"><span class="pre">System</span></code></a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.add_component"><code class="docutils literal notranslate"><span class="pre">System.add_component()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.add_components"><code class="docutils literal notranslate"><span class="pre">System.add_components()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.add_supplemental_attribute"><code class="docutils literal notranslate"><span class="pre">System.add_supplemental_attribute()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.add_time_series"><code class="docutils literal notranslate"><span class="pre">System.add_time_series()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.auto_add_composed_components"><code class="docutils literal notranslate"><span class="pre">System.auto_add_composed_components</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.change_component_uuid"><code class="docutils literal notranslate"><span class="pre">System.change_component_uuid()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.convert_storage"><code class="docutils literal notranslate"><span class="pre">System.convert_storage()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.copy_component"><code class="docutils literal notranslate"><span class="pre">System.copy_component()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.copy_time_series"><code class="docutils literal notranslate"><span class="pre">System.copy_time_series()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.data_format_version"><code class="docutils literal notranslate"><span class="pre">System.data_format_version</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.deepcopy_component"><code class="docutils literal notranslate"><span class="pre">System.deepcopy_component()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.description"><code class="docutils literal notranslate"><span class="pre">System.description</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.deserialize_system_attributes"><code class="docutils literal notranslate"><span class="pre">System.deserialize_system_attributes()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.export_component_to_csv"><code class="docutils literal notranslate"><span class="pre">System.export_component_to_csv()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.from_dict"><code class="docutils literal notranslate"><span class="pre">System.from_dict()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.from_json"><code class="docutils literal notranslate"><span class="pre">System.from_json()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.get_component"><code class="docutils literal notranslate"><span class="pre">System.get_component()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.get_component_by_label"><code class="docutils literal notranslate"><span class="pre">System.get_component_by_label()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.get_component_by_uuid"><code class="docutils literal notranslate"><span class="pre">System.get_component_by_uuid()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.get_component_types"><code class="docutils literal notranslate"><span class="pre">System.get_component_types()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.get_components"><code class="docutils literal notranslate"><span class="pre">System.get_components()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.get_components_with_supplemental_attribute"><code class="docutils literal notranslate"><span class="pre">System.get_components_with_supplemental_attribute()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.get_num_components_with_supplemental_attributes"><code class="docutils literal notranslate"><span class="pre">System.get_num_components_with_supplemental_attributes()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.get_num_supplemental_attributes"><code class="docutils literal notranslate"><span class="pre">System.get_num_supplemental_attributes()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.get_supplemental_attribute_by_uuid"><code class="docutils literal notranslate"><span class="pre">System.get_supplemental_attribute_by_uuid()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.get_supplemental_attribute_counts_by_type"><code class="docutils literal notranslate"><span class="pre">System.get_supplemental_attribute_counts_by_type()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.get_supplemental_attributes_with_component"><code class="docutils literal notranslate"><span class="pre">System.get_supplemental_attributes_with_component()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.get_time_series"><code class="docutils literal notranslate"><span class="pre">System.get_time_series()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.get_time_series_directory"><code class="docutils literal notranslate"><span class="pre">System.get_time_series_directory()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.handle_data_format_upgrade"><code class="docutils literal notranslate"><span class="pre">System.handle_data_format_upgrade()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.has_component"><code class="docutils literal notranslate"><span class="pre">System.has_component()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.has_supplemental_attribute"><code class="docutils literal notranslate"><span class="pre">System.has_supplemental_attribute()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.has_supplemental_attribute_association"><code class="docutils literal notranslate"><span class="pre">System.has_supplemental_attribute_association()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.has_time_series"><code class="docutils literal notranslate"><span class="pre">System.has_time_series()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.iter_all_components"><code class="docutils literal notranslate"><span class="pre">System.iter_all_components()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.label"><code class="docutils literal notranslate"><span class="pre">System.label</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.list_child_components"><code class="docutils literal notranslate"><span class="pre">System.list_child_components()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.list_components_by_name"><code class="docutils literal notranslate"><span class="pre">System.list_components_by_name()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.list_parent_components"><code class="docutils literal notranslate"><span class="pre">System.list_parent_components()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.list_time_series"><code class="docutils literal notranslate"><span class="pre">System.list_time_series()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.list_time_series_metadata"><code class="docutils literal notranslate"><span class="pre">System.list_time_series_metadata()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.merge_system"><code class="docutils literal notranslate"><span class="pre">System.merge_system()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.name"><code class="docutils literal notranslate"><span class="pre">System.name</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.rebuild_component_associations"><code class="docutils literal notranslate"><span class="pre">System.rebuild_component_associations()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.remove_component"><code class="docutils literal notranslate"><span class="pre">System.remove_component()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.remove_component_by_name"><code class="docutils literal notranslate"><span class="pre">System.remove_component_by_name()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.remove_component_by_uuid"><code class="docutils literal notranslate"><span class="pre">System.remove_component_by_uuid()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.remove_supplemental_attribute"><code class="docutils literal notranslate"><span class="pre">System.remove_supplemental_attribute()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.remove_supplemental_attribute_from_component"><code class="docutils literal notranslate"><span class="pre">System.remove_supplemental_attribute_from_component()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.remove_time_series"><code class="docutils literal notranslate"><span class="pre">System.remove_time_series()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.save"><code class="docutils literal notranslate"><span class="pre">System.save()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.serialize_system_attributes"><code class="docutils literal notranslate"><span class="pre">System.serialize_system_attributes()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.time_series"><code class="docutils literal notranslate"><span class="pre">System.time_series</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.to_json"><code class="docutils literal notranslate"><span class="pre">System.to_json()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.to_records"><code class="docutils literal notranslate"><span class="pre">System.to_records()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.update_components"><code class="docutils literal notranslate"><span class="pre">System.update_components()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.uuid"><code class="docutils literal notranslate"><span class="pre">System.uuid</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x.api.System.version"><code class="docutils literal notranslate"><span class="pre">System.version</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By R2X developers
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, Alliance for Sustainable Energy, LLC.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
