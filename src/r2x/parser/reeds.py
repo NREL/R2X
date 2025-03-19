@@ -830,8 +830,8 @@ class ReEDSParser(BaseParser):
         logger.debug("Adding hydro rating profiles.")
         month_hrs = read_csv("month_hrs.csv").collect()
         month_hrs = month_hrs.filter(pl.col("model") == self.config.input_model).rename({"szn": "season"})
-
         month_map = self.reeds_config.defaults["month_map"]
+
         hydro_cf = self.get_data("hydro_cf")
         hydro_cf = hydro_cf.with_columns(
             month=pl.col("month").map_elements(lambda row: month_map.get(row, row), return_dtype=pl.String)
