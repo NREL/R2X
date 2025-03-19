@@ -119,12 +119,7 @@ def base_cli() -> argparse.ArgumentParser:
     group_cli.add_argument(
         "--input-model",
         dest="input_model",
-        choices=[
-            "plexos",
-            "reeds-US",
-            "plexos",
-            "infrasys",
-        ],
+        choices=["plexos", "reeds-US", "plexos", "infrasys", "reeds-India"],
         help="Input model to convert from",
     )
     group_cli.add_argument(
