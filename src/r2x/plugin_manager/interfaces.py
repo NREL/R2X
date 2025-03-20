@@ -11,7 +11,7 @@ This includes one or more of the following:
 
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Any, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING, ParamSpec
 import json
 from pathlib import Path
 from importlib import resources
@@ -22,7 +22,6 @@ if TYPE_CHECKING:
     from r2x.parser.handler import BaseParser
     from r2x.exporter.handler import BaseExporter
     from r2x.config_models import BaseModelConfig
-
 
 
 @dataclass
@@ -61,10 +60,14 @@ class DefaultFile:
         package_name = module if isinstance(module, str) else module.__name__.split(".")[0]
         try:
             base_path = resources.files(package_name)
-            absolute_path = base_path.joinpath(path_obj).resolve()
-            if not absolute_path.is_file():
+            resource_path = base_path.joinpath(str(path_obj))
 
-                raise FileNotFoundError(f"Resolved path {absolute_path} does not exist.")
+            with resources.as_file(resource_path) as absolute_path:
+                resolved_path = Path(absolute_path).resolve()
+                if not absolute_path.is_file():
+                    raise FileNotFoundError(f"Resolved path {absolute_path} does not exist.")
+                return cls(name=path_obj.name, path=resolved_path)
+
         except (ModuleNotFoundError, TypeError, FileNotFoundError) as e:
             if hasattr(module, "__file__"):
                 base_dir = Path(module.__file__).parent
@@ -87,6 +90,7 @@ class DefaultFile:
         with open(self.path) as f:
             return json.load(f)
 
+
 @dataclass
 class PluginComponent:
     """Components associated with a model."""
@@ -94,7 +98,7 @@ class PluginComponent:
     config: type[BaseModelConfig]  # Required
     parser: type[BaseParser] | None = None
     parser_defaults: list[DefaultFile] = field(default_factory=list)
-    parser_filters: list[str] | list[Callable[[DataFrame, dict], DataFrame]] | None = None
+    parser_filters: list[str] | list[Callable[[DataFrame, ParamSpec], DataFrame]] | None = None
     exporter: type[BaseExporter] | None = None
     export_defaults: list[DefaultFile] = field(default_factory=list)
     fmap: DefaultFile | None = None

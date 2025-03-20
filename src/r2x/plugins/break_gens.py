@@ -4,11 +4,12 @@ This plugin breaks apart generators that are to big in conmparisson with the
 WECC database. If the generator is to small after the breakup than the capacity
 threshold variable, we drop the genrator entirely.
 """
+
 from __future__ import annotations
 
 # System packages
 import re
-from argparse import ArgumentParser
+from argparse import ArgumentParser, _ArgumentGroup
 
 import numpy as np
 import pandas as pd
@@ -24,6 +25,7 @@ from r2x.parser.handler import BaseParser
 from r2x.units import ActivePower, ureg
 from r2x.utils import read_json
 from r2x.plugin_manager import PluginManager
+
 # Constants
 CAPACITY_THRESHOLD = 5  # MW
 PROPERTIES_TO_BREAK = [
@@ -36,10 +38,8 @@ PROPERTIES_TO_BREAK = [
 ]
 
 
-
-
-@PluginManager.register_cli("system_update","break_gens")
-def cli_arguments(parser: ArgumentParser):
+@PluginManager.register_cli("system_update", "break_gens")
+def cli_arguments(parser: ArgumentParser | _ArgumentGroup):
     """CLI arguments for the plugin."""
     parser.add_argument(
         "--capacity-threshold",

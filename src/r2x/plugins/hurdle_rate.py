@@ -3,8 +3,7 @@
 This plugin is only applicable for ReEDs, but could work with similarly arrange data
 """
 
-
-from argparse import ArgumentParser
+from argparse import ArgumentParser, _ArgumentGroup
 
 from loguru import logger
 
@@ -14,14 +13,16 @@ from r2x.models.branch import MonitoredLine
 from r2x.parser.handler import BaseParser
 from r2x.plugin_manager import PluginManager
 
+
 @PluginManager.register_cli("system_update", "hurdle_rate")
-def cli_arguments(parser: ArgumentParser):
+def cli_arguments(parser: ArgumentParser | _ArgumentGroup):
     """CLI arguments for the plugin."""
     parser.add_argument(
         "--hurdle-rate",
         type=float,
         help="Hurdle rate between regions",
     )
+
 
 @PluginManager.register_system_update("hurdle_rate")
 def update_system(

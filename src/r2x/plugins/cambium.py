@@ -3,7 +3,7 @@
 This plugin is only applicable for ReEDs, but could work with similarly arrange data
 """
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, _ArgumentGroup
 
 import polars as pl
 from loguru import logger
@@ -17,8 +17,9 @@ from r2x.models.topology import ACBus
 from r2x.parser.handler import BaseParser
 from r2x.plugin_manager import PluginManager
 
-@PluginManager.register_cli("system_update","cambium")
-def cli_arguments(parser: ArgumentParser):
+
+@PluginManager.register_cli("system_update", "cambium")
+def cli_arguments(parser: ArgumentParser | _ArgumentGroup):
     """CLI arguments for the plugin."""
     parser.add_argument(
         "--perturb",
@@ -26,13 +27,10 @@ def cli_arguments(parser: ArgumentParser):
         help="Load perturbation scalar",
     )
 
+
 @PluginManager.register_system_update("cambium")
 def update_system(
-    config: Scenario,
-    system: System,
-    perturb: float,
-    parser: BaseParser | None = None,
-    **kwargs
+    config: Scenario, system: System, perturb: float, parser: BaseParser | None = None, **kwargs
 ) -> System:
     """Apply hurdle rate between regions.
 

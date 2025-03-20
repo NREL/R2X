@@ -6,6 +6,7 @@ import shutil
 from importlib.resources import files
 from pathlib import Path
 
+
 from loguru import logger
 
 from r2x.exporter.handler import get_exporter
@@ -16,7 +17,14 @@ from .config_scenario import Scenario, get_scenario_configuration
 from .parser.handler import BaseParser, get_parser_data
 from .upgrader import upgrade_handler
 
+from collections.abc import Callable
+from typing import TYPE_CHECKING, ParamSpec
+
+if TYPE_CHECKING:
+    from polars import DataFrame
+
 pm = PluginManager()
+
 
 def run_parser(config: Scenario, **kwargs):
     """Call get parser for parser selected.
@@ -47,24 +55,22 @@ def run_parser(config: Scenario, **kwargs):
     if getattr(config, "upgrade", None):
         upgrade_handler(config.run_folder)
 
-
     plugin = pm.get_plugin(config.input_model)
 
     parser_class = plugin.parser
     parser_filters = plugin.parser_filters
 
-    filter_funcs = []
+    filter_funcs: list[Callable[[DataFrame, ParamSpec], DataFrame]] | None = None
     if parser_filters is not None:
+        filter_funcs = []
         for filter_func in parser_filters:
             if type(filter_func) is str:
                 filter_func_call = pm.get_filter(str(filter_func))
-                filter_funcs.append(filter_func_call)
             elif callable(filter_func):
-                filter_funcs.append(filter_func)
+                filter_func_call = filter_func
             else:
                 raise TypeError(f"Filter function must be a string or callable, not {type(filter_func)}")
-    else:
-        filter_funcs = None
+            filter_funcs.append(filter_func_call)
 
     if not parser_class:
         raise KeyError(f"Parser for {config.input_model} not found")
@@ -104,6 +110,7 @@ def run_plugins(config: Scenario, parser: BaseParser, system: System) -> System:
         sysmod_config_args = {
             key: value for key, value in config.__dict__.items() if key in sysmod_required_args
         }
+
         # update the system
         system = sysmod_func(config=config, system=system, parser=parser, **sysmod_config_args)
 

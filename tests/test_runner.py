@@ -57,6 +57,10 @@ def test_init(tmp_path):
 
 
 def test_external_plugin(tmp_path, reeds_data_folder):
+    # import to register mock external plugin.
+    from .mock_external_plugin.r2x_mock_plugin.sysmod import cli_arguments, update_system
+
+    _ = (cli_arguments, update_system)
     cli_input = {
         "name": "Test",
         "weather_year": 2012,

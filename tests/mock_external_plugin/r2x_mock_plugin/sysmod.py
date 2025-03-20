@@ -1,21 +1,23 @@
 from r2x.config_scenario import Scenario
 from r2x.parser.handler import BaseParser
-from argparse import ArgumentParser
+from argparse import ArgumentParser, _ArgumentGroup
 from r2x.api import System
 from loguru import logger
 from r2x.plugin_manager import PluginManager
 
-@PluginManager.register_cli("system_update","mock_system_update")
-def cli_arguments(parser: ArgumentParser):
+
+@PluginManager.register_cli("system_update", "mock_system_update")
+def cli_arguments(parser: ArgumentParser | _ArgumentGroup):
     logger.info("adding mock arg")
     parser.add_argument("--mock-arg", type=str, help="Placeholder argument for testing external plugins")
+
 
 @PluginManager.register_system_update("mock_system_update")
 def update_system(
     config: Scenario,
     system: System,
     parser: BaseParser | None = None,
-    mock_arg: str = "No mock argument given"
+    mock_arg: str = "No mock argument given",
 ) -> System:
     """
     Run a simple mock external plugin that prints some details and returns the System without any changes.

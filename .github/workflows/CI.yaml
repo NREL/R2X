@@ -34,9 +34,6 @@ jobs:
       - name: Installing dependencies
         run: uv sync --dev
 
-      - name: Install mock plugin
-        run: uv pip install ./tests/mock_external_plugin
-
       - name: Running package tests
         run: |
           uv run pytest -vvl --cov --cov-report=xml

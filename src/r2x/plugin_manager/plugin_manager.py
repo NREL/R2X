@@ -5,22 +5,22 @@ import inspect
 import importlib
 import importlib.metadata
 from typing import ParamSpec, TYPE_CHECKING, ClassVar
-from collections.abc import Callable,Generator
+from collections.abc import Callable, Generator
 from loguru import logger
 from r2x.utils import validate_fmap
 
 if TYPE_CHECKING:
     from .defaults import PluginComponent
-    from argparse import ArgumentParser
+    from argparse import ArgumentParser, _ArgumentGroup
     from polars import DataFrame
     from r2x.api import System
-    from r2x.config_scenario import Scenario
     from r2x.parser.handler import BaseParser
     from r2x.exporter.handler import BaseExporter
     from r2x.config_models import BaseModelConfig
 
 
 DEFAULT_SYSMOD_PATH = "src/r2x/plugins"
+
 
 class PluginManager:
     """
@@ -36,10 +36,8 @@ class PluginManager:
     _instance = None
     _registry: ClassVar[dict[str, PluginComponent]] = {}
     _filter_registry: ClassVar[dict[str, Callable[[DataFrame, ParamSpec], DataFrame]]] = {}
-    _cli_registry: ClassVar[dict[str, dict[str, Callable[[ArgumentParser], None]]]] = {}
-    _system_update_registry: ClassVar[dict[
-        str, Callable[[Scenario, System, BaseParser | None, ParamSpec], System]
-    ]] = {}
+    _cli_registry: ClassVar[dict[str, Callable[[ArgumentParser | _ArgumentGroup], None]]] = {}
+    _system_update_registry: ClassVar[dict[str, Callable[..., System]]] = {}
 
     def __new__(cls):
         """Singleton pattern implementation."""
@@ -54,7 +52,7 @@ class PluginManager:
             self._initialized = True
             self._initialize_registries()
 
-    #Decorator Methods for registering functions
+    # Decorator Methods for registering functions
     @classmethod
     def register_cli(cls, cli_type: str, name: str, group_name: str | None = None):
         """Register a CLI function.
@@ -68,11 +66,16 @@ class PluginManager:
         valid_types = {"parser", "exporter", "system_update"}
         if cli_type not in valid_types:
             raise ValueError(f"cli_type must be one of {valid_types}")
-        key = f"{cli_type}_{name}"
 
-        def decorator(func: Callable[[ArgumentParser], None]):
-            cls._cli_registry[key] = {"func": func, "group_name": group_name or name}
+        if not group_name:
+            group_name = name
+
+        key = f"{cli_type}_{name}|{group_name}"
+
+        def decorator(func: Callable[[ArgumentParser | _ArgumentGroup], None]):
+            cls._cli_registry[key] = func
             return func
+
         return decorator
 
     @classmethod
@@ -84,9 +87,11 @@ class PluginManager:
         ----------
             name (str): The name to register for the filter function.
         """
+
         def decorator(func: Callable[[DataFrame, ParamSpec], DataFrame]):
             cls._filter_registry[name] = func
             return func
+
         return decorator
 
     @classmethod
@@ -98,11 +103,12 @@ class PluginManager:
         ----------
             name (str): The name to register for the system update function.
         """
-        def decorator(func: Callable[[Scenario, System, BaseParser | None, ParamSpec], System]):
+
+        def decorator(func: Callable[..., System]):
             cls._system_update_registry[name] = func
             return func
-        return decorator
 
+        return decorator
 
     def _initialize_registries(self):
         """Initialize registries with factories and eager-loaded functions."""
@@ -130,13 +136,11 @@ class PluginManager:
         register_functions_from_folder(DEFAULT_SYSMOD_PATH)
 
         # External plugins (factories via entry points)
-        for entry_point in importlib.metadata.entry_points().select(group='r2x_plugin'):
+        for entry_point in importlib.metadata.entry_points().select(group="r2x_plugin"):
             try:
-
                 # load and register external plugins
                 load_plugin = entry_point.load()
                 self._registry.update(load_plugin())
-
 
             except Exception as e:
                 logger.error(f"Error registering plugin {entry_point.name}: {e}")
@@ -183,7 +187,7 @@ class PluginManager:
             raise ValueError(f"Filter '{name}' not found")
         return self._filter_registry[name]
 
-    def get_cli(self, cli_type: str, name: str) -> dict[str, Callable[[ArgumentParser], None]]:
+    def get_cli(self, cli_type: str, name: str) -> Callable[[ArgumentParser | _ArgumentGroup], None]:
         """
         Get the dictionary of CLI functions for the given type and name.
 
@@ -205,8 +209,7 @@ class PluginManager:
             raise ValueError(f"CLI '{key}' not found")
         return self._cli_registry[key]
 
-    def get_system_modifier(self, name: str) -> Callable[
-        [Scenario, System, BaseParser | None, ParamSpec], System]:
+    def get_system_modifier(self, name: str) -> Callable[..., System]:
         """
         Get a system modifier function for the given name.
 
@@ -225,7 +228,7 @@ class PluginManager:
         return self._system_update_registry[name]
 
     @property
-    def plugins(self)->Generator[tuple[str, PluginComponent], None, None]:
+    def plugins(self) -> Generator[tuple[str, PluginComponent], None, None]:
         """
         Get all registered plugins.
 
@@ -236,7 +239,7 @@ class PluginManager:
         """
         yield from [(name, plugin) for name, plugin in self._registry.items()]
 
-    def get_model_config_class(self, config_name:str, **kwargs)->BaseModelConfig:
+    def get_model_config_class(self, config_name: str, **kwargs) -> BaseModelConfig:
         """
         Get model configuration class for a given configuration name.
 
@@ -261,7 +264,7 @@ class PluginManager:
             model_config_instance.fmap = fmap
         return model_config_instance
 
-    def get_model_input_defaults(self, model_name:str)->dict:
+    def get_model_input_defaults(self, model_name: str) -> dict:
         """
         Get parser defaults for a given parser plugin.
 
@@ -270,13 +273,13 @@ class PluginManager:
         dict or None
         Parser defaults or None if no defaults are found
         """
-        defaults = {}
+        defaults: dict[str, str] = {}
         for file in self._registry[model_name].parser_defaults:
             defaults = defaults | file.read()
 
         return defaults
 
-    def get_model_output_defaults(self, model_name:str)->dict:
+    def get_model_output_defaults(self, model_name: str) -> dict:
         """
         Get exporter defaults for a given exporter plugin.
 
@@ -285,12 +288,12 @@ class PluginManager:
         dict or None
         Exporter defaults or None if no defaults are found
         """
-        defaults = {}
+        defaults: dict[str, str] = {}
         for file in self._registry[model_name].export_defaults:
             defaults = defaults | file.read()
         return defaults
 
-    def get_model_input_fmap(self, config_name:str)->dict | None:
+    def get_model_input_fmap(self, config_name: str) -> dict | None:
         """
         Get a validated field mapping for a given plugin.
 
@@ -320,11 +323,7 @@ class PluginManager:
         List[str]
         List of available parsers
         """
-        return [
-            name
-            for name, plugin in self.plugins
-            if plugin.parser is not None
-        ]
+        return [name for name, plugin in self.plugins if plugin.parser is not None]
 
     @property
     def registered_exporters(self) -> list[str]:
@@ -336,11 +335,7 @@ class PluginManager:
         Dict[str, Type[BaseExporter]]
             Dictionary mapping model names to exporter classes
         """
-        return [
-            name
-            for name, plugin in self.plugins
-            if plugin.exporter is not None
-        ]
+        return [name for name, plugin in self.plugins if plugin.exporter is not None]
 
     @property
     def system_modifiers(self) -> list[str]:
@@ -352,10 +347,7 @@ class PluginManager:
         List[str]
             List of available modifiers
         """
-        return [
-            name
-            for name in self._system_update_registry.keys()
-        ]
+        return [name for name in self._system_update_registry.keys()]
 
     @property
     def filter_functions(self) -> list[str]:
@@ -367,12 +359,7 @@ class PluginManager:
         List[str]
             List of available modifiers
         """
-        return [
-            name
-            for name in self._filter_registry.keys()
-        ]
-
-
+        return [name for name in self._filter_registry.keys()]
 
     def load_parser(self, model_name: str) -> type[BaseParser]:
         """
@@ -433,10 +420,11 @@ class PluginManager:
             return {}
 
         # Load and merge all default files
-        defaults_dict = {}
-        for default_file in components.input_defaults:
+        defaults_dict: dict[str, str] = {}
+        for default_file in components.parser_defaults:
             try:
                 from r2x.utils import read_json
+
                 defaults_dict = defaults_dict | read_json(str(default_file.path))
             except Exception as e:
                 logger.warning(f"Error loading input defaults {default_file.name}: {e}")
@@ -462,10 +450,11 @@ class PluginManager:
             return {}
 
         # Load and merge all default files
-        defaults_dict = {}
+        defaults_dict: dict[str, str] = {}
         for default_file in components.export_defaults:
             try:
                 from r2x.utils import read_json
+
                 defaults_dict = defaults_dict | read_json(str(default_file.path))
             except Exception as e:
                 logger.warning(f"Error loading export defaults {default_file.name}: {e}")

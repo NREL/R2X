@@ -9,19 +9,6 @@ from r2x.plugin_manager import PluginManager
 
 pm = PluginManager()
 
-FILES_WITH_ARGS = [
-    "r2x.plugins.pcm_defaults",
-    "r2x.plugins.break_gens",
-    "r2x.plugins.emission_cap",
-    "r2x.plugins.hurdle_rate",
-    "r2x.plugins.cambium",
-    "r2x.plugins.electrolyzer",
-    "r2x.parser.plexos",
-    "r2x.parser.reeds",
-    "r2x.exporter.plexos",
-    "r2x.exporter.sienna",
-]
-
 
 class Flags(argparse.Action):
     """Class to enable feature flags on the code and CLI.
@@ -46,28 +33,21 @@ class Flags(argparse.Action):
             # assign into dictionary
             getattr(namespace, self.dest)[key] = value
 
-def get_additional_arguments(
-    parser: argparse.ArgumentParser
-)->argparse.ArgumentParser:
+
+def get_additional_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     """Add cli arguments found in input_models, output_models and system_modifiers."""
-    cli_types = [
-        ("parser", "PARSER"),
-        ("exporter", "EXPORTER"),
-        ("system_update", "SYSTEM MODIFIER")
-    ]
+    cli_types = [("parser", "PARSER"), ("exporter", "EXPORTER"), ("system_update", "SYSTEM MODIFIER")]
     # Input Models
     for cli_type, group_prefix in cli_types:
         relevant_clis = {
-            key: entry for key, entry in pm._cli_registry.items()
-            if key.startswith(f"{cli_type}_")
+            key: entry for key, entry in pm._cli_registry.items() if key.startswith(f"{cli_type}_")
         }
-        for key, entry in relevant_clis.items():
-            name = entry["group_name"]
+        for key, cli_func in relevant_clis.items():
+            name = key.split("|")[-1]
             script_cli_group = parser.add_argument_group(f"{group_prefix}: {name}")
-            entry["func"](script_cli_group)
+            cli_func(script_cli_group)
 
     return parser
-
 
 
 def base_cli() -> argparse.ArgumentParser:

@@ -1,6 +1,6 @@
 """Augment results from CEM with PCM defaults."""
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, _ArgumentGroup
 
 from infrasys.base_quantity import BaseQuantity
 import pandas as pd
@@ -14,20 +14,19 @@ from r2x.units import ActivePower
 from r2x.utils import read_json
 from r2x.plugin_manager import PluginManager
 
-@PluginManager.register_cli("system_update","pcm_defaults")
-def cli_arguments(parser: ArgumentParser):
+
+@PluginManager.register_cli("system_update", "pcm_defaults")
+def cli_arguments(parser: ArgumentParser | _ArgumentGroup):
     """CLI arguments for the plugin."""
     parser.add_argument(
         "--pcm-defaults-fpath",
         help="File containing the defaults",
     )
 
+
 @PluginManager.register_system_update("pcm_defaults")
 def update_system(
-    config: Scenario,
-    system: System,
-    parser: BaseParser,
-    pcm_defaults_fpath: str | None = None
+    config: Scenario, system: System, parser: BaseParser, pcm_defaults_fpath: str | None = None
 ) -> System:
     """Augment data model using PCM defaults dictionary.
 
