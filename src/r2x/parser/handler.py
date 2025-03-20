@@ -2,6 +2,7 @@
 
 This module provides the abstract class to create parser objects.
 """
+
 from __future__ import annotations
 
 # System packages
@@ -42,6 +43,7 @@ FILE_PARSING_KWARGS = {
     "weather_year",
     "filter_by_weather_year",
 }
+
 
 @dataclass
 class BaseParser(ABC):
@@ -266,9 +268,7 @@ def get_parser_data(
     return parser
 
 
-def create_model_instance(
-    model_class: type[Component], skip_validation: bool = False, **field_values
-) -> Any:
+def create_model_instance(model_class: type[Component], skip_validation: bool = False, **field_values) -> Any:
     """Create R2X model instance."""
     valid_fields = {
         key: value

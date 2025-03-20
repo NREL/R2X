@@ -115,6 +115,7 @@ def get_year(model_class: BaseModelConfig) -> int | None:
     """Extract year variable from `BaseModelConfig`."""
     raise NotImplementedError("No get_year implementation for this type")
 
+
 @get_year.register
 def _(model_class: SiennaConfig):
     return model_class.model_year

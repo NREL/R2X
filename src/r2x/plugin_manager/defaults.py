@@ -43,11 +43,7 @@ def create_reeds_plugin() -> PluginComponent:
 
     # Create REEDS-specific input defaults
     input_defaults = [common_files["config"], common_files["plugins"]]
-    input_defaults.extend(
-        [
-            DefaultFile.from_path("defaults/reeds_input.json")
-        ]
-    )
+    input_defaults.extend([DefaultFile.from_path("defaults/reeds_input.json")])
 
     fmap = DefaultFile.from_path("defaults/reeds_us_mapping.json")
     # REEDS is input-only
@@ -55,16 +51,39 @@ def create_reeds_plugin() -> PluginComponent:
         config=ReEDSConfig,
         parser=ReEDSParser,
         parser_defaults=input_defaults,
-        parser_filters=['pl_rename','pl_filter_by_year'],
-        fmap=fmap
+        parser_filters=["pl_rename", "pl_filter_by_year"],
+        fmap=fmap,
     )
+
+
+def create_reeds_india_plugin() -> PluginComponent:
+    """Create components for the REEDS-India model."""
+    from r2x.config_models import ReEDSConfig
+    from r2x.parser.reeds import ReEDSParser
+
+    # Get common defaults
+    common_files = get_common_default_files()
+
+    # Create REEDS-specific input defaults
+    input_defaults = [common_files["config"], common_files["plugins"]]
+    input_defaults.extend([DefaultFile.from_path("defaults/reeds_india_input.json")])
+
+    fmap = DefaultFile.from_path("defaults/reeds_india_mapping.json")
+    # REEDS is input-only
+    return PluginComponent(
+        config=ReEDSConfig,
+        parser=ReEDSParser,
+        parser_defaults=input_defaults,
+        parser_filters=["pl_rename", "pl_filter_by_year"],
+        fmap=fmap,
+    )
+
 
 def create_plexos_plugin() -> PluginComponent:
     """Create components for the PLEXOS model."""
     from r2x.config_models import PlexosConfig
     from r2x.parser.plexos import PlexosParser
     from r2x.exporter.plexos import PlexosExporter
-
 
     # Get common defaults
     common_files = get_common_default_files()
@@ -77,11 +96,11 @@ def create_plexos_plugin() -> PluginComponent:
         ]
     )
     # Create PLEXOS-specific export defaults
-    export_defaults =[
+    export_defaults = [
         DefaultFile.from_path("defaults/plexos_output.json"),
         DefaultFile.from_path("defaults/plexos_simulation_objects.json"),
         DefaultFile.from_path("defaults/plexos_horizons.json"),
-        DefaultFile.from_path("defaults/plexos_models.json")
+        DefaultFile.from_path("defaults/plexos_models.json"),
     ]
 
     fmap = DefaultFile.from_path("defaults/plexos_mapping.json")
@@ -93,8 +112,9 @@ def create_plexos_plugin() -> PluginComponent:
         parser_defaults=input_defaults,
         exporter=PlexosExporter,
         export_defaults=export_defaults,
-        fmap=fmap
+        fmap=fmap,
     )
+
 
 def create_sienna_plugin() -> PluginComponent:
     """Create components for the SIENNA model."""
@@ -107,7 +127,6 @@ def create_sienna_plugin() -> PluginComponent:
     input_defaults = [common_files["config"], common_files["plugins"]]
     input_defaults = [
         DefaultFile.from_path("defaults/sienna_config.json"),
-
     ]
     # Create SIENNA-specific export defaults
     export_defaults = [
@@ -121,8 +140,9 @@ def create_sienna_plugin() -> PluginComponent:
         parser_defaults=input_defaults,
         exporter=SiennaExporter,
         export_defaults=export_defaults,
-        fmap=fmap
+        fmap=fmap,
     )
+
 
 def create_infrasys_plugin() -> PluginComponent:
     """Create components for the INFRASYS model."""
@@ -137,13 +157,16 @@ def create_infrasys_plugin() -> PluginComponent:
         parser_defaults=[common_files["config"], common_files["plugins"]],
     )
 
+
 # Dictionary mapping model names to their component creation functions
 DEFAULT_MODEL_CREATORS = {
     "reeds-US": create_reeds_plugin,
+    "reeds-India": create_reeds_india_plugin,
     "plexos": create_plexos_plugin,
     "sienna": create_sienna_plugin,
     "infrasys": create_infrasys_plugin,
 }
+
 
 def create_default_registry() -> dict[str, PluginComponent]:
     """

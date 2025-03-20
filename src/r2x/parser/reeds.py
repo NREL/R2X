@@ -1,4 +1,5 @@
 """Functions related to parsers."""
+
 from __future__ import annotations
 
 import importlib
@@ -74,8 +75,9 @@ R2X_MODELS = importlib.import_module("r2x.models")
 UNITS = importlib.import_module("r2x.units")
 BASE_WEATHER_YEAR = 2007
 
-@PluginManager.register_cli("parser","reeds-US")
-def cli_arguments(parser: ArgumentParser)->None:
+
+@PluginManager.register_cli("parser", "reeds-US")
+def cli_arguments(parser: ArgumentParser) -> None:
     """CLI arguments for the plugin."""
     parser.add_argument(
         "--weather-year",
@@ -781,6 +783,7 @@ class ReEDSParser(BaseParser):
         """Hydro budgets in ReEDS."""
         logger.debug("Adding hydro budgets.")
         month_hrs = read_csv("month_hrs.csv").collect()
+        month_hrs = month_hrs.filter(pl.col("model") == self.config.input_model)
         month_map = self.reeds_config.defaults["month_map"]
 
         hydro_cf = self.get_data("hydro_cf")
@@ -833,13 +836,13 @@ class ReEDSParser(BaseParser):
     def _construct_hydro_rating_profiles(self) -> None:
         logger.debug("Adding hydro rating profiles.")
         month_hrs = read_csv("month_hrs.csv").collect()
+        month_hrs = month_hrs.filter(pl.col("model") == self.config.input_model).rename({"szn": "season"})
         month_map = self.reeds_config.defaults["month_map"]
 
         hydro_cf = self.get_data("hydro_cf")
         hydro_cf = hydro_cf.with_columns(
             month=pl.col("month").map_elements(lambda row: month_map.get(row, row), return_dtype=pl.String)
         )
-        month_hrs = month_hrs.rename({"szn": "season"})
         hydro_data = pl_left_multi_join(
             hydro_cf,
             month_hrs,
