@@ -84,7 +84,6 @@ from .polars_helpers import pl_filter_by_year
 from r2x.plugin_manager import PluginManager
 
 
-
 models = importlib.import_module("r2x.models")
 
 R2X_MODELS = importlib.import_module("r2x.models")
@@ -156,15 +155,15 @@ SIMPLE_QUERY_COLUMNS_SCHEMA = {
     "scenario": pl.String,
 }
 
-@PluginManager.register_cli("parser","plexos")
-def cli_arguments(parser: ArgumentParser)->None:
+
+@PluginManager.register_cli("parser", "plexos")
+def cli_arguments(parser: ArgumentParser) -> None:
     """CLI arguments for the plugin."""
     parser.add_argument(
         "--model",
         required=False,
         help="Plexos model to translate",
     )
-
 
 
 class PlexosParser(PCMParser):

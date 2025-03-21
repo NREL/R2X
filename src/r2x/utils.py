@@ -32,7 +32,6 @@ from r2x.units import ureg
 
 DEFAULT_OUTPUT_FOLDER: str = "r2x_export"
 DEFAULT_DATA_FOLDER: str = "data"
-#DEFAULT_PLUGIN_PATH: str = "r2x.plugins"
 DEFAULT_SEARCH_FOLDERS = [
     "outputs",
     "inputs_case",

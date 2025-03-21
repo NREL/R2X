@@ -1,6 +1,5 @@
 """Create PLEXOS model from translated ReEDS data."""
 
-
 import string
 import uuid
 from argparse import ArgumentParser
@@ -56,7 +55,8 @@ DEFAULT_XML_TEMPLATE = "master_9.2R6_btu.xml"
 EXT_PROPERTIES = {"UoS Charge", "Fixed Load"}
 KEYS_TO_FLATTEN = {"active_power_limits", "active_power_flow_limits", "storage_capacity"}
 
-@PluginManager.register_cli("exporter","plexos")
+
+@PluginManager.register_cli("exporter", "plexos")
 def cli_arguments(parser: ArgumentParser):
     """CLI arguments for the plugin."""
     parser.add_argument(

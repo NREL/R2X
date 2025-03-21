@@ -2,6 +2,7 @@ from r2x.plugin_manager import PluginManager
 
 from argparse import ArgumentParser
 
+
 @PluginManager.register_cli("parser", "ExternalParser")
 def cli_arguments(parser: ArgumentParser):
     """CLI arguments for the plugin."""

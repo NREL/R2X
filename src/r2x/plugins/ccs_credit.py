@@ -13,6 +13,7 @@ from r2x.models.generators import Generator
 from r2x.parser.handler import BaseParser
 from r2x.plugin_manager import PluginManager
 
+
 @PluginManager.register_system_update("ccs_credit")
 def update_system(
     config: Scenario,

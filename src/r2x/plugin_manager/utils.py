@@ -6,7 +6,7 @@ from pathlib import Path
 from loguru import logger
 
 
-def register_functions_from_folder(folder_path:str|Path):
+def register_functions_from_folder(folder_path: str | Path):
     """
     Dynamically register specific functions from Python files in a folder.
 
@@ -25,14 +25,14 @@ def register_functions_from_folder(folder_path:str|Path):
     # Loop through files in the folder
     for filename in os.listdir(folder_path):
         # Check if file is a Python file (ends with .py) and not __init__.py
-        if filename.endswith('.py') and filename != '__init__.py':
+        if filename.endswith(".py") and filename != "__init__.py":
             # Remove .py extension to get module name
-            module_name = str(folder_path).replace('src/', '').replace('/', '.') + '.' + filename[:-3]
+            module_name = str(folder_path).replace("src/", "").replace("/", ".") + "." + filename[:-3]
 
             try:
                 # Dynamically import the module. Functions will be registered automatically
                 _ = importlib.import_module(module_name)
-                #logger.debug(f"Successfully registered {module.__name__}")
+                # logger.debug(f"Successfully registered {module.__name__}")
 
             except ImportError as e:
                 logger.error(f"Error importing {module_name}: {e!s}")

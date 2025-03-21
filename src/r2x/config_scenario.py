@@ -20,6 +20,7 @@ from r2x.utils import override_dict
 
 from .config_models import BaseModelConfig
 
+
 @dataclass
 class Scenario:
     """Scenario class.
@@ -119,13 +120,13 @@ class Scenario:
 
     def _load_model_config(self) -> None:
         from r2x.plugin_manager import PluginManager
+
         pm = PluginManager()
 
         if self.input_model:
             self.input_config = pm.get_model_config_class(self.input_model)
             self.input_config.defaults = pm.get_model_input_defaults(self.input_model)
         if self.output_model:
-
             self.output_config = pm.get_model_config_class(self.output_model)
             self.output_config.defaults = pm.get_model_output_defaults(self.output_model)
         return None
@@ -160,6 +161,7 @@ class Scenario:
         cls_fields = {field for field in inspect.signature(cls).parameters}
 
         from r2x.plugin_manager import PluginManager
+
         pm = PluginManager()
 
         input_config = pm.get_model_config_class(input_model)

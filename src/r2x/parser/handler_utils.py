@@ -53,7 +53,6 @@ def csv_handler(fpath: Path, csv_file_encoding="utf8", **kwargs) -> pl.DataFrame
     │ 2   │ Bob    │ 24   │
     └─────┴────────┴──────┘
     """
-    from .polars_helpers import pl_lowercase
     if absolute_path := kwargs.get("absolute_fpath"):
         fpath = Path(absolute_path)
     logger.trace("Attempting reading file {}", fpath)

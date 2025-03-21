@@ -11,6 +11,7 @@ from r2x.exceptions import R2XParserError
 from r2x.parser.plexos_utils import DATAFILE_COLUMNS
 from r2x.plugin_manager import PluginManager
 
+
 @PluginManager.register_filter("pl_filter_by_year")
 def pl_filter_by_year(
     data: pl.DataFrame | pl.LazyFrame, year: int | None = None, year_column: str = "year", **kwargs
@@ -119,6 +120,7 @@ def pl_filter_by_weather_year(
 
     return data.filter(pl.col(year_column).dt.year() == weather_year)
 
+
 @PluginManager.register_filter("pl_remove_duplicates")
 def pl_remove_duplicates(data: pl.DataFrame, columns: DATAFILE_COLUMNS | list[str]) -> pl.DataFrame:
     """Remove duplicate rows from the DataFrame based on certain columns.
@@ -147,6 +149,7 @@ def pl_remove_duplicates(data: pl.DataFrame, columns: DATAFILE_COLUMNS | list[st
         data = data.unique(subset=columns_to_check).sort(pl.all())
 
     return data
+
 
 @PluginManager.register_filter("pl_lowercase")
 def pl_lowercase(data: pl.DataFrame, **kwargs):
@@ -201,6 +204,7 @@ def pl_rename(
     return data.select(pl.col(column_mapping.keys())).select(
         pl.all().name.map(lambda col_name: column_mapping.get(col_name, col_name))
     )
+
 
 def pl_left_multi_join(l_df: pl.LazyFrame, *r_dfs: pl.DataFrame, **kwargs):
     """Perform a left join on multiple DataFrames.

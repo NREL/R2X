@@ -86,7 +86,7 @@ def test_emission_but_no_cap(caplog):
         weather_year=2012,
         plugins=["emission_cap"],
     )
-    
+
     _ = update_system(config=config, system=system, parser=None)
     assert "Could not set emission cap value" in caplog.text
 
