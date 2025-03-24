@@ -14,7 +14,7 @@ class UpDown(InfraSysBaseModel):
 
 class Complex(InfraSysBaseModel):
     real: float
-    img: float
+    imag: float
 
 
 class InputOutput(InfraSysBaseModel):
