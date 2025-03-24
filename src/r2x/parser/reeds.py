@@ -250,6 +250,8 @@ class ReEDSParser(BaseParser):
                     name=branch_name,
                     from_bus=from_bus,
                     to_bus=to_bus,
+                    active_power_flow=0.0,
+                    reactive_power_flow=0.0,
                     rating_up=branch["max_active_power"] * ureg.MW,
                     rating_down=rating_down,
                     losses=losses * ureg.percent,
