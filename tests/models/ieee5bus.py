@@ -153,22 +153,64 @@ def ieee5bus() -> System:
     system.add_component(sundance)
 
     # Branch
-    branch_ab = MonitoredLine(name="line_ab", from_bus=bus_1, to_bus=bus_2, rating_up=400 * ureg.MW)
+    branch_ab = MonitoredLine(
+        name="line_ab",
+        active_power_flow=0.0,
+        reactive_power_flow=0.0,
+        from_bus=bus_1,
+        to_bus=bus_2,
+        rating_up=400 * ureg.MW,
+    )
     system.add_component(branch_ab)
 
-    branch_ad = MonitoredLine(name="line_ad", from_bus=bus_1, to_bus=bus_4, rating_up=400 * ureg.MW)
+    branch_ad = MonitoredLine(
+        name="line_ad",
+        active_power_flow=0.0,
+        reactive_power_flow=0.0,
+        from_bus=bus_1,
+        to_bus=bus_4,
+        rating_up=400 * ureg.MW,
+    )
     system.add_component(branch_ad)
 
-    branch_ae = MonitoredLine(name="line_ae", from_bus=bus_1, to_bus=bus_5, rating_up=400 * ureg.MW)
+    branch_ae = MonitoredLine(
+        name="line_ae",
+        active_power_flow=0.0,
+        reactive_power_flow=0.0,
+        from_bus=bus_1,
+        to_bus=bus_5,
+        rating_up=400 * ureg.MW,
+    )
     system.add_component(branch_ae)
 
-    branch_bc = MonitoredLine(name="line_bc", from_bus=bus_2, to_bus=bus_3, rating_up=400 * ureg.MW)
+    branch_bc = MonitoredLine(
+        name="line_bc",
+        active_power_flow=0.0,
+        reactive_power_flow=0.0,
+        from_bus=bus_2,
+        to_bus=bus_3,
+        rating_up=400 * ureg.MW,
+    )
     system.add_component(branch_bc)
 
-    branch_cd = MonitoredLine(name="line_cd", from_bus=bus_3, to_bus=bus_4, rating_up=400 * ureg.MW)
+    branch_cd = MonitoredLine(
+        name="line_cd",
+        active_power_flow=0.0,
+        reactive_power_flow=0.0,
+        from_bus=bus_3,
+        to_bus=bus_4,
+        rating_up=400 * ureg.MW,
+    )
     system.add_component(branch_cd)
 
-    branch_ed = MonitoredLine(name="line_ed", from_bus=bus_5, to_bus=bus_4, rating_up=240 * ureg.MW)
+    branch_ed = MonitoredLine(
+        name="line_ed",
+        active_power_flow=0.0,
+        reactive_power_flow=0.0,
+        from_bus=bus_5,
+        to_bus=bus_4,
+        rating_up=240 * ureg.MW,
+    )
     system.add_component(branch_ed)
 
     return system

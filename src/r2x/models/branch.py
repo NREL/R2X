@@ -41,6 +41,13 @@ class MonitoredLine(ACBranch):
     reactive_power_flow: Annotated[
         NonNegativeFloat, Field(description="Initial condition of reactive power flow on the line (MVAR)")
     ]
+    flow_limits: Annotated[
+        FromTo_ToFrom | None,
+        Field(
+            description="Minimum and maximum permissable flow on the line (MVA), "
+            "if different from the thermal rating defined in `rating`"
+        ),
+    ] = None
     rating_up: Annotated[ActivePower, Field(ge=0, description="Forward rating of the line.")] | None = None
     rating_down: Annotated[ActivePower, Field(le=0, description="Reverse rating of the line.")] | None = None
     losses: Annotated[Percentage, Field(description="Power losses on the line.")] | None = None
