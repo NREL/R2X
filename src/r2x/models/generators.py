@@ -7,7 +7,7 @@ from pydantic import Field, NonNegativeFloat, field_serializer
 
 from r2x.enums import PrimeMoversType, StorageTechs, ThermalFuels
 from r2x.models.core import Device
-from r2x.models.costs import HydroGenerationCost, RenewableGenerationCost, ThermalGenerationCost, StorageCost
+from r2x.models.costs import HydroGenerationCost, RenewableGenerationCost, StorageCost, ThermalGenerationCost
 from r2x.models.load import PowerLoad
 from r2x.models.named_tuples import InputOutput, MinMax, StartShut, StartTimeLimits, UpDown
 from r2x.models.topology import ACBus
@@ -286,6 +286,7 @@ class ThermalGen(Generator):
 
     fuel: Annotated[str, Field(description="Fuel category")] | None = None
     operation_cost: ThermalGenerationCost | None = None
+    must_run: Annotated[bool, Field(description="If we need to force the dispatch of the device.")] = False
 
 
 class ThermalStandard(ThermalGen):
