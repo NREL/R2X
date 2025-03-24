@@ -242,6 +242,7 @@ class ReEDSParser(BaseParser):
             else:
                 rating_down = -branch["max_active_power"] * ureg.MW
 
+            rating_up = branch["max_active_power"] * ureg.MW
             losses = branch["losses"] if branch["losses"] else 0
             self.system.add_component(
                 self._create_model_instance(
@@ -255,6 +256,7 @@ class ReEDSParser(BaseParser):
                     rating_up=branch["max_active_power"] * ureg.MW,
                     rating_down=rating_down,
                     losses=losses * ureg.percent,
+                    flow_limits=MinMax(min=-rating_down, max=rating_up),
                     ext=ext,
                 ),
             )

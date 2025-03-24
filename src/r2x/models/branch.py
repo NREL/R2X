@@ -62,8 +62,6 @@ class MonitoredLine(ACBranch):
             active_power_flow=100.0,
             reactive_power_flow=0.0,
             losses=Percentage(10, "%"),
-            rating_up=ActivePower(100, "MW"),
-            rating_down=ActivePower(-100, "MW"),
             rating=ActivePower(100, "MW"),
         )
 
