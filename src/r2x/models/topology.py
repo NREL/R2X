@@ -5,7 +5,8 @@ from typing import Annotated
 from pydantic import Field, NonNegativeFloat, PositiveInt
 
 from r2x.enums import ACBusTypes
-from r2x.models.core import BaseComponent, MinMax
+from r2x.models.core import BaseComponent
+from r2x.models.named_tuples import MinMax
 from r2x.units import Voltage, ureg
 
 
@@ -99,6 +100,7 @@ class ACBus(Bus):
             load_zone=LoadZone.example(),
             area=Area.example(),
             base_voltage=13 * ureg.kV,
+            voltage_limits=MinMax(min=0.9, max=1.1),
             bustype=ACBusTypes.PV,
         )
 

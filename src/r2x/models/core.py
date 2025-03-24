@@ -1,10 +1,11 @@
 """Core models for R2X."""
 
-from collections import defaultdict, namedtuple
+from collections import defaultdict
+from typing import Annotated
 
 from infrasys.component import Component
-from typing import Annotated
 from pydantic import Field, computed_field, field_serializer
+
 from r2x.units import ureg
 
 
@@ -27,13 +28,6 @@ class BaseComponent(Component):
             if isinstance(value, ureg.Quantity):
                 ext[key] = value.magnitude
         return ext
-
-
-MinMax = namedtuple("MinMax", ["min", "max"])
-Complex = namedtuple("Complex", ["real", "imag"])
-FromTo_ToFrom = namedtuple("FromTo_ToFrom", ["from_to", "to_from"])
-UpDown = namedtuple("UpDown", ["up", "down"])
-InputOutput = namedtuple("InputOutput", ["input", "output"])
 
 
 class Service(BaseComponent):

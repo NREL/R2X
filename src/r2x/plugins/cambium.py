@@ -10,10 +10,7 @@ from loguru import logger
 
 from r2x.api import System
 from r2x.config_scenario import Scenario
-from r2x.models.branch import MonitoredLine
-from r2x.models.core import MinMax
-from r2x.models.generators import Generator
-from r2x.models.topology import ACBus
+from r2x.models import ACBus, Generator, MinMax, MonitoredLine
 from r2x.parser.handler import BaseParser
 
 
