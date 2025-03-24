@@ -48,6 +48,7 @@ class MonitoredLine(ACBranch):
             "if different from the thermal rating defined in `rating`"
         ),
     ] = None
+    angle_limits: MinMax | None = None
     rating_up: Annotated[ActivePower, Field(ge=0, description="Forward rating of the line.")] | None = None
     rating_down: Annotated[ActivePower, Field(le=0, description="Reverse rating of the line.")] | None = None
     losses: Annotated[Percentage, Field(description="Power losses on the line.")] | None = None
