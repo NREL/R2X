@@ -2,6 +2,11 @@ from infrasys.models import InfraSysBaseModel
 from pint import Quantity
 
 
+class GeoLocation(InfraSysBaseModel):
+    Latitude: float
+    Longitude: float
+
+
 class MinMax(InfraSysBaseModel):
     min: float | Quantity
     max: float | Quantity
@@ -14,7 +19,7 @@ class UpDown(InfraSysBaseModel):
 
 class Complex(InfraSysBaseModel):
     real: float
-    img: float
+    imag: float
 
 
 class InputOutput(InfraSysBaseModel):

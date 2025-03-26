@@ -4,7 +4,8 @@ from typing import Annotated
 
 from pydantic import Field, NonNegativeFloat
 
-from r2x.models.core import Complex, StaticInjection
+from r2x.models.core import StaticInjection
+from r2x.models.named_tuples import Complex
 from r2x.models.topology import ACBus, Bus
 from r2x.units import ActivePower, ApparentPower
 

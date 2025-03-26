@@ -86,6 +86,8 @@ def pjm_2area() -> System:
         from_bus=busf,
         r=0.003,
         x=0.03,
+        active_power_flow=0.0,
+        reactive_power_flow=0.0,
         to_bus=bust,
         rating_up=1000 * ureg.MW,
         rating_down=-1000 * ureg.MW,

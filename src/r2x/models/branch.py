@@ -35,6 +35,20 @@ class MonitoredLine(ACBranch):
 
     b: Annotated[FromTo_ToFrom | None, Field(description="Shunt susceptance in pu")] = None
     g: Annotated[FromTo_ToFrom | None, Field(description="Shunt conductance in pu")] = None
+    active_power_flow: Annotated[
+        NonNegativeFloat, Field(description="Initial condition of active power flow on the line (MW)")
+    ] = 0.0
+    reactive_power_flow: Annotated[
+        NonNegativeFloat, Field(description="Initial condition of reactive power flow on the line (MVAR)")
+    ] = 0.0
+    flow_limits: Annotated[
+        FromTo_ToFrom | None,
+        Field(
+            description="Minimum and maximum permissable flow on the line (MVA), "
+            "if different from the thermal rating defined in `rating`"
+        ),
+    ] = None
+    angle_limits: MinMax | None = None
     rating_up: Annotated[ActivePower, Field(ge=0, description="Forward rating of the line.")] | None = None
     rating_down: Annotated[ActivePower, Field(le=0, description="Reverse rating of the line.")] | None = None
     losses: Annotated[Percentage, Field(description="Power losses on the line.")] | None = None
@@ -45,6 +59,8 @@ class MonitoredLine(ACBranch):
             name="ExampleMonitoredLine",
             from_bus=ACBus.example(),
             to_bus=ACBus.example(),
+            active_power_flow=100.0,
+            reactive_power_flow=0.0,
             losses=Percentage(10, "%"),
             rating_up=ActivePower(100, "MW"),
             rating_down=ActivePower(-100, "MW"),

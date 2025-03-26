@@ -2,7 +2,7 @@
 
 from collections import defaultdict, namedtuple
 
-from infrasys.models import InfraSysBaseModelWithIdentifers
+from infrasys import SupplementalAttribute
 from loguru import logger
 
 from r2x.models.core import BaseComponent
@@ -19,7 +19,7 @@ from .generators import Generator, HydroGen, RenewableGen, Storage, ThermalGen
 GeoLocation = namedtuple("GeoLocation", ["Latitude", "Longitude"])
 
 
-class GeographicInfo(InfraSysBaseModelWithIdentifers):
+class GeographicInfo(SupplementalAttribute):
     """Supplemental attribute that capture location."""
 
     geo_json: GeoLocation

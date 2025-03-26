@@ -431,7 +431,7 @@ class PlexosParser(PCMParser):
                     self.system.add_component(load)
                     ts_dict = {"solve_year": self.year}
                     if isinstance(max_active_power, SingleTimeSeries):
-                        self.system.add_time_series(max_active_power, load, **ts_dict)
+                        self.system.add_time_series(max_active_power, load, connection=None, **ts_dict)
 
             ts_fields = {k: v for k, v in mapped_records.items() if isinstance(v, SingleTimeSeries)}
             if ts_fields:
@@ -439,7 +439,7 @@ class PlexosParser(PCMParser):
                 ts_dict = {"solve_year": self.year}
                 for ts_name, ts in ts_fields.items():
                     ts.variable_name = ts_name
-                    self.system.add_time_series(ts, generator, **ts_dict)
+                    self.system.add_time_series(ts, generator, connection=None, **ts_dict)
         return
 
     def _add_generator_emissions(self, default_model=Emission):
@@ -557,7 +557,7 @@ class PlexosParser(PCMParser):
                 ts_dict = {"solve_year": self.year}
                 for ts_name, ts in ts_fields.items():
                     ts.variable_name = ts_name
-                    self.system.add_time_series(ts, reserve, **ts_dict)
+                    self.system.add_time_series(ts, reserve, connection=None, **ts_dict)
 
         reserve_map = ReserveMap(name="contributing_generators")
         self.system.add_component(reserve_map)
