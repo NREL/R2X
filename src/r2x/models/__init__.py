@@ -1,4 +1,4 @@
-from .attributes import Emission
+from .attributes import Emission, GeographicInfo
 from .branch import (
     ACBranch,
     AreaInterchange,
@@ -31,7 +31,15 @@ from .generators import (
     ThermalStandard,
 )
 from .load import FixedAdmittance, InterruptiblePowerLoad, PowerLoad, StandardLoad
-from .named_tuples import Complex, FromTo_ToFrom, InputOutput, MinMax, StartShut, StartTimeLimits, UpDown
+from .named_tuples import (
+    Complex,
+    FromTo_ToFrom,
+    GeoLocation,
+    InputOutput,
+    MinMax,
+    StartShut,
+    StartTimeLimits,
+    UpDown,
+)
 from .services import Reserve, TransmissionInterface, VariableReserve
 from .topology import ACBus, Arc, Area, Bus, DCBus, LoadZone
-from .utils import GeographicInfo, GeoLocation

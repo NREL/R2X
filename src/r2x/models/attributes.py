@@ -6,7 +6,18 @@ from infrasys import SupplementalAttribute
 from pydantic import Field
 
 from r2x.enums import EmissionType
+from r2x.models.named_tuples import GeoLocation
 from r2x.units import EmissionRate
+
+
+class GeographicInfo(SupplementalAttribute):
+    """Supplemental attribute that capture location."""
+
+    geo_json: GeoLocation
+
+    @classmethod
+    def example(cls) -> "GeographicInfo":
+        return GeographicInfo(geo_json=GeoLocation(Latitude=10.5, Longitude=-100))
 
 
 class Emission(SupplementalAttribute):

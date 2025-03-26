@@ -37,10 +37,10 @@ class MonitoredLine(ACBranch):
     g: Annotated[FromTo_ToFrom | None, Field(description="Shunt conductance in pu")] = None
     active_power_flow: Annotated[
         NonNegativeFloat, Field(description="Initial condition of active power flow on the line (MW)")
-    ]
+    ] = 0.0
     reactive_power_flow: Annotated[
         NonNegativeFloat, Field(description="Initial condition of reactive power flow on the line (MVAR)")
-    ]
+    ] = 0.0
     flow_limits: Annotated[
         FromTo_ToFrom | None,
         Field(
