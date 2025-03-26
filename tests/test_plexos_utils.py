@@ -1,7 +1,18 @@
-import pytest
 from datetime import datetime, timedelta
+from pathlib import Path
+from tempfile import NamedTemporaryFile
+
 import polars as pl
-from r2x.parser.plexos_utils import DATAFILE_COLUMNS, get_column_enum, time_slice_handler
+import pytest
+
+from r2x.parser.plexos_utils import DATAFILE_COLUMNS, get_column_enum, parse_ymd, time_slice_handler
+
+
+def temp_csv_file(data: str):
+    with NamedTemporaryFile(mode="w", delete=False, suffix=".csv") as tmp_file:
+        tmp_file.write(data)
+        tmp_file.flush()
+        return Path(tmp_file.name)
 
 
 def test_get_column_enum():
@@ -60,6 +71,9 @@ def test_get_column_enum():
     ]
     assert get_column_enum(columns) == DATAFILE_COLUMNS.TS_NMDH
 
+    columns = ["year", "month", "day", "Gen1", "Gen2"]
+    assert get_column_enum(columns) == DATAFILE_COLUMNS.YMD
+
 
 def test_time_slice_handler():
     records = [{"pattern": "M1-2", "value": 200}, {"pattern": "M3-12", "value": 100}]
@@ -94,3 +108,11 @@ def test_time_slice_handler_raises():
     records = [{"pattern": "H1-2", "value": 200}, {"pattern": "M3-12", "value": 100}]
     with pytest.raises(NotImplementedError):
         _ = time_slice_handler(records, datetime_index)
+
+
+def test_parse_ymd():
+    header = "year,month,day,Gen1,Gen2\n"
+    data = "2023,1,1,200,200\n2023,1,2,300,300\n"
+    csv_file = temp_csv_file(header + data)
+    csv_file = pl.read_csv(csv_file)
+    parse_ymd(csv_file)
