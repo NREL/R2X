@@ -10,13 +10,21 @@ import shutil
 import zipfile
 from collections import OrderedDict
 
-import h5py
-import numpy as np
 import pandas as pd
 from loguru import logger
 
-from r2x.upgrader.helpers import get_function_arguments
-from r2x.utils import get_timeindex, read_csv
+from r2x.upgrader.checks import (
+    check_if_columm_is_datetime,
+    check_if_h5_has_correct_index_names,
+    check_if_h5_is_pandas_format,
+)
+from r2x.upgrader.helpers import (
+    add_datetime_index,
+    get_function_arguments,
+    pandas_to_h5py,
+    rename_index_names_from_h5,
+)
+from r2x.utils import read_csv
 
 
 def rename(fpath: pathlib.Path, new_fname: str) -> pathlib.Path:
@@ -355,49 +363,17 @@ def convert_hdf(fpath: pathlib.Path, compression_opts=4) -> None:
     if not fpath.exists():
         raise FileNotFoundError(f"{fpath} does not exist.")
 
-    logger.debug("Converting pandas style H5 {} to h5py compatible", fpath)
-    try:
+    if check_if_h5_is_pandas_format(fpath):
         original_h5 = pd.read_hdf(fpath)
-    except ValueError:
-        logger.debug("H5 file {} not in pandas format.", fpath)
+        assert pandas_to_h5py(original_h5, fpath, compression_opts=compression_opts)
+        logger.debug("H5 {} converted to h5py compatible", fpath)
         return
 
-    timeindex = get_timeindex()
+    if not check_if_h5_has_correct_index_names(fpath):
+        assert rename_index_names_from_h5(fpath)
 
-    with h5py.File(fpath, "w") as f:
-        if isinstance(original_h5.index, pd.MultiIndex):
-            for level in original_h5.index.levels:
-                if (len(level) == 7 * 8760) and (isinstance(level.values[0], np.int64)):  # noqa: PD011
-                    assert len(level) == len(timeindex), f"H5 file {fpath} has more weather year data."
-                    timeindex = (
-                        timeindex.to_series().apply(datetime.datetime.isoformat).reset_index(drop=True)
-                    )
-                    f.create_dataset("index_datetime", data=timeindex.str.encode("utf-8"), dtype="S30")
-                else:
-                    f.create_dataset(f"index_{level.name}", data=level.values, dtype=level.dtype)
-
-            index_names = pd.Index(original_h5.index.names)
-            f.create_dataset("index_names", data=index_names, dtype=f"S{index_names.map(len).max()}")
-        else:
-            f.create_dataset("index_datetime", data=timeindex.str.encode("utf-8"), dtype="S30")
-
-        f.create_dataset("columns", data=original_h5.columns, dtype=f"S{original_h5.columns.map(len).max()}")
-
-        if len(original_h5.dtypes.unique()) > 1:
-            raise Exception(
-                f"Multiple data types detected in {fpath.name}, unclear which one to use for re-saving h5."
-            )
-        else:
-            original_h5 = original_h5.astype(np.float32)
-            dftype_out = original_h5.dtypes.unique()[0]
-        f.create_dataset(
-            "data",
-            data=original_h5.values,
-            dtype=dftype_out,
-            compression="gzip",
-            compression_opts=compression_opts,
-        )
-    logger.debug("H5 {} converted to h5py compatible", fpath)
+    if not check_if_columm_is_datetime(fpath):
+        assert add_datetime_index(fpath)
     return
 
 
