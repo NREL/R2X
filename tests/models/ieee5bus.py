@@ -159,7 +159,6 @@ def ieee5bus() -> System:
         reactive_power_flow=0.0,
         from_bus=bus_1,
         to_bus=bus_2,
-        rating_up=400 * ureg.MW,
     )
     system.add_component(branch_ab)
 
@@ -169,7 +168,6 @@ def ieee5bus() -> System:
         reactive_power_flow=0.0,
         from_bus=bus_1,
         to_bus=bus_4,
-        rating_up=400 * ureg.MW,
     )
     system.add_component(branch_ad)
 
@@ -179,7 +177,6 @@ def ieee5bus() -> System:
         reactive_power_flow=0.0,
         from_bus=bus_1,
         to_bus=bus_5,
-        rating_up=400 * ureg.MW,
     )
     system.add_component(branch_ae)
 
@@ -189,7 +186,6 @@ def ieee5bus() -> System:
         reactive_power_flow=0.0,
         from_bus=bus_2,
         to_bus=bus_3,
-        rating_up=400 * ureg.MW,
     )
     system.add_component(branch_bc)
 
@@ -199,7 +195,6 @@ def ieee5bus() -> System:
         reactive_power_flow=0.0,
         from_bus=bus_3,
         to_bus=bus_4,
-        rating_up=400 * ureg.MW,
     )
     system.add_component(branch_cd)
 
@@ -209,7 +204,6 @@ def ieee5bus() -> System:
         reactive_power_flow=0.0,
         from_bus=bus_5,
         to_bus=bus_4,
-        rating_up=240 * ureg.MW,
     )
     system.add_component(branch_ed)
 

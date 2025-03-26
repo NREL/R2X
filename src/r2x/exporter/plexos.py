@@ -52,7 +52,7 @@ NESTED_ATTRIBUTES = {"ext", "bus", "services"}
 TIME_SERIES_PROPERTIES = ["Min Provision", "Static Risk"]
 DEFAULT_XML_TEMPLATE = "master_9.2R6_btu.xml"
 EXT_PROPERTIES = {"UoS Charge", "Fixed Load"}
-KEYS_TO_FLATTEN = {"active_power_limits", "active_power_flow_limits", "storage_capacity"}
+KEYS_TO_FLATTEN = {"active_power_limits", "active_power_flow_limits", "storage_capacity", "flow_limits"}
 
 
 def cli_arguments(parser: ArgumentParser):

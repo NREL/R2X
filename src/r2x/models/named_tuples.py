@@ -28,8 +28,8 @@ class InputOutput(InfraSysBaseModel):
 
 
 class FromTo_ToFrom(InfraSysBaseModel):  # type: ignore  # noqa: N801
-    from_to: float
-    to_from: float
+    from_to: float | Quantity
+    to_from: float | Quantity
 
 
 class StartShut(InfraSysBaseModel):

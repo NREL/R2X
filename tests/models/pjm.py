@@ -89,8 +89,7 @@ def pjm_2area() -> System:
         active_power_flow=0.0,
         reactive_power_flow=0.0,
         to_bus=bust,
-        rating_up=1000 * ureg.MW,
-        rating_down=-1000 * ureg.MW,
+        flow_limits=FromTo_ToFrom(from_to=-1000 * ureg.MW, to_from=1000 * ureg.MW),
     )
     system.add_component(branch_monitored)
 

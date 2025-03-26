@@ -1281,28 +1281,6 @@
       "name": "inter_area_line",
       "r": 0.003,
       "rating": null,
-      "rating_down": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "ActivePower"
-          }
-        },
-        "units": "megawatt",
-        "value": -1000
-      },
-      "rating_up": {
-        "__metadata__": {
-          "fields": {
-            "module": "r2x.units",
-            "serialized_type": "quantity",
-            "type": "ActivePower"
-          }
-        },
-        "units": "megawatt",
-        "value": 1000
-      },
       "reactive_power_flow": 0.0,
       "services": null,
       "to_bus": {

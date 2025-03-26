@@ -42,6 +42,7 @@ from r2x.models import (
     Emission,
     EnergyReservoirStorage,
     Generator,
+    FromTo_ToFrom,
     HydroDispatch,
     HydroGenerationCost,
     HydroPumpedStorage,
@@ -623,8 +624,10 @@ class PlexosParser(PCMParser):
         for line in lines_pivot.iter_rows(named=True):
             line_properties_mapped = {self.property_map.get(key, key): value for key, value in line.items()}
             line_properties_mapped["rating"] = line_properties_mapped.get("max_power_flow", 0.0)
-            line_properties_mapped["rating_up"] = line_properties_mapped.pop("max_power_flow", 0.0)
-            line_properties_mapped["rating_down"] = line_properties_mapped.pop("min_power_flow", 0.0)
+            line_properties_mapped["flow_limits"] = FromTo_ToFrom(
+                from_to=line_properties_mapped.pop("Max Flow", 0.0),
+                to_from=line_properties_mapped.pop("Min Flow", 0.0),
+            )
 
             if line_properties_mapped["rating"] is None:
                 logger.warning("Skipping disabled line {}", line)

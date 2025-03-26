@@ -90,6 +90,8 @@
     "discharge_efficiency": "Discharge Efficiency",
     "duration": "Duration",
     "fixed_load": "Fixed Load",
+    "flow_limits_from_to": "Min Flow",
+    "flow_limits_to_from": "Max Flow",
     "forced_outage_rate": "Forced Outage Rate",
     "fuel_price": "Fuel Price",
     "heat_rate": "Heat Rate",
