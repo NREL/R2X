@@ -80,21 +80,29 @@ def update_system(
         logger.warning("Did not find any emission type to apply emission_cap")
         return system
 
-    assert parser.data.get("switches") is not None, "Missing switches file from run folder."
-    switches = {key: validate_string(value) for key, value in parser.data["switches"].iter_rows()}
-
     if parser is not None and config.input_model == "reeds-US" and emission_cap is None:
+        assert parser.data.get("switches") is not None, "Missing switches file from run folder."
+        switches = {key: validate_string(value) for key, value in parser.data["switches"].iter_rows()}
         emission_object = EmissionType.CO2E if switches["gsw_annualcapco2e"] else EmissionType.CO2
         assert parser.data.get("co2_cap", None) is not None, "co2_cap not found from ReEDS parser"
         emission_cap = parser.data["co2_cap"]["value"].item()
 
-    return break_emissions(system, switches, parser, emission_cap, default_unit, emission_object)
+        if switches["gsw_precombustion"]:
+            emit_rates = parser.data.get("emission_rates")
+            generator_attr = system.get_components(
+                Generator, filter_func=lambda x: system.has_supplemental_attribute(x, Emission)
+            )
+            for component in generator_attr:
+                attribute = system.get_supplemental_attributes_with_component(component, Emission)
+                attribute.rate = attribute.rate + emit_rates.filter(
+                    pl.col["generator_name"] == component.name
+                )
+
+    return break_emissions(system, emission_cap, default_unit, emission_object)
 
 
 def break_emissions(
     system: System,
-    switches: dict[str, dict],
-    parser: BaseParser | None = None,
     emission_cap: float | None = None,
     default_unit: str = "tonne",
     emission_object: EmissionType | None = None,
@@ -103,15 +111,6 @@ def break_emissions(
     if emission_cap is None:
         logger.warning("Could not set emission cap value. Skipping plugin.")
         return system
-
-    if switches["gsw_precombustion"]:
-        emit_rates = parser.data.get("emission_rates")
-        generator_attr = system.get_components(
-            Generator, filter_func=lambda x: system.has_supplemental_attribute(x, Emission)
-        )
-        for component in generator_attr:
-            attribute = system.get_supplemental_attributes_with_component(component, Emission)
-            attribute.rate = attribute.rate + emit_rates.filter(pl.col["generator_name"] == component.name)
 
     emission_cap = ureg.Quantity(emission_cap, default_unit)
 
