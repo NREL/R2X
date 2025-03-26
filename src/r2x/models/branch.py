@@ -1,9 +1,10 @@
 """Model related to branches."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
+from pint import Quantity
 from infrasys.value_curves import InputOutputCurve
-from pydantic import Field, NonNegativeFloat, NonPositiveFloat
+from pydantic import Field, field_serializer, NonNegativeFloat, NonPositiveFloat
 
 from r2x.models.core import Device
 from r2x.models.named_tuples import FromTo_ToFrom, MinMax
@@ -51,6 +52,22 @@ class MonitoredLine(ACBranch):
     angle_limits: MinMax | None = None
     losses: Annotated[Percentage, Field(description="Power losses on the line.")] | None = None
 
+    @field_serializer("flow_limits")
+    def serialize_flow_limits(self, fromto_tofrom: FromTo_ToFrom | dict | None) -> dict[str, Any] | None:
+        if fromto_tofrom is None:
+            return None
+        if not isinstance(fromto_tofrom, FromTo_ToFrom):
+            fromto_tofrom = FromTo_ToFrom(**fromto_tofrom)
+        if fromto_tofrom is not None:
+            return {
+                "from_to": fromto_tofrom.from_to.magnitude
+                if isinstance(fromto_tofrom.from_to, Quantity)
+                else fromto_tofrom.from_to,
+                "to_from": fromto_tofrom.to_from.magnitude
+                if isinstance(fromto_tofrom.to_from, Quantity)
+                else fromto_tofrom.to_from,
+            }
+
     @classmethod
     def example(cls) -> "MonitoredLine":
         return MonitoredLine(
@@ -60,7 +77,6 @@ class MonitoredLine(ACBranch):
             active_power_flow=100.0,
             reactive_power_flow=0.0,
             losses=Percentage(10, "%"),
-            rating=ActivePower(100, "MW"),
         )
 
 
