@@ -254,8 +254,6 @@ class ReEDSParser(BaseParser):
                     to_bus=to_bus,
                     active_power_flow=0.0,
                     reactive_power_flow=0.0,
-                    rating_up=branch["max_active_power"] * ureg.MW,
-                    rating_down=rating_down,
                     losses=losses * ureg.percent,
                     flow_limits=FromTo_ToFrom(from_to=-rating_down, to_from=rating_up),
                     ext=ext,
@@ -275,9 +273,15 @@ class ReEDSParser(BaseParser):
             zone_pair = tuple(sorted((zone_from, zone_to)))
             zone_pair_name = f"{zone_pair[0]}_{zone_pair[1]}"
             if (zone_from, zone_to) == zone_pair:
-                positive_flow, negative_flow = line.rating_up.magnitude, line.rating_down.magnitude
+                positive_flow, negative_flow = (
+                    line.flow_limits.from_to.magnitude,
+                    line.flow_limits.to_from.magnitude,
+                )
             else:
-                positive_flow, negative_flow = -line.rating_down.magnitude, -line.rating_up.magnitude
+                positive_flow, negative_flow = (
+                    -line.flow_limits.to_from.magnitude,
+                    -line.flow_limits.from_to.magnitude,
+                )
 
             if "positive_flow" not in interfaces[zone_pair] or "negative_flow" not in interfaces[zone_pair]:
                 interfaces[zone_pair]["positive_flow"] = positive_flow
