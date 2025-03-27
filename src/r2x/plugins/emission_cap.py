@@ -5,17 +5,20 @@ This plugin is only applicable for ReEDs, but could work with similarly arrange 
 
 from argparse import ArgumentParser
 
-from loguru import logger
 import polars as pl
+from loguru import logger
 
 from r2x.api import System
+from r2x.config_models import PlexosConfig, ReEDSConfig
 from r2x.config_scenario import Scenario
 from r2x.enums import EmissionType
-from r2x.models import Emission, Generator
+from r2x.exceptions import R2XModelError
+from r2x.models import Emission
+from r2x.models.generators import ThermalStandard
 from r2x.models.utils import Constraint, ConstraintMap
 from r2x.parser.handler import BaseParser
-from r2x.units import ureg
-from r2x.utils import validate_string
+from r2x.units import EmissionRate, ureg
+from r2x.utils import get_enum_from_string, validate_string
 
 
 def cli_arguments(parser: ArgumentParser):
@@ -63,8 +66,9 @@ def update_system(
     short ton equals 2000 lbs. For units in kg/MWh and `emission_cap` in metric tons,
     we multiply by 1000 (`Scalar` property in Plexos).
     """
-    if not config.output_model == "plexos":
-        msg = "Plugin `emission_cap.py` is not compatible with a model that is not Plexos."
+    is_plexos_exporter = isinstance(config.output_config, PlexosConfig)
+    if not is_plexos_exporter:
+        msg = "Plugin `emission_cap.py` is not compatible with an output model that is not Plexos."
         raise NotImplementedError(msg)
 
     logger.info("Adding emission cap...")
@@ -80,25 +84,82 @@ def update_system(
         logger.warning("Did not find any emission type to apply emission_cap")
         return system
 
-    if parser is not None and config.input_model == "reeds-US" and emission_cap is None:
+    is_reeds_parser = parser is not None and isinstance(config.input_config, ReEDSConfig)
+
+    if is_reeds_parser:
         assert parser.data.get("switches") is not None, "Missing switches file from run folder."
+        assert isinstance(parser.data["switches"], pl.DataFrame)
+        assert parser.data.get("emission_rates") is not None, "Missing emission rates."
+
         switches = {key: validate_string(value) for key, value in parser.data["switches"].iter_rows()}
+        emit_rates = parser.data["emission_rates"]
+        emit_rates = emit_rates.with_columns(
+            pl.concat_str([pl.col("tech"), pl.col("tech_vintage"), pl.col("region")], separator="_").alias(
+                "generator_name"
+            )
+        )
+        any_precombustion = emit_rates["emission_source"].str.contains("precombustion")
+        emit_rates = emit_rates.filter(any_precombustion)
+        if switches.get("gsw_precombustion") and not emit_rates.is_empty():
+            logger.debug("Adding precombustion emission.")
+            generator_with_precombustion = emit_rates.select(
+                "generator_name", "emission_type", "rate"
+            ).unique()
+            assert add_precombustion(system, generator_with_precombustion)
+
+    if is_reeds_parser and emission_cap is None:
         emission_object = EmissionType.CO2E if switches["gsw_annualcapco2e"] else EmissionType.CO2
         assert parser.data.get("co2_cap", None) is not None, "co2_cap not found from ReEDS parser"
         emission_cap = parser.data["co2_cap"]["value"].item()
 
-        if switches.get("gsw_precombustion"):
-            emit_rates = parser.data.get("emission_rates")
-            generator_attr = system.get_components(
-                Generator, filter_func=lambda x: system.has_supplemental_attribute(x, Emission)
-            )
-            for component in generator_attr:
-                attribute = system.get_supplemental_attributes_with_component(component, Emission)
-                attribute.rate = attribute.rate + emit_rates.filter(
-                    pl.col["generator_name"] == component.name
-                )
-
     return set_emission_constraint(system, emission_cap, default_unit, emission_object)
+
+
+def add_precombustion(system: System, emission_rates: pl.DataFrame) -> bool:
+    """Add precombustion emission rates to `Emission` objects.
+
+    This function adds precpmbustion rates to the attributes :class:`~r2x.models.Emission`.
+
+    Parameters
+    ----------
+    system : System
+        The system object to be updated.
+    emission_rates : pl.DataFrame
+        The precombustion emission_rates
+
+    Returns
+    -------
+    bool
+        True if the addition succeded. False if it failed
+
+    Raises
+    ------
+    R2XModelError
+        If multiple emission_rates of the same type are attached to the component
+    """
+    applied_rate = False
+    for generator_name, emission_type, rate in emission_rates.iter_rows():
+        emission_type = get_enum_from_string(emission_type, EmissionType)
+        component = system.get_component(ThermalStandard, generator_name)
+        attr = system.get_supplemental_attributes_with_component(
+            component, Emission, filter_func=lambda attr: attr.emission_type == emission_type
+        )
+        if not attr:
+            logger.trace("`Emission:{}` object not found for {}", emission_type, generator_name)
+            continue
+        if len(attr) != 1:
+            msg = f"Multiple emission of the same type attached to {generator_name}. "
+            msg += "Check addition of supplemental attributes."
+            raise R2XModelError
+
+        # Extract first element only
+        attr = attr[0]
+
+        # Add precombustion emissions
+        attr.rate += EmissionRate(rate, attr.rate.units)
+        applied_rate = True
+
+    return applied_rate
 
 
 def set_emission_constraint(
@@ -107,7 +168,7 @@ def set_emission_constraint(
     default_unit: str = "tonne",
     emission_object: EmissionType | None = None,
 ) -> System:
-    """Break emissions into smaller units."""
+    """Add emissions constraint object to the system."""
     if emission_cap is None:
         logger.warning("Could not set emission cap value. Skipping plugin.")
         return system
