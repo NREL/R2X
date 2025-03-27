@@ -1,10 +1,12 @@
 import csv
-import tempfile
 import pathlib
 import shutil
+import tempfile
+
 import pandas as pd
-from r2x.upgrader.functions import apply_header, melt, move_file, rename, set_index
+
 from r2x.upgrader import upgrade_handler
+from r2x.upgrader.functions import add_column, apply_header, melt, move_file, rename, set_index
 
 
 def test_rename(tmp_path):
@@ -113,6 +115,28 @@ def test_set_index():
     result = set_index(temp_file, "index")
     assert result is not None
     assert result.index.name == "index"
+    temp_file.unlink()
+
+
+def test_add_column():
+    temp_file = pathlib.Path(tempfile.gettempdir()) / "test_data.csv"
+    with open(temp_file, mode="w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["eall", "i", "v", "r", "t", "value"])  # Header row
+        writer.writerow(["CO2", "beccs_mod", "new1", "p1", 2029, -0.918])
+    result = add_column(temp_file, column_name="etype", default_value="combustion")
+    assert result is not None
+    assert "etype" in result.columns
+    assert all(value == "combustion" for value in result["etype"])
+
+    temp_file.unlink()
+    temp_file = pathlib.Path(tempfile.gettempdir()) / "test_data.csv"
+    with open(temp_file, mode="w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["eall", "etype", "i", "v", "r", "t", "value"])  # Header row
+        writer.writerow(["CO2", "combustion", "beccs_mod", "new1", "p1", 2029, -0.918])
+    result = add_column(temp_file, column_name="etype", default_value="combustion")
+    assert result is None
     temp_file.unlink()
 
 

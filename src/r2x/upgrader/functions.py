@@ -377,8 +377,10 @@ def convert_hdf(fpath: pathlib.Path, compression_opts=4) -> None:
     return
 
 
-def add_column(fpath: pathlib.Path) -> pd.DataFrame | None:
-    """Create a new column the emit_rate.csv file.
+def add_column(
+    fpath: pathlib.Path, column_name: str, default_value: str | float | int
+) -> pd.DataFrame | None:
+    """Create a new column to a csv file wit a default value
     This function creates a new column in a CSV file, checks if the columns already exists
     and if not, creates the new column and saves the file.
 
@@ -397,11 +399,11 @@ def add_column(fpath: pathlib.Path) -> pd.DataFrame | None:
         raise FileNotFoundError(f"{fpath} does not exist.")
     data = pd.read_csv(fpath)
 
-    if "etype" in data.columns.tolist():
+    if column_name in data.columns.tolist():
         logger.debug(f"{fpath.name} has column etype already.")
         return None
 
-    data["etype"] = "combustion"  # Add a new column with default value of combustion (emission source)
+    data[column_name] = default_value  # Add a new column with default value of combustion (emission source)
     data.to_csv(fpath, index=False)
     return data
 
