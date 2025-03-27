@@ -98,10 +98,10 @@ def update_system(
                     pl.col["generator_name"] == component.name
                 )
 
-    return break_emissions(system, emission_cap, default_unit, emission_object)
+    return set_emission_constraint(system, emission_cap, default_unit, emission_object)
 
 
-def break_emissions(
+def set_emission_constraint(
     system: System,
     emission_cap: float | None = None,
     default_unit: str = "tonne",
