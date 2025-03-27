@@ -17,23 +17,29 @@ def add_datetime_index(fpath, datetime_column: str = "index_datetime") -> bool:
     """Add datetime index for h5 file w/o it."""
     time_index = get_timeindex()
     time_index = time_index.to_series().apply(datetime.datetime.isoformat).reset_index(drop=True)
+    time_index = np.char.encode(time_index.to_numpy().astype(str), "utf-8")
 
     with h5py.File(fpath, "r+") as f:
-        dset = f[datetime_column]
-        if not len(time_index) == len(dset):
-            msg = "Can not add index with different lengths. Check the `index_datetime` column."
-            logger.debug(msg)
-            return False
+        year_multiplier = len(set(f["index_year"][:])) if "index_year" in f.keys() else 1
+        time_index = np.tile(time_index, year_multiplier)
         del f[datetime_column]
-        f.create_dataset(datetime_column, data=time_index.str.encode("utf-8"), dtype="S30")
+        f.create_dataset(datetime_column, data=time_index, dtype="S30")
     return True
 
 
 def rename_index_names_from_h5(fpath) -> bool:
     """Rename index for h5 file."""
-    column_mapping = {"index_0": "index_year", "index_1": "index_datetime"}
+    multi_index = {"index_0", "index_1"}
+    single_index = {"index_0"}
 
     with h5py.File(fpath, "r+") as f:
+        keys = set(f.keys())
+
+        match keys:
+            case set() if multi_index.issubset(keys):
+                column_mapping = {"index_0": "index_year", "index_1": "index_datetime"}
+            case set() if single_index.issubset(keys):
+                column_mapping = {"index_0": "index_datetime"}
         for old_name, new_name in column_mapping.items():
             f.move(old_name, new_name)
     return True

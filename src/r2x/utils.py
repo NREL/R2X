@@ -367,7 +367,7 @@ def get_timeindex(
             pd.date_range(
                 f"{y}-01-01",
                 f"{y + 1}-01-01",
-                freq="H",
+                freq="h",
                 inclusive="left",
                 tz=tz,
             )[
