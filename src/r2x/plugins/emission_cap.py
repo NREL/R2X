@@ -87,7 +87,7 @@ def update_system(
         assert parser.data.get("co2_cap", None) is not None, "co2_cap not found from ReEDS parser"
         emission_cap = parser.data["co2_cap"]["value"].item()
 
-        if switches["gsw_precombustion"]:
+        if switches.get("gsw_precombustion"):
             emit_rates = parser.data.get("emission_rates")
             generator_attr = system.get_components(
                 Generator, filter_func=lambda x: system.has_supplemental_attribute(x, Emission)
