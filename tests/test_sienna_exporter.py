@@ -1,3 +1,4 @@
+import json
 from typing import Any
 
 import pytest
@@ -6,16 +7,21 @@ from infrasys.function_data import PiecewiseLinearData, QuadraticFunctionData, X
 from infrasys.value_curves import InputOutputCurve, LinearCurve
 
 from r2x.config_scenario import Scenario
-from r2x.exporter.sienna import SiennaExporter, apply_operation_table_data, get_psy_fields
+from r2x.exporter.sienna import (
+    SiennaExporter,
+    apply_operation_table_data,
+    create_timeseries_pointers,
+    get_psy_fields,
+)
 from r2x.models.costs import ThermalGenerationCost
 
 
 @pytest.fixture
-def scenario_instance(data_folder, tmp_folder):
+def scenario_instance(data_folder, tmp_path):
     return Scenario.from_kwargs(
         name="Test Scenario",
         run_folder=data_folder,
-        output_folder=tmp_folder,
+        output_folder=tmp_path,
         input_model="infrasys",
         output_model="sienna",
         reference_year=2010,
@@ -23,8 +29,8 @@ def scenario_instance(data_folder, tmp_folder):
 
 
 @pytest.fixture
-def sienna_exporter(scenario_instance, infrasys_test_system, tmp_folder):
-    return SiennaExporter(config=scenario_instance, system=infrasys_test_system, output_folder=tmp_folder)
+def sienna_exporter(scenario_instance, infrasys_test_system, tmp_path):
+    return SiennaExporter(config=scenario_instance, system=infrasys_test_system, output_folder=tmp_path)
 
 
 @pytest.mark.sienna
@@ -33,7 +39,7 @@ def test_sienna_exporter_instance(sienna_exporter):
 
 
 @pytest.mark.sienna
-def test_sienna_exporter_run(sienna_exporter, tmp_folder):
+def test_sienna_exporter_run(sienna_exporter, tmp_path):
     exporter = sienna_exporter.run()
 
     output_files = [
@@ -47,11 +53,28 @@ def test_sienna_exporter_run(sienna_exporter, tmp_folder):
     ]
 
     for file in output_files:
-        assert (tmp_folder / file).exists(), f"File {file} was not created properly."
+        assert (tmp_path / file).exists(), f"File {file} was not created properly."
 
     # Check that time series was created correctly
-    ts_directory = tmp_folder / exporter.ts_directory
+    ts_directory = tmp_path / exporter.ts_directory
     assert any(ts_directory.iterdir())
+
+
+def test_create_time_series_pointers(sienna_exporter, tmp_path):
+    exporter = sienna_exporter
+
+    assert create_timeseries_pointers(
+        config=exporter.config,
+        system=exporter.system,
+        output_folder=exporter.config.output_folder,
+        reference_year=exporter.year,
+    )
+    output_fpath = tmp_path / "timeseries_pointers.json"
+    assert output_fpath.exists()
+
+    with open(output_fpath) as f:
+        pointers = json.load(f)
+    assert pointers
 
 
 def test_sienna_exporter_empty_storage(caplog, sienna_exporter):

@@ -30,6 +30,7 @@ class DATAFILE_COLUMNS(Enum):  # noqa: N801
     NV = ("name", "value")
     Y = ("year",)
     YV = ("year", "value")
+    YMD = ("year", "month", "day")
     YearValue = ("Year", "Value")
     TS_datetime = ("datetime",)
     TS_DateTime = ("DateTime",)
@@ -256,6 +257,12 @@ def parse_y(data_file):
 
 
 def parse_yv(data_file):
+    return data_file
+
+
+def parse_ymd(data_file):
+    data_file = data_file.melt(id_vars=["year", "month", "day"], variable_name="name")
+    data_file = data_file.sort(["year", "month", "day", "name"])
     return data_file
 
 

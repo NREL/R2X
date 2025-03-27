@@ -2,17 +2,20 @@
 
 # System packages
 import json
-import os
 from functools import partial
 from operator import itemgetter
+from pathlib import Path
 from typing import Any
 from urllib.request import urlopen
 
 # Third-party packages
+from infrasys import Component
 from loguru import logger
 
 # Local imports
+from r2x.api import System
 from r2x.config_models import ReEDSConfig, SiennaConfig
+from r2x.config_scenario import Scenario
 from r2x.config_utils import get_year
 from r2x.exporter.handler import BaseExporter, get_export_records
 from r2x.exporter.utils import (
@@ -118,7 +121,12 @@ class SiennaExporter(BaseExporter):
         self.process_reserves_data()
         self.process_storage_data()
         self.export_data()
-        self.create_timeseries_pointers()
+        create_timeseries_pointers(
+            config=self.config,
+            output_folder=self.config.output_folder,
+            system=self.system,
+        )
+
         return self
 
     def process_bus_data(self, fname: str = "bus.csv") -> None:
@@ -486,36 +494,6 @@ class SiennaExporter(BaseExporter):
         fname : str
             Name of the file to be created
         """
-        ts_pointers_list = []
-
-        for component_type, time_series in self.time_series_objects.items():
-            csv_fpath = self.ts_directory / (f"{component_type}_{self.config.name}_{self.year}.csv")
-            for i in range(len(time_series)):
-                component_name = self.time_series_name_by_type[component_type][i]
-                ts_instance = time_series[i]
-                resolution = ts_instance.resolution.seconds
-                variable_name = self.property_map.get(ts_instance.variable_name, ts_instance.variable_name)
-                # Set to None if the variable is not found in the property map
-                ts_pointers = {
-                    "category": component_type.split("_", maxsplit=1)[0],  # Component_name is the first
-                    "component_name": component_name,
-                    "data_file": str(csv_fpath),
-                    "normalization_factor": None,
-                    "resolution": resolution,
-                    "name": variable_name,
-                    "scaling_factor_multiplier_module": "PowerSystems",
-                    "scaling_factor_multiplier": None,
-                }
-                ts_pointers_list.append(ts_pointers)
-
-        # Sort the list to make it easier to visually diff
-        ts_pointers_list.sort(key=lambda x: x["component_name"])
-
-        with open(os.path.join(self.output_folder, "timeseries_pointers.json"), mode="w") as f:
-            json.dump(ts_pointers_list, f, indent=4)
-
-        logger.info("File timeseries_pointers.json created.")
-        return
 
     def export_data(self) -> None:
         """Export csv data to specified folder from output_data attribute."""
@@ -524,6 +502,79 @@ class SiennaExporter(BaseExporter):
         # First export all time series objects
         self.time_series_to_csv(config=self.config, system=self.system, reference_year=self.year)
         logger.info("Saving time series data.")
+
+
+def create_timeseries_pointers(
+    config: Scenario,
+    system: System,
+    reference_year: int | None = None,
+    output_folder: str | Path | None = None,
+    default_fname: str = "timeseries_pointers.json",
+    time_series_folder: str = "Data",
+) -> bool:
+    """Export time series pointers to json file.
+
+    Parameters
+    ----------
+    config : Scenario
+        The scenario configuration object containing output settings.
+    system : System
+        The system containing the components and time series data.
+    output_folder : str | Path | None, optional
+        The directory where CSV files should be saved (default is `config.output_folder`).
+    reference_year : int | None, optional
+        The reference year for time series generation (default is inferred from `config`).
+    default_fname: str
+        Name of the pointers file. Default `timeseries_pointers.json`.
+    time_series_folder : Literal["Data"], optional
+        Subfolder for storing time series files (default is "Data").
+    **user_attributes : str
+        Additional filtering attributes for selecting time series data.
+
+    See Also
+    --------
+    create_time_series_arrays
+    check_time_series_length_consistency
+    """
+    logger.info("Exporting time series pointers.")
+    output_folder = output_folder or config.output_folder
+    assert output_folder is not None
+    if isinstance(output_folder, str):
+        output_folder = Path(output_folder)
+
+    if not reference_year:
+        assert config.output_config is not None
+        reference_year = get_year(config.output_config)
+
+    ts_pointers_list = []
+    for component in system.get_components(
+        Component,
+        filter_func=lambda x: system.has_time_series(
+            x,
+        ),
+    ):
+        for ts_metadata in system.time_series.list_time_series_metadata(component):
+            assert hasattr(ts_metadata, "resolution")
+            ts_component_name = f"{component.__class__.__name__}_{ts_metadata.variable_name}"
+            ts_pointers = {
+                "category": type(component).__name__,
+                "component_name": component.name,
+                "data_file": str(
+                    output_folder
+                    / time_series_folder
+                    / f"{ts_component_name}_{config.name}_{reference_year}.csv"
+                ),
+                "normalization_factor": "MAX",  # LL: null is not translated properly
+                "resolution": ts_metadata.resolution.seconds,
+                "name": ts_metadata.variable_name,
+                "scaling_factor_multiplier_module": "PowerSystems",
+                "scaling_factor_multiplier": "get_max_active_power",
+            }
+            ts_pointers_list.append(ts_pointers)
+    with open(output_folder / default_fname, mode="w") as f:
+        json.dump(ts_pointers_list, f, indent=4)
+    logger.info("File {} created.", output_folder / default_fname)
+    return True
 
 
 def apply_operation_table_data(
