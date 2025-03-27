@@ -7,6 +7,7 @@ from r2x.models import MonitoredLine, Emission, Generator, PowerLoad
 from r2x.parser.handler import get_parser_data
 from r2x.parser.reeds import ReEDSParser
 from r2x.exceptions import R2XParserError
+from r2x.parser.polars_helpers import pl_rename, pl_filter_by_year
 
 
 @pytest.fixture
@@ -24,7 +25,9 @@ def scenario_instance(reeds_data_folder, default_scenario, tmp_folder):
 
 @pytest.fixture
 def reeds_parser_instance(scenario_instance):
-    return get_parser_data(scenario_instance, parser_class=ReEDSParser)
+    return get_parser_data(
+        scenario_instance, parser_class=ReEDSParser, filter_funcs=[pl_rename, pl_filter_by_year]
+    )
 
 
 def test_reeds_parser_instance(reeds_parser_instance):

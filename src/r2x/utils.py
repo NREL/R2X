@@ -32,7 +32,6 @@ from r2x.units import ureg
 
 DEFAULT_OUTPUT_FOLDER: str = "r2x_export"
 DEFAULT_DATA_FOLDER: str = "data"
-DEFAULT_PLUGIN_PATH: str = "r2x.plugins"
 DEFAULT_SEARCH_FOLDERS = [
     "outputs",
     "inputs_case",
@@ -248,13 +247,19 @@ def read_json(fname: str):
         return json.load(f)
 
 
-def read_fmap(fname: str):
-    """Read default fmap mapping for ReEDS files."""
-    fmap = read_json(fname)
+def validate_fmap(fmap: dict):
+    """Validate fmap mapping for ReEDS files."""
     validate(instance=fmap, schema=mapping_schema)
 
     # Lowercase dictionary
     fmap = {key.lower() if isinstance(key, str) else key: value for key, value in fmap.items()}
+    return fmap
+
+
+def read_fmap(fname: str):
+    """Read default fmap mapping for ReEDS files."""
+    fmap = read_json(fname)
+    validate_fmap(fmap)
     return fmap
 
 

@@ -69,7 +69,7 @@ def test_no_emission(caplog, infrasys_test_system):
         plugins=["emission_cap"],
     )
 
-    _ = update_system(config=config, system=infrasys_test_system)
+    _ = update_system(config=config, system=infrasys_test_system, parser=None)
     assert "Did not find any emission" in caplog.text
 
 
@@ -87,7 +87,7 @@ def test_emission_but_no_cap(caplog):
         plugins=["emission_cap"],
     )
 
-    _ = update_system(config=config, system=system)
+    _ = update_system(config=config, system=system, parser=None)
     assert "Could not set emission cap value" in caplog.text
 
 
