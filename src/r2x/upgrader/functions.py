@@ -377,6 +377,37 @@ def convert_hdf(fpath: pathlib.Path, compression_opts=4) -> None:
     return
 
 
+def add_column(
+    fpath: pathlib.Path, column_name: str, default_value: str | float | int
+) -> pd.DataFrame | None:
+    """Create a new column to a csv file wit a default value
+    This function creates a new column in a CSV file, checks if the columns already exists
+    and if not, creates the new column and saves the file.
+
+    Parameters
+    ----------
+    fpath : pathlib.Path
+        The path to the csv file which was saved using Pandas.
+
+    Returns
+    -------
+    pd.DataFrame | None
+        The modified DataFrame if the new column was created, or None if
+        the column already existed or an error occurred.
+    """
+    if not fpath.exists():
+        raise FileNotFoundError(f"{fpath} does not exist.")
+    data = pd.read_csv(fpath)
+
+    if column_name in data.columns.tolist():
+        logger.debug(f"{fpath.name} has column etype already.")
+        return None
+
+    data[column_name] = default_value  # Add a new column with default value of combustion (emission source)
+    data.to_csv(fpath, index=False)
+    return data
+
+
 def upgrade_handler(run_folder: str | pathlib.Path):
     """Entry point to call the different upgrade functions."""
     logger.info("Starting upgrader")

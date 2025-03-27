@@ -138,6 +138,7 @@
   "emission_rates": {
     "column_mapping": {
       "eall": "emission_type",
+      "etype": "emission_source",
       "i": "tech",
       "r": "region",
       "t": "year",

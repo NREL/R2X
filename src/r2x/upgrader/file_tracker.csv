@@ -8,7 +8,7 @@ storage_duration.csv,,"i,value",,outputs/storage_duration.csv,"apply_header,move
 storage_eff.csv,,,,outputs/storage_eff.csv,move_file,
 outage_planned.csv,,"i,value",,,apply_header,
 outage_forced.csv,,"i,value",,,apply_header,
-emit_rate.csv,,"eall,i,v,r,t,value",,outputs/emit_rate.csv,"apply_header,move_file",
+emit_rate.csv,,,,outputs/emit_rate.csv,"add_column,move_file","{'column_name':'etype','default_value': 'precombustion'}"
 fuel_price.csv,,,,outputs/fuel_price.csv,move_file,
 ilr.csv,,,,outputs/ilr.csv,move_file,
 fuel2tech.csv,,,,outputs/fuel2tech.csv,move_file,

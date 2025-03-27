@@ -339,7 +339,9 @@ class ReEDSParser(BaseParser):
         for generator in self.system.get_components(
             Generator, filter_func=lambda x: x.name in emit_rates["generator_name"]
         ):
-            generator_emission = emit_rates.filter(pl.col("generator_name") == generator.name)
+            generator_emission = emit_rates.filter(
+                (pl.col("generator_name") == generator.name) & (pl.col("emission_source") == "combustion")
+            )
             for row in generator_emission.iter_rows(named=True):
                 row["rate"] = EmissionRate(row["rate"], "kg/MWh")
                 row["emission_type"] = get_enum_from_string(row["emission_type"], EmissionType)
