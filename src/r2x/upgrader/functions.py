@@ -401,9 +401,7 @@ def add_column(fpath: pathlib.Path) -> pd.DataFrame | None:
         logger.debug(f"{fpath.name} has column etype already.")
         return None
 
-    data.insert(
-        loc=1, column="etype", value="combustion"
-    )  # Add a new column with default value of combustion
+    data["etype"] = "combustion"  # Add a new column with default value of combustion (emission source)
     data.to_csv(fpath, index=False)
     return data
 
