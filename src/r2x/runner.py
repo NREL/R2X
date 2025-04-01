@@ -4,12 +4,14 @@ import importlib
 import inspect
 import shutil
 import sys
+import polars as pl
 from importlib.resources import files
 from pathlib import Path
 
 from loguru import logger
 
 from r2x.exporter.handler import get_exporter
+from r2x.config_models import ReEDSConfig
 
 from .api import System
 from .config_scenario import Scenario, get_scenario_configuration
@@ -57,6 +59,14 @@ def run_parser(config: Scenario, **kwargs):
         raise KeyError(f"Parser for {config.input_model} not found")
 
     parser = get_parser_data(config, parser_class, **kwargs)
+
+    if isinstance(config.input_config, ReEDSConfig):
+        if not parser.data["switches"].filter(parser.data["switches"]["aws"] == "gsw_precombustion").height:
+            precombustion_switch = pl.DataFrame(
+                [{"aws": "gsw_precombustion", "0": "false"}]
+            )  # default value "false"
+            parser.data["switches"] = pl.concat([parser.data["switches"], precombustion_switch])
+
     system = parser.build_system()
 
     assert system is not None, "System failed to create"
