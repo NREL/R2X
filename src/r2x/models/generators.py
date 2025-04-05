@@ -233,6 +233,10 @@ class HydroEnergyReservoir(HydroGen):
 class HydroPumpedStorage(HydroGen):
     """Class representing pumped hydro generators."""
 
+    ramp_limits: UpDown | None = None
+    time_limits: UpDown | None = None
+    ramp_limits_pump: UpDown | None = None
+    time_limits_pump: UpDown | None = None
     operation_cost: HydroGenerationCost | StorageCost | None = None
     storage_duration: (
         Annotated[
@@ -270,6 +274,10 @@ class HydroPumpedStorage(HydroGen):
             name="HydroPumpedStorage",
             active_power=ActivePower(100, "MW"),
             pump_load=ActivePower(100, "MW"),
+            ramp_limits=UpDown(up=0, down=0),
+            time_limits=UpDown(up=0, down=0),
+            ramp_limits_pump=UpDown(up=0, down=0),
+            time_limits_pump=UpDown(up=0, down=0),
             bus=ACBus.example(),
             prime_mover_type=PrimeMoversType.PS,
             storage_duration=Time(10, "h"),
