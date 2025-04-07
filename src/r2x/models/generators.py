@@ -233,6 +233,10 @@ class HydroEnergyReservoir(HydroGen):
 class HydroPumpedStorage(HydroGen):
     """Class representing pumped hydro generators."""
 
+    rating_pump: Annotated[
+        ApparentPower | None,
+        Field(ge=0, description="Maximum output power rating of the unit when pumping (MVA)."),
+    ] = ApparentPower(1, "MVA")
     ramp_limits: UpDown | None = None
     time_limits: UpDown | None = None
     ramp_limits_pump: UpDown | None = None
@@ -273,6 +277,8 @@ class HydroPumpedStorage(HydroGen):
         return HydroPumpedStorage(
             name="HydroPumpedStorage",
             active_power=ActivePower(100, "MW"),
+            rating=ApparentPower(100, "MVA"),
+            rating_pump=ApparentPower(100, "MVA"),
             pump_load=ActivePower(100, "MW"),
             ramp_limits=UpDown(up=0, down=0),
             time_limits=UpDown(up=0, down=0),
