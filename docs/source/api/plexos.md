@@ -1,7 +1,7 @@
 # `plexosdb`
 
 ```{eval-rst}
-.. automodule:: plexosdb.sqlite
+.. automodule:: plexosdb.db
     :members:
     :inherited-members:
 ```
