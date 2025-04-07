@@ -1,13 +1,12 @@
 import pytest
-from plexosdb import XMLHandler
-from plexosdb.sqlite import PlexosSQLite
+from plexosdb import PlexosDB, XMLHandler
 
 from r2x.api import System
 from r2x.config_scenario import Scenario
 from r2x.exceptions import R2XParserError
+from r2x.models import Generator
 from r2x.parser.handler import get_parser_data
 from r2x.parser.plexos import PlexosParser
-from r2x.models import Generator
 
 DB_NAME = "2-bus_example.xml"
 MODEL_NAME = "main_model"
@@ -70,7 +69,7 @@ def test_plexos_parser_instance(plexos_parser_instance):
     assert isinstance(plexos_parser_instance, PlexosParser)
     assert len(plexos_parser_instance.data) == 1  # Plexos parser just parses a single file
     assert isinstance(plexos_parser_instance.data["xml_file"], XMLHandler)
-    assert isinstance(plexos_parser_instance.db, PlexosSQLite)
+    assert isinstance(plexos_parser_instance.db, PlexosDB)
 
 
 @pytest.mark.skip(reason="We need a better test model")
