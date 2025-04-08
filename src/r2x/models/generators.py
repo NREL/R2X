@@ -269,6 +269,8 @@ class HydroPumpedStorage(HydroGen):
         ]
         | None
     ) = None
+    initial_storage: UpDown | None = None
+    storage_target: UpDown | None = None
     pump_efficiency: Annotated[Percentage, Field(ge=0, le=1, description="Pumping efficiency.")] | None = None
     pump_load: (
         Annotated[
@@ -277,6 +279,9 @@ class HydroPumpedStorage(HydroGen):
         ]
         | None
     ) = None
+    conversion_factor: float | None = None
+    inflow: float | None = None
+    outflow: float | None = None
 
     @classmethod
     def example(cls) -> "HydroPumpedStorage":
