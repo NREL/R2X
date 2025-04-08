@@ -241,6 +241,9 @@ class HydroPumpedStorage(HydroGen):
     time_limits: UpDown | None = None
     ramp_limits_pump: UpDown | None = None
     time_limits_pump: UpDown | None = None
+    active_power_limits_pump: Annotated[
+        MinMax | None, Field(description="Maximum output power rating of the unit when pumping (MW).")
+    ] = None
     operation_cost: HydroGenerationCost | StorageCost | None = None
     storage_duration: (
         Annotated[
