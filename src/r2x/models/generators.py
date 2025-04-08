@@ -44,7 +44,7 @@ class Generator(Device):
         ApparentPower | None,
         Field(
             description=(
-                "Reactive power set point of the unit in MW. For power flow, this is the steady "
+                "Reactive power set point of the unit in MVAr. For power flow, this is the steady "
                 "state operating point of the system."
             ),
         ),
@@ -126,10 +126,10 @@ class Generator(Device):
         Annotated[NonNegativeFloat, Field(description="Cost in $ of shuting down a unit.")] | None
     ) = None
     active_power_limits: Annotated[
-        MinMax | None, Field(description="Maximum output power rating of the unit (MVA).")
+        MinMax | None, Field(description="Active power limits of the unit (MW).")
     ] = None
     reactive_power_limits: Annotated[
-        MinMax | None, Field(description="Maximum output power rating of the unit (MVA).")
+        MinMax | None, Field(description="Reactive power limits of the unit (MVAr).")
     ] = None
 
     @field_serializer("active_power_limits")
@@ -242,7 +242,10 @@ class HydroPumpedStorage(HydroGen):
     ramp_limits_pump: UpDown | None = None
     time_limits_pump: UpDown | None = None
     active_power_limits_pump: Annotated[
-        MinMax | None, Field(description="Maximum output power rating of the unit when pumping (MW).")
+        MinMax | None, Field(description="Active power limits of the unit when pumping (MW).")
+    ] = None
+    reactive_power_limits_pump: Annotated[
+        MinMax | None, Field(description="Reactive power limits of the unit when pumping (MVAr).")
     ] = None
     operation_cost: HydroGenerationCost | StorageCost | None = None
     storage_duration: (
