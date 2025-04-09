@@ -237,16 +237,16 @@ class HydroPumpedStorage(HydroGen):
         ApparentPower | None,
         Field(ge=0, description="Maximum output power rating of the unit when pumping (MVA)."),
     ] = ApparentPower(1, "MVA")
-    ramp_limits: UpDown | None = None
-    time_limits: UpDown | None = None
-    ramp_limits_pump: UpDown | None = None
-    time_limits_pump: UpDown | None = None
+    ramp_limits: UpDown = UpDown(up=0.0, down=0.0)
+    time_limits: UpDown = UpDown(up=0.0, down=0.0)
+    ramp_limits_pump: UpDown = UpDown(up=0.0, down=0.0)
+    time_limits_pump: UpDown = UpDown(up=0.0, down=0.0)
     active_power_limits_pump: Annotated[
-        MinMax | None, Field(description="Active power limits of the unit when pumping (MW).")
-    ] = None
+        MinMax, Field(description="Active power limits of the unit when pumping (MW).")
+    ] = MinMax(min=0.0, max=1.0)
     reactive_power_limits_pump: Annotated[
         MinMax | None, Field(description="Reactive power limits of the unit when pumping (MVAr).")
-    ] = None
+    ] = MinMax(min=0.0, max=1.0)
     operation_cost: HydroGenerationCost | StorageCost | None = None
     storage_duration: (
         Annotated[
@@ -254,34 +254,36 @@ class HydroPumpedStorage(HydroGen):
             Field(description="Storage duration in hours."),
         ]
         | None
-    ) = None
+    ) = Time(10, "h")
     initial_volume: (
         Annotated[Energy, Field(gt=0, description="Initial water volume or percentage.")] | None
     ) = None
+    initial_storage: UpDown = UpDown(up=0.5, down=0.5)
     storage_capacity: Annotated[
         UpDown,
         Field(description="Total water volume or percentage."),
-    ]
+    ] = UpDown(up=0.0, down=0.0)
     min_storage_capacity: (
         Annotated[
             Energy,
             Field(description="Minimum water volume or percentage."),
         ]
         | None
-    ) = None
-    initial_storage: UpDown | None = None
-    storage_target: UpDown | None = None
-    pump_efficiency: Annotated[Percentage, Field(ge=0, le=1, description="Pumping efficiency.")] | None = None
+    ) = Energy(10, "MWh")
+    storage_target: UpDown = UpDown(up=1, down=0)
+    pump_efficiency: Annotated[Percentage, Field(ge=0, le=1, description="Pumping efficiency.")] = Percentage(
+        85, "%"
+    )
     pump_load: (
         Annotated[
             ActivePower,
             Field(description="Load related to the usage of the pump."),
         ]
         | None
-    ) = None
-    conversion_factor: float | None = None
-    inflow: float | None = None
-    outflow: float | None = None
+    ) = ActivePower(1, "MW")
+    conversion_factor: float = 1.0
+    inflow: float = 0.0
+    outflow: float = 0.0
 
     @classmethod
     def example(cls) -> "HydroPumpedStorage":
