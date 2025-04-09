@@ -359,7 +359,11 @@ class ReEDSParser(BaseParser):
         bfuel_price_output = (
             self.get_data("bfuel_price").with_columns(fuel=pl.lit("biomass")).join(generator_fuel, on="fuel")
         ).select(pl.exclude("fuel"))
-        fuel_price = pl.concat([fuel_price_input, bfuel_price_output], how="diagonal")
+
+        if bfuel_price_output.is_empty():
+            fuel_price = fuel_price_input
+        else:
+            fuel_price = pl.concat([fuel_price_input, bfuel_price_output], how="diagonal")
 
         heat_rate = self.get_data("heat_rate")
         cost_vom = self.get_data("cost_vom")
