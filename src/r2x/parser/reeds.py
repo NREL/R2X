@@ -255,7 +255,7 @@ class ReEDSParser(BaseParser):
                     active_power_flow=0.0,
                     reactive_power_flow=0.0,
                     losses=losses * ureg.percent,
-                    flow_limits=FromTo_ToFrom(from_to=-rating_down, to_from=rating_up),
+                    flow_limits=FromTo_ToFrom(from_to=rating_down, to_from=rating_up),
                     ext=ext,
                 ),
             )
