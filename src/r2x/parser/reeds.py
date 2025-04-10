@@ -255,10 +255,12 @@ class ReEDSParser(BaseParser):
                     active_power_flow=0.0,
                     reactive_power_flow=0.0,
                     losses=losses * ureg.percent,
-                    flow_limits=FromTo_ToFrom(from_to=-rating_down, to_from=rating_up),
+                    flow_limits=FromTo_ToFrom(from_to=rating_down, to_from=rating_up),
                     ext=ext,
                 ),
             )
+
+            print(branch_name, " - Rating down=", rating_down, " - Rating up=", rating_up)
 
     def _construct_tx_interfaces(self):
         logger.info("Creating transmission interfaces objects.")
