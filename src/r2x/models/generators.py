@@ -127,10 +127,10 @@ class Generator(Device):
     ) = None
     active_power_limits: Annotated[
         MinMax | None, Field(description="Active power limits of the unit (MW).")
-    ] = None
+    ] = MinMax(min=0.0, max=1.0)
     reactive_power_limits: Annotated[
         MinMax | None, Field(description="Reactive power limits of the unit (MVAr).")
-    ] = None
+    ] = MinMax(min=-1.0, max=1.0)
 
     @field_serializer("active_power_limits")
     def serialize_active_power_limits(self, min_max: MinMax | dict | None) -> dict[str, Any] | None:
@@ -176,20 +176,8 @@ class HydroDispatch(HydroGen):
     """Class representing flexible hydro generators."""
 
     operation_cost: HydroGenerationCost | None = None
-    ramp_up: (
-        Annotated[
-            PowerRate,
-            Field(ge=0, description="Ramping rate on the positve direction."),
-        ]
-        | None
-    ) = None
-    ramp_down: (
-        Annotated[
-            PowerRate,
-            Field(ge=0, description="Ramping rate on the negative direction."),
-        ]
-        | None
-    ) = None
+    ramp_limits: UpDown | None = None
+    time_limits: UpDown | None = None
 
 
 class HydroFix(HydroGen):
@@ -237,16 +225,16 @@ class HydroPumpedStorage(HydroGen):
         ApparentPower | None,
         Field(ge=0, description="Maximum output power rating of the unit when pumping (MVA)."),
     ] = ApparentPower(1, "MVA")
-    ramp_limits: UpDown = UpDown(up=0.0, down=0.0)
-    time_limits: UpDown = UpDown(up=0.0, down=0.0)
-    ramp_limits_pump: UpDown = UpDown(up=0.0, down=0.0)
-    time_limits_pump: UpDown = UpDown(up=0.0, down=0.0)
+    ramp_limits: UpDown | None = None
+    time_limits: UpDown | None = None
+    ramp_limits_pump: UpDown | None = None
+    time_limits_pump: UpDown | None = None
     active_power_limits_pump: Annotated[
         MinMax, Field(description="Active power limits of the unit when pumping (MW).")
     ] = MinMax(min=0.0, max=1.0)
     reactive_power_limits_pump: Annotated[
         MinMax | None, Field(description="Reactive power limits of the unit when pumping (MVAr).")
-    ] = MinMax(min=0.0, max=1.0)
+    ] = MinMax(min=-1.0, max=1.0)
     operation_cost: HydroGenerationCost | StorageCost | None = None
     storage_duration: (
         Annotated[
