@@ -260,8 +260,6 @@ class ReEDSParser(BaseParser):
                 ),
             )
 
-            print(branch_name, " - Rating down=", rating_down, " - Rating up=", rating_up)
-
     def _construct_tx_interfaces(self):
         logger.info("Creating transmission interfaces objects.")
         interface_lines = self.system.get_components(
