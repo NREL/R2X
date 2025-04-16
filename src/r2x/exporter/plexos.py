@@ -10,8 +10,7 @@ from typing import Any
 
 from infrasys.component import Component
 from loguru import logger
-from plexosdb import PlexosSQLite
-from plexosdb.enums import ClassEnum, CollectionEnum
+from plexosdb import ClassEnum, CollectionEnum, PlexosDB
 
 from r2x.config_models import PlexosConfig, ReEDSConfig
 from r2x.enums import ReserveType
@@ -101,8 +100,8 @@ class PlexosExporter(BaseExporter):
             logger.debug("Using default XML template.")
 
         # Initialize PlexosDB
-        self._db_mgr = database_manager or PlexosSQLite(xml_fname=xml_fname)
-        self.plexos_scenario_id = self._db_mgr.get_scenario_id(scenario_name=plexos_scenario)
+        self._db_mgr = PlexosDB.from_xml(xml_path=xml_fname)
+        self.plexos_scenario_id = self._db_mgr.add_scenario(plexos_scenario)
 
         self._setup_plexos_configuration()
 
@@ -147,7 +146,7 @@ class PlexosExporter(BaseExporter):
         self.add_generators()
         self.add_storage()
 
-        self._db_mgr.to_xml(fpath=f"{self.output_folder}/{self.config.name}.xml")
+        self._db_mgr.to_xml(f"{self.output_folder}/{self.config.name}.xml")
 
         return self
 
@@ -220,9 +219,9 @@ class PlexosExporter(BaseExporter):
         /,
         *,
         parent_class: ClassEnum,
+        child_class: ClassEnum,
         parent_object_name: str = "System",
         collection: CollectionEnum,
-        child_class: ClassEnum | None = None,
         filter_func: Callable | None = None,
         scenario: str | None = None,
         records: list[dict] | None = None,
@@ -243,8 +242,8 @@ class PlexosExporter(BaseExporter):
             logger.warning("No components found for type {}", component_type)
             return
 
-        collection_properties = self._db_mgr.get_valid_properties(
-            collection, parent_class=parent_class, child_class=child_class
+        collection_properties = self._db_mgr.list_valid_properties(
+            collection, parent_class_enum=parent_class, child_class_enum=child_class
         )
         # property_names = [key[0] for key in collection_properties]
         match component_type.__name__:
@@ -268,8 +267,9 @@ class PlexosExporter(BaseExporter):
             partial(apply_pint_deconstruction, unit_map=self.default_units),
             partial(apply_valid_properties, valid_properties=collection_properties, add_name=True),
         )
-        self._db_mgr.add_property_from_records(
+        self._db_mgr.add_properties_from_records(
             export_records,
+            object_class=child_class,
             parent_class=parent_class,
             parent_object_name=parent_object_name,
             collection=collection,
@@ -299,8 +299,8 @@ class PlexosExporter(BaseExporter):
         ]
 
         # Maybe replace `t_category` with right schema.
-        with self._db_mgr._conn as conn:
-            conn.executemany("INSERT into t_category(class_id, rank, name) values (?,?,?)", categories)
+        query = "INSERT INTO t_category(class_id, rank, name) VALUES (?,?,?)"
+        self._db_mgr._db.executemany(query, categories)
         return
 
     def bulk_insert_objects(
@@ -344,16 +344,15 @@ class PlexosExporter(BaseExporter):
         if not objects:
             logger.warning("No components found for type' {}", component_type)
             return
-        with self._db_mgr._conn as conn:
-            conn.executemany(
-                "INSERT into t_object(class_id, name, category_id, GUID) values (?,?,?,?)", objects
-            )
+
+        query = "INSERT INTO t_object(class_id, name, category_id, GUID) values (?,?,?,?)"
+        self._db_mgr._db.executemany(query, objects)
 
         # Add system membership
-        system_object_id = self._db_mgr.get_object_id("System", class_name=ClassEnum.System)
+        system_object_id = self._db_mgr.get_object_id(ClassEnum.System, name="System")
         system_class_id = self._db_mgr.get_class_id(ClassEnum.System)
         collection_id = self._db_mgr.get_collection_id(
-            collection_enum, parent_class=ClassEnum.System, child_class=class_enum
+            collection_enum, parent_class_enum=ClassEnum.System, child_class_enum=class_enum
         )
         objects_placeholders = ", ".join("?" * len(object_names))
         membership_query = f"""
@@ -381,11 +380,11 @@ class PlexosExporter(BaseExporter):
             class_id,
             *object_names,
         )
-        self._db_mgr.execute_query(membership_query, query_parameters)
+        self._db_mgr._db.execute(membership_query, query_parameters)
 
         # Enable all classes that we add into the database.
         # Some are disabled by default.
-        self._db_mgr.execute_query(f"UPDATE t_class SET is_enabled=1 WHERE t_class.name='{class_enum}'")
+        self._db_mgr._db.execute(f"UPDATE t_class SET is_enabled=1 WHERE t_class.name='{class_enum}'")
         return
 
     def add_topology(self) -> None:
@@ -399,11 +398,14 @@ class PlexosExporter(BaseExporter):
             collection_enum=CollectionEnum.Regions,
         )
         self.insert_component_properties(
-            ACBus, parent_class=ClassEnum.System, collection=CollectionEnum.Regions
+            ACBus,
+            parent_class=ClassEnum.System,
+            child_class=ClassEnum.Region,
+            collection=CollectionEnum.Regions,
         )
         for bus in self.system.get_components(ACBus, filter_func=lambda x: x.ext):
-            collection_properties = self._db_mgr.get_valid_properties(
-                collection=CollectionEnum.Zones, parent_class=ClassEnum.System, child_class=ClassEnum.Zone
+            collection_properties = self._db_mgr.list_valid_properties(
+                CollectionEnum.Zones, parent_class_enum=ClassEnum.System, child_class_enum=ClassEnum.Zone
             )
             properties = get_export_properties(
                 bus.ext,
@@ -414,11 +416,11 @@ class PlexosExporter(BaseExporter):
             if properties:
                 for property_name, property_value in properties.items():
                     self._db_mgr.add_property(
+                        ClassEnum.Region,
                         bus.name,
                         property_name,
                         property_value,
-                        object_class=ClassEnum.Region,
-                        collection=CollectionEnum.Regions,
+                        collection_enum=CollectionEnum.Regions,
                         scenario=self.plexos_scenario,
                     )
 
@@ -426,7 +428,10 @@ class PlexosExporter(BaseExporter):
         # self.add_component_category(LoadZone, class_enum=ClassEnum.Zone)
         self.bulk_insert_objects(LoadZone, class_enum=ClassEnum.Zone, collection_enum=CollectionEnum.Zones)
         self.insert_component_properties(
-            LoadZone, parent_class=ClassEnum.System, collection=CollectionEnum.Zones
+            LoadZone,
+            parent_class=ClassEnum.System,
+            child_class=ClassEnum.Zone,
+            collection=CollectionEnum.Zones,
         )
 
         # Adding nodes
@@ -434,7 +439,7 @@ class PlexosExporter(BaseExporter):
         # self.add_component_category(ACBus, class_enum=ClassEnum.Node)
         self.bulk_insert_objects(ACBus, class_enum=ClassEnum.Node, collection_enum=CollectionEnum.Nodes)
         self.insert_component_properties(
-            ACBus, parent_class=ClassEnum.System, collection=CollectionEnum.Nodes
+            ACBus, parent_class=ClassEnum.System, child_class=ClassEnum.Node, collection=CollectionEnum.Nodes
         )
 
         # Add node memberships to zone and regions.
@@ -442,20 +447,20 @@ class PlexosExporter(BaseExporter):
         for bus in self.system.get_components(ACBus):
             bus_load_zone = bus.load_zone
             self._db_mgr.add_membership(
-                bus.name,
-                bus.name,  # Zone has the same name
-                parent_class=ClassEnum.Node,
-                child_class=ClassEnum.Region,
-                collection=CollectionEnum.Region,
+                parent_object_name=bus.name,
+                child_object_name=bus.name,
+                parent_class_enum=ClassEnum.Node,
+                child_class_enum=ClassEnum.Region,
+                collection_enum=CollectionEnum.Region,
             )
             if bus_load_zone is None:
                 continue
             self._db_mgr.add_membership(
-                bus.name,
-                bus_load_zone.name,
-                parent_class=ClassEnum.Node,
-                child_class=ClassEnum.Zone,
-                collection=CollectionEnum.Zone,
+                parent_object_name=bus.name,
+                child_object_name=bus_load_zone.name,
+                parent_class_enum=ClassEnum.Node,
+                child_class_enum=ClassEnum.Zone,
+                collection_enum=CollectionEnum.Zone,
             )
 
         # Adding load time series
@@ -468,11 +473,11 @@ class PlexosExporter(BaseExporter):
                 text = time_series_properties.pop("Data File")
                 for property_name, property_value in time_series_properties.items():
                     self._db_mgr.add_property(
+                        ClassEnum.Region,
                         component.bus.name,
                         property_name,
                         property_value,
-                        object_class=ClassEnum.Region,
-                        collection=CollectionEnum.Regions,
+                        collection_enum=CollectionEnum.Regions,
                         scenario=self.plexos_scenario,
                         text={"Data File": text},
                     )
@@ -485,17 +490,22 @@ class PlexosExporter(BaseExporter):
         # in the future, we will uncomment the line below with the pertinent category name.
         self.add_component_category(MonitoredLine, class_enum=ClassEnum.Line)
         self.bulk_insert_objects(Line, class_enum=ClassEnum.Line, collection_enum=CollectionEnum.Lines)
-        self.insert_component_properties(Line, parent_class=ClassEnum.System, collection=CollectionEnum.Lines)
+        self.insert_component_properties(
+            Line, parent_class=ClassEnum.System, child_class=ClassEnum.Line, collection=CollectionEnum.Lines
+        )
         self.bulk_insert_objects(
             MonitoredLine, class_enum=ClassEnum.Line, collection_enum=CollectionEnum.Lines
         )
         self.insert_component_properties(
-            MonitoredLine, parent_class=ClassEnum.System, collection=CollectionEnum.Lines
+            MonitoredLine,
+            parent_class=ClassEnum.System,
+            child_class=ClassEnum.Line,
+            collection=CollectionEnum.Lines,
         )
 
         # Add additional properties if any and membersips
-        collection_properties = self._db_mgr.get_valid_properties(
-            collection=CollectionEnum.Lines, parent_class=ClassEnum.System, child_class=ClassEnum.Line
+        collection_properties = self._db_mgr.list_valid_properties(
+            CollectionEnum.Lines, parent_class_enum=ClassEnum.System, child_class_enum=ClassEnum.Line
         )
         for line in self.system.get_components(MonitoredLine, Line):
             properties = get_export_properties(
@@ -506,26 +516,26 @@ class PlexosExporter(BaseExporter):
             )
             for property_name, property_value in properties.items():
                 self._db_mgr.add_property(
+                    ClassEnum.Line,
                     line.name,
                     property_name,
                     property_value,
-                    object_class=ClassEnum.Line,
-                    collection=CollectionEnum.Lines,
+                    collection_enum=CollectionEnum.Lines,
                     scenario=self.plexos_scenario,
                 )
             self._db_mgr.add_membership(
-                line.name,
-                line.from_bus.name,
-                parent_class=ClassEnum.Line,
-                child_class=ClassEnum.Node,
-                collection=CollectionEnum.NodeFrom,
+                parent_object_name=line.name,
+                child_object_name=line.from_bus.name,
+                parent_class_enum=ClassEnum.Line,
+                child_class_enum=ClassEnum.Node,
+                collection_enum=CollectionEnum.NodeFrom,
             )
             self._db_mgr.add_membership(
-                line.name,
-                line.to_bus.name,
-                parent_class=ClassEnum.Line,
-                child_class=ClassEnum.Node,
-                collection=CollectionEnum.NodeTo,
+                parent_object_name=line.name,
+                child_object_name=line.to_bus.name,
+                parent_class_enum=ClassEnum.Line,
+                child_class_enum=ClassEnum.Node,
+                collection_enum=CollectionEnum.NodeTo,
             )
         return
 
@@ -536,22 +546,25 @@ class PlexosExporter(BaseExporter):
             Transformer2W, class_enum=ClassEnum.Transformer, collection_enum=CollectionEnum.Transformers
         )
         self.insert_component_properties(
-            Transformer2W, parent_class=ClassEnum.System, collection=CollectionEnum.Transformers
+            Transformer2W,
+            parent_class=ClassEnum.System,
+            child_class=ClassEnum.Transformer,
+            collection=CollectionEnum.Transformers,
         )
         for transformer in self.system.get_components(Transformer2W):
             self._db_mgr.add_membership(
-                transformer.name,
-                transformer.from_bus.name,
-                parent_class=ClassEnum.Transformer,
-                child_class=ClassEnum.Node,
-                collection=CollectionEnum.NodeFrom,
+                parent_object_name=transformer.name,
+                child_object_name=transformer.from_bus.name,
+                parent_class_enum=ClassEnum.Transformer,
+                child_class_enum=ClassEnum.Node,
+                collection_enum=CollectionEnum.NodeFrom,
             )
             self._db_mgr.add_membership(
-                transformer.name,
-                transformer.to_bus.name,
-                parent_class=ClassEnum.Transformer,
-                child_class=ClassEnum.Node,
-                collection=CollectionEnum.NodeTo,
+                parent_object_name=transformer.name,
+                child_object_name=transformer.to_bus.name,
+                parent_class_enum=ClassEnum.Transformer,
+                child_class_enum=ClassEnum.Node,
+                collection_enum=CollectionEnum.NodeTo,
             )
         return
 
@@ -563,7 +576,10 @@ class PlexosExporter(BaseExporter):
             collection_enum=CollectionEnum.Interfaces,
         )
         self.insert_component_properties(
-            TransmissionInterface, parent_class=ClassEnum.System, collection=CollectionEnum.Interfaces
+            TransmissionInterface,
+            parent_class=ClassEnum.System,
+            child_class=ClassEnum.Interface,
+            collection=CollectionEnum.Interfaces,
         )
 
     def add_constraints(self) -> None:
@@ -573,10 +589,10 @@ class PlexosExporter(BaseExporter):
             class_enum=ClassEnum.Constraint,
             collection_enum=CollectionEnum.Constraints,
         )
-        collection_properties = self._db_mgr.get_valid_properties(
-            collection=CollectionEnum.Constraints,
-            parent_class=ClassEnum.System,
-            child_class=ClassEnum.Constraint,
+        collection_properties = self._db_mgr.list_valid_properties(
+            CollectionEnum.Constraints,
+            parent_class_enum=ClassEnum.System,
+            child_class_enum=ClassEnum.Constraint,
         )
         for constraint in self.system.get_components(Constraint):
             properties = get_export_properties(
@@ -589,11 +605,11 @@ class PlexosExporter(BaseExporter):
             if properties:
                 for property_name, property_value in properties.items():
                     self._db_mgr.add_property(
+                        ClassEnum.Constraint,
                         constraint.name,
                         property_name,
                         property_value,
-                        object_class=ClassEnum.Constraint,
-                        collection=CollectionEnum.Constraints,
+                        collection_enum=CollectionEnum.Constraints,
                         scenario=self.plexos_scenario,
                     )
 
@@ -602,9 +618,7 @@ class PlexosExporter(BaseExporter):
     def add_emissions(self) -> None:
         """Add emission objects to the database."""
         logger.debug("Adding Emission objects...")
-        self._db_mgr.execute_query(
-            f"UPDATE t_class SET is_enabled=1 WHERE t_class.name='{ClassEnum.Emission}'"
-        )
+        self._db_mgr._db.execute(f"UPDATE t_class SET is_enabled=1 WHERE t_class.name='{ClassEnum.Emission}'")
         # Getting all unique emission types (e.g., CO2, NOX) from the emissions objects.
         # NOTE: On Plexos, we need to add each emission type individually to the Emission class
         emission_types = set(
@@ -612,27 +626,27 @@ class PlexosExporter(BaseExporter):
         )
         for emission_type in emission_types:
             self._db_mgr.add_object(
-                emission_type,
                 ClassEnum.Emission,
-                CollectionEnum.Emissions,
+                name=emission_type,
+                collection_enum=CollectionEnum.Emissions,
             )
 
             # Add emission caps from emission_cap.py if added.
             emission_constraint_name = f"Annual_{emission_type}_cap"
-            collection_properties = self._db_mgr.get_valid_properties(
-                collection=CollectionEnum.Constraints,
-                parent_class=ClassEnum.Emission,
-                child_class=ClassEnum.Constraint,
+            collection_properties = self._db_mgr.list_valid_properties(
+                CollectionEnum.Constraints,
+                parent_class_enum=ClassEnum.Emission,
+                child_class_enum=ClassEnum.Constraint,
             )
             for constraint in self.system.get_components(
                 Constraint, filter_func=lambda x: x.name == emission_constraint_name
             ):
                 self._db_mgr.add_membership(
-                    emission_type,
-                    constraint.name,
-                    parent_class=ClassEnum.Emission,
-                    child_class=ClassEnum.Constraint,
-                    collection=CollectionEnum.Constraints,
+                    parent_object_name=emission_type,
+                    child_object_name=constraint.name,
+                    parent_class_enum=ClassEnum.Emission,
+                    child_class_enum=ClassEnum.Constraint,
+                    collection_enum=CollectionEnum.Constraints,
                 )
                 properties = get_export_properties(
                     constraint.ext[emission_type],
@@ -643,13 +657,13 @@ class PlexosExporter(BaseExporter):
                 if properties:
                     for property_name, property_value in properties.items():
                         self._db_mgr.add_property(
+                            ClassEnum.Constraint,
                             constraint.name,
                             property_name,
                             property_value,
-                            object_class=ClassEnum.Constraint,
                             parent_object_name=emission_type,
-                            parent_class=ClassEnum.Emission,
-                            collection=CollectionEnum.Constraints,
+                            parent_class_enum=ClassEnum.Emission,
+                            collection_enum=CollectionEnum.Constraints,
                             scenario=self.plexos_scenario,
                         )
         return
@@ -670,6 +684,7 @@ class PlexosExporter(BaseExporter):
         self.insert_component_properties(
             Reserve,
             parent_class=ClassEnum.System,
+            child_class=ClassEnum.Reserve,
             collection=CollectionEnum.Reserves,
             exclude_fields=NESTED_ATTRIBUTES | {"max_requirement"},
         )
@@ -685,11 +700,11 @@ class PlexosExporter(BaseExporter):
 
             for property, value in properties.items():
                 self._db_mgr.add_property(
+                    ClassEnum.Reserve,
                     reserve.name,
                     property,
                     value,
-                    object_class=ClassEnum.Reserve,
-                    collection=CollectionEnum.Reserves,
+                    collection_enum=CollectionEnum.Reserves,
                     scenario=self.plexos_scenario,
                 )
             time_series_properties = self._get_time_series_properties(reserve)
@@ -697,11 +712,11 @@ class PlexosExporter(BaseExporter):
                 text = time_series_properties.pop("Data File")
                 for property_name, property_value in time_series_properties.items():
                     self._db_mgr.add_property(
+                        ClassEnum.Reserve,
                         reserve.name,
                         property_name,
                         property_value,
-                        object_class=ClassEnum.Reserve,
-                        collection=CollectionEnum.Reserves,
+                        collection_enum=CollectionEnum.Reserves,
                         scenario=self.plexos_scenario,
                         text={"Data File": text},
                     )
@@ -719,18 +734,18 @@ class PlexosExporter(BaseExporter):
                 ACBus, filter_func=lambda x: x.load_zone.name == reserve_region.name
             )
 
-            collection_properties = self._db_mgr.get_valid_properties(
-                collection=CollectionEnum.Regions,
-                parent_class=ClassEnum.Reserve,
-                child_class=ClassEnum.Region,
+            collection_properties = self._db_mgr.list_valid_properties(
+                CollectionEnum.Regions,
+                parent_class_enum=ClassEnum.Reserve,
+                child_class_enum=ClassEnum.Region,
             )
             for region in regions:
                 self._db_mgr.add_membership(
-                    reserve.name,
-                    region.name,  # Zone has the same name
-                    parent_class=ClassEnum.Reserve,
-                    child_class=ClassEnum.Region,
-                    collection=CollectionEnum.Regions,
+                    parent_object_name=reserve.name,
+                    child_object_name=region.name,  # Zone has the same name
+                    parent_class_enum=ClassEnum.Reserve,
+                    child_class_enum=ClassEnum.Region,
+                    collection_enum=CollectionEnum.Regions,
                 )
                 properties = get_export_properties(
                     component_dict,
@@ -741,13 +756,13 @@ class PlexosExporter(BaseExporter):
                 if properties:
                     for property_name, property_value in properties.items():
                         self._db_mgr.add_property(
+                            ClassEnum.Region,
                             region.name,
                             property_name,
                             property_value,
-                            object_class=ClassEnum.Region,
                             parent_object_name=reserve.name,
-                            parent_class=ClassEnum.Reserve,
-                            collection=CollectionEnum.Regions,
+                            parent_class_enum=ClassEnum.Reserve,
+                            collection_enum=CollectionEnum.Regions,
                             scenario=self.plexos_scenario,
                         )
         return
@@ -769,6 +784,7 @@ class PlexosExporter(BaseExporter):
         self.insert_component_properties(
             Generator,
             parent_class=ClassEnum.System,
+            child_class=ClassEnum.Generator,
             collection=CollectionEnum.Generators,
             filter_func=exclude_battery,
             exclude_fields=[],
@@ -778,22 +794,22 @@ class PlexosExporter(BaseExporter):
         logger.debug("Adding generator memberships")
         for generator in self.system.get_components(Generator, filter_func=exclude_battery):
             self._db_mgr.add_membership(
-                generator.name,
-                generator.bus.name,
-                parent_class=ClassEnum.Generator,
-                child_class=ClassEnum.Node,
-                collection=CollectionEnum.Nodes,
+                parent_object_name=generator.name,
+                child_object_name=generator.bus.name,
+                parent_class_enum=ClassEnum.Generator,
+                child_class_enum=ClassEnum.Node,
+                collection_enum=CollectionEnum.Nodes,
             )
             properties = self._get_time_series_properties(generator)
             if properties:
                 text = properties.pop("Data File")
                 for property_name, property_value in properties.items():
                     self._db_mgr.add_property(
+                        ClassEnum.Generator,
                         generator.name,
                         property_name,
                         property_value,
-                        object_class=ClassEnum.Generator,
-                        collection=CollectionEnum.Generators,
+                        collection_enum=CollectionEnum.Generators,
                         scenario=self.plexos_scenario,
                         text={"Data File": text},
                     )
@@ -802,11 +818,11 @@ class PlexosExporter(BaseExporter):
                     match service:
                         case Reserve():
                             self._db_mgr.add_membership(
-                                service.name,
-                                generator.name,
-                                parent_class=ClassEnum.Reserve,
-                                child_class=ClassEnum.Generator,
-                                collection=CollectionEnum.Generators,
+                                parent_object_name=service.name,
+                                child_object_name=generator.name,
+                                parent_class_enum=ClassEnum.Reserve,
+                                child_class_enum=ClassEnum.Generator,
+                                collection_enum=CollectionEnum.Generators,
                             )
                         case _:
                             raise NotImplementedError(f"{service} not yet implemented for generator.")
@@ -816,20 +832,20 @@ class PlexosExporter(BaseExporter):
         for emission in self.system.get_supplemental_attributes(Emission):
             for generator in self.system.get_components_with_supplemental_attribute(emission):
                 self._db_mgr.add_membership(
-                    emission.emission_type,
-                    generator.name,
-                    parent_class=ClassEnum.Emission,
-                    child_class=ClassEnum.Generator,
-                    collection=CollectionEnum.Generators,
+                    parent_object_name=emission.emission_type,
+                    child_object_name=generator.name,
+                    parent_class_enum=ClassEnum.Emission,
+                    child_class_enum=ClassEnum.Generator,
+                    collection_enum=CollectionEnum.Generators,
                 )
                 self._db_mgr.add_property(
+                    ClassEnum.Generator,
                     generator.name,
                     self.property_map["rate"],
                     get_magnitude(emission.rate),
-                    object_class=ClassEnum.Generator,
-                    parent_class=ClassEnum.Emission,
+                    parent_class_enum=ClassEnum.Emission,
                     parent_object_name=emission.emission_type,
-                    collection=CollectionEnum.Generators,
+                    collection_enum=CollectionEnum.Generators,
                     scenario=self.plexos_scenario,
                 )
 
@@ -843,27 +859,30 @@ class PlexosExporter(BaseExporter):
             collection_enum=CollectionEnum.Batteries,
         )
         self.insert_component_properties(
-            EnergyReservoirStorage, parent_class=ClassEnum.System, collection=CollectionEnum.Batteries
+            EnergyReservoirStorage,
+            parent_class=ClassEnum.System,
+            child_class=ClassEnum.Battery,
+            collection=CollectionEnum.Batteries,
         )
         # Add battery memberships
         for battery in self.system.get_components(EnergyReservoirStorage):
             self._db_mgr.add_membership(
-                battery.name,
-                battery.bus.name,
-                parent_class=ClassEnum.Battery,
-                child_class=ClassEnum.Node,
-                collection=CollectionEnum.Nodes,
+                parent_object_name=battery.name,
+                child_object_name=battery.bus.name,
+                parent_class_enum=ClassEnum.Battery,
+                child_class_enum=ClassEnum.Node,
+                collection_enum=CollectionEnum.Nodes,
             )
             if battery.services:
                 for service in battery.services:
                     match service:
                         case Reserve():
                             self._db_mgr.add_membership(
-                                service.name,
-                                battery.name,
-                                parent_class=ClassEnum.Reserve,
-                                child_class=ClassEnum.Battery,
-                                collection=CollectionEnum.Batteries,
+                                parent_object_name=service.name,
+                                child_object_name=battery.name,
+                                parent_class_enum=ClassEnum.Reserve,
+                                child_class_enum=ClassEnum.Battery,
+                                collection_enum=CollectionEnum.Batteries,
                             )
                         case _:
                             raise NotImplementedError(f"{service} not yet implemented for generator.")
@@ -901,6 +920,7 @@ class PlexosExporter(BaseExporter):
         self.insert_component_properties(
             HydroPumpedStorage,
             parent_class=ClassEnum.System,
+            child_class=ClassEnum.Storage,
             collection=CollectionEnum.Storages,
             records=head_storage,
         )
@@ -913,6 +933,7 @@ class PlexosExporter(BaseExporter):
         self.insert_component_properties(
             HydroPumpedStorage,
             parent_class=ClassEnum.System,
+            child_class=ClassEnum.Storage,
             collection=CollectionEnum.Storages,
             records=tail_storage,
         )
@@ -921,18 +942,18 @@ class PlexosExporter(BaseExporter):
             head_name = f"{phs.name}_head"
             tail_name = f"{phs.name}_tail"
             self._db_mgr.add_membership(
-                phs.name,
-                head_name,
-                parent_class=ClassEnum.Generator,
-                child_class=ClassEnum.Storage,
-                collection=CollectionEnum.HeadStorage,
+                parent_object_name=phs.name,
+                child_object_name=head_name,
+                parent_class_enum=ClassEnum.Generator,
+                child_class_enum=ClassEnum.Storage,
+                collection_enum=CollectionEnum.HeadStorage,
             )
             self._db_mgr.add_membership(
-                phs.name,
-                tail_name,
-                parent_class=ClassEnum.Generator,
-                child_class=ClassEnum.Storage,
-                collection=CollectionEnum.TailStorage,
+                parent_object_name=phs.name,
+                child_object_name=tail_name,
+                parent_class_enum=ClassEnum.Generator,
+                child_class_enum=ClassEnum.Storage,
+                collection_enum=CollectionEnum.TailStorage,
             )
         return
 
@@ -942,19 +963,18 @@ class PlexosExporter(BaseExporter):
             class_enum: ClassEnum = get_enum_from_string(simulation_object["class_name"], ClassEnum)
             for objects in simulation_object["attributes"]:
                 self._db_mgr.add_object(
-                    objects["name"],
                     class_enum,
-                    collection_enum,
-                    category_name=objects["category"] or "-",
+                    objects["name"],
+                    collection_enum=collection_enum,
+                    category=objects["category"] or "-",
                 )
 
             # Add attributes
             property_list = self.output_config.defaults[simulation_object["class_name"]]
             for attributes in property_list["attributes"]:
                 self._db_mgr.add_attribute(
+                    get_enum_from_string(attributes["class"], ClassEnum),
                     object_name=attributes["name"],
-                    object_class=get_enum_from_string(attributes["class"], ClassEnum),
-                    attribute_class=class_enum,
                     attribute_name=attributes["attribute"],
                     attribute_value=attributes["value"],
                 )
@@ -963,15 +983,14 @@ class PlexosExporter(BaseExporter):
         logger.info("Adding model horizon")
         for horizon, values in self.static_horizons.items():
             self._db_mgr.add_object(
-                horizon,
                 ClassEnum.Horizon,
-                CollectionEnum.Horizons,
+                name=horizon,
+                collection_enum=CollectionEnum.Horizons,
             )
             for attribute, attribute_value in values["attributes"].items():
                 self._db_mgr.add_attribute(
+                    ClassEnum.Horizon,
                     object_name=horizon,
-                    object_class=ClassEnum.Horizon,
-                    attribute_class=ClassEnum.Horizon,
                     attribute_name=attribute,
                     attribute_value=attribute_value,
                 )
@@ -979,16 +998,15 @@ class PlexosExporter(BaseExporter):
     def _add_models(self):
         for model, values in self.static_models.items():
             self._db_mgr.add_object(
-                model,
                 ClassEnum.Model,
-                CollectionEnum.Models,
-                category_name=values["category"],
+                name=model,
+                collection_enum=CollectionEnum.Models,
+                category=values["category"],
             )
             for attribute, attribute_value in values["attributes"].items():
                 self._db_mgr.add_attribute(
+                    ClassEnum.Model,
                     object_name=model,
-                    object_class=ClassEnum.Model,
-                    attribute_class=ClassEnum.Model,
                     attribute_name=attribute,
                     attribute_value=attribute_value,
                 )
@@ -996,18 +1014,18 @@ class PlexosExporter(BaseExporter):
                 collection_enum = get_enum_from_string(child_class_name, CollectionEnum)
                 child_class = get_enum_from_string(child_class_name, ClassEnum)
                 self._db_mgr.add_membership(
-                    model,
-                    child_object_name,
-                    parent_class=ClassEnum.Model,
-                    child_class=child_class,
-                    collection=collection_enum,
+                    parent_object_name=model,
+                    child_object_name=child_object_name,
+                    parent_class_enum=ClassEnum.Model,
+                    child_class_enum=child_class,
+                    collection_enum=collection_enum,
                 )
             self._db_mgr.add_membership(
-                model,
-                self.plexos_scenario,
-                parent_class=ClassEnum.Model,
-                child_class=ClassEnum.Scenario,
-                collection=CollectionEnum.Scenarios,
+                parent_object_name=model,
+                child_object_name=self.plexos_scenario,
+                parent_class_enum=ClassEnum.Model,
+                child_class_enum=ClassEnum.Scenario,
+                collection_enum=CollectionEnum.Scenarios,
             )
         return
 
