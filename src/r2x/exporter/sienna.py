@@ -9,7 +9,7 @@ from typing import Any
 from urllib.request import urlopen
 
 # Third-party packages
-from infrasys import Component
+from infrasys import Component, SingleTimeSeries
 from loguru import logger
 
 # Local imports
@@ -122,9 +122,9 @@ class SiennaExporter(BaseExporter):
         self.process_storage_data()
         self.export_data()
         create_timeseries_pointers(
-            config=self.config,
+            self.config,
+            self.system,
             output_folder=self.config.output_folder,
-            system=self.system,
         )
 
         return self
@@ -507,10 +507,15 @@ class SiennaExporter(BaseExporter):
 def create_timeseries_pointers(
     config: Scenario,
     system: System,
+    /,
     reference_year: int | None = None,
+    *,
     output_folder: str | Path | None = None,
+    variable_name: str | None = None,
+    time_series_type: type[SingleTimeSeries] = SingleTimeSeries,
     default_fname: str = "timeseries_pointers.json",
     time_series_folder: str = "Data",
+    **user_attributes: str,
 ) -> bool:
     """Export time series pointers to json file.
 
@@ -550,10 +555,12 @@ def create_timeseries_pointers(
     for component in system.get_components(
         Component,
         filter_func=lambda x: system.has_time_series(
-            x,
+            x, time_series_type=time_series_type, variable_name=variable_name, **user_attributes
         ),
     ):
-        for ts_metadata in system.time_series.list_time_series_metadata(component):
+        for ts_metadata in system.time_series.list_time_series_metadata(
+            component, time_series_type=time_series_type, variable_name=variable_name, **user_attributes
+        ):
             assert hasattr(ts_metadata, "resolution")
             ts_component_name = f"{component.__class__.__name__}_{ts_metadata.variable_name}"
             ts_pointers = {
@@ -571,8 +578,10 @@ def create_timeseries_pointers(
                 "scaling_factor_multiplier": "get_max_active_power",
             }
             ts_pointers_list.append(ts_pointers)
+
     with open(output_folder / default_fname, mode="w") as f:
         json.dump(ts_pointers_list, f, indent=4)
+
     logger.info("File {} created.", output_folder / default_fname)
     return True
 
