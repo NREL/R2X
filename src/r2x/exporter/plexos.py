@@ -46,6 +46,7 @@ from r2x.models.branch import Line
 from r2x.models.utils import Constraint
 from r2x.units import get_magnitude
 from r2x.utils import custom_attrgetter, get_enum_from_string, read_json
+from r2x.plugin_manager import PluginManager
 
 NESTED_ATTRIBUTES = {"ext", "bus", "services"}
 TIME_SERIES_PROPERTIES = ["Min Provision", "Static Risk"]
@@ -54,6 +55,7 @@ EXT_PROPERTIES = {"UoS Charge", "Fixed Load"}
 KEYS_TO_FLATTEN = {"active_power_limits", "active_power_flow_limits", "storage_capacity", "flow_limits"}
 
 
+@PluginManager.register_cli("exporter", "plexos")
 def cli_arguments(parser: ArgumentParser):
     """CLI arguments for the plugin."""
     parser.add_argument(

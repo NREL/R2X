@@ -54,3 +54,23 @@ def test_init(tmp_path):
     cli_input = {"path": str(tmp_path)}
     _ = init(cli_input)
     assert (tmp_path / "user_dict.yaml").exists()
+
+
+def test_external_plugin(tmp_path, reeds_data_folder):
+    # import to register mock external plugin.
+    from .mock_external_plugin.r2x_mock_plugin.sysmod import cli_arguments, update_system
+
+    _ = (cli_arguments, update_system)
+    cli_input = {
+        "name": "Test",
+        "weather_year": 2012,
+        "solve_year": [2050],
+        "input_model": "reeds-US",
+        "output_model": "sienna",
+        "output_folder": str(tmp_path),
+        "feature_flags": {"cool-feature": True},
+        "run_folder": reeds_data_folder,
+        "plugins": ["mock_system_update"],
+    }
+
+    _ = run(cli_input, {})
