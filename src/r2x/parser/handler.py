@@ -3,6 +3,8 @@
 This module provides the abstract class to create parser objects.
 """
 
+from __future__ import annotations
+
 # System packages
 import inspect
 import json
@@ -11,24 +13,26 @@ from collections.abc import Callable, Sequence
 from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any, TypeVar, TYPE_CHECKING
 
-import polars as pl
 
 # Third-party packages
-from infrasys.component import Component
 from loguru import logger
 from plexosdb import XMLHandler
 from pydantic import ValidationError
 
 # Local packages
-from r2x.api import System
-from r2x.config_scenario import Scenario
-from r2x.exceptions import R2XParserError
-from r2x.utils import check_file_exists
-
+from ..utils import check_file_exists
 from .handler_utils import csv_handler, h5_handler
-from .polars_helpers import pl_filter_by_weather_year, pl_filter_by_year, pl_rename
+from .polars_helpers import pl_filter_by_weather_year
+from r2x.exceptions import R2XParserError
+
+# Imports needed for type checking, not at runtime
+if TYPE_CHECKING:
+    import polars as pl
+    from infrasys.component import Component
+    from r2x.api import System
+    from r2x.config_scenario import Scenario
 
 FILE_PARSING_KWARGS = {
     "absolute_fpath",
@@ -246,12 +250,6 @@ def get_parser_data(
 
     parser = parser_class(config=config, **kwargs)
 
-    # Functions relative to the parser.
-    # NOTE: At some point we are going to migrate this out, but this sound like a good standard set
-    if (filter_funcs is None) and (parser_class.__name__ == "ReEDSParser"):
-        logger.trace("Using default filter functions")
-        filter_funcs = [pl_rename, pl_filter_by_year]
-
     # Adding special case for Plexos parser
     if model := getattr(config, "model", False):
         kwargs["model"] = model
@@ -270,9 +268,7 @@ def get_parser_data(
     return parser
 
 
-def create_model_instance(
-    model_class: type["Component"], skip_validation: bool = False, **field_values
-) -> Any:
+def create_model_instance(model_class: type[Component], skip_validation: bool = False, **field_values) -> Any:
     """Create R2X model instance."""
     valid_fields = {
         key: value

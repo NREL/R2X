@@ -18,13 +18,11 @@ from r2x.config_scenario import Scenario
 from r2x.models.generators import HydroDispatch
 from r2x.parser.handler import BaseParser
 from r2x.units import Energy
+from r2x.plugin_manager import PluginManager
 
 
-def update_system(
-    config: Scenario,
-    system: System,
-    parser: BaseParser | None = None,
-) -> System:
+@PluginManager.register_system_update("imports")
+def update_system(config: Scenario, system: System, parser: BaseParser | None = None) -> System:
     """Apply an emission cap constraint for the system.
 
     This function adds to the sytem a :class:`~r2x.models.Constraint`object that is used to set the maximum
