@@ -6,6 +6,7 @@ from pint import Quantity
 from r2x.api import System
 from r2x.config_scenario import Scenario
 from r2x.models import MinMax, ThermalStandard, UpDown
+from r2x.models.getters import get_ramp_limits
 from r2x.plugins.pcm_defaults import update_system
 from r2x.runner import run_parser
 
@@ -57,7 +58,7 @@ def test_custom_pcm_defaults(tmp_path):
         json.dump(pcm_defaults, f)
 
     _ = update_system(config, None, system, pcm_defaults_fpath=temp_file)
-    assert gen_01.ramp_limits == UpDown(up=2.0, down=2.0)  # 2 MW since example has 100 MW
+    assert get_ramp_limits(gen_01) == UpDown(up=2.0, down=2.0)  # 2 MW since example has 100 MW
     assert gen_01.forced_outage_rate
     assert isinstance(gen_01.forced_outage_rate, Quantity)
     assert gen_01.forced_outage_rate.magnitude == 4.29
@@ -68,6 +69,7 @@ def test_custom_pcm_defaults_override(tmp_path):
         "ThermalStandard": {
             "active_power_limits": {"max": 100.0, "min": 10.0},
             "ramp_limits": {"up": 0.3, "down": 0.3},
+            "non_valid_field": 10.0,
         }
     }
     temp_file = tmp_path / "pcm_data.json"
@@ -84,9 +86,9 @@ def test_custom_pcm_defaults_override(tmp_path):
 
     # Make sure that we just override fields that are None
     _ = update_system(config, None, system, pcm_defaults_fpath=temp_file, pcm_defaults_override=False)
-    assert gen_01.ramp_limits == UpDown(up=50.0, down=50.0)
+    assert get_ramp_limits(gen_01) == UpDown(up=50.0, down=50.0)
 
     # Now test that we override even the fields that are set
     _ = update_system(config, None, system, pcm_defaults_fpath=temp_file, pcm_defaults_override=True)
-    assert gen_01.ramp_limits == UpDown(up=30.0, down=30.0)
+    assert get_ramp_limits(gen_01)
     assert gen_01.active_power_limits == MinMax(max=100.0, min=10.0)
