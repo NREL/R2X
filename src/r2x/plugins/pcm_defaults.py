@@ -9,6 +9,7 @@ from r2x.api import System
 from r2x.config_scenario import Scenario
 from r2x.models import Generator
 from r2x.parser.handler import BaseParser
+from r2x.units import get_magnitude
 from r2x.utils import read_json
 
 
@@ -99,7 +100,7 @@ def update_system(
             if _check_if_null(value):
                 continue
             if field in needs_multiplication:
-                value = _multiply_value(component.base_power or component.active_power, value)
+                value = _multiply_value(get_magnitude(component.base_power or component.active_power), value)
             # NOTE: We need to move this to the operation cost instead.
             if field == "start_cost_per_MW":
                 field = "startup_cost"
