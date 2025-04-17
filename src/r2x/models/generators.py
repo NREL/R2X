@@ -252,13 +252,6 @@ class HydroPumpedStorage(HydroGen):
         UpDown,
         Field(description="Total water volume or percentage."),
     ] = UpDown(up=0.0, down=0.0)
-    min_storage_capacity: (
-        Annotated[
-            Energy,
-            Field(description="Minimum water volume or percentage."),
-        ]
-        | None
-    ) = Energy(10, "MWh")
     storage_target: UpDown = UpDown(up=1, down=0)
     pump_efficiency: Annotated[Percentage, Field(ge=0, le=1, description="Pumping efficiency.")] = Percentage(
         85, "%"
@@ -296,7 +289,6 @@ class HydroPumpedStorage(HydroGen):
             initial_storage=UpDown(up=500, down=500),
             storage_target=UpDown(up=1000, down=0),
             storage_capacity=UpDown(up=100, down=100),
-            min_storage_capacity=Energy(10, "MWh"),
             pump_efficiency=Percentage(85, "%"),
             conversion_factor=1.0,
             inflow=0.0,
