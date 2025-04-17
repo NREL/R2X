@@ -5,7 +5,7 @@ from typing import Any
 from pint import Quantity
 
 from r2x.models import Generator
-from r2x.models.named_tuples import MinMax
+from r2x.models.named_tuples import MinMax, UpDown
 from r2x.units import get_magnitude
 
 
@@ -46,3 +46,21 @@ def get_max_active_power(component) -> float:
 @get_max_active_power.register
 def _(component: Generator) -> float:
     return get_value(component.active_power_limits, component).max
+
+
+@singledispatch
+def get_ramp_limits(component) -> UpDown:
+    msg = f"`get_ramp_limits` not implemented for {type(component)}"
+    raise NotImplementedType(msg)
+
+
+@get_ramp_limits.register
+def _(component: Generator) -> UpDown:
+    m = _get_multiplier(component)
+    ramp = component.ramp_limits
+    if not ramp:
+        msg = f"Ramp not defined for {component.name=}"
+        raise KeyError(msg)
+    up = get_magnitude(ramp.up) * m
+    down = get_magnitude(ramp.down) * m
+    return UpDown(up=up, down=down)

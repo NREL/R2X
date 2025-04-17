@@ -93,7 +93,7 @@ def update_system(
                 if key in pcm_values.keys()
             ]
             if not pcm_defaults_override
-            else pcm_values.keys()
+            else [key for key in pcm_values.keys() if key in type(component).model_fields]
         )
         for field in sorted(
             fields_to_replace, key=lambda x: fields_weight[x] if x in fields_weight else -999
