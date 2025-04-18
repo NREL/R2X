@@ -34,8 +34,8 @@ from r2x.models import (
     Area,
     Bus,
     Emission,
-    FromTo_ToFrom,
     EnergyReservoirStorage,
+    FromTo_ToFrom,
     Generator,
     HybridSystem,
     HydroDispatch,
@@ -59,6 +59,8 @@ from r2x.models import (
     TransmissionInterfaceMap,
     UpDown,
 )
+from r2x.models.costs import StorageCost
+from r2x.models.generators import Storage
 from r2x.parser.handler import BaseParser, create_model_instance
 from r2x.units import ActivePower, EmissionRate, Energy, Percentage, Time, ureg
 from r2x.utils import get_enum_from_string, match_category, read_csv
@@ -548,6 +550,8 @@ class ReEDSParser(BaseParser):
                 fuel_price = fuel_price.magnitude
             if issubclass(gen_model, RenewableGen):
                 row["operation_cost"] = RenewableGenerationCost()
+            if issubclass(gen_model, Storage):
+                row["operation_cost"] = StorageCost()
             if issubclass(gen_model, ThermalGen):
                 if heat_rate := row.get("heat_rate"):
                     if isinstance(heat_rate, Quantity):
@@ -568,6 +572,8 @@ class ReEDSParser(BaseParser):
                     row["operation_cost"] = ThermalGenerationCost(
                         variable=fuel_curve,
                     )
+                else:
+                    row["operation_cost"] = ThermalGenerationCost()
             if issubclass(gen_model, HydroGen):
                 row["operation_cost"] = HydroGenerationCost(
                     variable=CostCurve(
