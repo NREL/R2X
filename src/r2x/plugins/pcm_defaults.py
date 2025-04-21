@@ -1,6 +1,6 @@
 """Augment results from CEM with PCM defaults."""
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, _ArgumentGroup
 from operator import attrgetter
 
 from loguru import logger
