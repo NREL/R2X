@@ -7,6 +7,8 @@ from collections.abc import Callable
 from functools import partial
 from importlib.resources import files
 from typing import Any
+from calendar import monthrange
+from math import ceil
 
 from infrasys.component import Component
 from loguru import logger
@@ -114,15 +116,52 @@ class PlexosExporter(BaseExporter):
 
         self.simulation_objects = self.output_config.defaults["simulation_objects"]
         self.static_horizon_type = self.output_config.defaults["static_horizon_type"]
-        self.static_horizons = self.output_config.defaults[self.static_horizon_type]
         self.static_model_type = self.output_config.defaults["static_model_type"]
-        self.static_models = self.output_config.defaults[self.static_model_type]
         self.plexos_reports_fpath = self.output_config.defaults["plexos_reports"]
 
         # Set modeling years that will be used.
         assert isinstance(self.output_config.model_year, int)
         self.model_year: int = self.output_config.model_year
         self.weather_year: int = self.output_config.horizon_year or self.model_year
+
+        self.static_models = {}
+        for model, values in self.output_config.defaults[self.static_model_type].items():
+            model = model.replace("_2012", f"_{self.weather_year}")
+            self.static_models[model] = eval(
+                str(values).replace("_2012", f"_{self.weather_year}")
+            )
+
+        self.static_horizons = {}
+        for horizon, values in self.output_config.defaults[self.static_horizon_type].items():
+            horizon = horizon.replace("_2012", f"_{self.weather_year}")
+
+            if ("attributes" in values) and ("Date From" in values["attributes"]):
+                date_from = ceil((self.weather_year - 1900) * 365.25) + 1
+                match horizon:
+                    case _ if horizon == f"base_{self.weather_year}":
+                        chrono_date_from = date_from
+                    case _ if horizon == f"base_{self.weather_year}_d1":
+                        chrono_date_from = date_from + 1
+                    case _ if '_m' in horizon:
+                        month = int(horizon.split('_m')[1].split('_')[0])
+                        chrono_date_from = (
+                            date_from
+                            + sum(
+                                [
+                                    monthrange(self.weather_year, x)[1]
+                                    for x in range(1, month)
+                                ]
+                            )
+                        )
+                    case _:
+                        pass
+
+                values["attributes"]["Date From"] = date_from
+                values["attributes"]["Chrono Date From"] = chrono_date_from
+
+            self.static_horizons[horizon] = eval(
+                str(values).replace("_2012", f"_{self.weather_year}")
+            )
 
     def run(self, *args, new_database: bool = True, **kwargs) -> "PlexosExporter":
         """Run the exporter."""

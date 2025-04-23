@@ -79,7 +79,9 @@ def run_plugins(config: Scenario, parser: BaseParser, system: System) -> System:
         System
     """
     if not config.plugins:
-        return system
+        config.plugins = config.input_config.defaults['default_plugins']
+        if not config.plugins:
+            return system
 
     logger.info("Running the following plugins: {}", config.plugins)
     for plugin in config.plugins:

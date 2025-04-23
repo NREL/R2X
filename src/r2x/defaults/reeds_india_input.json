@@ -142,7 +142,10 @@
       "fuel": "NATURAL_GAS",
       "type": "CT"
     },
-    "DIESEL": "ThermalStandard",
+    "DIESEL": {
+      "fuel": "OTHER",
+      "type": "ST"
+    },
     "DISTPV": {
       "fuel": null,
       "type": "PVe"

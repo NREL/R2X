@@ -162,6 +162,12 @@ def update_system(
             if wecc_data_row.get("start_cost_per_MW")
             else None
         )
+        values_to_add["shutdown_cost"] = (
+            getattr(component, "active_power")
+            * BaseQuantity(wecc_data_row.get("shutdown_cost_per_MW"), "usd/MW")
+            if wecc_data_row.get("shutdown_cost_per_MW")
+            else None
+        )
         valid_fields = {key: value for key, value in values_to_add.items() if key in component.model_fields}
         for key, value in valid_fields.items():
             setattr(component, key, value)
