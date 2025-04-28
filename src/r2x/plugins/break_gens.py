@@ -8,6 +8,7 @@ threshold variable, we drop the genrator entirely.
 # System packages
 import re
 from argparse import ArgumentParser
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -19,6 +20,7 @@ from loguru import logger
 from r2x.api import System
 from r2x.config_scenario import Scenario
 from r2x.models import Emission, Generator
+from r2x.models.named_tuples import MinMax
 from r2x.parser.handler import BaseParser
 from r2x.units import ActivePower, ureg
 from r2x.utils import read_json
@@ -32,6 +34,7 @@ PROPERTIES_TO_BREAK = [
     "startup_cost",
     "pump_load",
     "storage_capacity",
+    "active_power_limits",
 ]
 
 
@@ -149,7 +152,8 @@ def break_generators(  # noqa: C901
             for property in PROPERTIES_TO_BREAK:
                 if attr := getattr(new_component, property, None):
                     new_component.ext[f"{property}_original"] = attr
-                    setattr(new_component, property, attr * proportion)
+                    property_value = _apply_new_value(attr, proportion)
+                    setattr(new_component, property, property_value)
             new_component.ext["original_capacity"] = component.active_power
             new_component.ext["original_name"] = component.name
             new_component.ext["broken"] = True
@@ -174,7 +178,8 @@ def break_generators(  # noqa: C901
             for property in PROPERTIES_TO_BREAK:
                 if attr := getattr(new_component, property, None):
                     new_component.ext[f"{property}_original"] = attr
-                    setattr(new_component, property, attr * proportion)
+                    property_value = _apply_new_value(attr, proportion)
+                    setattr(new_component, property, property_value)
             new_component.ext["original_capacity"] = component.active_power
             new_component.ext["original_name"] = component.name
             new_component.ext["broken"] = True
@@ -198,3 +203,9 @@ def break_generators(  # noqa: C901
 
     logger.info("Total capacity dropped {} MW", capacity_dropped)
     return system
+
+
+def _apply_new_value(attr: Any, proportion: float):
+    if isinstance(attr, MinMax):
+        return MinMax(min=attr.min * proportion, max=attr.max * proportion)
+    return attr * proportion
