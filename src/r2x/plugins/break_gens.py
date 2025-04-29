@@ -35,6 +35,7 @@ PROPERTIES_TO_BREAK = [
     "pump_load",
     "storage_capacity",
     "active_power_limits",
+    "output_active_power_limits",
 ]
 
 
