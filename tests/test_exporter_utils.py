@@ -16,10 +16,21 @@ from r2x.exporter.utils import (
 @pytest.mark.exporter_utils
 def test_apply_correct_commit():
     """Test the apply_correct_commit function."""
-    commponent = {"name": "Gen1", "Commit": False}
+    component = {"name": "Gen1", "Commit": False}
+    commit_map = {"Commit": {"False": -1}}
 
-    result = apply_correct_commit(commponent, "Commit")
+    result = apply_correct_commit(component, commit_map)
     assert result == {"name": "Gen1", "Commit": -1}
+
+    # Test when component is True
+    component = {"name": "Gen1", "Commit": True}
+    result = apply_correct_commit(component, commit_map)
+    assert result == component
+
+    # Test when key doesn't exist
+    component = {"name": "Gen1"}
+    result = apply_correct_commit(component, commit_map)
+    assert result == component
 
 
 @pytest.mark.exporter_utils
