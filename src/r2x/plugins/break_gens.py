@@ -37,6 +37,7 @@ PROPERTIES_TO_BREAK = [
     "storage_capacity",
     "active_power_limits",
     "output_active_power_limits",
+    "input_active_power_limits",
 ]
 
 
