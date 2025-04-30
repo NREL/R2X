@@ -22,12 +22,12 @@ def test_apply_correct_commit():
     result = apply_correct_commit(component, commit_map)
     assert result == {"name": "Gen1", "Commit": -1}
 
-    # Test when component is True
+    # Test when 'Commit' key is True
     component = {"name": "Gen1", "Commit": True}
     result = apply_correct_commit(component, commit_map)
     assert result == component
 
-    # Test when key doesn't exist
+    # Test when 'Commit' key doesn't exist
     component = {"name": "Gen1"}
     result = apply_correct_commit(component, commit_map)
     assert result == component
