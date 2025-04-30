@@ -21,6 +21,7 @@ from r2x.exporter.utils import (
     apply_pint_deconstruction,
     apply_property_map,
     apply_valid_properties,
+    apply_correct_commit,
     get_reserve_type,
 )
 from r2x.models import (
@@ -264,6 +265,7 @@ class PlexosExporter(BaseExporter):
                 keys_to_flatten=KEYS_TO_FLATTEN,
             ),
             partial(apply_property_map, property_map=property_map),
+            partial(apply_correct_commit, key="Commit"),
             partial(apply_pint_deconstruction, unit_map=self.default_units),
             partial(apply_valid_properties, valid_properties=collection_properties, add_name=True),
         )
