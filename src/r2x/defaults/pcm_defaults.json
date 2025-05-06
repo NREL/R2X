@@ -2161,5 +2161,14 @@
       "down": 0.0,
       "up": 0.0
     }
+  },
+  "upv": {
+    "avg_capacity_MW": 60.8
+  },
+  "wind-ofs": {
+    "avg_capacity_MW": 340.0
+  },
+  "wind-ons": {
+    "avg_capacity_MW": 186.7
   }
 }
