@@ -4,14 +4,12 @@ import importlib
 import inspect
 import shutil
 import sys
-import polars as pl
 from importlib.resources import files
 from pathlib import Path
 
 from loguru import logger
 
 from r2x.exporter.handler import get_exporter
-from r2x.config_models import ReEDSConfig
 
 from .api import System
 from .config_scenario import Scenario, get_scenario_configuration
