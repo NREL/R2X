@@ -433,15 +433,15 @@ class PlexosParser(PCMParser):
                     self.system.add_component(load)
                     ts_dict = {"solve_year": self.year}
                     if isinstance(max_active_power, SingleTimeSeries):
-                        self.system.add_time_series(max_active_power, load, connection=None, **ts_dict)
+                        self.system.add_time_series(max_active_power, load, context=None, **ts_dict)
 
             ts_fields = {k: v for k, v in mapped_records.items() if isinstance(v, SingleTimeSeries)}
             if ts_fields:
                 generator = self.system.get_component_by_label(f"{default_model.__name__}.{bus_name}")
                 ts_dict = {"solve_year": self.year}
                 for ts_name, ts in ts_fields.items():
-                    ts.variable_name = ts_name
-                    self.system.add_time_series(ts, generator, connection=None, **ts_dict)
+                    ts.name = ts_name
+                    self.system.add_time_series(ts, generator, context=None, **ts_dict)
         return
 
     def _add_generator_emissions(self, default_model=Emission):
@@ -558,8 +558,8 @@ class PlexosParser(PCMParser):
                 reserve = self.system.get_component_by_label(f"{default_model.__name__}.{reserve_name}")
                 ts_dict = {"solve_year": self.year}
                 for ts_name, ts in ts_fields.items():
-                    ts.variable_name = ts_name
-                    self.system.add_time_series(ts, reserve, connection=None, **ts_dict)
+                    ts.name = ts_name
+                    self.system.add_time_series(ts, reserve, context=None, **ts_dict)
 
         reserve_map = ReserveMap(name="contributing_generators")
         self.system.add_component(reserve_map)
@@ -925,7 +925,7 @@ class PlexosParser(PCMParser):
                 generator = self.system.get_component_by_label(f"{model_map.__name__}.{generator_name}")
                 ts_dict = {"solve_year": self.year}
                 for ts_name, ts in ts_fields.items():
-                    ts.variable_name = ts_name
+                    ts.name = ts_name
 
                     # NOTE: This is fix to avoid mismatch with unit registry for custom units.
                     if isinstance(ts.data, Quantity):
@@ -1491,8 +1491,8 @@ class PlexosParser(PCMParser):
                 if not isinstance(record["max_active_power"], SingleTimeSeries):
                     record["max_active_power"] = SingleTimeSeries.from_array(
                         record["max_active_power"].data,
-                        variable_name="max_active_power",
-                        initial_time=rating_factor.initial_time,
+                        name="max_active_power",
+                        initial_timestamp=rating_factor.initial_time,
                         resolution=rating_factor.resolution,
                     )
             else:
@@ -1776,8 +1776,8 @@ class PlexosParser(PCMParser):
 
         return SingleTimeSeries(
             data=ureg.Quantity(value, unit) if unit else value,  # type: ignore
-            variable_name=variable_name,
-            initial_time=initial_time,
+            name=variable_name,
+            initial_timestamp=initial_time,
             resolution=resolution,
         )
 

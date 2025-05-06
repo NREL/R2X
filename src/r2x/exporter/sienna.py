@@ -510,7 +510,7 @@ def create_timeseries_pointers(
     reference_year: int | None = None,
     *,
     output_folder: str | Path | None = None,
-    variable_name: str | None = None,
+    name: str | None = None,
     time_series_type: type[SingleTimeSeries] = SingleTimeSeries,
     default_fname: str = "timeseries_pointers.json",
     time_series_folder: str = "Data",
@@ -554,14 +554,14 @@ def create_timeseries_pointers(
     for component in system.get_components(
         Component,
         filter_func=lambda x: system.has_time_series(
-            x, time_series_type=time_series_type, variable_name=variable_name, **user_attributes
+            x, time_series_type=time_series_type, name=name, **user_attributes
         ),
     ):
         for ts_metadata in system.time_series.list_time_series_metadata(
-            component, time_series_type=time_series_type, variable_name=variable_name, **user_attributes
+            component, time_series_type=time_series_type, name=name, **user_attributes
         ):
             assert hasattr(ts_metadata, "resolution")
-            ts_component_name = f"{component.__class__.__name__}_{ts_metadata.variable_name}"
+            ts_component_name = f"{component.__class__.__name__}_{ts_metadata.name}"
             ts_pointers = {
                 "category": type(component).__name__,
                 "component_name": component.name,
@@ -572,7 +572,7 @@ def create_timeseries_pointers(
                 ),
                 "normalization_factor": "MAX",  # LL: null is not translated properly
                 "resolution": ts_metadata.resolution.seconds,
-                "name": ts_metadata.variable_name,
+                "name": ts_metadata.name,
                 "scaling_factor_multiplier_module": "PowerSystems",
                 "scaling_factor_multiplier": "get_max_active_power",
             }

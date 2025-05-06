@@ -157,3 +157,6 @@ markers = [
 omit = [
     "tests/*",
     ]
+
+[tool.uv.sources]
+infrasys = { git = "https://github.com/NREL/infrasys", rev = "ps/deterministic" }
