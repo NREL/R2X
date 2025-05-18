@@ -14,9 +14,8 @@ from loguru import logger
 
 # Local imports
 from r2x.api import System
-from r2x.config_models import ReEDSConfig, SiennaConfig
+from r2x.config_models import ReEDSConfig, SiennaConfig, get_year
 from r2x.config_scenario import Scenario
-from r2x.config_utils import get_year
 from r2x.exporter.handler import BaseExporter, get_export_records
 from r2x.exporter.utils import (
     apply_default_value,

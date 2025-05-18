@@ -7,6 +7,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from itertools import repeat
 from operator import attrgetter
+from typing import TYPE_CHECKING
 
 import numpy as np
 import polars as pl
@@ -35,8 +36,8 @@ from r2x.models import (
     Area,
     Bus,
     Emission,
-    FromTo_ToFrom,
     EnergyReservoirStorage,
+    FromTo_ToFrom,
     Generator,
     HybridSystem,
     HydroDispatch,
@@ -61,12 +62,11 @@ from r2x.models import (
     UpDown,
 )
 from r2x.parser.handler import BaseParser, create_model_instance
+from r2x.plugin_manager import PluginManager
 from r2x.units import ActivePower, EmissionRate, Energy, Percentage, Time, ureg
 from r2x.utils import get_enum_from_string, match_category, read_csv
-from r2x.plugin_manager import PluginManager
 
 from .polars_helpers import pl_left_multi_join
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser
