@@ -5,8 +5,8 @@ It can either read the information directly or throught a cases file.
 """
 
 from dataclasses import field
-from typing import Any, TypeVar
 from functools import singledispatch
+from typing import Any, TypeVar
 
 from pydantic import BaseModel
 
