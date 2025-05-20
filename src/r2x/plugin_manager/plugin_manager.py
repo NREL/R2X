@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 import inspect
+from pathlib import Path
 import importlib
 import importlib.metadata
 from typing import ParamSpec, TYPE_CHECKING, ClassVar
@@ -18,8 +19,6 @@ if TYPE_CHECKING:
     from r2x.exporter.handler import BaseExporter
     from r2x.config_models import BaseModelConfig
 
-
-DEFAULT_SYSMOD_PATH = "src/r2x/plugins"
 
 
 class PluginManager:
@@ -133,7 +132,9 @@ class PluginManager:
         _ = (pl_rename, pl_filter_by_year)
 
         # Internal System Modifiers
-        register_functions_from_folder(DEFAULT_SYSMOD_PATH)
+        script_dir = Path(__file__).parent.parent
+        plugins_path = script_dir / "plugins"
+        register_functions_from_folder(plugins_path)
 
         # External plugins (factories via entry points)
         for entry_point in importlib.metadata.entry_points().select(group="r2x_plugin"):
