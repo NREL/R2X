@@ -25,12 +25,12 @@ def register_functions_from_folder(folder_path: str | Path):
 
     # Loop through files in the folder
     for filename in folder_path.glob("*.py"):  # Use glob to safely get .py files
-            if filename.name != "__init__.py":  # Skip __init__.py
-                module_name = f"r2x.plugins.{filename.stem}"  # e.g., r2x.plugins.break_gens
-                try:
-                    _ = importlib.import_module(module_name)
-                    logger.debug(f"Successfully imported and registered functions from {module_name}")
-                except ImportError as e:
-                    logger.error(f"Error importing {module_name}: {e!s}")
-                except Exception as e:
-                    logger.error(f"Unexpected error with {module_name}: {e!s}")
+        if filename.name != "__init__.py":  # Skip __init__.py
+            module_name = f"r2x.plugins.{filename.stem}"  # e.g., r2x.plugins.break_gens
+            try:
+                _ = importlib.import_module(module_name)
+                logger.debug(f"Successfully imported and registered functions from {module_name}")
+            except ImportError as e:
+                logger.error(f"Error importing {module_name}: {e!s}")
+            except Exception as e:
+                logger.error(f"Unexpected error with {module_name}: {e!s}")

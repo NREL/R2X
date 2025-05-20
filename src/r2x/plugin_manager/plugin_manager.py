@@ -20,7 +20,6 @@ if TYPE_CHECKING:
     from r2x.config_models import BaseModelConfig
 
 
-
 class PluginManager:
     """
     Centralized manager for R2X plugins.
