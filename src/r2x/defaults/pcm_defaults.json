@@ -1091,6 +1091,9 @@
       "up": null
     }
   },
+  "distpv": {
+    "avg_capacity_MW": 100.0
+  },
   "egs_nearfield_1": {
     "active_power_limits": {
       "max": 50.0,
