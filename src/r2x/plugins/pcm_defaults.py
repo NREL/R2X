@@ -125,18 +125,40 @@ def update_system(
             if wecc_data_row.get("forced_outage_rate")
             else None
         )
-        values_to_add["ramp_up"] = (
-            getattr(component, "active_power")
-            * BaseQuantity(wecc_data_row.get("max_ramp_up_percentage"), "1/min")
-            if wecc_data_row.get("max_ramp_up_percentage")
-            else None
-        )
-        values_to_add["ramp_down"] = (
-            getattr(component, "active_power")
-            * BaseQuantity(wecc_data_row.get("max_ramp_up_percentage"), "1/min")
-            if wecc_data_row.get("max_ramp_up_percentage")
-            else None
-        )
+
+        is_nuclear = getattr(component, "fuel", "").lower() == "nuclear"
+
+        if is_nuclear:
+            values_to_add["ramp_up"] = BaseQuantity(0, "MW/min")
+            values_to_add["ramp_down"] = BaseQuantity(0, "MW/min")
+
+            if hasattr(component, "active_power_limits"):
+                setattr(
+                    component.active_power_limits,
+                    "min",
+                    get_magnitude(getattr(component, "active_power", 0))
+                )
+        else:
+            values_to_add["ramp_up"] = (
+                getattr(component, "active_power")
+                * BaseQuantity(wecc_data_row.get("max_ramp_up_percentage"), "1/min")
+                if wecc_data_row.get("max_ramp_up_percentage")
+                else None
+            )
+            values_to_add["ramp_down"] = (
+                getattr(component, "active_power")
+                * BaseQuantity(wecc_data_row.get("max_ramp_up_percentage"), "1/min")
+                if wecc_data_row.get("max_ramp_up_percentage")
+                else None
+            )
+            if hasattr(component, "active_power_limits") and hasattr(component.active_power_limits, "min"):
+                setattr(
+                    component.active_power_limits,
+                    "min",
+                    get_magnitude(getattr(component, "active_power", 0))
+                    * wecc_data_row.get("min_stable_level_percentage", 1),
+                )
+        
         values_to_add["mean_time_to_repair"] = (
             BaseQuantity(wecc_data_row.get("mean_time_to_repair"), "h")
             if wecc_data_row.get("mean_time_to_repair")
@@ -159,13 +181,5 @@ def update_system(
         valid_fields = {key: value for key, value in values_to_add.items() if key in component.model_fields}
         for key, value in valid_fields.items():
             setattr(component, key, value)
-
-        if hasattr(component, "active_power_limits") and hasattr(component.active_power_limits, "min"):
-            setattr(
-                component.active_power_limits,
-                "min",
-                get_magnitude(getattr(component, "active_power", 0))
-                * wecc_data_row.get("min_stable_level_percentage", 1),
-            )
 
     return system
