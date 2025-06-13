@@ -20,20 +20,16 @@ def register_functions_from_folder(folder_path: str | Path):
     folder_path = Path(folder_path)
     # Ensure folder path exists
     if not os.path.exists(folder_path):
-        raise FileNotFoundError(f"Folder not found: {folder_path}")
+        msg = f"Folder not found: {folder_path}"
+        raise FileNotFoundError(msg)
 
     # Loop through files in the folder
-    for filename in os.listdir(folder_path):
-        # Check if file is a Python file (ends with .py) and not __init__.py
-        if filename.endswith(".py") and filename != "__init__.py":
-            # Remove .py extension to get module name
-            module_name = str(folder_path).replace("src/", "").replace("/", ".") + "." + filename[:-3]
-
+    for filename in folder_path.glob("*.py"):  # Use glob to safely get .py files
+        if filename.name != "__init__.py":  # Skip __init__.py
+            module_name = f"r2x.plugins.{filename.stem}"  # e.g., r2x.plugins.break_gens
             try:
-                # Dynamically import the module. Functions will be registered automatically
                 _ = importlib.import_module(module_name)
-                # logger.debug(f"Successfully registered {module.__name__}")
-
+                logger.debug(f"Successfully imported and registered functions from {module_name}")
             except ImportError as e:
                 logger.error(f"Error importing {module_name}: {e!s}")
             except Exception as e:
