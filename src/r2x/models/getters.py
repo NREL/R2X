@@ -1,5 +1,4 @@
 from functools import singledispatch
-from types import NotImplementedType
 from typing import Any
 
 from pint import Quantity
@@ -40,7 +39,7 @@ def _(value: Quantity, component) -> float:
 @singledispatch
 def get_max_active_power(component) -> float:
     msg = f"`get_max_active_power` not implemented for {type(component)}"
-    raise NotImplementedType(msg)
+    raise TypeError(msg)
 
 
 @get_max_active_power.register
@@ -51,7 +50,7 @@ def _(component: Generator) -> float:
 @singledispatch
 def get_ramp_limits(component) -> UpDown:
     msg = f"`get_ramp_limits` not implemented for {type(component)}"
-    raise NotImplementedType(msg)
+    raise TypeError(msg)
 
 
 @get_ramp_limits.register
