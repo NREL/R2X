@@ -265,6 +265,10 @@
       "fuel": "COAL",
       "type": "ST"
     },
+    "coaloldscr_coal-ccs_mod": {
+      "fuel": "COAL",
+      "type": "ST"
+    },
     "coalolduns": {
       "fuel": "COAL",
       "type": "ST"
