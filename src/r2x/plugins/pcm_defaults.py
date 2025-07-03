@@ -49,32 +49,49 @@ def update_system(
         logger.debug("Using custom defaults from {}", pcm_defaults_fpath)
         pcm_defaults: dict = read_json(pcm_defaults_fpath)
 
-    reference_data = (
-        pd.DataFrame.from_dict(pcm_defaults)
-        .transpose()
-        .reset_index()
-        .rename(
-            columns={
-                "index": "tech",
-            }
+    if 'battery' in pcm_defaults.keys():
+        reference_data = (
+            pd.DataFrame.from_dict(pcm_defaults)
+            .transpose()
+            # .reset_index()
+            # .rename(
+            #     columns={
+            #         "index": "tech",
+            #     }
+            # )
         )
-    )
-    reference_data.loc[reference_data.tech.str.startswith("battery"), "mean_time_to_repair"] = (
-        config.input_config.defaults["storage_mean_time_to_repair"]
-    )
-    reference_data.loc[reference_data.tech.str.startswith("hyd"), "mean_time_to_repair"] = (
-        config.input_config.defaults["hydro_mean_time_to_repair"]
-    )
-    reference_data.loc[reference_data.tech.str.startswith("hyd"), "max_ramp_up_percentage"] = (
-        config.input_config.defaults["hydro_ramp_rate"] * 100
-    )
-    reference_data.loc[reference_data.tech.str.endswith("nd"), "min_stable_level_percentage"] = 1
+    else:
+        reference_data = (
+            pd.concat({
+                k: pd.DataFrame(v).transpose()
+                for k,v
+                in pcm_defaults.items()
+            }, axis=0)
+            # .reset_index()
+            # .rename(
+            #     columns={
+            #         "level_0": "region",
+            #         "level_1": "tech"
+            #     }
+            # )
+        )
+
+    if isinstance(reference_data, pd.Index):
+        reference_data.loc[reference_data.index.str.startswith("battery"), "mean_time_to_repair"] = (
+            config.input_config.defaults["storage_mean_time_to_repair"]
+        )
+        reference_data.loc[reference_data.index.str.startswith("hyd"), "mean_time_to_repair"] = (
+            config.input_config.defaults["hydro_mean_time_to_repair"]
+        )
+        reference_data.loc[reference_data.index.str.startswith("hyd"), "max_ramp_up_percentage"] = (
+            config.input_config.defaults["hydro_ramp_rate"] * 100
+        )
+        reference_data.loc[reference_data.index.str.endswith("nd"), "min_stable_level_percentage"] = 1
 
     # Rename columns on the file itself and remove this
     reference_data = reference_data.loc[
         :,
         [
-            "tech",
             "min_stable_level_percentage",
             "start_cost_per_MW",
             "max_ramp_up_percentage",
@@ -97,19 +114,30 @@ def update_system(
     }
     reference_data = reference_data.astype(dtypes)
 
-    reference_techs = reference_data.tech.unique()
+    reference_categories = reference_data.index.unique()
 
     for component in system.get_components(Generator):
         reeds_tech = getattr(component, "ext").get("reeds_tech")
+        if isinstance(reference_categories[0], str):
+            if reeds_tech not in reference_categories:
+                continue
+            wecc_data_row = (
+                reference_data.loc[reference_data.index.str.startswith(reeds_tech)]
+                .dropna(axis=1)
+                .to_dict(orient="records")[0]
+            )
+        else:
+            reeds_region = getattr(getattr(component, "bus"), "name")
+            reeds_region_tech = (reeds_region, reeds_tech)
+            if reeds_region_tech not in reference_categories:
+                continue
+            wecc_data_row = (
+                reference_data.loc[reference_data.index == reeds_region_tech]
+                .dropna(axis=1)
+                .to_dict(orient="records")[0]
+            )
 
-        if reeds_tech not in reference_techs:
-            continue
-
-        wecc_data_row = (
-            reference_data.loc[reference_data.tech.str.startswith(reeds_tech)]
-            .dropna(axis=1)
-            .to_dict(orient="records")[0]
-        )
+        
         values_to_add = {}
 
         # I do not like this implementation.

@@ -71,22 +71,50 @@ def update_system(
         logger.debug("Using custom defaults from {}", pcm_defaults_fpath)
         pcm_defaults: dict = read_json(pcm_defaults_fpath)
 
-    reference_generators = (
-        pd.DataFrame.from_dict(pcm_defaults)
-        .transpose()
-        .reset_index()
-        .rename(
-            columns={
-                "index": "tech",
-            }
+    if 'battery' in pcm_defaults.keys():
+        reference_generators = (
+            pd.DataFrame.from_dict(pcm_defaults)
+            .transpose()
+            # .reset_index()
+            # .rename(
+            #     columns={
+            #         "index": "tech",
+            #     }
+            # )
         )
-        .set_index("tech")
+        break_categories = ['category']
+    else:
+        reference_generators = (
+            pd.concat({
+                k: pd.DataFrame(v).transpose()
+                for k,v
+                in pcm_defaults.items()
+            }, axis=0)
+            # .reset_index()
+            # .rename(
+            #     columns={
+            #         "level_0": "region",
+            #         "level_1": "tech"
+            #     }
+            # )
+        )
+        break_categories = ['region', 'category']
+
+    reference_generators = (
+        reference_generators
+        # .set_index("tech")
         .replace({np.nan: None})
         .to_dict(orient="index")
     )
     non_break_techs = config.input_config.defaults.get("non_break_techs", [])
 
-    return break_generators(system, reference_generators, capacity_threshold, non_break_techs)
+    return break_generators(
+        system,
+        reference_generators,
+        capacity_threshold,
+        non_break_techs,
+        break_categories
+    )
 
 
 def break_generators(  # noqa: C901
@@ -94,7 +122,7 @@ def break_generators(  # noqa: C901
     reference_generators: dict[str, dict],
     capacity_threshold: int = CAPACITY_THRESHOLD,
     non_break_techs: list[str] | None = None,
-    break_category: str = "category",
+    break_categories: list[str] = ["category"],
 ) -> System:
     """Break component generator into smaller units."""
     if non_break_techs:
@@ -104,15 +132,23 @@ def break_generators(  # noqa: C901
 
     capacity_dropped = 0  # count capacity dropped
     for component in system.get_components(Generator, filter_func=lambda x: re.search(regex_pattern, x.name)):
-        if not (tech := getattr(component, break_category, None)):
+        if not (tech := getattr(component, 'category', None)):
             logger.trace("Skipping component {} with missing category", component.label)
             continue
+    
+        if 'region' in break_categories:
+            region = getattr(getattr(component, "bus"), "name")
+            if not (reference_generator := reference_generators.get((region, tech))):
+                logger.trace("region {} / tech {} not found in reference_generators", region, tech)
+                continue
+        else:
+            if not (reference_generator := reference_generators.get(tech)):
+                logger.trace("{} not found in reference_generators", tech)
+                continue
+
         logger.trace("Breaking {}", component.label)
 
-        if not (reference_tech := reference_generators.get(tech)):
-            logger.trace("{} not found in reference_generators", tech)
-            continue
-        if not (avg_capacity := reference_tech.get("avg_capacity_MW", None)):
+        if not (avg_capacity := reference_generator.get("avg_capacity_MW", None)):
             continue
         logger.trace("Average_capacity: {}", avg_capacity)
         reference_base_power = (
