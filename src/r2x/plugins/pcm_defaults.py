@@ -9,8 +9,8 @@ from r2x.api import System
 from r2x.config_scenario import Scenario
 from r2x.models import Generator
 from r2x.parser.handler import BaseParser
-from r2x.units import get_magnitude
 from r2x.utils import read_json
+from r2x.units import get_magnitude
 
 
 def cli_arguments(parser: ArgumentParser):

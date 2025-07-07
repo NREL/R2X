@@ -265,6 +265,10 @@
       "fuel": "COAL",
       "type": "ST"
     },
+    "coaloldscr-igcc_coal-ccs_mod": {
+      "fuel": "COAL",
+      "type": "ST"
+    },
     "coaloldscr_coal-ccs_mod": {
       "fuel": "COAL",
       "type": "ST"
@@ -401,6 +405,10 @@
       "fuel": "NUCLEAR",
       "type": "ST"
     },
+    "nuclear-smr": {
+      "fuel": "NUCLEAR",
+      "type": "ST"
+    },
     "o-g-s": {
       "fuel": "OTHER",
       "type": "GT"
@@ -412,6 +420,14 @@
     "pvb": {
       "fuel": null,
       "type": "PVe"
+    },
+    "smr": {
+      "fuel": "NUCLEAR",
+      "type": "ST"
+    },
+    "smr_css": {
+      "fuel": "NUCLEAR",
+      "type": "ST"
     },
     "undisc": {
       "fuel": "GEOTHERMAL",
