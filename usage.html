@@ -1,0 +1,656 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Getting Started &#8212; R2X  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/autodoc_pydantic.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=6dbb43f8"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'usage';</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="How-To’s" href="howtos.html" />
+    <link rel="prev" title="Installation" href="install.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">R2X  documentation</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="howtos.html">How-To’s</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshoot.html">Troubleshoot and FAQ’s</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="dev/develop.html">How To Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dev/git.html">Git Convention</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Modeling PCM</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="model/logic.html">Baseline System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model/diagram.html">R2X Workflow Diagram</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model/models.html">Translation Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model/data_models.html">PCM Modeling Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model/terminology.html">Terminology</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Zonal to Nodal</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="nodal.html">Nodal documentation</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="api/enums.html">Enums</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/config.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/system.html"><code class="docutils literal notranslate"><span class="pre">infrasys</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/plexos.html"><code class="docutils literal notranslate"><span class="pre">plexosdb</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/models.html">Component Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/parsers.html">Parsers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/exporters.html">Exporters</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/NREL/R2X/blob/main/docs/source/usage.md?plain=1" target="_blank"
+   class="btn btn-sm btn-source-file-button dropdown-item"
+   title="Show source"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-code"></i>
+  </span>
+<span class="btn__text-container">Show source</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/NREL/R2X/edit/main/docs/source/usage.md" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="_sources/usage.md" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.md</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Getting Started</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x-run-overview"><code class="docutils literal notranslate"><span class="pre">r2x</span> <span class="pre">run</span></code> overview</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#using-a-configuration-file">Using a configuration file</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#command-example">Command example</a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#using-positional-arguments">Using positional arguments</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#experimental-features">Experimental features</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x-init-overview"><code class="docutils literal notranslate"><span class="pre">r2x</span> <span class="pre">init</span></code> overview</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="getting-started">
+<span id="id1"></span><h1>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading">#</a></h1>
+<p>Once you have <a class="reference internal" href="install.html#installation"><span class="std std-ref">R2X installed</span></a>, you can check the
+installation by running the <code class="docutils literal notranslate"><span class="pre">r2x</span></code> command in a terminal:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>r2x<span class="w"> </span>--help
+
+<span class="go">usage: r2x [-h] [--verbose] [--version] {init,run} ...</span>
+<span class="go">Model translation framework</span>
+
+<span class="go">positional arguments:</span>
+<span class="go">  {init,run}     Subcommands</span>
+<span class="go">    init         Create an empty configuration file.</span>
+<span class="go">    run          Run an R2X translation</span>
+
+<span class="go">options:</span>
+<span class="go">  -h, --help     show this help message and exit</span>
+<span class="go">  --verbose, -v  Run with additional verbosity</span>
+<span class="go">  --version, -V  show program&#39;s version number and exit</span>
+</pre></div>
+</div>
+<section id="r2x-run-overview">
+<span id="run"></span><h2><code class="docutils literal notranslate"><span class="pre">r2x</span> <span class="pre">run</span></code> overview<a class="headerlink" href="#r2x-run-overview" title="Link to this heading">#</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">r2x</span> <span class="pre">run</span></code> command is the main entry point for performing translations between
+different models. It supports two primary workflows for specifying input
+arguments:</p>
+<ol class="arabic simple">
+<li><p>Using a configuration file (recommended),</p></li>
+<li><p>Using the positional arguments,</p></li>
+</ol>
+<section id="using-a-configuration-file">
+<h3>Using a configuration file<a class="headerlink" href="#using-a-configuration-file" title="Link to this heading">#</a></h3>
+<p>This is the recommended approach because it provides a human-readable format
+that can be saved and reused for future translations. The configuration file
+preserves all necessary information about the translation process.</p>
+<aside class="margin sidebar">
+<p class="sidebar-title"></p>
+<p>To create an example configuration file you can run <a class="reference internal" href="#init"><code class="docutils literal notranslate"><span class="pre">r2x</span> <span class="pre">init</span></code></a></p>
+</aside>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">input_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">reeds-US</span>
+<span class="nt">output_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sienna</span>
+<span class="nt">solve_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2050</span>
+<span class="nt">weather_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2012</span>
+</pre></div>
+</div>
+<p>Depending on the parser/exporter combo used, the configuration will require
+aditiional settings (see the <a class="reference internal" href="api/config.html#configuration-models"><span class="std std-ref">configuration model
+classes</span></a> for each model specific field list)</p>
+<p>The configuration file also enables to do multiple concurrent translations. To
+use this functionality, you need to create a new key called <code class="docutils literal notranslate"><span class="pre">scenarios</span></code> (see
+example below)</p>
+<aside class="margin sidebar">
+<p class="sidebar-title"></p>
+<p>Each scenario <strong>must</strong> have a unique name. Otherwise, R2X will overwrite the
+resulting translation.</p>
+</aside>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">input_model</span><span class="p">:</span> <span class="n">reeds</span><span class="o">-</span><span class="n">US</span>
+<span class="n">output_model</span><span class="p">:</span> <span class="n">sienna</span>
+<span class="n">weather_year</span><span class="p">:</span> <span class="mi">2012</span>
+<span class="n">scenarios</span><span class="p">:</span>
+ <span class="o">-</span> <span class="p">{</span> <span class="n">name</span> <span class="n">Run1</span><span class="p">,</span> <span class="n">solve_year</span><span class="p">:</span> <span class="mi">2050</span><span class="p">}</span>
+ <span class="o">-</span> <span class="p">{</span> <span class="n">name</span> <span class="n">Run2</span><span class="p">,</span> <span class="n">solve_year</span><span class="p">:</span> <span class="mi">2050</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>All the keys that are not specified on the scenario are considered global and
+will be applied for all the scenarios.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Scenarios only work with a configuration file.</p>
+</div>
+<section id="command-example">
+<h4>Command example<a class="headerlink" href="#command-example" title="Link to this heading">#</a></h4>
+<aside class="margin sidebar">
+<p class="sidebar-title"></p>
+<p>You need to point to the relative path to the <code class="docutils literal notranslate"><span class="pre">config.yaml</span></code> file.</p>
+</aside>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">r2x run --config config.yaml</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="using-positional-arguments">
+<h3>Using positional arguments<a class="headerlink" href="#using-positional-arguments" title="Link to this heading">#</a></h3>
+<p>If you prefer not to use a configuration file, you can directly provide input
+arguments as positional parameters.</p>
+<p><strong>Syntax</strong></p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">r2x run run --input-model &lt;input_model&gt; --output-model &lt;output_model&gt;</span>
+</pre></div>
+</div>
+<p><strong>Example command</strong></p>
+<aside class="margin sidebar">
+<p class="sidebar-title"></p>
+<p>Replace <code class="docutils literal notranslate"><span class="pre">$RUN_FOLDER</span></code> and <code class="docutils literal notranslate"><span class="pre">$SOLVE_YEAR</span></code> with your custom settings.</p>
+</aside>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">r2x -i $RUN_FOLDER \</span>
+<span class="go">   --solve-year=$SOLVE_YEAR \</span>
+<span class="go">   --input-model=reeds-US \</span>
+<span class="go">   --output-model=plexos</span>
+</pre></div>
+</div>
+</section>
+<section id="experimental-features">
+<h3>Experimental features<a class="headerlink" href="#experimental-features" title="Link to this heading">#</a></h3>
+<p>R2X enables the use of feature flags (features that could or could not make it
+into main). To enable this throught the CLI by passing <code class="docutils literal notranslate"><span class="pre">--flags</span> <span class="pre">feature=true</span></code>.
+The convention we use is simply pass the feature name (with the exact name is
+defined in the code).</p>
+<p>An example of a curent feature flag:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>r2x<span class="w"> </span>-i<span class="w"> </span><span class="nv">$RUN_FOLDER</span><span class="w"> </span>--year<span class="o">=</span><span class="nv">$SOLVE_YEAR</span><span class="w"> </span>--flags<span class="w"> </span>tx-out<span class="o">=</span><span class="nb">true</span>
+</pre></div>
+</div>
+<p>For additional detail on the implementation of each of the PCM models, see <a class="reference internal" href="model/data_models.html#generator-models"><span class="std std-ref">Models section</span></a>.</p>
+</section>
+</section>
+<section id="r2x-init-overview">
+<span id="init"></span><h2><code class="docutils literal notranslate"><span class="pre">r2x</span> <span class="pre">init</span></code> overview<a class="headerlink" href="#r2x-init-overview" title="Link to this heading">#</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">r2x</span> <span class="pre">init</span></code> command is used to create a copy of the <code class="docutils literal notranslate"><span class="pre">user_dict.yaml</span></code> in the
+current location where you call the command. This will contain default
+information that can be changed to the translation you will be performing.</p>
+<p>A typical workflow might look like the following, let’s say that we want to
+translate <a class="reference internal" href="model/terminology.html#term-ReEDS"><span class="xref std std-term">ReEDS</span></a> results into <a class="reference internal" href="model/terminology.html#term-Plexos"><span class="xref std std-term">PLEXOS</span></a> and we want to translate 2
+<code class="docutils literal notranslate"><span class="pre">solve_years</span></code> 2035 and 2050. The first thing create a
+configuration file</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">r2x init</span>
+</pre></div>
+</div>
+<p>then with any text editor of your choice modify the <code class="docutils literal notranslate"><span class="pre">user_dict.yaml</span></code> file to
+specify the run_folder, output_folder (optional) and the scenarios to run.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">input_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">reeds-US</span>
+<span class="nt">output_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sienna</span>
+<span class="nt">run_folder</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/path/to/input_model/</span>
+<span class="nt">output_folder</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/path/to/save/results</span>
+<span class="nt">scenarios</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="nv">Run1</span><span class="p p-Indicator">,</span><span class="nt"> solve_year</span><span class="p">:</span><span class="w"> </span><span class="nv">2035</span><span class="p p-Indicator">}</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="nv">Run2</span><span class="p p-Indicator">,</span><span class="nt"> solve_year</span><span class="p">:</span><span class="w"> </span><span class="nv">2040</span><span class="p p-Indicator">}</span>
+</pre></div>
+</div>
+<p>Once everything is setup, you run the <code class="docutils literal notranslate"><span class="pre">r2x</span> <span class="pre">run</span></code> command</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">r2x run --config user_dict.yaml</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="install.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Installation</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="howtos.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">How-To’s</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x-run-overview"><code class="docutils literal notranslate"><span class="pre">r2x</span> <span class="pre">run</span></code> overview</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#using-a-configuration-file">Using a configuration file</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#command-example">Command example</a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#using-positional-arguments">Using positional arguments</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#experimental-features">Experimental features</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#r2x-init-overview"><code class="docutils literal notranslate"><span class="pre">r2x</span> <span class="pre">init</span></code> overview</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By R2X developers
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, Alliance for Sustainable Energy, LLC.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

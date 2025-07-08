@@ -1,0 +1,641 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Nodal documentation &#8212; R2X  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/autodoc_pydantic.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=6dbb43f8"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'nodal';</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Enums" href="api/enums.html" />
+    <link rel="prev" title="Terminology" href="model/terminology.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">R2X  documentation</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="howtos.html">How-To’s</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshoot.html">Troubleshoot and FAQ’s</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="dev/develop.html">How To Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dev/git.html">Git Convention</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Modeling PCM</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="model/logic.html">Baseline System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model/diagram.html">R2X Workflow Diagram</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model/models.html">Translation Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model/data_models.html">PCM Modeling Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model/terminology.html">Terminology</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Zonal to Nodal</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Nodal documentation</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="api/enums.html">Enums</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/config.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/system.html"><code class="docutils literal notranslate"><span class="pre">infrasys</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/plexos.html"><code class="docutils literal notranslate"><span class="pre">plexosdb</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/models.html">Component Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/parsers.html">Parsers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/exporters.html">Exporters</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/NREL/R2X/blob/main/docs/source/nodal.md?plain=1" target="_blank"
+   class="btn btn-sm btn-source-file-button dropdown-item"
+   title="Show source"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-code"></i>
+  </span>
+<span class="btn__text-container">Show source</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/NREL/R2X/edit/main/docs/source/nodal.md" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="_sources/nodal.md" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.md</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Nodal documentation</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#process">Process</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#user-configurable-values">User-configurable Values</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="nodal-documentation">
+<h1>Nodal documentation<a class="headerlink" href="#nodal-documentation" title="Link to this heading">#</a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">#</a></h2>
+<p>The zonal-to-nodal component of R2X is a process by which the results of a
+zonal capacity expansion model (<a class="reference internal" href="model/terminology.html#term-CEM"><span class="xref std std-term">CEM</span></a>) can be applied to a nodal production cost
+model (<a class="reference internal" href="model/terminology.html#term-PCM"><span class="xref std std-term">PCM</span></a>). This exists as four main steps:</p>
+<ol class="arabic simple">
+<li><p>Determine the zone-wise and technology-wise capacity that needs to be added
+to and removed from the PCM to match the CEM’s prescribed capacities.</p></li>
+<li><p>Deactivate capacity from the PCM’s generators pursuant to the prescribed
+capacities.</p></li>
+<li><p>Rank the PCM’s nodes by build favorability.</p></li>
+<li><p>Add new capacity to the PCM’s nodes pursuant to the prescribed capacities.</p></li>
+</ol>
+<p>The inputs required to run the workflow are the following:</p>
+<ul class="simple">
+<li><p>PCM – Either a Sienna model (<code class="docutils literal notranslate"><span class="pre">.json</span></code> file) or a Plexos model (<code class="docutils literal notranslate"><span class="pre">.xml</span></code> file)</p></li>
+<li><p>CEM results – ReEDS run folder</p></li>
+<li><p>Node metadata file – A <code class="docutils literal notranslate"><span class="pre">.csv</span></code> file giving information about the PCM’s nodes
+such as their locations, voltages, and load participation factors (required
+columns: <code class="docutils literal notranslate"><span class="pre">node_id</span></code>, <code class="docutils literal notranslate"><span class="pre">latitude</span></code>, <code class="docutils literal notranslate"><span class="pre">longitude</span></code>, <code class="docutils literal notranslate"><span class="pre">reeds_ba</span></code>, <code class="docutils literal notranslate"><span class="pre">voltage</span></code>,
+<code class="docutils literal notranslate"><span class="pre">load_participation_factor</span></code>)</p></li>
+</ul>
+</section>
+<section id="process">
+<h2>Process<a class="headerlink" href="#process" title="Link to this heading">#</a></h2>
+<p>The following are the steps of the zonal-to-nodal workflow and their corresponding files:</p>
+<ol class="arabic simple">
+<li><p>Parse CEM results (<code class="docutils literal notranslate"><span class="pre">parser/reeds.py</span></code>)</p></li>
+<li><p>Read node metadata (<code class="docutils literal notranslate"><span class="pre">parser/nodes.py</span></code>)</p></li>
+<li><p>Parse PCM (<code class="docutils literal notranslate"><span class="pre">parser/plexos.py</span></code> or <code class="docutils literal notranslate"><span class="pre">parser/sienna.py</span></code>)</p></li>
+<li><p>Apply CEM results to PCM (<code class="docutils literal notranslate"><span class="pre">nodal/apply_cem_to_pcm.py</span></code>)</p>
+<ul class="simple">
+<li><p>Compute required capacity additions and reductions to reconcile PCM and
+CEM zone-wise and technology-wise capacities
+(<code class="docutils literal notranslate"><span class="pre">nodal/compute_capacity_additions_and_reductions.py</span></code>)</p></li>
+<li><p>This requires a mapping between the PCM and CEM technologies and a
+mapping connecting the PCM nodes to their CEM zones (from the node
+metadata file)</p></li>
+<li><p>Execute required capacity reductions by fully and partially deactivating
+capacity from PCM generators (<code class="docutils literal notranslate"><span class="pre">nodal/execute_retirements.py</span></code>)</p>
+<ul>
+<li><p>Higher heat rates correspond to higher deactivation priority</p></li>
+</ul>
+</li>
+<li><p>Rank PCM nodes (within their zones) by build favorability
+(<code class="docutils literal notranslate"><span class="pre">nodal/node_ranking.py</span></code>)</p>
+<ul>
+<li><p>Higher deactivated capacity, voltage, and load participation factor
+correspond to higher favorability</p></li>
+<li><p>The available transmission capacity of each node is also computed at
+this step</p></li>
+</ul>
+</li>
+<li><p>Execute standard capacity additions by assigning (disaggregated) capacity
+to PCM nodes (<code class="docutils literal notranslate"><span class="pre">nodal/execute_capacity_additions.py</span></code>)</p>
+<ul>
+<li><p>reV technologies and technologies included in enabled custom
+buildouts (see “user-configurable values”) are excluded</p></li>
+<li><p>Capacity is disaggregated according to per-technology average
+generator sizes from <a class="reference internal" href="model/terminology.html#term-WECC"><span class="xref std std-term">WECC</span></a> and/or according to median generator sizes
+of the PCM</p></li>
+<li><p>Limits on per-node capacity injection can be enforced with respect to
+the computed available capacities or user-defined limits (see
+“user-configurable values”)</p></li>
+<li><p>For nodes with deactivated capacity, the amount of deactivate
+capacity also serves as an upper bound for capacity injection</p></li>
+</ul>
+</li>
+<li><p>Execute reVX-based capacity additions (<code class="docutils literal notranslate"><span class="pre">nodal/revx_aggregation.py</span></code>)</p>
+<ul>
+<li><p>The per-supply curve capacities are normalized according to the
+investment capacity determined in the first step</p></li>
+<li><p>Only reV technologies (see “user-configurable values”) are included</p></li>
+<li><p>Nodal injection limits cannot be enforced</p></li>
+</ul>
+</li>
+<li><p>Add timeseries data to non-reV VRE technologies (<code class="docutils literal notranslate"><span class="pre">nodal/postprocessing.py</span></code>)</p>
+<ul>
+<li><p>Profiles are based on the <code class="docutils literal notranslate"><span class="pre">recf.h5</span></code> input file from the ReEDS run</p></li>
+</ul>
+</li>
+<li><p>Execute custom capacity additions (<code class="docutils literal notranslate"><span class="pre">nodal/ext/build_vre_based_bess.py</span></code>)</p>
+<ul>
+<li><p>This entails assigning new capacity to nodes in ways that deviate
+from the standard procedure of the fourth step</p></li>
+<li><p>Custom buildouts and their corresponding technologies are defined in
+nodal_defaults.json (see “user-configurable values”)</p></li>
+<li><p>For instance, the “<code class="docutils literal notranslate"><span class="pre">vre_based_bess</span></code>” custom buildout assigns new <a class="reference internal" href="model/terminology.html#term-BESS"><span class="xref std std-term">BESS</span></a>
+capacity  to PCM nodes with higher VRE capacity, load participation
+factor, and voltage corresponding to higher favorability and with a
+maximum of 50% of the node’s solar (if short-duration BESS) or wind
+(if long-duration BESS) instset guicursor=a:blinkon1alled capacity</p></li>
+</ul>
+</li>
+<li><p>Add auxiliary generator attributes to the new builds based on ReEDS and
+WECC data (<code class="docutils literal notranslate"><span class="pre">nodal/postprocessing.py</span></code>)</p></li>
+<li><p>Create formatted generator and storage data (<code class="docutils literal notranslate"><span class="pre">nodal/postprocessing.py</span></code>)</p></li>
+<li><p>Write system update report detailing initial, deactivated, new, and total
+per-zone and per-technology capacities (<code class="docutils literal notranslate"><span class="pre">nodal/postprocessing.py</span></code>)</p></li>
+</ul>
+</li>
+</ol>
+<ul class="simple">
+<li><p>Export updated PCM (<code class="docutils literal notranslate"><span class="pre">parser/sienna.py</span></code> or <code class="docutils literal notranslate"><span class="pre">parser/plexos.py</span></code>)</p></li>
+</ul>
+</section>
+<section id="user-configurable-values">
+<h2>User-configurable Values<a class="headerlink" href="#user-configurable-values" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">bess_lpf_threshold</span></code> – Only nodes with load participation factor equal to or
+above this threshold will be considered for VRE-based BESS buildout.
+(default: 0.001)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">custom_nodal_buildout_tech_map</span></code> – Mapping between available custom buildouts
+and their corresponding CEM technologies. (default: {<code class="docutils literal notranslate"><span class="pre">vre_based_bess</span></code>:
+[battery]})</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">custom_nodal_buildouts</span></code> – Enabled custom buildouts. (default:
+[vre_based_bess])</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">disable_transmission_capacity_limits</span></code> – Whether the capacity injection of
+nodes should be limited by their available transmission capacities in
+non-reVX buildouts. (default: <code class="code highlight python docutils literal highlight-python"><span class="kc">True</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">distpv_capacity_threshold_MW</span></code> – New distributed PV generators will only be
+assigned capacities equal to or above this value. (default: 100)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">new_build_prefix</span></code> – String that gets attached to the beginning of new
+generators’ names. (default: ReEDS)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">nodal_build_capacity_limit_MW</span></code> – Each node can only receive new capacity until
+its total capacity reaches this value. (default: infinity)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">nodal_build_unit_limit</span></code> – Each node can only receive new capacity until its
+total number of units reaches this value. (default: 5)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">reV_capacity_threshold_MW</span></code> – Minimum capacity of new generators created by
+reVX. (default: 100)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">reV_node_voltage_threshold_kV</span></code> – Only nodes with voltages equal to or above
+this threshold will be considered for the buildout of reV technologies
+(rev_techs). (default: 100)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rev_techs</span></code> – CEM technologies that should be built by reVX PlexosAggregation.
+You must have reV supply curves and capacity factor files for each tech.
+(default: [upv, wind-ons, wind-ofs])</p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="model/terminology.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Terminology</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="api/enums.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Enums</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#process">Process</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#user-configurable-values">User-configurable Values</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By R2X developers
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, Alliance for Sustainable Energy, LLC.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
