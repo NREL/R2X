@@ -12,6 +12,7 @@ from r2x.parser.handler import BaseParser
 from r2x.plugin_manager import PluginManager
 from r2x.units import get_magnitude
 from r2x.utils import read_json
+from r2x.units import get_magnitude
 
 
 @PluginManager.register_cli("system_update", "pcm_defaults")
@@ -77,6 +78,7 @@ def update_system(
             pcm_defaults.get(component.name)
             or pcm_defaults.get(attrgetter("ext.reeds_tech"))
             or pcm_defaults.get(component.category)
+
         )
         if not pcm_values:
             msg = "Could not find a matching category for {}. "
