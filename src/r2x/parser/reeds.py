@@ -1,11 +1,13 @@
 """Functions related to parsers."""
 
+from __future__ import annotations
+
 import importlib
-from argparse import ArgumentParser
 from collections import defaultdict
 from datetime import datetime, timedelta
 from itertools import repeat
 from operator import attrgetter
+from typing import TYPE_CHECKING
 
 import numpy as np
 import polars as pl
@@ -34,8 +36,8 @@ from r2x.models import (
     Area,
     Bus,
     Emission,
-    FromTo_ToFrom,
     EnergyReservoirStorage,
+    FromTo_ToFrom,
     Generator,
     HybridSystem,
     HydroDispatch,
@@ -59,18 +61,26 @@ from r2x.models import (
     TransmissionInterfaceMap,
     UpDown,
 )
+from r2x.models.costs import StorageCost
+from r2x.models.generators import Storage
 from r2x.parser.handler import BaseParser, create_model_instance
+from r2x.plugin_manager import PluginManager
 from r2x.units import ActivePower, EmissionRate, Energy, Percentage, Time, ureg
 from r2x.utils import get_enum_from_string, match_category, read_csv
 
 from .polars_helpers import pl_left_multi_join
+
+if TYPE_CHECKING:
+    from argparse import ArgumentParser
+
 
 R2X_MODELS = importlib.import_module("r2x.models")
 UNITS = importlib.import_module("r2x.units")
 BASE_WEATHER_YEAR = 2007
 
 
-def cli_arguments(parser: ArgumentParser):
+@PluginManager.register_cli("parser", "reeds-US")
+def cli_arguments(parser: ArgumentParser) -> None:
     """CLI arguments for the plugin."""
     parser.add_argument(
         "--weather-year",
@@ -97,7 +107,6 @@ class ReEDSParser(BaseParser):
         self.excluded_categories = self.reeds_config.defaults["excluded_categories"]
         self.weather_year: int = self.reeds_config.weather_year
         self.skip_validation: bool = getattr(self.reeds_config, "skip_validation", False)
-
         # Add hourly_time_index
         self.hourly_time_index = np.arange(
             f"{self.weather_year}",
@@ -160,7 +169,6 @@ class ReEDSParser(BaseParser):
     def _construct_buses(self):
         logger.info("Creating bus objects.")
         bus_data = self.get_data("hierarchy")
-
         zones = bus_data["transmission_region"].unique()
         for zone in zones:
             self.system.add_component(self._create_model_instance(LoadZone, name=zone))
@@ -548,6 +556,8 @@ class ReEDSParser(BaseParser):
                 fuel_price = fuel_price.magnitude
             if issubclass(gen_model, RenewableGen):
                 row["operation_cost"] = RenewableGenerationCost()
+            if issubclass(gen_model, Storage):
+                row["operation_cost"] = StorageCost()
             if issubclass(gen_model, ThermalGen):
                 if heat_rate := row.get("heat_rate"):
                     if isinstance(heat_rate, Quantity):
@@ -568,6 +578,8 @@ class ReEDSParser(BaseParser):
                     row["operation_cost"] = ThermalGenerationCost(
                         variable=fuel_curve,
                     )
+                else:
+                    row["operation_cost"] = ThermalGenerationCost()
             if issubclass(gen_model, HydroGen):
                 row["operation_cost"] = HydroGenerationCost(
                     variable=CostCurve(
@@ -601,8 +613,8 @@ class ReEDSParser(BaseParser):
             bus = self.system.get_component(ACBus, name=bus_name)
             ts = SingleTimeSeries.from_array(
                 data=ActivePower(load_df[bus_name].to_numpy(), "MW"),
-                variable_name="max_active_power",
-                initial_time=start,
+                name="max_active_power",
+                initial_timestamp=start,
                 resolution=resolution,
             )
             user_dict = {"solve_year": self.reeds_config.weather_year, "weather_year": self.weather_year}
@@ -652,8 +664,8 @@ class ReEDSParser(BaseParser):
             rating_profile = generator.active_power * ilr_value * cf_adj * cf_data[profile_name].to_numpy()
             ts = SingleTimeSeries.from_array(
                 data=rating_profile,
-                variable_name="max_active_power",
-                initial_time=start,
+                name="max_active_power",
+                initial_timestamp=start,
                 resolution=resolution,
             )
             user_dict = {"weather_year": self.weather_year}
@@ -779,8 +791,8 @@ class ReEDSParser(BaseParser):
             self.system.add_time_series(
                 SingleTimeSeries.from_array(
                     total_provision.to_numpy(),
-                    variable_name="requirement",
-                    initial_time=start,
+                    name="requirement",
+                    initial_timestamp=start,
                     resolution=resolution,
                 ),
                 reserve,
@@ -807,7 +819,7 @@ class ReEDSParser(BaseParser):
         month_of_day = np.array(
             [dt.astype("datetime64[M]").astype(int) % 12 + 1 for dt in self.daily_time_index]
         )
-        initial_time = datetime(self.weather_year, 1, 1)
+        initial_timestamp = datetime(self.weather_year, 1, 1)
         for generator in self.system.get_components(HydroDispatch):
             # NOTE: Canadian imports need another file for the ratings, but we process it as
             # HydroEnergyReservoir since it is the way ReEDS model it.
@@ -835,7 +847,7 @@ class ReEDSParser(BaseParser):
             ts = SingleTimeSeries.from_array(
                 Energy(hourly_time_series / 1e3, "GWh"),
                 "hydro_budget",
-                initial_time=initial_time,
+                initial_timestamp=initial_timestamp,
                 resolution=timedelta(days=1),
             )
             self.system.add_time_series(ts, generator)
@@ -859,7 +871,7 @@ class ReEDSParser(BaseParser):
         month_of_hour = np.array(
             [dt.astype("datetime64[M]").astype(int) % 12 + 1 for dt in self.hourly_time_index]
         )
-        initial_time = datetime(self.weather_year, 1, 1)
+        initial_timestamp = datetime(self.weather_year, 1, 1)
         for generator in self.system.get_components(HydroEnergyReservoir):
             tech = generator.ext["reeds_tech"]
             generator_bus = generator.bus
@@ -882,7 +894,7 @@ class ReEDSParser(BaseParser):
             ts = SingleTimeSeries.from_array(
                 ActivePower(hourly_time_series, "MW"),
                 "max_active_power",
-                initial_time=initial_time,
+                initial_timestamp=initial_timestamp,
                 resolution=timedelta(hours=1),
             )
             self.system.add_time_series(ts, generator)

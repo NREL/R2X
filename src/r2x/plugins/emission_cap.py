@@ -3,7 +3,7 @@
 This plugin is only applicable for ReEDs, but could work with similarly arrange data
 """
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, _ArgumentGroup
 
 import polars as pl
 from loguru import logger
@@ -17,11 +17,13 @@ from r2x.models import Emission
 from r2x.models.generators import ThermalStandard
 from r2x.models.utils import Constraint, ConstraintMap
 from r2x.parser.handler import BaseParser
+from r2x.plugin_manager import PluginManager
 from r2x.units import EmissionRate, ureg
 from r2x.utils import get_enum_from_string, validate_string
 
 
-def cli_arguments(parser: ArgumentParser):
+@PluginManager.register_cli("system_update", "emission_cap")
+def cli_arguments(parser: ArgumentParser | _ArgumentGroup):
     """CLI arguments for the plugin."""
     parser.add_argument(
         "--emission-cap",
@@ -30,6 +32,7 @@ def cli_arguments(parser: ArgumentParser):
     )
 
 
+@PluginManager.register_system_update("emission_cap")
 def update_system(
     config: Scenario,
     system: System,

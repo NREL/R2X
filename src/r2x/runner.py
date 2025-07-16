@@ -1,25 +1,29 @@
 """Umbrella API for R2X model."""
 
-import importlib
 import inspect
-import shutil
 import sys
+import shutil
 from importlib.resources import files
 from pathlib import Path
+
 
 from loguru import logger
 
 from r2x.exporter.handler import get_exporter
+from r2x.plugin_manager import PluginManager
 
 from .api import System
 from .config_scenario import Scenario, get_scenario_configuration
-from .exporter import exporter_list
-from .parser import parser_list
 from .parser.handler import BaseParser, get_parser_data
 from .upgrader import upgrade_handler
-from .utils import (
-    DEFAULT_PLUGIN_PATH,
-)
+
+from collections.abc import Callable
+from typing import TYPE_CHECKING, ParamSpec
+
+if TYPE_CHECKING:
+    from polars import DataFrame
+
+pm = PluginManager()
 
 
 def run_parser(config: Scenario, **kwargs):
@@ -51,12 +55,27 @@ def run_parser(config: Scenario, **kwargs):
     if getattr(config, "upgrade", None):
         upgrade_handler(config.run_folder)
 
-    # Initialize parser
-    parser_class = parser_list.get(config.input_model)
+    plugin = pm.get_plugin(config.input_model)
+
+    parser_class = plugin.parser
+    parser_filters = plugin.parser_filters
+
+    filter_funcs: list[Callable[[DataFrame, ParamSpec], DataFrame]] | None = None
+    if parser_filters is not None:
+        filter_funcs = []
+        for filter_func in parser_filters:
+            if type(filter_func) is str:
+                filter_func_call = pm.get_filter(str(filter_func))
+            elif callable(filter_func):
+                filter_func_call = filter_func
+            else:
+                raise TypeError(f"Filter function must be a string or callable, not {type(filter_func)}")
+            filter_funcs.append(filter_func_call)
+
     if not parser_class:
         raise KeyError(f"Parser for {config.input_model} not found")
 
-    parser = get_parser_data(config, parser_class, **kwargs)
+    parser = get_parser_data(config, parser_class, filter_funcs=filter_funcs, **kwargs)
     system = parser.build_system()
 
     assert system is not None, "System failed to create"
@@ -65,7 +84,7 @@ def run_parser(config: Scenario, **kwargs):
 
 
 def run_plugins(config: Scenario, parser: BaseParser, system: System) -> System:
-    """Run selected plugins.
+    """Run selected system modifiers.
 
     Parameters
     ----------
@@ -82,21 +101,26 @@ def run_plugins(config: Scenario, parser: BaseParser, system: System) -> System:
         return system
 
     logger.info("Running the following plugins: {}", config.plugins)
-    for plugin in config.plugins:
-        module = importlib.import_module(f".{plugin}", DEFAULT_PLUGIN_PATH)
-        if hasattr(module, "update_system"):
-            plugin_required_args = inspect.getfullargspec(module.update_system).args
-            plugin_config_args = {
-                key: value for key, value in config.__dict__.items() if key in plugin_required_args
-            }
-            system = module.update_system(config=config, parser=parser, system=system, **plugin_config_args)
+    for sysmod_name in config.plugins:
+        # Load the system modifier function
+        sysmod_func = pm.get_system_modifier(sysmod_name)
+        # Inspect the system modifier function for arguments
+        sysmod_required_args = inspect.getfullargspec(sysmod_func).args
+        # Lookup the required arguments in the config
+        sysmod_config_args = {
+            key: value for key, value in config.__dict__.items() if key in sysmod_required_args
+        }
+
+        # update the system
+        system = sysmod_func(config=config, system=system, parser=parser, **sysmod_config_args)
+
     return system
 
 
 def run_exporter(config: Scenario, system: System) -> None:
     """Create exporter model."""
     assert config.output_model
-    exporter_class = exporter_list.get(config.output_model, None)
+    exporter_class = pm.load_exporter(config.output_model)
     if not exporter_class:
         raise KeyError(f"Exporter for {config.output_model} not found")
 

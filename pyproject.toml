@@ -31,7 +31,7 @@ dependencies = [
     "jsonschema~=4.23",
     "loguru~=0.7.2",
     "pandas>=2.2",
-    "plexosdb~=1.0.0",
+    "plexosdb~=1.1.0",
     "polars~=1.1.0",
     "pyyaml~=6.0.1",
     "rich~=13.7.1",
@@ -54,6 +54,7 @@ dev = [
     "ruff~=0.9",
     "types-pyyaml>=6.0.12.20240917",
     "bump2version>=1.0.1",
+    "pytest-xdist>=3.6.1",
 ]
 docs = [
     "autodoc-pydantic>=2.2.0",
@@ -156,3 +157,6 @@ markers = [
 omit = [
     "tests/*",
     ]
+
+[tool.uv.sources]
+infrasys = { git = "https://github.com/NREL/infrasys", branch = "release/v1.0.0" }
