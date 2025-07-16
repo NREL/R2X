@@ -61,6 +61,7 @@ from r2x.models import (
     TransmissionInterfaceMap,
     UpDown,
 )
+from r2x.plugin_manager import PluginManager
 from r2x.units import ureg
 from r2x.utils import get_enum_from_string, get_pint_unit, validate_string
 
@@ -81,8 +82,6 @@ from .plexos_utils import (
     time_slice_handler,
 )
 from .polars_helpers import pl_filter_by_year
-from r2x.plugin_manager import PluginManager
-
 
 models = importlib.import_module("r2x.models")
 
@@ -1492,7 +1491,7 @@ class PlexosParser(PCMParser):
                     record["max_active_power"] = SingleTimeSeries.from_array(
                         record["max_active_power"].data,
                         name="max_active_power",
-                        initial_timestamp=rating_factor.initial_time,
+                        initial_timestamp=rating_factor.initial_timestamp,
                         resolution=rating_factor.resolution,
                     )
             else:

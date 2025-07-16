@@ -265,13 +265,10 @@
       "fuel": "COAL",
       "type": "ST"
     },
-<<<<<<< HEAD
     "coaloldscr-igcc_coal-ccs_mod": {
       "fuel": "COAL",
       "type": "ST"
     },
-=======
->>>>>>> 72bf754 (Add fuel and prime-mover for coaloldscr_coal-ccs_mod)
     "coaloldscr_coal-ccs_mod": {
       "fuel": "COAL",
       "type": "ST"
