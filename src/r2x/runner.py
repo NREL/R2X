@@ -57,6 +57,7 @@ def run_parser(config: Scenario, **kwargs):
         raise KeyError(f"Parser for {config.input_model} not found")
 
     parser = get_parser_data(config, parser_class, **kwargs)
+
     system = parser.build_system()
 
     assert system is not None, "System failed to create"

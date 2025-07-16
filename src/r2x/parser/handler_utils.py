@@ -62,6 +62,13 @@ def csv_handler(fpath: Path, csv_file_encoding="utf8", **kwargs) -> pl.DataFrame
             infer_schema_length=10_000_000,
             encoding=csv_file_encoding,
         )
+        if fpath.name == "switches.csv":
+            if not data_file.filter(data_file["AWS"] == "gsw_precombustion").height:
+                precombustion_switch = pl.DataFrame(
+                    [{"AWS": "gsw_precombustion", "0": "false"}]
+                )  # default value "false"
+                data_file = pl.concat([data_file, precombustion_switch])
+
     except FileNotFoundError:
         msg = f"File {fpath} not found."
         logger.error(msg)

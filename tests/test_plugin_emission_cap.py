@@ -139,11 +139,12 @@ def test_update_system_using_cli(test_system):
 def test_emission_source(test_system, caplog):
     config, system, parser = test_system
 
-    # Manually adding the switch
-    # NOTE: We might need to modify this if we change the parsing of this file
-    # https://github.com/NREL/R2X/issues/177
-    adding_precombustion_switch = polars.DataFrame([{"aws": "gsw_precombustion", "0": "true"}])
-    parser.data["switches"] = polars.concat([parser.data["switches"], adding_precombustion_switch])
+    parser.data["switches"] = parser.data["switches"].with_columns(
+        polars.when(polars.col("aws") == "gsw_precombustion")
+        .then(polars.lit("true"))  # change "gsw_precombustion" to true
+        .otherwise(polars.col("0"))
+        .alias("0")
+    )
     # Adding precombustion to the first generator
     adding_precombustion_entry = polars.DataFrame(
         [
