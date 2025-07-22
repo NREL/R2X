@@ -49,74 +49,64 @@ def update_system(
         logger.debug("Using custom defaults from {}", pcm_defaults_fpath)
         pcm_defaults: dict = read_json(pcm_defaults_fpath)
 
-    if 'battery' in pcm_defaults.keys():
-        reference_data = (
-            pd.DataFrame.from_dict(pcm_defaults)
-            .transpose()
-            # .reset_index()
-            # .rename(
-            #     columns={
-            #         "index": "tech",
-            #     }
-            # )
-        )
-    else:
-        reference_data = (
-            pd.concat({
-                k: pd.DataFrame(v).transpose()
-                for k,v
-                in pcm_defaults.items()
-            }, axis=0)
-            # .reset_index()
-            # .rename(
-            #     columns={
-            #         "level_0": "region",
-            #         "level_1": "tech"
-            #     }
-            # )
-        )
+    reference_data_old = (
+        pd.concat({
+            k: pd.DataFrame(v).transpose()
+            for k,v
+            in pcm_defaults['old'].items()
+        }, axis=0)
+    )
+    reference_data_new = (
+        pd.concat({
+            k: pd.DataFrame(v).transpose()
+            for k,v
+            in pcm_defaults['new'].items()
+        }, axis=0)
+    )
 
-    if isinstance(reference_data, pd.Index):
-        reference_data.loc[reference_data.index.str.startswith("battery"), "mean_time_to_repair"] = (
-            config.input_config.defaults["storage_mean_time_to_repair"]
-        )
-        reference_data.loc[reference_data.index.str.startswith("hyd"), "mean_time_to_repair"] = (
-            config.input_config.defaults["hydro_mean_time_to_repair"]
-        )
-        reference_data.loc[reference_data.index.str.startswith("hyd"), "max_ramp_up_percentage"] = (
-            config.input_config.defaults["hydro_ramp_rate"] * 100
-        )
-        reference_data.loc[reference_data.index.str.endswith("nd"), "min_stable_level_percentage"] = 1
+    for reference_data in [reference_data_old, reference_data_new]:
+        # Rename columns on the file itself and remove this
+        reference_data = reference_data.loc[
+            :,
+            [
+                "min_stable_level_percentage",
+                "start_cost_per_MW",
+                "shutdown_cost_per_MW",
+                "max_ramp_up_percentage",
+                "mean_time_to_repair",
+                "min_down_time",
+                "min_up_time",
+                "maintenance_rate",
+                "forced_outage_rate",
+                "fom_cost",
+                "heat_rate",
+                "vom_cost"
+            ],
+        ]
+        dtypes = {
+            "min_stable_level_percentage": "float",
+            "start_cost_per_MW": "float",
+            "shutdown_cost_per_MW": "float",
+            "max_ramp_up_percentage": "float",
+            "mean_time_to_repair": "float",
+            "min_down_time": "float",
+            "min_up_time": "float",
+            "maintenance_rate": "float",
+            "forced_outage_rate": "float",
+            "fom_cost": "float",
+            "heat_rate": "float",
+            "vom_cost": "float"
+        }
+        reference_data = reference_data.astype(dtypes)
 
-    # Rename columns on the file itself and remove this
-    reference_data = reference_data.loc[
-        :,
-        [
-            "min_stable_level_percentage",
-            "start_cost_per_MW",
-            "max_ramp_up_percentage",
-            "mean_time_to_repair",
-            "min_down_time",
-            "min_up_time",
-            "maintenance_rate",
-            "forced_outage_rate",
-        ],
-    ]
-    dtypes = {
-        "min_stable_level_percentage": "float",
-        "start_cost_per_MW": "float",
-        "max_ramp_up_percentage": "float",
-        "mean_time_to_repair": "float",
-        "min_down_time": "float",
-        "min_up_time": "float",
-        "maintenance_rate": "float",
-        "forced_outage_rate": "float",
-    }
-    reference_data = reference_data.astype(dtypes)
-
-    reference_categories = reference_data.index.unique()
+        reference_categories = reference_data.index.unique()
 
     for component in system.get_components(Generator):
+        if 'init' in component.ext['reeds_vintage']:
+            reference_data = reference_data_old
+        else:
+            reference_data = reference_data_new
+
         reeds_tech = getattr(component, "ext").get("reeds_tech")
         if isinstance(reference_categories[0], str):
             if reeds_tech not in reference_categories:
@@ -199,4 +189,14 @@ def update_system(
         valid_fields = {key: value for key, value in values_to_add.items() if key in component.model_fields}
         for key, value in valid_fields.items():
             setattr(component, key, value)
+            
+        if fom_cost := wecc_data_row.get("fom_cost"):
+            component.operation_cost.fixed = fom_cost
+
+        if heat_rate := wecc_data_row.get("heat_rate"):
+            component.operation_cost.variable.value_curve.function_data.proportional_term = heat_rate
+
+        if vom_cost := wecc_data_row.get("vom_cost"):
+            component.operation_cost.variable.vom_cost.function_data.proportional_term = vom_cost
+
     return system

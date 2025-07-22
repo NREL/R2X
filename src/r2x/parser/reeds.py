@@ -553,6 +553,14 @@ class ReEDSParser(BaseParser):
                     row["operation_cost"] = ThermalGenerationCost(
                         variable=fuel_curve,
                     )
+                else:
+                    row["operation_cost"] = ThermalGenerationCost(
+                        variable=CostCurve(
+                            value_curve=LinearCurve(vom_price),
+                            power_units=UnitSystem.NATURAL_UNITS,
+                        )
+                    )
+
             if issubclass(gen_model, HydroGen):
                 row["operation_cost"] = HydroGenerationCost(
                     variable=CostCurve(

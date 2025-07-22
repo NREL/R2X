@@ -1075,10 +1075,13 @@ def apply_operation_cost(component: dict) -> dict[str, Any]:
         return component
     match cost["class_type"]:
         case "ThermalGenerationCost":
-            if shut_down := cost.get("start_up"):
-                component["Start Cost"] = shut_down
+            if start_up := cost.get("start_up"):
+                component["Start Cost"] = start_up
             if shut_down := cost.get("shut_down"):
                 component["Shutdown Cost"] = shut_down
+            if fom_cost := cost.get("fixed"):
+                component["fom_cost"] = fom_cost
+                component["FO&M Charge"] = fom_cost
 
             if cost.get("variable"):
                 component = _variable_type_parsing(component, cost)

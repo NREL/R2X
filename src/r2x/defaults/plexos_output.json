@@ -31,6 +31,7 @@
     "Pump Load": "MW",
     "Start Cost": "$",
     "UoS Charge": "$/MWh",
+    "FO&M Charge": "$/kW/yr",
     "VO&M Charge": "$/MWh",
     "VoLL": "$/MWh",
     "Wheeling Charge": "$/MWh",
@@ -52,6 +53,7 @@
     "Commit",
     "Fixed Load",
     "Forced Outage Rate",
+    "FO&M Charge",
     "Heat Rate",
     "Maintenance Rate",
     "Max Capacity",
@@ -126,6 +128,7 @@
     "time_frame": "Timeframe",
     "voll": "VoLL",
     "vom_price": "VO&M Charge",
+    "fom_cost": "FO&M Charge",
     "vors": "VoRS",
     "x": "Reactance"
   },
