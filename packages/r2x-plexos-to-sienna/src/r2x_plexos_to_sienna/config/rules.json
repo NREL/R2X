@@ -162,8 +162,8 @@
   {
     "defaults": {
       "category": "two-terminal-hvdc-line",
-      "reactance": 0.0,
-      "resistance": 0.0
+      "x": 0.0,
+      "r": 0.0
     },
     "field_map": {
       "active_power_flow": "fixed_flow",
@@ -194,8 +194,7 @@
   },
   {
     "defaults": {
-      "category": "transformer-2w",
-      "susceptance": 0.0
+      "category": "transformer-2w"
     },
     "field_map": {
       "name": "name",
@@ -211,8 +210,7 @@
       "reactive_power_flow": "get_trf_reactive_power_flow",
       "primary_shunt": "get_trf_primary_shunt",
       "base_power": "get_trf_base_power",
-      "winding_group_number": "get_trf_winding_group_number",
-      "control_objective": "get_trf_control_objective"
+      "winding_group_number": "get_trf_winding_group_number"
     },
     "source_type": "PLEXOSTransformer",
     "target_type": "Transformer2W",
@@ -220,9 +218,7 @@
   },
   {
     "defaults": {
-      "ac_tap_ratio": 1.0,
-      "category": "tap-transformer",
-      "susceptance": 0.0
+      "category": "tap-transformer"
     },
     "field_map": {
       "name": "name",
@@ -248,9 +244,7 @@
   },
   {
     "defaults": {
-      "ac_tap_ratio": 1.0,
-      "category": "phase-shifting-transformer",
-      "susceptance": 0.0
+      "category": "phase-shifting-transformer"
     },
     "field_map": {
       "name": "name",
@@ -266,7 +260,6 @@
       "active_power_flow": "get_trf_active_power_flow",
       "reactive_power_flow": "get_trf_reactive_power_flow",
       "primary_shunt": "get_trf_primary_shunt",
-      "winding_group_number": "get_trf_winding_group_number",
       "control_objective": "get_trf_control_objective"
     },
     "source_type": "PLEXOSTransformer",
@@ -460,14 +453,12 @@
       "initial_level": 0.5
     },
     "field_map": {
-      "initial_storage": "initial_level",
-      "rating": "rating",
+      "initial_level": "initial_level",
       "category": "category",
       "name": "name",
       "uuid": "uuid"
     },
     "getters": {
-      "bus": "get_gen_bus",
       "services": "get_device_services",
       "operation_cost": "get_hydro_reservoir_operation_cost"
     },
