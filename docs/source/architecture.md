@@ -3,17 +3,13 @@
 R2X is the translation layer in the broader r2x model-interoperability
 workflow. Each stage has a focused responsibility:
 
-```text
-source model
-    │
-    ▼
-parser package  ──>  r2x_core.System  ──>  R2X translation plugin
-                                                    │
-                                                    ▼
-                                            target r2x_core.System
-                                                    │
-                                                    ▼
-                                             exporter package
+```mermaid
+flowchart LR
+    source[Source model] --> parser[Parser package]
+    parser --> system[r2x_core.System]
+    system --> translation[R2X translation plugin]
+    translation --> target[Target r2x_core.System]
+    target --> exporter[Exporter package]
 ```
 
 ## Package boundaries
@@ -33,7 +29,7 @@ Each package under `packages/` has the same broad shape:
 - `translation.py` exposes the public translation function.
 - `plugin_config.py` defines the typed configuration accepted by that function.
 - `config/rules.json` contains declarative source-to-target mappings.
-- `getters.py` and `getters_utils.py` contain derived-field and post-processing logic.
+- Getter and post-processing modules contain derived-field and integration logic. Their names are package-specific, such as `getters.py`, `getter_utils.py`, or `getters_mappings.py`.
 - `tests/` exercises translation behavior and important edge cases.
 
 For example, `r2x-reeds-to-plexos` exposes
