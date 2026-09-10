@@ -22,7 +22,7 @@ flowchart LR
 | Interoperability | Maps source components and fields to target components and attaches derived data. | This repository |
 | Exporter | Writes a target system to its native format. | [`r2x-plexos`](https://github.com/NatLabRockies/r2x-plexos), [`r2x-sienna`](https://github.com/NatLabRockies/r2x-sienna) |
 
-## Translation package structure
+## Interoperability package structure
 
 Each package under `packages/` has a related shape, with package-specific differences:
 
