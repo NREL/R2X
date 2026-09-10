@@ -1,0 +1,33 @@
+{
+  "sidebar": [
+    {
+      "label": "Start here",
+      "items": [
+        { "label": "Introduction", "link": "/" },
+        { "label": "Getting started", "link": "/tutorials/getting-started/" }
+      ]
+    },
+    {
+      "label": "Translation workflows",
+      "items": [
+        { "label": "Workflow overview", "link": "/how-to/" },
+        { "label": "ReEDS to PLEXOS", "link": "/how-to/reeds-to-plexos/" },
+        { "label": "ReEDS to Sienna", "link": "/how-to/reeds-to-sienna/" },
+        { "label": "PLEXOS to Sienna", "link": "/how-to/plexos-to-sienna/" },
+        { "label": "Sienna to PLEXOS", "link": "/how-to/sienna-to-plexos/" }
+      ]
+    },
+    {
+      "label": "Reference",
+      "items": [{ "label": "Changelog", "link": "/reference/changelog/" }]
+    },
+    {
+      "label": "Explanation",
+      "items": [{ "label": "Architecture", "link": "/explanation/architecture/" }]
+    },
+    {
+      "label": "Contributors",
+      "items": [{ "label": "Development", "link": "/how-to/development/" }]
+    }
+  ]
+}

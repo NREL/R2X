@@ -1,4 +1,7 @@
-# Development
+---
+title: Development
+description: Maintain R2X translation packages and documentation.
+---
 
 This page covers the repository workflow for updating translation packages and
 keeping the documentation accurate.
@@ -63,7 +66,7 @@ source system and verifies the target system. Add a workflow page with:
 - validation or expected-output guidance; and
 - known limitations, if the implementation has any.
 
-Add the page to `docs/source/dev_workflow.md` and the documentation site
+Add the page to `docs/src/content/docs/how-to/index.mdx` and the documentation site
 navigation when the Astro site is present.
 
 ## Documentation structure
@@ -81,7 +84,12 @@ place verification immediately after the action it checks.
 ## Add and maintain translations
 
 Documentation translations are maintained as parallel pages, not as machine
-translated output committed without review. When adding a language:
+translated output committed without review. The current site has English as
+its default locale. Add future locales through the `locales` configuration in
+`docs/astro.config.mjs`, then mirror the content tree under the locale directory
+used by Starlight.
+
+When adding a language:
 
 1. Copy the current English page into the language-specific documentation
    location defined by the site configuration.
@@ -90,7 +98,7 @@ translated output committed without review. When adding a language:
    text, but do not translate package names, Python identifiers, CLI commands,
    file paths, or configuration keys.
 3. Add the translated page to the same sidebar position as the English page and
-   add the language to the site language selector when the site supports one.
+   add the language to the site language selector.
 4. Record the English source page and its source revision in the translated
    page's frontmatter or maintenance metadata. This makes stale translations
    discoverable after an English update.
