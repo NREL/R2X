@@ -16,34 +16,45 @@ flowchart LR
 
 | Layer | Responsibility | Examples |
 | --- | --- | --- |
-| CLI | Discovers plugins, manages the Python environment, and runs pipelines. | `r2x-cli` |
-| Parser | Reads a source format into an `r2x_core.System`. | `r2x-reeds`, `r2x-plexos`, `r2x-sienna` |
-| Core | Provides the shared `System`, `PluginContext`, `Rule`, and rule-engine APIs. | `r2x-core` |
-| Translation | Maps source components and fields to target components and attaches derived data. | This repository |
-| Exporter | Writes a target system to its native format. | `r2x-plexos`, `r2x-sienna` |
+| CLI | Discovers plugins, manages the Python environment, and runs pipelines. | [`r2x-cli`](https://github.com/NatLabRockies/r2x-cli) |
+| Parser | Reads a source format into an `r2x_core.System`. | [`r2x-reeds`](https://github.com/NatLabRockies/r2x-reeds), [`r2x-plexos`](https://github.com/NatLabRockies/r2x-plexos), [`r2x-sienna`](https://github.com/NatLabRockies/r2x-sienna) |
+| Core | Provides the shared `System`, `PluginContext`, `Rule`, and rule-engine APIs. | [`r2x-core`](https://github.com/NatLabRockies/r2x-core) |
+| Interoperability | Maps source components and fields to target components and attaches derived data. | This repository |
+| Exporter | Writes a target system to its native format. | [`r2x-plexos`](https://github.com/NatLabRockies/r2x-plexos), [`r2x-sienna`](https://github.com/NatLabRockies/r2x-sienna) |
 
 ## Translation package structure
 
-Each package under `packages/` has the same broad shape:
+Each package under `packages/` has a related shape, with package-specific differences:
 
-- `translation.py` exposes the public translation function.
+- `translation.py` exposes the public interoperability function.
 - `plugin_config.py` defines the typed configuration accepted by that function.
-- `config/rules.json` contains declarative source-to-target mappings.
-- Getter and post-processing modules contain derived-field and integration logic. Their names are package-specific, such as `getters.py`, `getter_utils.py`, or `getters_mappings.py`.
+- `config/` contains package configuration artifacts. Depending on the package,
+  this includes `defaults.json`, `rules.json`, and configuration package helpers.
+- Getter and post-processing modules contain derived-field and integration logic.
+  Their names are package-specific, such as `getters.py`, `getter_utils.py`,
+  `getters_utils.py`, or `getters_mappings.py`.
 - `tests/` exercises translation behavior and important edge cases.
+
+For the shared configuration and plugin conventions, see the
+[`r2x-core` plugin-system documentation](https://natlabrockies.github.io/r2x-core/explanations/plugin-system/)
+and [`r2x-core` rules documentation](https://natlabrockies.github.io/r2x-core/explanations/rules-system/).
 
 For example, `r2x-reeds-to-plexos` exposes
 `reeds_to_plexos(system, config)`. It loads its rules, creates the target PLEXOS
 system, applies the mappings, and then attaches reserve, generator, region-load,
-and purchaser time series.
+and purchaser time series. The other packages follow the same public-function
+pattern while their configuration artifacts and post-processing modules differ.
 
 ## Rules and getters
 
 Rules handle direct field mappings, defaults, source and target component types,
 and filters. Getter functions handle values that require computation or context,
 such as unit conversion, commitment status, outage rates, memberships, and
-name resolution. Keep these responsibilities separate: put a stable mapping in
-`rules.json`, and put computation that needs code or context in a getter.
+name resolution. Supplemental attributes and post-processing helpers handle
+relationships and data that cannot be represented by a simple field mapping.
+Keep these responsibilities separate: put a stable mapping in `rules.json`,
+put computed values in a getter, and use the package's post-processing helpers
+for integration-specific work.
 
 When a mapping changes, update the rule and the behavior-focused tests together.
 When a getter changes, test both its returned value and the resulting target
