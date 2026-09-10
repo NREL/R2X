@@ -1,0 +1,16 @@
+{
+  "name": "r2x-docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "astro build",
+    "dev": "astro dev",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.39.3",
+    "astro": "^6.4.4",
+    "starlight-theme-celestia": "0.2.4",
+    "starlight-versions": "^0.9.0"
+  }
+}

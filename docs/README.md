@@ -1,27 +1,25 @@
 # R2X documentation
 
-The R2X documentation helps users choose and run a model translation and helps
-contributors extend the translation packages. Start with the page that matches
-your goal:
+This directory contains the Astro and Starlight documentation site for R2X.
 
-## User guides
+## Develop the site
 
-- [Getting started](source/getting_started.md): install a translation plugin,
-  check the available packages, and choose a workflow.
-- [Translation workflows](source/dev_workflow.md): run an end-to-end Python
-  translation with the required parser, translator, and exporter packages.
+```bash
+npm ci
+npm run dev
+```
 
-## Explanations
+Build the static site with the same command used by CI:
 
-- [Architecture](source/architecture.md): understand the boundaries between
-  the `r2x-cli`, parser, translation, and exporter packages.
+```bash
+npm run build
+```
 
-## Contributor guidance
+The site source lives under `src/content/docs/`. Content is organized into
+Starlight's tutorial, how-to, explanation, and reference sections. The
+`src/content/docs/2-0-0/` tree is the archived v2.0.0 documentation and
+`src/content/versions/2-0-0.json` defines its sidebar.
 
-- [Development](source/development.md): set up the repository, run checks, and
-  add or maintain a translation package.
-- [Changelog](source/CHANGELOG.md): review released changes.
-
-The published site is built from the Markdown files under `docs/source/`. Keep
-examples and package names aligned with the package source and its public
-configuration classes.
+Keep the current documentation and archived version synchronized when a change
+applies to both. See the [development guide](src/content/docs/how-to/development.mdx)
+for translation maintenance guidance and documentation authoring rules.

@@ -1,0 +1,34 @@
+:root {
+  --sl-color-accent-low: #d9effa;
+  --sl-color-accent: #0079c2;
+  --sl-color-accent-high: #003a69;
+  --sl-color-white: #ffffff;
+  --sl-color-gray-1: #f4f7f9;
+  --sl-color-gray-2: #dfe8ee;
+  --sl-color-gray-3: #9aaebd;
+  --sl-color-gray-4: #526a7b;
+  --sl-color-gray-5: #293d4d;
+  --sl-color-gray-6: #111212;
+  --sl-color-black: #111212;
+}
+
+:root[data-theme="dark"] {
+  --sl-color-accent-low: #102d44;
+  --sl-color-accent: #54b7ee;
+  --sl-color-accent-high: #d9effa;
+  --sl-color-gray-1: #e6edf2;
+  --sl-color-gray-2: #b7c7d2;
+  --sl-color-gray-3: #7890a0;
+  --sl-color-gray-4: #526a7b;
+  --sl-color-gray-5: #293d4d;
+  --sl-color-gray-6: #111212;
+  --sl-color-black: #111212;
+}
+
+.site-title img {
+  max-height: 2.2rem;
+}
+
+.sl-markdown-content a:not(.sl-link-button) {
+  text-decoration-color: color-mix(in srgb, var(--sl-color-accent), transparent 45%);
+}

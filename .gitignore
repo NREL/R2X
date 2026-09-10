@@ -194,3 +194,6 @@ notebooks/
 .worktree
 tags
 uv.lock
+
+docs/dist/
+docs/.astro/
