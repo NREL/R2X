@@ -1,0 +1,54 @@
+# Architecture
+
+R2X is the translation layer in the broader r2x model-interoperability
+workflow. Each stage has a focused responsibility:
+
+```text
+source model
+    │
+    ▼
+parser package  ──>  r2x_core.System  ──>  R2X translation plugin
+                                                    │
+                                                    ▼
+                                            target r2x_core.System
+                                                    │
+                                                    ▼
+                                             exporter package
+```
+
+## Package boundaries
+
+| Layer | Responsibility | Examples |
+| --- | --- | --- |
+| CLI | Discovers plugins, manages the Python environment, and runs pipelines. | `r2x-cli` |
+| Parser | Reads a source format into an `r2x_core.System`. | `r2x-reeds`, `r2x-plexos`, `r2x-sienna` |
+| Core | Provides the shared `System`, `PluginContext`, `Rule`, and rule-engine APIs. | `r2x-core` |
+| Translation | Maps source components and fields to target components and attaches derived data. | This repository |
+| Exporter | Writes a target system to its native format. | `r2x-plexos`, `r2x-sienna` |
+
+## Translation package structure
+
+Each package under `packages/` has the same broad shape:
+
+- `translation.py` exposes the public translation function.
+- `plugin_config.py` defines the typed configuration accepted by that function.
+- `config/rules.json` contains declarative source-to-target mappings.
+- `getters.py` and `getters_utils.py` contain derived-field and post-processing logic.
+- `tests/` exercises translation behavior and important edge cases.
+
+For example, `r2x-reeds-to-plexos` exposes
+`reeds_to_plexos(system, config)`. It loads its rules, creates the target PLEXOS
+system, applies the mappings, and then attaches reserve, generator, region-load,
+and purchaser time series.
+
+## Rules and getters
+
+Rules handle direct field mappings, defaults, source and target component types,
+and filters. Getter functions handle values that require computation or context,
+such as unit conversion, commitment status, outage rates, memberships, and
+name resolution. Keep these responsibilities separate: put a stable mapping in
+`rules.json`, and put computation that needs code or context in a getter.
+
+When a mapping changes, update the rule and the behavior-focused tests together.
+When a getter changes, test both its returned value and the resulting target
+component or time series where feasible.
