@@ -1,12 +1,15 @@
 import { defineConfig } from "astro/config";
+import mermaid from "astro-mermaid";
 import starlight from "@astrojs/starlight";
 import starlightVersions from "starlight-versions";
-import starlightCelestiaTheme from "starlight-theme-celestia";
+import { unified } from "@astrojs/markdown-remark";
 
 export default defineConfig({
-  site: "https://natlabrockies.github.io/R2X/",
+  site: "https://natlabrockies.github.io",
   base: "/R2X/",
+  markdown: { processor: unified() },
   integrations: [
+    mermaid({ enableLog: false }),
     starlight({
       title: "R2X",
       description: "Translation plugins for ReEDS, PLEXOS, and Sienna model interoperability.",
@@ -14,32 +17,32 @@ export default defineConfig({
         light: "./src/assets/r2x-logo-full-color.svg",
         dark: "./src/assets/r2x-logo-white.svg",
         alt: "R2X",
+        replacesTitle: true,
       },
       social: [{ icon: "github", label: "GitHub", href: "https://github.com/NatLabRockies/R2X" }],
       editLink: {
         baseUrl: "https://github.com/NatLabRockies/R2X/edit/main/",
       },
       customCss: ["./src/styles/brand.css"],
-      components: {
-        SiteTitle: "./src/components/SiteTitleVersioned.astro",
-      },
       plugins: [
-        starlightCelestiaTheme(),
         starlightVersions({
-          current: { label: "v2.2.0" },
-          versions: [{ slug: "2-0-0", label: "v2.0.0" }],
+          current: { label: "Latest (main)" },
+          versions: [
+            { slug: "2-2-0", label: "v2.2.0", redirect: "root" },
+            { slug: "2-0-0", label: "v2.0.0", redirect: "root" },
+          ],
         }),
       ],
       sidebar: [
         {
-          label: "Start here",
+          label: "Tutorials",
           items: [
             { label: "Introduction", link: "/" },
             { label: "Getting started", link: "/tutorials/getting-started/" },
           ],
         },
         {
-          label: "Translation workflows",
+          label: "How-to guides",
           items: [
             { label: "Workflow overview", link: "/how-to/" },
             { label: "ReEDS to PLEXOS", link: "/how-to/reeds-to-plexos/" },
@@ -50,7 +53,14 @@ export default defineConfig({
         },
         {
           label: "Reference",
-          items: [{ label: "Changelog", link: "/reference/changelog/" }],
+          items: [
+            { label: "Python API", link: "/reference/python-api/" },
+            { label: "ReEDS to PLEXOS properties", link: "/reference/reeds-to-plexos-properties/" },
+            { label: "ReEDS to Sienna properties", link: "/reference/reeds-to-sienna-properties/" },
+            { label: "PLEXOS to Sienna properties", link: "/reference/plexos-to-sienna-properties/" },
+            { label: "Sienna to PLEXOS properties", link: "/reference/sienna-to-plexos-properties/" },
+            { label: "Changelog", link: "/reference/changelog/" },
+          ],
         },
         {
           label: "Explanation",

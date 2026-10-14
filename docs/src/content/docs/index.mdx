@@ -3,30 +3,38 @@ title: R2X documentation
 description: Translation plugins for ReEDS, PLEXOS, and Sienna model interoperability.
 ---
 
-R2X provides translation plugins for ReEDS, PLEXOS, and Sienna model interoperability.
-
-This repository contains the translation layer in the [`r2x-cli`](https://github.com/NatlabRockies/r2x-cli) ecosystem. For the shared plugin architecture, rule engine, `System`, `DataStore`, and units, see [`r2x-core`](https://nrel.github.io/r2x-core/).
+This repository contains the interoperability layer in the
+[r2x-cli](https://github.com/NatlabRockies/r2x-cli) ecosystem. It connects
+model-specific parsers and exporters through shared
+[`r2x-core`](https://github.com/NatLabRockies/r2x-core) systems, rules, plugins,
+data stores, and units.
 
 ## Start here
 
-- [Getting started](/tutorials/getting-started/) explains installation and how to choose a translation workflow.
-- [Translation workflows](/how-to/) contains end-to-end Python examples.
-- [Architecture](/explanation/architecture/) explains the parser, translation, and exporter boundaries.
-- [Development](/how-to/development/) covers checks, adding translation directions, and maintaining translated documentation.
+- [Getting started](/R2X/tutorials/getting-started/) explains installation and how to choose
+  an interoperability workflow.
+- [Translation workflows](/R2X/how-to/) contains contributor-oriented,
+  end-to-end interoperability examples.
+- [Architecture](/R2X/explanation/architecture/) explains the parser, interoperability, and
+  exporter boundaries.
+- [Development](/R2X/how-to/development/) covers repository checks and changes to
+  interoperability packages.
 
 ## Translation plugins
 
-| Package | Direction | Rules |
-| --- | --- | ---: |
-| [`r2x-reeds-to-plexos`](https://github.com/NatLabRockies/R2X/tree/main/packages/r2x-reeds-to-plexos) | ReEDS → PLEXOS | 34 |
-| [`r2x-reeds-to-sienna`](https://github.com/NatLabRockies/R2X/tree/main/packages/r2x-reeds-to-sienna) | ReEDS → Sienna | — |
-| [`r2x-plexos-to-sienna`](https://github.com/NatLabRockies/R2X/tree/main/packages/r2x-plexos-to-sienna) | PLEXOS → Sienna | 21 |
-| [`r2x-sienna-to-plexos`](https://github.com/NatLabRockies/R2X/tree/main/packages/r2x-sienna-to-plexos) | Sienna → PLEXOS | 44 |
+| Package | Direction |
+| --- | --- |
+| [`r2x-reeds-to-plexos`](https://github.com/NatlabRockies/R2X/tree/main/packages/r2x-reeds-to-plexos) | [ReEDS → PLEXOS](/R2X/how-to/reeds-to-plexos/) · [properties](/R2X/reference/reeds-to-plexos-properties/) |
+| [`r2x-reeds-to-sienna`](https://github.com/NatlabRockies/R2X/tree/main/packages/r2x-reeds-to-sienna) | [ReEDS → Sienna](/R2X/how-to/reeds-to-sienna/) · [properties](/R2X/reference/reeds-to-sienna-properties/) |
+| [`r2x-plexos-to-sienna`](https://github.com/NatlabRockies/R2X/tree/main/packages/r2x-plexos-to-sienna) | [PLEXOS → Sienna](/R2X/how-to/plexos-to-sienna/) · [properties](/R2X/reference/plexos-to-sienna-properties/) |
+| [`r2x-sienna-to-plexos`](https://github.com/NatLabRockies/R2X/tree/main/packages/r2x-sienna-to-plexos) | [Sienna → PLEXOS](/R2X/how-to/sienna-to-plexos/) · [properties](/R2X/reference/sienna-to-plexos-properties/) |
 
-## Model compatibility
 
-| R2X version | Supported inputs | Supported outputs |
-| --- | --- | --- |
-| 2.0 | ReEDS (v2024.8.0) | PLEXOS (9.0, 9.2, 10, 11) |
-|     | Sienna (PSY 4.0) | Sienna (PSY 4.0, 5.0) |
-|     | PLEXOS (9.0, 9.2, 10, 11) | |
+## Compatibility
+
+Use parser and exporter versions compatible with the translation package. Each
+workflow lists its required packages. Historical compatibility information is
+available in the release archives selected from the version menu.
+
+See [architecture](/R2X/explanation/architecture/) for ecosystem boundaries and
+[open issues](https://github.com/NatLabRockies/R2X/issues) for planned work.

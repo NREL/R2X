@@ -1,25 +1,36 @@
 # R2X documentation
 
-This directory contains the Astro and Starlight documentation site for R2X.
+The Astro and Starlight site organizes the current documentation into tutorials,
+how-to guides, reference, and explanation. Search indexes each version separately.
 
-## Develop the site
+## Build and preview
 
-```bash
-npm ci
-npm run dev
-```
-
-Build the static site with the same command used by CI:
+Use Node.js 22.12 or newer and npm. From the repository root, install the locked
+site dependencies and build the pages:
 
 ```bash
-npm run build
+cd docs && npm ci && npm run build
 ```
 
-The site source lives under `src/content/docs/`. Content is organized into
-Starlight's tutorial, how-to, explanation, and reference sections. The
-`src/content/docs/2-0-0/` tree is the archived v2.0.0 documentation and
-`src/content/versions/2-0-0.json` defines its sidebar.
+The build writes `docs/dist/`. From `docs/`, start the local preview:
 
-Keep the current documentation and archived version synchronized when a change
-applies to both. See the [development guide](src/content/docs/how-to/development.mdx)
-for translation maintenance guidance and documentation authoring rules.
+```bash
+npm run preview
+```
+
+Open the printed URL under `/R2X/`. Use `npm run dev` for live editing.
+
+## Content and versions
+
+- Current pages: `src/content/docs/`, grouped by reader task.
+- Release archives: `src/content/docs/2-2-0/` and `src/content/docs/2-0-0/`,
+  migrated from the actual `r2x-v2.2.0` and `r2x-v2.0.0` tags.
+- Version sidebars: `src/content/versions/`.
+- Current navigation and plugins: `astro.config.mjs`.
+
+Use `/R2X/`-prefixed page links so they work on GitHub Pages. The version plugin
+adds the archive prefix for historical content. Link to source on `main` for
+current docs and the matching release tag for archives. Keep release content
+frozen, apart from migration fixes such as links and rendering.
+
+See [development](src/content/docs/how-to/development.mdx) for repository checks.

@@ -71,7 +71,8 @@ jobs:
           persist-credentials: false
 
       - name: Setup uv environment
-        uses: ./.github/actions/setup-uv-env
+        # actionlint 1.7.7 does not support $/ action references yet.
+        uses: ./.github/actions/setup-uv-env  # zizmor: ignore[self-repository]
         with:
           uv-version: ${{ env.UV_VERSION }}
           python-version-file: "pyproject.toml"

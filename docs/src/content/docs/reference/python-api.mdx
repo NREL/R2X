@@ -1,0 +1,31 @@
+---
+title: Python API
+description: Public translation functions, configuration classes, and links to their implementation.
+---
+
+Each translation accepts a parsed `r2x_core.System` and its typed configuration,
+and returns the target `System`. Export the result with the target model package.
+
+| Function | Configuration | Implementation and guide |
+| --- | --- | --- |
+| `r2x_reeds_to_plexos.translation.reeds_to_plexos(system, config)` | [`ReedsToPlexosConfig`](https://github.com/NatLabRockies/R2X/blob/main/packages/r2x-reeds-to-plexos/src/r2x_reeds_to_plexos/plugin_config.py#L12) | [source](https://github.com/NatLabRockies/R2X/blob/main/packages/r2x-reeds-to-plexos/src/r2x_reeds_to_plexos/translation.py#L22) · [workflow](/R2X/how-to/reeds-to-plexos/) |
+| `r2x_reeds_to_sienna.translation.reeds_to_sienna(system, config)` | [`ReEDSToSiennaConfig`](https://github.com/NatLabRockies/R2X/blob/main/packages/r2x-reeds-to-sienna/src/r2x_reeds_to_sienna/plugin_config.py#L12) | [source](https://github.com/NatLabRockies/R2X/blob/main/packages/r2x-reeds-to-sienna/src/r2x_reeds_to_sienna/translation.py#L24) · [workflow](/R2X/how-to/reeds-to-sienna/) |
+| `r2x_plexos_to_sienna.translation.plexos_to_sienna(system, config)` | [`PlexosToSiennaConfig`](https://github.com/NatLabRockies/R2X/blob/main/packages/r2x-plexos-to-sienna/src/r2x_plexos_to_sienna/plugin_config.py#L12) | [source](https://github.com/NatLabRockies/R2X/blob/main/packages/r2x-plexos-to-sienna/src/r2x_plexos_to_sienna/translation.py#L17) · [workflow](/R2X/how-to/plexos-to-sienna/) |
+| `r2x_sienna_to_plexos.translation.sienna_to_plexos(system, config)` | [`SiennaToPlexosConfig`](https://github.com/NatLabRockies/R2X/blob/main/packages/r2x-sienna-to-plexos/src/r2x_sienna_to_plexos/plugin_config.py#L12) | [source](https://github.com/NatLabRockies/R2X/blob/main/packages/r2x-sienna-to-plexos/src/r2x_sienna_to_plexos/translation.py#L37) · [workflow](/R2X/how-to/sienna-to-plexos/) |
+
+`system` must contain the source component classes and time series expected by
+the workflow. An empty `System` is not a complete model. Configuration classes
+resolve source and target models through their `models` field.
+
+## Hydro budget resolution
+
+`ReedsToPlexosConfig.hydro_budget_ts` defaults to `"daily"`.
+`SiennaToPlexosConfig.hydro_budget_ts` defaults to `"weekly"`.
+Both accept `"hourly"`, `"daily"`, `"weekly"`, and `"monthly"`.
+
+The property-reference pages link to each package's `config/rules.json`, which
+specifies direct fields, computed getters, filters, and defaults. Use the
+configuration and implementation links above for the complete current contract.
+
+For shared `System`, `PluginContext`, rule, and plugin APIs, see
+[r2x-core](https://natlabrockies.github.io/r2x-core/).

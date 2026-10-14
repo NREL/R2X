@@ -283,7 +283,6 @@ def test_reeds_pumped_hydro_translates_to_turbine_and_reservoirs(tmp_path) -> No
         HydroPumpTurbine,
         HydroReservoir,
         ReservoirDataType,
-        ReservoirLocation,
     )
 
     context, rules = make_context_and_rules(tmp_path)
@@ -339,8 +338,6 @@ def test_reeds_pumped_hydro_translates_to_turbine_and_reservoirs(tmp_path) -> No
     assert tail.initial_level == 0.5
     assert head.level_data_type == ReservoirDataType.ENERGY
     assert tail.level_data_type == ReservoirDataType.ENERGY
-    assert head.reservoir_location == ReservoirLocation.HEAD
-    assert tail.reservoir_location == ReservoirLocation.TAIL
     assert head.downstream_turbines == [turbine]
     assert tail.upstream_turbines == [turbine]
 
@@ -493,6 +490,10 @@ def test_reeds_ac_transmission_line_translates_to_monitored_line(tmp_path) -> No
     assert line.rating_c is None
     assert line.r == 0.0
     assert line.x == 0.0
+    assert line.b.from_to == 0.0
+    assert line.b.to_from == 0.0
+    assert line.g.from_to == 0.0
+    assert line.g.to_from == 0.0
     assert line.angle_limits.min == -90.0
     assert line.angle_limits.max == 90.0
     assert line.arc is not None

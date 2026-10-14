@@ -1,6 +1,6 @@
 ---
-title: Translate Sienna to PLEXOS
-description: Set up and run a Sienna-to-PLEXOS translation with the R2X Python API.
+title: Sienna → PLEXOS
+editUrl: false
 ---
 
 Cloning the necessary packages for each translation is important.
@@ -161,3 +161,5 @@ exporter.on_export()
 To export hydro budgets as monthly profiles instead of the default weekly aggregation,
 set `context.config = SiennaToPlexosConfig(hydro_budget_ts="monthly")` before calling
 `ensure_generator_time_series(context)`.
+
+[Source at r2x-v2.2.0](https://github.com/NatLabRockies/R2X/blob/r2x-v2.2.0/docs/source/sienna_to_plexos.md)

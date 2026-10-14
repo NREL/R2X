@@ -1,6 +1,6 @@
 ---
-title: Translate ReEDS to PLEXOS
-description: Set up and run a ReEDS-to-PLEXOS translation with the R2X Python API.
+title: ReEDS → PLEXOS
+editUrl: false
 ---
 
 Cloning the necessary packages for each translation is important.
@@ -197,3 +197,5 @@ ReEDS consuming-demand components (for example `ReEDSElectrolyzerDemand`,
 To export hydro budgets as monthly profiles instead of hourly time series, set
 `context.config = ReedsToPlexosConfig(hydro_budget_ts="monthly")` before calling
 `attach_time_series_to_generators(context)`.
+
+[Source at r2x-v2.2.0](https://github.com/NatLabRockies/R2X/blob/r2x-v2.2.0/docs/source/reeds_to_plexos.md)
