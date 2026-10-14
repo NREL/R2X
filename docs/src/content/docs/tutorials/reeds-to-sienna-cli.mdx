@@ -15,19 +15,56 @@ A ReEDS model and run data are external to this repository; this page's list, re
 
 ## Install and inspect the plugins
 
-From your workspace, install the translation package and its dependencies:
+Run these installation commands from your workspace using the same `r2x`
+executable that will execute the pipeline. First check its managed environment:
+
+```bash
+r2x python show
+```
+
+Install the ReEDS source parser. It reads the completed run directory and supplies
+`reeds-parser`; the translation step cannot read the source files on its own:
+
+```bash
+r2x install r2x-reeds
+```
+
+See the [r2x-reeds reference documentation](https://github.com/NatLabRockies/r2x-reeds/tree/main/docs)
+for parser configuration, input file mappings and supported ReEDS data.
+
+Install the translation package, which maps parsed ReEDS components to Sienna:
 
 ```bash
 r2x install r2x-reeds-to-sienna
 ```
 
-Check the registered entry points before writing the configuration:
+Install the target package explicitly as well. It supplies the Sienna model
+classes and `sienna-exporter` used to write the native result:
 
 ```bash
-r2x list
+r2x install r2x-sienna
 ```
 
-The list should contain the three steps used below. Inspect the parser options to
+Check each package's registered entry points before writing the configuration.
+First, confirm `reeds-parser` is available:
+
+```bash
+r2x list r2x-reeds
+```
+
+Then confirm `reeds-to-sienna`:
+
+```bash
+r2x list r2x-reeds-to-sienna
+```
+
+Finally, confirm `sienna-exporter`:
+
+```bash
+r2x list r2x-sienna
+```
+
+Together, these lists should contain the three steps used below. Inspect the parser options to
 understand which settings locate and select your ReEDS data:
 
 ```bash
