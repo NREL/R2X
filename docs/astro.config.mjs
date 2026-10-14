@@ -8,7 +8,10 @@ export default defineConfig({
   site: "https://natlabrockies.github.io",
   base: "/R2X/",
   markdown: { processor: unified() },
-  redirects: { "/how-to/troubleshooting/": "/R2X/troubleshooting/" },
+  redirects: {
+    "/how-to/troubleshooting/": "/R2X/troubleshooting/",
+    "/reference/changelog/": "/R2X/changelog/",
+  },
   integrations: [
     mermaid({
       enableLog: false,
@@ -73,12 +76,15 @@ export default defineConfig({
             { label: "ReEDS to Sienna properties", link: "/reference/reeds-to-sienna-properties/" },
             { label: "PLEXOS to Sienna properties", link: "/reference/plexos-to-sienna-properties/" },
             { label: "Sienna to PLEXOS properties", link: "/reference/sienna-to-plexos-properties/" },
-            { label: "Changelog", link: "/reference/changelog/" },
           ],
         },
         {
           label: "Explanation",
           items: [{ label: "Architecture", link: "/explanation/architecture/" }],
+        },
+        {
+          label: "Changelog",
+          items: [{ label: "Release history", link: "/changelog/" }],
         },
         {
           label: "Contributors",
