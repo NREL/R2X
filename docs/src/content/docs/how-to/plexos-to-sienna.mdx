@@ -14,25 +14,19 @@ the generator `category` to choose the Sienna generator family. The diagram summ
 
 ```mermaid
 flowchart LR
-    zone[PLEXOSZone] --> loadzone[LoadZone]
-    node[PLEXOSNode] --> bus[ACBus]
-    region[PLEXOSRegion] --> powerload[PowerLoad]
-    region --> area[Area]
-    purchaser[PLEXOSPurchaser] --> powerload
-    reserve[PLEXOSReserve] --> variableReserve[VariableReserve]
-    line[PLEXOSLine] --> lineTarget[Line / MonitoredLine / HVDC]
-    transformer[PLEXOSTransformer] --> transformerTarget[Transformer2W / Tap / Phase-Shifting]
-    interface[PLEXOSInterface] --> transmission[TransmissionInterface]
-    battery[PLEXOSBattery] --> batteryTarget[EnergyReservoirStorage]
-    storage[PLEXOSStorage] --> reservoir[HydroReservoir]
-
-    generator[PLEXOSGenerator] --> thermal[gas-cc, gas-ct, coal, nuclear, biomass<br/>ThermalStandard]
-    generator --> multiStart[thermal-multi-start<br/>ThermalMultiStart]
-    generator --> hydro[hydro, hyd, hydro-d, hydro-and<br/>HydroDispatch]
-    generator --> hydroTurbine[pumped-hydro, egs, rtes<br/>HydroTurbine]
-    generator --> renewable[wind, solar, upv, dupv, csp<br/>RenewableDispatch]
-    generator --> nonDispatch[distpv, rooftop, pvnsg<br/>RenewableNonDispatch]
-    generator --> condenser[synchronous-condenser, syncon<br/>SynchronousCondenser]
+  P["PLEXOS objects"] --> N["Network + loads"]
+  P --> C{"Generator category"}
+  C --> G["Thermal, hydro or renewable"]
+  N --> S["Sienna components"]
+  G --> S
+  class P source
+  class N,G process
+  class S target
+  class C data
+  classDef source fill:#d9effa,stroke:#0079c2,color:#003a69,stroke-width:2px
+  classDef process fill:#f4f7f9,stroke:#7890a0,color:#293d4d
+  classDef target fill:#003a69,stroke:#003a69,color:#ffffff,stroke-width:2px
+  classDef data fill:#fff7e6,stroke:#c58625,color:#684716
 ```
 
 ### Generator Category Families
@@ -81,6 +75,7 @@ setup_logging(verbosity=2)
 
 case_name = "20241018_2023system_EI_ba"
 folder_path = Path(f"/path/to/{case_name}")
+model_year = 2012
 
 # PLEXOS PARSER
 xml_path = folder_path / "20241018_2023system_EI_ba.xml"
@@ -92,7 +87,7 @@ model_name = model_names[0] if model_names else "Base"
 
 plexos_config = PLEXOSConfig(
     model_name=model_name,
-    horizon_year=2012,
+    horizon_year=model_year,
     models=("r2x_plexos.models", "r2x_sienna.models"),
 )
 data_file = DataFile(name="xml_file", fpath=xml_path)
@@ -107,10 +102,9 @@ plexos_sys = plexos_sys_result.system
 sienna_sys = plexos_to_sienna(plexos_sys, PlexosToSiennaConfig())
 
 # Sienna Exporter
-result_path = folder_path / "results"
-output_dir = os.path.dirname(result_path)
-os.makedirs(output_dir, exist_ok=True)
-output_file = f"{folder_path}/{case_name}.json"
+results_dir = folder_path / "results"
+results_dir.mkdir(exist_ok=True)
+output_file = str(results_dir / f"{case_name}.json")
 sienna_config = SiennaConfig(system_name=case_name, model_year=model_year, output_path=output_file)
 
 exporter_context = PluginContext(

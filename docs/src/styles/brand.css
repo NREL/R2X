@@ -34,3 +34,40 @@
 .sl-markdown-content a:not(.sl-link-button) {
   text-decoration-color: color-mix(in srgb, var(--sl-color-accent), transparent 45%);
 }
+
+pre.mermaid {
+  margin-block: 1.5rem;
+  padding: 1.25rem;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 0.75rem;
+  background: var(--sl-color-gray-6);
+  overflow-x: auto;
+}
+
+pre.mermaid svg {
+  display: block;
+  min-width: 38rem;
+  margin-inline: auto;
+}
+
+.configuration-fields {
+  overflow-x: auto;
+}
+
+.configuration-fields table {
+  width: 100%;
+  min-width: 32rem;
+  table-layout: fixed;
+}
+
+.configuration-fields th:first-child {
+  width: 28%;
+}
+
+.configuration-fields th:nth-child(2) {
+  width: 30%;
+}
+
+.configuration-fields code {
+  overflow-wrap: anywhere;
+}

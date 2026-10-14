@@ -6,12 +6,17 @@ R2X is the translation layer in the broader r2x model-interoperability
 workflow. Each stage has a focused responsibility:
 
 ```mermaid
-flowchart LR
-    source[Source model] --> parser[Parser package]
-    parser --> system[r2x_core.System]
-    system --> translation[R2X translation plugin]
-    translation --> target[Target r2x_core.System]
-    target --> exporter[Exporter package]
+sequenceDiagram
+  participant CLI as r2x-cli
+  participant P as Parser
+  participant T as Translation
+  participant E as Exporter
+  CLI->>P: Input files + parser settings
+  P-->>CLI: Source System
+  CLI->>T: Source System + typed configuration
+  T-->>CLI: Target System + time series
+  CLI->>E: Target System + output path
+  E-->>CLI: Native model + companion files
 ```
 
 ## Package boundaries

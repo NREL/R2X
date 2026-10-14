@@ -9,7 +9,14 @@ export default defineConfig({
   base: "/R2X/",
   markdown: { processor: unified() },
   integrations: [
-    mermaid({ enableLog: false }),
+    mermaid({
+      enableLog: false,
+      mermaidConfig: {
+        theme: "base",
+        fontFamily: "system-ui, sans-serif",
+        flowchart: { curve: "basis", nodeSpacing: 35, rankSpacing: 45, padding: 16 },
+      },
+    }),
     starlight({
       title: "R2X",
       description: "Translation plugins for ReEDS, PLEXOS, and Sienna model interoperability.",
@@ -38,7 +45,8 @@ export default defineConfig({
           label: "Tutorials",
           items: [
             { label: "Introduction", link: "/" },
-            { label: "Getting started", link: "/tutorials/getting-started/" },
+            { label: "First CLI pipeline", link: "/tutorials/getting-started/" },
+            { label: "ReEDS with the CLI", link: "/tutorials/reeds-to-sienna-cli/" },
           ],
         },
         {

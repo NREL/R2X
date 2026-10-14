@@ -16,25 +16,19 @@ preserving the information PLEXOS can represent.
 
 ```mermaid
 flowchart LR
-    bus[ACBus] --> node[PLEXOSNode]
-    area[Area] --> region[PLEXOSRegion]
-    zone[LoadZone] --> plexosZone[PLEXOSZone]
-    line[Line] --> plexosLine[PLEXOSLine]
-    monitored[MonitoredLine] --> plexosLine
-    hvdc[TwoTerminalGenericHVDCLine / LCC / VSC] --> plexosLine
-    transformer[Transformer2W / TapTransformer / PhaseShiftingTransformer] --> plexosTransformer[PLEXOSTransformer]
-
-    thermal[ThermalStandard] --> generator[PLEXOSGenerator]
-    multiStart[ThermalMultiStart] --> generator
-    hydro[HydroDispatch] --> generator
-    reservoirGen[HydroEnergyReservoir] --> generator
-    turbine[HydroTurbine / HydroPumpTurbine] --> generator
-    renewable[RenewableDispatch] --> generator
-    nonDispatch[RenewableNonDispatch] --> generator
-    storage[EnergyReservoirStorage] --> battery[PLEXOSBattery]
-    hydroReservoir[HydroReservoir] --> plexosStorage[PLEXOSStorage]
-    reserve[VariableReserve] --> plexosReserve[PLEXOSReserve]
-    interface[TransmissionInterface] --> plexosInterface[PLEXOSInterface]
+  S["Sienna components"] --> N["Resolve topology"]
+  S --> G["Map generator families"]
+  N --> P["PLEXOS objects"]
+  G --> P
+  T["Time series"] -. "aggregate hydro budgets" .-> P
+  class S source
+  class N,G process
+  class P target
+  class T data
+  classDef source fill:#d9effa,stroke:#0079c2,color:#003a69,stroke-width:2px
+  classDef process fill:#f4f7f9,stroke:#7890a0,color:#293d4d
+  classDef target fill:#003a69,stroke:#003a69,color:#ffffff,stroke-width:2px
+  classDef data fill:#fff7e6,stroke:#c58625,color:#684716
 ```
 
 ### Generator Collapse
@@ -67,6 +61,7 @@ the target model and time-series files to the configured results directory.
 
 ```python
 from pathlib import Path
+from typing import cast
 
 from r2x_plexos import PLEXOSConfig
 from r2x_plexos.exporter import PLEXOSExporter

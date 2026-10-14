@@ -45,7 +45,7 @@ jobs:
     steps:
       - name: Run release-please
         id: rp
-        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v4
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           config-file: .release-please-config.json
@@ -66,13 +66,12 @@ jobs:
       # Only need read permissions to checkout and build
       contents: read
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Setup uv environment
-        # actionlint 1.7.7 does not support $/ action references yet.
-        uses: ./.github/actions/setup-uv-env  # zizmor: ignore[self-repository]
+        uses: NatLabRockies/R2X/.github/actions/setup-uv-env@2af872f994b1637b9dd4604d5be2d2edf4efa1c8 # r2x-v2.2.0
         with:
           uv-version: ${{ env.UV_VERSION }}
           python-version-file: "pyproject.toml"
