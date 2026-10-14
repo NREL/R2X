@@ -120,26 +120,16 @@ Check the generated files before loading them:
 ls -lh outputs
 ```
 
-Open the serialized transformed system. This archive is distinct from the native
-Sienna JSON export and contains the component graph and time-series storage:
-
-```bash
-r2x read outputs/my-case-system.zip --zip
-```
-
-Inspect the system summary and component counts against the source run.
-Use `sys.info()` to print the summary again in the interactive session.
-Then follow [inspect a transformed system](/R2X/how-to/inspect-transformed-system/)
-to list buses, inspect load fields, read attached time series, and load the same
-archive directly with Infrasys.
+Follow [inspect a transformed system](/R2X/how-to/inspect-transformed-system/)
+to read the archive with a tested script, list buses, inspect load fields and
+attached time series, and load the same result directly with Infrasys.
 
 ## Troubleshooting and next steps
 
-| Symptom | Action |
-| --- | --- |
-| Missing required dataset | Check the parser's file mapping against the actual run directory, then verify the solve and weather years. |
-| Missing plugin | Inspect `r2x list`. Install the package into the environment reported by `r2x python show`. |
-| Execution fails after dry-run succeeds | Read the log path printed during execution. Retry with `-v` to identify the failing plugin and dataset. |
-| Unexpected generator, reserve, or transmission mapping | Compare the [property reference](/R2X/reference/reeds-to-sienna-properties/) and its pinned source rules with the source components. |
+For missing datasets, unregistered plugins, execution failures after a dry run,
+or result-loading errors, follow [troubleshooting](/R2X/how-to/troubleshooting/).
+For unexpected target mappings, compare the
+[property reference](/R2X/reference/reeds-to-sienna-properties/) with the source
+components and pinned translation rules.
 
 For Python integration and detailed mapping behavior, see [ReEDS to Sienna](/R2X/how-to/reeds-to-sienna/).

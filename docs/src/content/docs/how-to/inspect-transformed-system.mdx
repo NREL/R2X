@@ -154,15 +154,8 @@ for the public save/load API.
 
 ## If loading fails
 
-If a model module cannot be imported, install the matching target package in the
-loading environment and check its version. If time-series storage is missing,
-restore the complete archive or the JSON's sibling storage directory. If the
-schema or SQLite metadata is incompatible, use the environment that wrote the
-artifact or a supported migration path; do not edit serialized metadata by hand.
-
-The minimal transformed fixture used here supports the scripted component and
-time-series queries, but `sys.info()` raises a SQLite error about a missing
-`supplemental_attribute_associations` table. Interactive startup also calls that
-summary in CLI 0.1.15. If you encounter this error, use the tested `--exec`
-checks above and retain the artifact and package versions for a bug report;
-it is not evidence that the component queries returned an empty system.
+Follow [troubleshooting](/R2X/how-to/troubleshooting/) for missing model imports,
+incomplete time-series storage, schema compatibility, and the verified
+[summary metadata error](/R2X/how-to/troubleshooting/#summary-fails-with-supplemental_attribute_associations).
+The scripted queries above work on the transformed fixture even when its summary
+fails; a failed summary does not establish that its components are missing.
