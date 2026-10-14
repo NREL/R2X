@@ -63,7 +63,6 @@ $79/MW PCM default produces $25,280, $25,280, and $4,740.
 > The coordinated corrections are tracked in
 > [ReEDS #114](https://github.com/NatLabRockies/r2x-reeds/pull/114) and
 > [R2X #340](https://github.com/NatLabRockies/R2X/pull/340).
-> Release the corrected ReEDS package first, then R2X.
 
 ## Hydro Budget Resolution
 
