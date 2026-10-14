@@ -1306,7 +1306,7 @@ docs = [
 
 [[package]]
 name = "r2x-core"
-version = "0.7.0"
+version = "0.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "h5py" },
@@ -1317,9 +1317,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "rust-ok" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/4b/71/72226a7b7d84ad6dfacdccbeb1613862fc4f9f34f3a47a5f6fb77899c1d5/r2x_core-0.7.0.tar.gz", hash = "sha256:1d0f3a9c707aeb64b217e11a6582b198034ae2c7c84767d909d585f4e3be0e43", size = 73512, upload-time = "2026-08-10T20:34:08.355Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4d/ce/e2224b14eccaf8a272973ba72b61f6b1a7548faf23e9fe1498a3ad2afd3b/r2x_core-0.9.0.tar.gz", hash = "sha256:af8afe6bb3a00f47d6747f6c613c551887168351ce9ef070fead1faf0a3ef5fd", size = 84821, upload-time = "2026-10-01T04:35:33.382Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ed/86/6e4f5a6ad88266d73bfeea60134fc2e5217eafebc2b83fd1e05ce6d572eb/r2x_core-0.7.0-py3-none-any.whl", hash = "sha256:3c71fc23c0cc0f586e586a91f15d54b46810c691f6b05723eb9881963aad2153", size = 89204, upload-time = "2026-08-10T20:34:06.966Z" },
+    { url = "https://files.pythonhosted.org/packages/2c/a5/f934885c51badc789ee8ca0468feeda1c690e1c31207d8fe8745815dc52a/r2x_core-0.9.0-py3-none-any.whl", hash = "sha256:2e3fe77fdfe7a990dac2e87c1159d7e7c2b9015636df4b510aa78e68499c691a", size = 100252, upload-time = "2026-10-01T04:35:31.61Z" },
 ]
 
 [[package]]
@@ -1348,8 +1348,8 @@ requires-dist = [
 
 [[package]]
 name = "r2x-reeds"
-version = "0.7.0"
-source = { git = "https://github.com/NatLabRockies/r2x-reeds.git?branch=main#f032456ed0b2047b958caf25d1eb40c11b806853" }
+version = "0.9.2"
+source = { git = "https://github.com/NatLabRockies/r2x-reeds.git?rev=03b789780e783551188695c8bc41b0c9748ac8fb#03b789780e783551188695c8bc41b0c9748ac8fb" }
 dependencies = [
     { name = "r2x-core" },
 ]
@@ -1366,7 +1366,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "r2x-plexos", git = "https://github.com/NatLabRockies/r2x-plexos.git?branch=main" },
-    { name = "r2x-reeds", git = "https://github.com/NatLabRockies/r2x-reeds.git?branch=main" },
+    { name = "r2x-reeds", git = "https://github.com/NatLabRockies/r2x-reeds.git?rev=03b789780e783551188695c8bc41b0c9748ac8fb" },
 ]
 
 [[package]]
@@ -1380,7 +1380,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "r2x-reeds", git = "https://github.com/NatLabRockies/r2x-reeds.git?branch=main" },
+    { name = "r2x-reeds", git = "https://github.com/NatLabRockies/r2x-reeds.git?rev=03b789780e783551188695c8bc41b0c9748ac8fb" },
     { name = "r2x-sienna", git = "https://github.com/NatLabRockies/r2x-sienna.git?branch=main" },
 ]
 
@@ -1515,23 +1515,23 @@ resolution-markers = [
     "python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
 dependencies = [
-    { name = "alabaster", marker = "python_full_version < '3.12'" },
-    { name = "babel", marker = "python_full_version < '3.12'" },
-    { name = "colorama", marker = "python_full_version < '3.12' and sys_platform == 'win32'" },
-    { name = "docutils", marker = "python_full_version < '3.12'" },
-    { name = "imagesize", marker = "python_full_version < '3.12'" },
-    { name = "jinja2", marker = "python_full_version < '3.12'" },
-    { name = "packaging", marker = "python_full_version < '3.12'" },
-    { name = "pygments", marker = "python_full_version < '3.12'" },
-    { name = "requests", marker = "python_full_version < '3.12'" },
-    { name = "roman-numerals", marker = "python_full_version < '3.12'" },
-    { name = "snowballstemmer", marker = "python_full_version < '3.12'" },
-    { name = "sphinxcontrib-applehelp", marker = "python_full_version < '3.12'" },
-    { name = "sphinxcontrib-devhelp", marker = "python_full_version < '3.12'" },
-    { name = "sphinxcontrib-htmlhelp", marker = "python_full_version < '3.12'" },
-    { name = "sphinxcontrib-jsmath", marker = "python_full_version < '3.12'" },
-    { name = "sphinxcontrib-qthelp", marker = "python_full_version < '3.12'" },
-    { name = "sphinxcontrib-serializinghtml", marker = "python_full_version < '3.12'" },
+    { name = "alabaster" },
+    { name = "babel" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "docutils" },
+    { name = "imagesize" },
+    { name = "jinja2" },
+    { name = "packaging" },
+    { name = "pygments" },
+    { name = "requests" },
+    { name = "roman-numerals" },
+    { name = "snowballstemmer" },
+    { name = "sphinxcontrib-applehelp" },
+    { name = "sphinxcontrib-devhelp" },
+    { name = "sphinxcontrib-htmlhelp" },
+    { name = "sphinxcontrib-jsmath" },
+    { name = "sphinxcontrib-qthelp" },
+    { name = "sphinxcontrib-serializinghtml" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/42/50/a8c6ccc36d5eacdfd7913ddccd15a9cee03ecafc5ee2bc40e1f168d85022/sphinx-9.0.4.tar.gz", hash = "sha256:594ef59d042972abbc581d8baa577404abe4e6c3b04ef61bd7fc2acbd51f3fa3", size = 8710502, upload-time = "2025-12-04T07:45:27.343Z" }
 wheels = [
@@ -1548,23 +1548,23 @@ resolution-markers = [
     "python_full_version >= '3.12' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
 dependencies = [
-    { name = "alabaster", marker = "python_full_version >= '3.12'" },
-    { name = "babel", marker = "python_full_version >= '3.12'" },
-    { name = "colorama", marker = "python_full_version >= '3.12' and sys_platform == 'win32'" },
-    { name = "docutils", marker = "python_full_version >= '3.12'" },
-    { name = "imagesize", marker = "python_full_version >= '3.12'" },
-    { name = "jinja2", marker = "python_full_version >= '3.12'" },
-    { name = "packaging", marker = "python_full_version >= '3.12'" },
-    { name = "pygments", marker = "python_full_version >= '3.12'" },
-    { name = "requests", marker = "python_full_version >= '3.12'" },
-    { name = "roman-numerals", marker = "python_full_version >= '3.12'" },
-    { name = "snowballstemmer", marker = "python_full_version >= '3.12'" },
-    { name = "sphinxcontrib-applehelp", marker = "python_full_version >= '3.12'" },
-    { name = "sphinxcontrib-devhelp", marker = "python_full_version >= '3.12'" },
-    { name = "sphinxcontrib-htmlhelp", marker = "python_full_version >= '3.12'" },
-    { name = "sphinxcontrib-jsmath", marker = "python_full_version >= '3.12'" },
-    { name = "sphinxcontrib-qthelp", marker = "python_full_version >= '3.12'" },
-    { name = "sphinxcontrib-serializinghtml", marker = "python_full_version >= '3.12'" },
+    { name = "alabaster" },
+    { name = "babel" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "docutils" },
+    { name = "imagesize" },
+    { name = "jinja2" },
+    { name = "packaging" },
+    { name = "pygments" },
+    { name = "requests" },
+    { name = "roman-numerals" },
+    { name = "snowballstemmer" },
+    { name = "sphinxcontrib-applehelp" },
+    { name = "sphinxcontrib-devhelp" },
+    { name = "sphinxcontrib-htmlhelp" },
+    { name = "sphinxcontrib-jsmath" },
+    { name = "sphinxcontrib-qthelp" },
+    { name = "sphinxcontrib-serializinghtml" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/cd/bd/f08eb0f4eed5c83f1ba2a3bd18f7745a2b1525fad70660a1c00224ec468a/sphinx-9.1.0.tar.gz", hash = "sha256:7741722357dd75f8190766926071fed3bdc211c74dd2d7d4df5404da95930ddb", size = 8718324, upload-time = "2025-12-31T15:09:27.646Z" }
 wheels = [

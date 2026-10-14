@@ -99,7 +99,7 @@ r2x-reeds-to-plexos = { workspace = true }
 r2x-reeds-to-sienna = { workspace = true }
 r2x-plexos = { git = "https://github.com/NatLabRockies/r2x-plexos.git", branch = "main" }
 r2x-sienna = { git = "https://github.com/NatLabRockies/r2x-sienna.git", branch = "main" }
-r2x-reeds = { git = "https://github.com/NatLabRockies/r2x-reeds.git", branch = "main" }
+r2x-reeds = { git = "https://github.com/NatLabRockies/r2x-reeds.git", rev = "03b789780e783551188695c8bc41b0c9748ac8fb" }
 
 [tool.uv.workspace]
 members = ["packages/*"]

@@ -46,6 +46,23 @@ translation.run(run_upgrader=True)
 
 Translation rules are defined in `config/rules.json`. These rules specify how ReEDS components are mapped to PLEXOS components, including field mappings, getters, and filters.
 
+## Startup Costs
+
+ReEDS `startup_cost` and PCM startup defaults are coefficients in dollars per MW.
+Keep this coefficient unchanged when applying PCM defaults or splitting generators.
+Translation multiplies it once by the final generator capacity to produce PLEXOS
+Start Cost in dollars. Each translated generator has `Units = 1`.
+
+For example, a $68/MW coefficient produces $6,800 for 100 MW and $21,760 for
+320 MW. A 700 MW gas-cc generator split into 320, 320, and 60 MW units with the
+$79/MW PCM default produces $25,280, $25,280, and $4,740.
+
+Use the corrected ReEDS PCM modifier and this translator together. The published
+`r2x-reeds-to-plexos` 0.2.1 wheel does not perform the final capacity conversion,
+and older ReEDS PCM modifiers pre-scale the coefficient. These corrections need
+coordinated package releases. Shutdown Cost remains zero because this translation
+has no ReEDS shutdown-cost source mapping.
+
 ## Hydro Budget Resolution
 
 Set `hydro_budget_ts` on the translation plugin to control the PLEXOS hydro
