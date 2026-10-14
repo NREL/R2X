@@ -8,6 +8,7 @@ export default defineConfig({
   site: "https://natlabrockies.github.io",
   base: "/R2X/",
   markdown: { processor: unified() },
+  redirects: { "/how-to/troubleshooting/": "/R2X/troubleshooting/" },
   integrations: [
     mermaid({
       enableLog: false,
@@ -54,12 +55,15 @@ export default defineConfig({
           items: [
             { label: "Workflow overview", link: "/how-to/" },
             { label: "Inspect a system", link: "/how-to/inspect-transformed-system/" },
-            { label: "Troubleshooting", link: "/how-to/troubleshooting/" },
             { label: "ReEDS to PLEXOS", link: "/how-to/reeds-to-plexos/" },
             { label: "ReEDS to Sienna", link: "/how-to/reeds-to-sienna/" },
             { label: "PLEXOS to Sienna", link: "/how-to/plexos-to-sienna/" },
             { label: "Sienna to PLEXOS", link: "/how-to/sienna-to-plexos/" },
           ],
+        },
+        {
+          label: "Troubleshooting",
+          items: [{ label: "Common problems", link: "/troubleshooting/" }],
         },
         {
           label: "Reference",
