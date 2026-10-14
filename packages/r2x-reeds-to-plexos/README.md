@@ -57,11 +57,11 @@ For example, a $68/MW coefficient produces $6,800 for 100 MW and $21,760 for
 320 MW. A 700 MW gas-cc generator split into 320, 320, and 60 MW units with the
 $79/MW PCM default produces $25,280, $25,280, and $4,740.
 
-Use the corrected ReEDS PCM modifier and this translator together. The published
-`r2x-reeds-to-plexos` 0.2.1 wheel does not perform the final capacity conversion,
-and older ReEDS PCM modifiers pre-scale the coefficient. These corrections need
-coordinated package releases. Shutdown Cost remains zero because this translation
-has no ReEDS shutdown-cost source mapping.
+> [!WARNING]
+> Verified affected releases include `r2x-reeds` 0.9.0 and 0.9.2 and
+> `r2x-reeds-to-plexos` 0.2.1. Missing or duplicated capacity scaling can produce
+> incorrect startup costs. The fixes are unreleased and require both corrected
+> packages to be used together.
 
 ## Hydro Budget Resolution
 
