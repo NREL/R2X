@@ -58,10 +58,11 @@ For example, a $68/MW coefficient produces $6,800 for 100 MW and $21,760 for
 $79/MW PCM default produces $25,280, $25,280, and $4,740.
 
 > [!WARNING]
-> Verified affected releases include `r2x-reeds` 0.9.0 and 0.9.2 and
-> `r2x-reeds-to-plexos` 0.2.1. Missing or duplicated capacity scaling can produce
-> incorrect startup costs. The fixes are unreleased and require both corrected
-> packages to be used together.
+> `r2x-reeds-to-plexos` 0.2.1 produces incorrect startup costs because capacity
+> scaling is missing. The fix is included in the upcoming
+> [0.3.0 release](https://github.com/NatLabRockies/R2X/pull/320), which is not yet published.
+> PCM workflows also require the [ReEDS PCM fix](https://github.com/NatLabRockies/r2x-reeds/pull/114)
+> to avoid duplicated scaling with `r2x-reeds` 0.9.0 and 0.9.2. That fix is not yet released.
 
 ## Hydro Budget Resolution
 
