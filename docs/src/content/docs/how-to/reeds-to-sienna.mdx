@@ -45,9 +45,22 @@ Use Python 3.11–3.13 and uv. From this repository checkout, replace the
 editable package paths below with your local parser and exporter checkouts.
 These commands update the workspace environment and lockfile:
 
+First, install the dependencies pinned by this checkout:
+
 ```bash
-uv sync &&
-uv add --editable /path/to/r2x-reeds &&
+uv sync
+```
+
+Add your source parser checkout so the script can read the native input model:
+
+```bash
+uv add --editable /path/to/r2x-reeds
+```
+
+Add the target parser/exporter checkout, then verify that the command completes
+before running the Python example:
+
+```bash
 uv add --editable /path/to/r2x-sienna
 ```
 

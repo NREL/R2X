@@ -53,6 +53,7 @@ export default defineConfig({
           label: "How-to guides",
           items: [
             { label: "Workflow overview", link: "/how-to/" },
+            { label: "Inspect a system", link: "/how-to/inspect-transformed-system/" },
             { label: "ReEDS to PLEXOS", link: "/how-to/reeds-to-plexos/" },
             { label: "ReEDS to Sienna", link: "/how-to/reeds-to-sienna/" },
             { label: "PLEXOS to Sienna", link: "/how-to/plexos-to-sienna/" },

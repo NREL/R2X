@@ -11,10 +11,22 @@ No ReEDS run or licensed PLEXOS installation is needed for this tutorial.
 
 Install [r2x-cli](https://github.com/NatLabRockies/r2x-cli#install) and [uv](https://docs.astral.sh/uv/getting-started/installation/).
 The commands below use a macOS or Linux shell and `curl`.
-Check your CLI and managed runtime:
+First, confirm that the executable is available and note its version:
 
 ```bash
-r2x --version && r2x python install && r2x python show
+r2x --version
+```
+
+Install the managed Python runtime needed by that CLI binary:
+
+```bash
+r2x python install
+```
+
+Check which Python version and environment the CLI will use before installing plugins:
+
+```bash
+r2x python show
 ```
 
 Use the Python version supported by your CLI binary.
@@ -24,14 +36,30 @@ Installing a plugin changes the CLI's managed environment and plugin manifest.
 
 ## Create a workspace and install the plugin
 
-From a directory where you want to keep the tutorial files:
+Create a directory to keep the inputs, configuration and results together.
+Choose another name if `r2x-quickstart/` already exists:
 
 ```bash
-mkdir r2x-quickstart && cd r2x-quickstart && r2x init
+mkdir r2x-quickstart
 ```
 
-Choose a new workspace name if `r2x-quickstart/` already exists.
-`r2x init` creates `pipeline.yaml`.
+Move into it. Run the rest of this tutorial from this directory so relative paths resolve consistently:
+
+```bash
+cd r2x-quickstart
+```
+
+Create the starter configuration:
+
+```bash
+r2x init
+```
+
+Check that `pipeline.yaml` exists before continuing:
+
+```bash
+ls pipeline.yaml
+```
 Install the parser and exporter package:
 
 ```bash
@@ -53,12 +81,33 @@ r2x run sienna-parser --help
 
 ## Download a small model
 
-From `r2x-quickstart/`, download the JSON model and its companion time-series file from an immutable upstream revision:
+Create separate directories for downloaded inputs and generated results:
 
 ```bash
-mkdir -p inputs outputs &&
-curl -fsSL https://raw.githubusercontent.com/NatLabRockies/r2x-sienna/4a5b365e8637ebb56e5cf389b32eec801265072f/tests/data/2area-5bus-system/test_system.json -o inputs/test_system.json &&
-curl -fsSL https://raw.githubusercontent.com/NatLabRockies/r2x-sienna/4a5b365e8637ebb56e5cf389b32eec801265072f/tests/data/2area-5bus-system/test_system_time_series_storage.h5 -o inputs/test_system_time_series_storage.h5
+mkdir -p inputs outputs
+```
+
+Download the model description from a pinned upstream revision.
+The line breaks below belong to one `curl` command:
+
+```bash
+curl -fsSL \
+  https://raw.githubusercontent.com/NatLabRockies/r2x-sienna/4a5b365e8637ebb56e5cf389b32eec801265072f/tests/data/2area-5bus-system/test_system.json \
+  -o inputs/test_system.json
+```
+
+Download its companion time-series data from the same revision:
+
+```bash
+curl -fsSL \
+  https://raw.githubusercontent.com/NatLabRockies/r2x-sienna/4a5b365e8637ebb56e5cf389b32eec801265072f/tests/data/2area-5bus-system/test_system_time_series_storage.h5 \
+  -o inputs/test_system_time_series_storage.h5
+```
+
+Confirm that both files are present and nonempty:
+
+```bash
+ls -lh inputs
 ```
 
 Both files must stay in the same directory.
@@ -153,5 +202,7 @@ For interactive exploration, omit `--exec` to open the CLI's Python session.
 | File or HDF5 data is missing | Check that both downloaded files are in `inputs/` with their original names. Run from `r2x-quickstart/`. |
 | Python ABI is incompatible | Compare `r2x python show` with the ABI required by the installed binary. Follow the CLI's runtime instructions. |
 | Model fails during execution | Inspect the log path printed by the CLI. Run `r2x run pipeline.yaml inspect-sienna -v` for more detail. |
+
+For deeper component, field and time-series inspection, follow [inspect a transformed system](/R2X/how-to/inspect-transformed-system/).
 
 Next, [translate a ReEDS run to Sienna](/R2X/tutorials/reeds-to-sienna-cli/) or inspect the [Python API](/R2X/reference/python-api/).

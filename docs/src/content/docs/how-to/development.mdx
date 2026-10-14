@@ -23,8 +23,22 @@ coverage when changing a package.
 
 The documentation workflow builds the Astro and Starlight site with npm. Build it before opening a documentation PR:
 
+Move into the site directory:
+
 ```bash
-cd docs && npm ci && npm run build
+cd docs
+```
+
+Install the locked site dependencies:
+
+```bash
+npm ci
+```
+
+Build the pages and search index. A successful build writes `docs/dist/`:
+
+```bash
+npm run build
 ```
 
 ## Change an interoperability plugin

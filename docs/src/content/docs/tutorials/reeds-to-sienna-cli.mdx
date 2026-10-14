@@ -21,10 +21,24 @@ From your workspace, install the translation package and its dependencies:
 r2x install r2x-reeds-to-sienna
 ```
 
-Inspect the registered entry points and parser options:
+Check the registered entry points before writing the configuration:
 
 ```bash
-r2x list && r2x run reeds-parser --help && r2x run reeds-to-sienna --help
+r2x list
+```
+
+The list should contain the three steps used below. Inspect the parser options to
+understand which settings locate and select your ReEDS data:
+
+```bash
+r2x run reeds-parser --help
+```
+
+Then inspect the translation options. This separates source-data settings from
+settings that control the target model:
+
+```bash
+r2x run reeds-to-sienna --help
 ```
 
 The pipeline needs `reeds-parser`, `reeds-to-sienna`, and `sienna-exporter`.
@@ -83,14 +97,31 @@ A successful dry run does not validate ReEDS datasets or target model values.
 
 ## Execute and inspect
 
-Create the output directory and execute the pipeline:
+Create the directory that will hold the exported model and serialized system:
 
 ```bash
-mkdir -p outputs && r2x run reeds-pipeline.yaml reeds-to-sienna --zip -o outputs/my-case-system.zip
+mkdir -p outputs
+```
+
+Now execute the checked pipeline. The `--zip` option saves the final transformed
+system for inspection; `-o` names that archive. Choose a fresh filename if it
+already exists:
+
+```bash
+r2x run reeds-pipeline.yaml reeds-to-sienna \
+  --zip \
+  -o outputs/my-case-system.zip
 ```
 
 Success creates the Sienna JSON and companion time-series file under `outputs/`, plus `my-case-system.zip` for inspection.
-Open the portable result:
+Check the generated files before loading them:
+
+```bash
+ls -lh outputs
+```
+
+Open the serialized transformed system. This archive is distinct from the native
+Sienna JSON export and contains the component graph and time-series storage:
 
 ```bash
 r2x read outputs/my-case-system.zip --zip
@@ -98,6 +129,9 @@ r2x read outputs/my-case-system.zip --zip
 
 Inspect the system summary and component counts against the source run.
 Use `sys.info()` to print the summary again in the interactive session.
+Then follow [inspect a transformed system](/R2X/how-to/inspect-transformed-system/)
+to list buses, inspect load fields, read attached time series, and load the same
+archive directly with Infrasys.
 
 ## Troubleshooting and next steps
 
