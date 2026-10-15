@@ -1,24 +1,43 @@
 # R2X documentation
 
-This directory contains the Sphinx documentation for R2X, the interoperability
-layer for moving systems between ReEDS, PLEXOS, and Sienna formats.
+The Astro and Starlight site organizes the current documentation into tutorials,
+how-to guides, reference, and explanation. Search indexes each version separately.
 
-## Documentation map
+## Build and preview
 
-- [Getting started](source/getting_started.md): install a plugin and choose a
-  source-to-target interoperability workflow.
-- [Translation workflows](source/dev_workflow.md): contributor-oriented,
-  end-to-end parser, interoperability, and exporter examples.
-- [Architecture](source/architecture.md): parser, core, interoperability, and
-  exporter boundaries, including configuration assets such as
-  `translation_rules.json`.
-- [Development](source/development.md): repository checks and changes to
-  interoperability packages.
-- [Changelog](source/CHANGELOG.md): released changes.
-
-Build the current site with the same commands used by CI:
+Use Node.js 22.12 or newer and npm. From the repository root, install the locked
+site dependencies and build the pages:
 
 ```bash
-uv sync --group docs
-uv run sphinx-build docs/source/ docs/build/
+cd docs && npm ci && npm run build
 ```
+
+The build writes `docs/dist/`. From `docs/`, start the local preview:
+
+```bash
+npm run preview
+```
+
+Open the printed URL under `/R2X/`. Use `npm run dev` for live editing.
+
+## Content and versions
+
+- Current pages: `src/content/docs/`, grouped by reader task.
+- Release archives: `src/content/docs/2-2-0/` and `src/content/docs/2-0-0/`,
+  migrated from the actual `r2x-v2.2.0` and `r2x-v2.0.0` tags.
+- Version sidebars: `src/content/versions/`.
+- Current navigation and plugins: `astro.config.mjs`.
+
+Use `/R2X/`-prefixed page links so they work on GitHub Pages. The version plugin
+adds the archive prefix for historical content. Link to source at the verified current code commit for
+current docs and the matching release tag for archives. Keep release content
+frozen, apart from migration fixes such as links and rendering.
+
+See [development](src/content/docs/how-to/development.mdx) for repository checks.
+
+## Dependency overrides
+
+The lockfile selects patched `postcss-nested` 7.0.2 for Expressive Code and
+KaTeX 0.18.2 for Mermaid. These overrides remove transitive security advisories;
+the Node.js 22 build and rendered CSS and diagrams have been checked. Revisit
+them when upstream dependencies include the patched versions.
