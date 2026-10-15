@@ -1009,7 +1009,7 @@ dev = [
 
 [[package]]
 name = "r2x-core"
-version = "0.7.0"
+version = "0.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "h5py" },
@@ -1020,9 +1020,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "rust-ok" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/4b/71/72226a7b7d84ad6dfacdccbeb1613862fc4f9f34f3a47a5f6fb77899c1d5/r2x_core-0.7.0.tar.gz", hash = "sha256:1d0f3a9c707aeb64b217e11a6582b198034ae2c7c84767d909d585f4e3be0e43", size = 73512, upload-time = "2026-08-10T20:34:08.355Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4d/ce/e2224b14eccaf8a272973ba72b61f6b1a7548faf23e9fe1498a3ad2afd3b/r2x_core-0.9.0.tar.gz", hash = "sha256:af8afe6bb3a00f47d6747f6c613c551887168351ce9ef070fead1faf0a3ef5fd", size = 84821, upload-time = "2026-10-01T04:35:33.382Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ed/86/6e4f5a6ad88266d73bfeea60134fc2e5217eafebc2b83fd1e05ce6d572eb/r2x_core-0.7.0-py3-none-any.whl", hash = "sha256:3c71fc23c0cc0f586e586a91f15d54b46810c691f6b05723eb9881963aad2153", size = 89204, upload-time = "2026-08-10T20:34:06.966Z" },
+    { url = "https://files.pythonhosted.org/packages/2c/a5/f934885c51badc789ee8ca0468feeda1c690e1c31207d8fe8745815dc52a/r2x_core-0.9.0-py3-none-any.whl", hash = "sha256:2e3fe77fdfe7a990dac2e87c1159d7e7c2b9015636df4b510aa78e68499c691a", size = 100252, upload-time = "2026-10-01T04:35:31.61Z" },
 ]
 
 [[package]]
@@ -1051,10 +1051,14 @@ requires-dist = [
 
 [[package]]
 name = "r2x-reeds"
-version = "0.7.0"
-source = { git = "https://github.com/NatLabRockies/r2x-reeds.git?branch=main#f032456ed0b2047b958caf25d1eb40c11b806853" }
+version = "0.9.3"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "r2x-core" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3c/33/0641ff02b7925b52f4c13b701a3262377a43b2c82445428c86141eab8590/r2x_reeds-0.9.3.tar.gz", hash = "sha256:09d8ccfb421d785f6a97ab4f1c3747a78cfe4a9a5ef0b239b3a14b0bef91736e", size = 79688, upload-time = "2026-10-15T16:55:18.676Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/15/ea/2c30bf7a21c28a31214f41027ec32af18bf4ebf6d1988d0c6b15cdd0109f/r2x_reeds-0.9.3-py3-none-any.whl", hash = "sha256:77cce3848d36d36e294c043bed5af122a41a42f7b5ff69b49a8db154a599a353", size = 92905, upload-time = "2026-10-15T16:55:16.935Z" },
 ]
 
 [[package]]
@@ -1069,7 +1073,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "r2x-plexos", git = "https://github.com/NatLabRockies/r2x-plexos.git?branch=main" },
-    { name = "r2x-reeds", git = "https://github.com/NatLabRockies/r2x-reeds.git?branch=main" },
+    { name = "r2x-reeds", specifier = ">=0.9.3,<1.0.0" },
 ]
 
 [[package]]
@@ -1083,7 +1087,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "r2x-reeds", git = "https://github.com/NatLabRockies/r2x-reeds.git?branch=main" },
+    { name = "r2x-reeds", specifier = ">=0.9.3,<1.0.0" },
     { name = "r2x-sienna", git = "https://github.com/NatLabRockies/r2x-sienna.git?branch=main" },
 ]
 
