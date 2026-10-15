@@ -72,6 +72,7 @@ export default defineConfig({
           label: "Reference",
           items: [
             { label: "Python API", link: "/reference/python-api/" },
+            { label: "ReEDS translation comparison", link: "/reference/reeds-translation-reference/" },
             { label: "ReEDS to PLEXOS properties", link: "/reference/reeds-to-plexos-properties/" },
             { label: "ReEDS to Sienna properties", link: "/reference/reeds-to-sienna-properties/" },
             { label: "PLEXOS to Sienna properties", link: "/reference/plexos-to-sienna-properties/" },

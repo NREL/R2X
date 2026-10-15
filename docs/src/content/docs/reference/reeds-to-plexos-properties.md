@@ -2,6 +2,9 @@
 title: ReEDS to PLEXOS Property Mappings
 ---
 
+See the [ReEDS translation comparison](/R2X/reference/reeds-translation-reference/)
+for side-by-side component mappings, time-series treatment, and modeling limitations.
+
 This page documents property-level mappings for `r2x-reeds-to-plexos`. The
 class-level flow is shown in [ReEDS to PLEXOS](/R2X/how-to/reeds-to-plexos/). The
 [authoritative rules](https://github.com/NatLabRockies/R2X/blob/main/packages/r2x-reeds-to-plexos/src/r2x_reeds_to_plexos/config/rules.json)
