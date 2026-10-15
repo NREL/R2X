@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+import sqlite3
 from datetime import datetime, timedelta
 
 import numpy as np
@@ -195,40 +197,81 @@ def test_reeds_to_sienna_normalizes_max_active_power_time_series(monkeypatch):
     assert scaling_calls == [(result, target_wind, "max_active_power", "get_max_active_power")]
 
 
-def test_reeds_to_sienna_normalizes_reserve_requirement_time_series(monkeypatch):
+@pytest.mark.parametrize(
+    ("profiles", "expected_shapes", "expected_requirement", "expected_peak"),
+    [
+        ([[0.0, 25.0, 50.0]], [[0.0, 0.5, 1.0]], 0.5, 50.0),
+        (
+            [[0.0, 25.0, 50.0], [100.0, 0.0, 50.0]],
+            [[0.0, 0.25, 0.5], [1.0, 0.0, 0.5]],
+            1.0,
+            100.0,
+        ),
+        ([[0.0, 0.0, 0.0]], [[0.0, 0.0, 0.0]], 0.0, None),
+    ],
+)
+def test_reeds_to_sienna_persists_reserve_scaling(
+    tmp_path, profiles, expected_shapes, expected_requirement, expected_peak
+):
     source = _build_source_system()
     source_reserve = source.get_component(ReEDSReserve, "spin_up")
-    scaling_calls = []
-
-    def record_scaling_call(system, owner, name, function_name):
-        scaling_calls.append((system, owner, name, function_name))
-
-    monkeypatch.setattr(
-        "r2x_sienna.exporter.set_time_series_scaling_factor_multiplier",
-        record_scaling_call,
-    )
-    source_profile = SingleTimeSeries.from_array(
-        data=[0.0, 25.0, 50.0],
-        name="requirement",
-        initial_timestamp=datetime(2012, 1, 1),
-        resolution=timedelta(hours=1),
-    )
-    source.add_time_series(source_profile, source_reserve)
+    for index, values in enumerate(profiles):
+        source.add_time_series(
+            SingleTimeSeries.from_array(
+                data=values,
+                name="requirement",
+                initial_timestamp=datetime(2012, 1, 1),
+                resolution=timedelta(hours=1),
+            ),
+            source_reserve,
+            scenario=str(index),
+        )
 
     result = reeds_to_sienna(source, config=ReEDSToSiennaConfig())
-
     target_reserve = result.get_component(VariableReserve, "spin_up")
-    target_profile = result.get_time_series(target_reserve, name="requirement")
-    target_metadata = result.list_time_series_metadata(target_reserve, name="requirement")[0]
-    preserved_source = source.get_time_series(source_reserve, name="requirement")
+    assert target_reserve.requirement == pytest.approx(expected_requirement)
 
-    assert target_reserve.requirement == pytest.approx(0.5)
-    assert isinstance(target_metadata.normalization, NormalizationByValue)
-    assert target_metadata.normalization.value == pytest.approx(50.0)
-    assert target_profile.data_array == pytest.approx([0.0, 0.5, 1.0])
-    assert preserved_source.data_array == pytest.approx([0.0, 25.0, 50.0])
+    for index, (values, shape) in enumerate(zip(profiles, expected_shapes, strict=True)):
+        features = {"scenario": str(index)}
+        target_profile = result.get_time_series(target_reserve, name="requirement", **features)
+        (metadata,) = result.list_time_series_metadata(target_reserve, name="requirement", **features)
+        assert target_profile.data_array == pytest.approx(shape)
+        assert target_profile.data_array * target_reserve.requirement * result.base_power == pytest.approx(
+            values
+        )
+        if expected_peak is None:
+            assert metadata.normalization is None
+        else:
+            assert isinstance(metadata.normalization, NormalizationByValue)
+            assert metadata.normalization.value == pytest.approx(expected_peak)
+        preserved_source = source.get_time_series(source_reserve, name="requirement", **features)
+        (source_metadata,) = source.list_time_series_metadata(source_reserve, name="requirement", **features)
+        assert preserved_source.data_array == pytest.approx(values)
+        assert source_metadata.normalization is None
 
-    assert scaling_calls == [(result, target_reserve, "requirement", "get_requirement")]
+    for system, owner, filename in (
+        (result, target_reserve, "target.db"),
+        (source, source_reserve, "source.db"),
+    ):
+        database = tmp_path / filename
+        system.time_series.metadata_store.serialize(database)
+        with sqlite3.connect(database) as connection:
+            rows = connection.execute(
+                "SELECT features, scaling_factor_multiplier FROM time_series_associations "
+                "WHERE owner_uuid = ? AND name = ?",
+                (str(owner.uuid), "requirement"),
+            ).fetchall()
+        assert len(rows) == len(profiles)
+        assert {json.loads(features)[0]["scenario"] for features, _ in rows} == {
+            str(index) for index in range(len(profiles))
+        }
+        for _, scaling in rows:
+            if system is result and expected_peak is not None:
+                assert json.loads(scaling) == {
+                    "__metadata__": {"module": "PowerSystems", "function": "get_requirement"}
+                }
+            else:
+                assert scaling is None
 
 
 def test_reeds_to_sienna_translates_hydro():
