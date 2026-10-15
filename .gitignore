@@ -193,9 +193,6 @@ tags
 uv.lock
 
 # Astro documentation
-!/docs/src/data/
-/docs/src/data/*
-!/docs/src/data/releases.json
 docs/dist/
 docs/.astro/
 

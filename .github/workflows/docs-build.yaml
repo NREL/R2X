@@ -9,12 +9,6 @@ on:
       - "src/**"
       - "packages/*/src/**"
       - "pyproject.toml"
-  workflow_call:
-    inputs:
-      upload-artifact:
-        description: Upload the built site for publication
-        type: boolean
-        default: false
 
 permissions: {}
 
@@ -49,10 +43,3 @@ jobs:
       - name: Build Astro documentation
         run: npm run build
         working-directory: docs
-
-      - name: Upload built docs artifact
-        if: inputs.upload-artifact
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: docs-site
-          path: docs/dist/

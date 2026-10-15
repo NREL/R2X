@@ -18,30 +18,35 @@ concurrency:
 
 permissions: {}
 
-jobs:
-  build:
-    if: github.ref == 'refs/heads/main'
-    permissions:
-      contents: read
-    # The pinned CI actionlint does not yet support the $/ workflow syntax.
-    uses: ./.github/workflows/docs-build.yaml # zizmor: ignore[self-repository]
-    with:
-      upload-artifact: true
+env:
+  NODE_VERSION: "22.23.1"
 
-  deploy:
-    name: Deploy to GitHub Pages
-    needs: build
+jobs:
+  publish:
+    name: Build and publish documentation
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: write  # Required: push generated docs to gh-pages
     steps:
-      - name: Download built docs artifact
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          name: docs-site
-          path: docs/dist/
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: docs/package-lock.json
+
+      - name: Install documentation dependencies
+        run: npm ci
+        working-directory: docs
+
+      - name: Build Astro documentation
+        run: npm run build
+        working-directory: docs
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0

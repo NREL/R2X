@@ -35,22 +35,15 @@ frozen, apart from migration fixes such as links and rendering.
 
 See [development](src/content/docs/how-to/development.mdx) for repository checks.
 
-## Package release versions
-
-The homepage reads `src/data/releases.json`. Each translation package's
-`extra-files` entry in `../.release-please-config.json` updates only its own
-JSON field. The leading `/` in `/docs/src/data/releases.json` resolves the file
-from the repository root, outside the package directory. The homepage uses that
-value for both the displayed version and the versioned PyPI link. Release
-metadata does not confirm that PyPI publication succeeded.
-
-The Changelog page links to the canonical root `CHANGELOG.md`. Keep archived
-documentation and tested tutorial environments unchanged when packages release.
+The homepage links directly to each translation package's PyPI page for current
+release information. The Changelog page links to the canonical root
+`CHANGELOG.md`. Keep archived documentation and tested tutorial environments
+unchanged when packages release.
 
 ## Publication
 
 Pull requests run the documentation build without a deployment job. The
-`Publish documentation` workflow reuses that build and publishes to `gh-pages`
+`Publish documentation` workflow builds and publishes to `gh-pages`
 after relevant changes reach `main`. It can also be dispatched manually on
 `main`. Workflow changes themselves trigger validation and publication.
 

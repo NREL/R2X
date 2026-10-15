@@ -80,11 +80,6 @@
           "type": "toml",
           "path": "packages/r2x-plexos-to-sienna/pyproject.toml",
           "jsonpath": "$.project.version"
-        },
-        {
-          "type": "json",
-          "path": "/docs/src/data/releases.json",
-          "jsonpath": "$['r2x-plexos-to-sienna']"
         }
       ]
     },
@@ -98,11 +93,6 @@
           "type": "toml",
           "path": "packages/r2x-reeds-to-plexos/pyproject.toml",
           "jsonpath": "$.project.version"
-        },
-        {
-          "type": "json",
-          "path": "/docs/src/data/releases.json",
-          "jsonpath": "$['r2x-reeds-to-plexos']"
         }
       ]
     },
@@ -116,11 +106,6 @@
           "type": "toml",
           "path": "packages/r2x-reeds-to-sienna/pyproject.toml",
           "jsonpath": "$.project.version"
-        },
-        {
-          "type": "json",
-          "path": "/docs/src/data/releases.json",
-          "jsonpath": "$['r2x-reeds-to-sienna']"
         }
       ]
     },
@@ -134,11 +119,6 @@
           "type": "toml",
           "path": "packages/r2x-sienna-to-plexos/pyproject.toml",
           "jsonpath": "$.project.version"
-        },
-        {
-          "type": "json",
-          "path": "/docs/src/data/releases.json",
-          "jsonpath": "$['r2x-sienna-to-plexos']"
         }
       ]
     }
