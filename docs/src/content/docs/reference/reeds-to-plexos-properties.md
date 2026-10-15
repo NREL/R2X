@@ -7,6 +7,63 @@ class-level flow is shown in [ReEDS to PLEXOS](/R2X/how-to/reeds-to-plexos/). Th
 [authoritative rules](https://github.com/NatLabRockies/R2X/blob/main/packages/r2x-reeds-to-plexos/src/r2x_reeds_to_plexos/config/rules.json)
 contain the complete field maps, getters, defaults, and filters.
 
+## Component conversion
+
+These diagrams summarize selected rule families, not a one-to-one copy of every
+field. Blue source nodes feed either a conversion step or an explicitly filtered
+branch; dark nodes show the target classes and representative properties.
+The tables below retain the full property reference.
+
+### Generation and flexible demand
+
+Thermal, variable and hydro generators converge on `PLEXOSGenerator`. Their
+identity and capacity fields are mapped, while technology-specific getters
+compute operating properties. Consuming technologies use that generator route
+only when their technology is not `electrolyzer`, `data-center`, `smr` or `smr_ccs`.
+Electrolyzer, steam-methane-reforming and data-center demand classes instead
+become purchasers.
+
+```mermaid
+flowchart LR
+  accTitle: ReEDS generation and demand conversion
+  accDescr: Thermal, variable and hydro generator families use field maps and operating getters to create PLEXOSGenerator. Three flexible demand classes create PLEXOSPurchaser. Separate rule filters apply to consuming technologies.
+  G["ReEDSThermalGenerator<br/>ReEDSVariableGenerator<br/>ReEDSHydroGenerator"] --> C["Map identity + capacity<br/>Compute operating properties" ]
+  C --> P["PLEXOSGenerator<br/>max_capacity, commitment<br/>costs + technology-specific limits"]
+  D["ReEDSElectrolyzerDemand<br/>ReEDSSteamMethaneReformingDemand<br/>ReEDSDataCenterDemand"] --> U["Map demand fields<br/>Compute units"]
+  U --> Q["PLEXOSPurchaser<br/>max_load + units"]
+  class G,D source
+  class C,U process
+  class P,Q target
+  classDef source fill:#d9effa,stroke:#0079c2,color:#003a69,stroke-width:2px
+  classDef process fill:#f4f7f9,stroke:#7890a0,color:#293d4d
+  classDef target fill:#003a69,stroke:#0079c2,color:#ffffff,stroke-width:2px
+```
+
+### Storage selection
+
+`ReEDSStorage` follows the battery branch only when its technology starts with
+`battery` (case-insensitive); `pumped-hydro` follows the generator branch.
+The reservoir rules are separate: they read `ReEDSGenerator` with technology
+`pumped-hydro` and create the upper and lower `PLEXOSStorage` objects. Do not
+interpret the storage branches as an unconditional conversion to both targets.
+
+```mermaid
+flowchart LR
+  accTitle: ReEDS storage and pumped hydro selection
+  accDescr: ReEDSStorage with battery technology creates PLEXOSBattery; pumped-hydro technology creates PLEXOSGenerator. Separate ReEDSGenerator pumped-hydro rules create upper and lower PLEXOSStorage reservoirs.
+  B["ReEDSStorage"] --> F{"Technology filter"}
+  F -->|"starts with battery"| T["PLEXOSBattery<br/>max_power + capacity<br/>efficiency + SOC limits"]
+  F -->|"pumped-hydro"| G["PLEXOSGenerator<br/>pump efficiency + load"]
+  H["ReEDSGenerator"] --> K["technology = pumped-hydro"]
+  K --> R["PLEXOSStorage<br/>upper + lower reservoirs<br/>volume + natural inflow"]
+  class B,H source
+  class F,K process
+  class T,G,R target
+  classDef source fill:#d9effa,stroke:#0079c2,color:#003a69,stroke-width:2px
+  classDef process fill:#f4f7f9,stroke:#7890a0,color:#293d4d
+  classDef target fill:#003a69,stroke:#0079c2,color:#ffffff,stroke-width:2px
+```
+
 ## Generator and Demand Properties
 
 | Source class | Target class | Direct fields | Computed properties |

@@ -7,6 +7,65 @@ class-level flow is shown in [ReEDS to Sienna](/R2X/how-to/reeds-to-sienna/). Th
 [authoritative rules](https://github.com/NatLabRockies/R2X/blob/main/packages/r2x-reeds-to-sienna/src/r2x_reeds_to_sienna/config/rules.json)
 combine direct field maps, computed getters, defaults, and filters.
 
+## Component conversion
+
+Sienna has distinct component classes for operating behavior. Rule filters select
+those classes before field maps, defaults and getters populate their properties.
+These diagrams highlight renewable and storage selection; the tables below also
+cover thermal generation, demand, topology and reserves.
+
+### Renewable and hydro selection
+
+For `ReEDSVariableGenerator`, the technology prefixes `upv`, `wind-ons` and
+`wind-ofs` select `RenewableDispatch`; `distpv` selects `RenewableNonDispatch`
+(case-insensitive). For `ReEDSHydroGenerator`, `is_dispatchable` selects
+`HydroDispatch` or `RenewableNonDispatch`. The diagram groups the two paths to the
+same target without treating their property getters as identical.
+
+```mermaid
+flowchart LR
+  accTitle: ReEDS renewable and hydro class selection
+  accDescr: Variable generator technology prefixes select RenewableDispatch or RenewableNonDispatch. Hydro is_dispatchable true selects HydroDispatch; false selects RenewableNonDispatch. Target properties come from each matching rule.
+  V["ReEDSVariableGenerator"] --> F{"Technology prefix"}
+  F -->|"upv / wind-ons / wind-ofs"| D["RenewableDispatch"]
+  F -->|"distpv"| N["RenewableNonDispatch"]
+  H["ReEDSHydroGenerator"] --> I{"is_dispatchable"}
+  I -->|"true"| T["HydroDispatch"]
+  I -->|"false"| N
+  class V,H source
+  class F,I process
+  class D,N,T target
+  classDef source fill:#d9effa,stroke:#0079c2,color:#003a69,stroke-width:2px
+  classDef process fill:#f4f7f9,stroke:#7890a0,color:#293d4d
+  classDef target fill:#003a69,stroke:#0079c2,color:#ffffff,stroke-width:2px
+```
+
+The matching rule computes bus references, power limits, ratings and operating
+properties where applicable. Time-series normalization and attachment happen
+after rule application; a profile is not simply a copied scalar field.
+
+### Storage selection
+
+Technology `pumped-hydro` produces a `HydroPumpTurbine` plus two `HydroReservoir`
+objects. Other storage technologies select `EnergyReservoirStorage`. The
+technology comparisons are case-insensitive.
+
+```mermaid
+flowchart LR
+  accTitle: ReEDS storage class selection
+  accDescr: ReEDSStorage pumped-hydro creates a HydroPumpTurbine and upper and lower HydroReservoir objects. Other technologies create EnergyReservoirStorage. Rule getters compute target storage properties.
+  S["ReEDSStorage"] --> F{"Technology filter"}
+  F -->|"not pumped-hydro"| B["EnergyReservoirStorage<br/>capacity + efficiency<br/>SOC + power limits"]
+  F -->|"pumped-hydro"| P["HydroPumpTurbine<br/>generation + pumping limits"]
+  F -->|"pumped-hydro"| R["HydroReservoir<br/>upper + lower reservoirs"]
+  class S source
+  class F process
+  class B,P,R target
+  classDef source fill:#d9effa,stroke:#0079c2,color:#003a69,stroke-width:2px
+  classDef process fill:#f4f7f9,stroke:#7890a0,color:#293d4d
+  classDef target fill:#003a69,stroke:#0079c2,color:#ffffff,stroke-width:2px
+```
+
 ## Network, Reserves, and Loads
 
 | Source class | Target class | Direct fields | Computed properties |

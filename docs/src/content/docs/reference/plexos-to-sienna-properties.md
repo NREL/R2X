@@ -12,6 +12,58 @@ The authoritative source is the
 file. In the tables below, **field map** means a direct source-to-target field
 copy and **getter** means a computed value supplied by a translation helper.
 
+## Component conversion
+
+PLEXOS generator categories are resolved by `get_gen_technology_class`; matching
+rules select the Sienna class. The selected rule combines direct identity fields,
+defaults and computed properties. The groups below summarize the target families,
+not an unconditional expansion of one generator into every displayed class.
+
+### Generator family selection
+
+```mermaid
+flowchart LR
+  accTitle: PLEXOS generator family selection
+  accDescr: PLEXOSGenerator is classified by get_gen_technology_class. Thermal, hydro, renewable or condenser matching rules select the corresponding Sienna class. Tables specify the properties for each target.
+  G["PLEXOSGenerator"] --> C{"get_gen_technology_class"}
+  C -->|"thermal / thermal-multi-start"| T["ThermalStandard<br/>ThermalMultiStart"]
+  C -->|"hydro-dispatch / hydro-turbine"| H["HydroDispatch<br/>HydroTurbine"]
+  C -->|"renewable-dispatch / renewable-non-dispatch"| R["RenewableDispatch<br/>RenewableNonDispatch"]
+  C -->|"synchronous-condenser"| S["SynchronousCondenser"]
+  class G source
+  class C process
+  class T,H,R,S target
+  classDef source fill:#d9effa,stroke:#0079c2,color:#003a69,stroke-width:2px
+  classDef process fill:#f4f7f9,stroke:#7890a0,color:#293d4d
+  classDef target fill:#003a69,stroke:#0079c2,color:#ffffff,stroke-width:2px
+```
+
+Within each grouped node, the class matches the corresponding classification
+value in the same order. Generator limits, costs, bus references and services
+come from getters; they are not all direct field copies.
+
+### Loads and bus references
+
+`PLEXOSRegion` and `PLEXOSPurchaser` have separate rules that produce `PowerLoad`.
+Their getters resolve target bus references through source memberships and
+compute load properties. Node load time series are attached to target loads
+under the `active_power` name by the translation helpers.
+
+```mermaid
+flowchart LR
+  accTitle: PLEXOS load property conversion
+  accDescr: Separate PLEXOSRegion and PLEXOSPurchaser rules map identity fields and compute bus and power properties for PowerLoad. Memberships resolve bus references; helpers attach renamed active_power time series.
+  R["PLEXOSRegion"] --> M["Map identity<br/>Resolve memberships<br/>Compute load properties"]
+  P["PLEXOSPurchaser"] --> M
+  M --> L["PowerLoad<br/>bus, active_power<br/>max_active_power + base_power"]
+  class R,P source
+  class M process
+  class L target
+  classDef source fill:#d9effa,stroke:#0079c2,color:#003a69,stroke-width:2px
+  classDef process fill:#f4f7f9,stroke:#7890a0,color:#293d4d
+  classDef target fill:#003a69,stroke:#0079c2,color:#ffffff,stroke-width:2px
+```
+
 ## Common Fields
 
 | Source property | Target property | Mapping |
