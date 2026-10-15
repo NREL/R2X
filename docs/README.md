@@ -35,6 +35,22 @@ frozen, apart from migration fixes such as links and rendering.
 
 See [development](src/content/docs/how-to/development.mdx) for repository checks.
 
+The homepage links directly to each translation package's PyPI page for current
+release information. The Changelog page links to the canonical root
+`CHANGELOG.md`. Keep archived documentation and tested tutorial environments
+unchanged when packages release.
+
+## Publication
+
+Pull requests run the documentation build without a deployment job. The
+`Publish documentation` workflow builds and publishes to `gh-pages`
+after relevant changes reach `main`. It can also be dispatched manually on
+`main`. Workflow changes themselves trigger validation and publication.
+
+GitHub Pages continues to publish from `gh-pages`, so GitHub's separate
+`pages-build-deployment` run still appears after publication. No repository
+Pages settings change is required.
+
 ## Dependency overrides
 
 The lockfile selects patched `postcss-nested` 7.0.2 for Expressive Code and
