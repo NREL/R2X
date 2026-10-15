@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from numbers import Real
 from typing import Any, cast
 
 import numpy as np
 from infrasys import Component, SingleTimeSeries
 from infrasys.time_series_models import TimeSeriesMetadata
+from rust_ok import Err, Ok, Result
 
 from r2x_core import PluginContext, System, replace_single_time_series
 
@@ -27,13 +29,22 @@ _POLLUTANT_MAP: dict[str, str] = {
 }
 
 
-def get_source_max_active_power(component: Component, /) -> float | None:
+@dataclass(frozen=True, kw_only=True)
+class TimeSeriesProfile:
+    """A target profile and the source metadata identifying its features."""
+
+    time_series: SingleTimeSeries
+    metadata: TimeSeriesMetadata
+
+
+def get_source_max_active_power(component: Component, /) -> Result[float, ValueError]:
     """Return the scalar MW basis for a ReEDS maximum active power profile."""
     for field_name in ("max_active_power", "capacity"):
         value = getattr(component, field_name, None)
         if isinstance(value, Real):
-            return float(value)
-    return None
+            return Ok(float(value))
+    msg = f"No scalar MW basis available for {component.name}"
+    return Err(ValueError(msg))
 
 
 def get_target_time_series_profiles(
@@ -43,17 +54,17 @@ def get_target_time_series_profiles(
     *,
     name: str,
     metadata_records: list[TimeSeriesMetadata],
-) -> list[tuple[SingleTimeSeries, TimeSeriesMetadata]]:
+) -> list[TimeSeriesProfile]:
     """Return target time series and features matching source metadata records."""
     return [
-        (
-            target_system.get_time_series(
+        TimeSeriesProfile(
+            time_series=target_system.get_time_series(
                 target_component,
                 name=name,
                 time_series_type=SingleTimeSeries,
                 **metadata.features,
             ),
-            metadata,
+            metadata=metadata,
         )
         for metadata in metadata_records
     ]
@@ -65,7 +76,7 @@ def normalize_target_time_series(
     /,
     *,
     name: str,
-    profiles: list[tuple[SingleTimeSeries, TimeSeriesMetadata]],
+    profiles: list[TimeSeriesProfile],
     normalization_value: float,
     scaling_function: str,
 ) -> int:
@@ -73,7 +84,8 @@ def normalize_target_time_series(
     from infrasys.normalization import NormalizationByValue
     from r2x_sienna.exporter import set_time_series_scaling_factor_multiplier
 
-    for time_series, metadata in profiles:
+    for profile in profiles:
+        time_series = profile.time_series
         normalized_time_series = SingleTimeSeries.from_array(
             data=time_series.data_array,
             name=time_series.name,
@@ -85,7 +97,7 @@ def normalize_target_time_series(
             target_system,
             target_component,
             normalized_time_series,
-            **metadata.features,
+            **profile.metadata.features,
         )
 
     set_time_series_scaling_factor_multiplier(
@@ -102,7 +114,8 @@ def normalize_max_active_power_time_series(context: PluginContext, /) -> None:
     source_system = context.source_system
     target_system = context.target_system
     if source_system is None or target_system is None:
-        raise ValueError("Time series normalization requires source and target systems")
+        msg = "Time series normalization requires source and target systems"
+        raise ValueError(msg)
     target_by_uuid = {str(component.uuid): component for component in target_system.iter_all_components()}
     normalized = 0
 
@@ -119,8 +132,12 @@ def normalize_max_active_power_time_series(context: PluginContext, /) -> None:
         if target_component is None:
             continue
 
-        max_active_power = get_source_max_active_power(source_component)
-        if max_active_power is None or max_active_power <= 0.0:
+        max_active_power_result = get_source_max_active_power(source_component)
+        if max_active_power_result.is_err():
+            logger.warning("%s", max_active_power_result.err())
+            continue
+        max_active_power = max_active_power_result.unwrap()
+        if max_active_power <= 0.0:
             logger.warning(
                 "Cannot normalize max_active_power time series for %s without a positive MW basis",
                 source_component.name,
@@ -153,7 +170,8 @@ def normalize_reserve_requirement_time_series(context: PluginContext, /) -> None
     source_system = context.source_system
     target_system = context.target_system
     if source_system is None or target_system is None:
-        raise ValueError("Time series normalization requires source and target systems")
+        msg = "Time series normalization requires source and target systems"
+        raise ValueError(msg)
     target_by_uuid = {
         str(component.uuid): component
         for component in target_system.iter_all_components()
@@ -180,7 +198,7 @@ def normalize_reserve_requirement_time_series(context: PluginContext, /) -> None
             name="requirement",
             metadata_records=metadata_records,
         )
-        peak_requirement = max(float(np.max(profile.data_array)) for profile, _ in profiles)
+        peak_requirement = max(float(np.max(profile.time_series.data_array)) for profile in profiles)
 
         if peak_requirement <= 0.0:
             logger.warning(
@@ -190,7 +208,8 @@ def normalize_reserve_requirement_time_series(context: PluginContext, /) -> None
             continue
 
         if target_system.base_power is None or target_system.base_power <= 0.0:
-            raise ValueError("Reserve normalization requires a positive system base power")
+            msg = "Reserve normalization requires a positive system base power"
+            raise ValueError(msg)
         target_reserve.requirement = peak_requirement / target_system.base_power
         normalized += normalize_target_time_series(
             target_system,

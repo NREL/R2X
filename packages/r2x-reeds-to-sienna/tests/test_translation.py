@@ -197,6 +197,34 @@ def test_reeds_to_sienna_normalizes_max_active_power_time_series(monkeypatch):
     assert scaling_calls == [(result, target_wind, "max_active_power", "get_max_active_power")]
 
 
+@pytest.mark.parametrize("mw_basis", [None, 0.0, -5.0])
+def test_reeds_to_sienna_preserves_profiles_without_a_positive_mw_basis(mw_basis, caplog):
+    source = _build_source_system()
+    demand = source.get_component(ReEDSDemand, "load_p1")
+    demand.max_active_power = mw_basis
+    source.add_time_series(
+        SingleTimeSeries.from_array(
+            data=[0.0, 25.0, 50.0],
+            name="max_active_power",
+            initial_timestamp=datetime(2012, 1, 1),
+            resolution=timedelta(hours=1),
+        ),
+        demand,
+    )
+
+    result = reeds_to_sienna(source, config=ReEDSToSiennaConfig())
+
+    load = result.get_component(PowerLoad, "load_p1")
+    profile = result.get_time_series(load, name="max_active_power")
+    (metadata,) = result.list_time_series_metadata(load, name="max_active_power")
+    assert profile.data_array == pytest.approx([0.0, 25.0, 50.0])
+    assert metadata.normalization is None
+    assert source.get_time_series(demand, name="max_active_power").data_array == pytest.approx(
+        [0.0, 25.0, 50.0]
+    )
+    assert "MW basis" in caplog.text
+
+
 @pytest.mark.parametrize(
     ("profiles", "expected_shapes", "expected_requirement", "expected_peak"),
     [
