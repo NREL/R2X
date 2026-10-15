@@ -3,6 +3,8 @@ title: R2X documentation
 description: Translation plugins for ReEDS, PLEXOS, and Sienna model interoperability.
 ---
 
+import releases from '../../data/releases.json';
+
 This repository contains the interoperability layer in the
 [r2x-cli](https://github.com/NatLabRockies/r2x-cli) ecosystem. It connects
 model-specific parsers and exporters through shared
@@ -40,18 +42,17 @@ flowchart LR
   classDef target fill:#003a69,stroke:#0079c2,color:#ffffff,stroke-width:2px
 ```
 
-Latest releases below are the non-yanked stable versions published on PyPI,
-verified October 14, 2026. These package versions are independent of the
-selected documentation version. Follow each release link for current registry
-information; match parser and exporter dependencies before upgrading.
+Package versions below are maintained by release-please and are independent of
+the selected documentation version. Follow each release link to check PyPI
+publication and registry information. Match parser and exporter dependencies
+before upgrading.
 
 | Package | Latest release | Direction |
 | --- | --- | --- |
-| [`r2x-reeds-to-plexos`](https://github.com/NatLabRockies/R2X/tree/main/packages/r2x-reeds-to-plexos) | [0.2.1](https://pypi.org/project/r2x-reeds-to-plexos/0.2.1/) | [ReEDS → PLEXOS](/R2X/how-to/reeds-to-plexos/) · [properties](/R2X/reference/reeds-to-plexos-properties/) |
-| [`r2x-reeds-to-sienna`](https://github.com/NatLabRockies/R2X/tree/main/packages/r2x-reeds-to-sienna) | [0.2.1](https://pypi.org/project/r2x-reeds-to-sienna/0.2.1/) | [ReEDS → Sienna](/R2X/how-to/reeds-to-sienna/) · [properties](/R2X/reference/reeds-to-sienna-properties/) |
-| [`r2x-plexos-to-sienna`](https://github.com/NatLabRockies/R2X/tree/main/packages/r2x-plexos-to-sienna) | [0.2.1](https://pypi.org/project/r2x-plexos-to-sienna/0.2.1/) | [PLEXOS → Sienna](/R2X/how-to/plexos-to-sienna/) · [properties](/R2X/reference/plexos-to-sienna-properties/) |
-| [`r2x-sienna-to-plexos`](https://github.com/NatLabRockies/R2X/tree/main/packages/r2x-sienna-to-plexos) | [0.3.0](https://pypi.org/project/r2x-sienna-to-plexos/0.3.0/) | [Sienna → PLEXOS](/R2X/how-to/sienna-to-plexos/) · [properties](/R2X/reference/sienna-to-plexos-properties/) |
-
+| [`r2x-reeds-to-plexos`](https://github.com/NatLabRockies/R2X/tree/main/packages/r2x-reeds-to-plexos) | <a href={`https://pypi.org/project/r2x-reeds-to-plexos/${releases["r2x-reeds-to-plexos"]}/`}>{releases["r2x-reeds-to-plexos"]}</a> | [ReEDS → PLEXOS](/R2X/how-to/reeds-to-plexos/) · [properties](/R2X/reference/reeds-to-plexos-properties/) |
+| [`r2x-reeds-to-sienna`](https://github.com/NatLabRockies/R2X/tree/main/packages/r2x-reeds-to-sienna) | <a href={`https://pypi.org/project/r2x-reeds-to-sienna/${releases["r2x-reeds-to-sienna"]}/`}>{releases["r2x-reeds-to-sienna"]}</a> | [ReEDS → Sienna](/R2X/how-to/reeds-to-sienna/) · [properties](/R2X/reference/reeds-to-sienna-properties/) |
+| [`r2x-plexos-to-sienna`](https://github.com/NatLabRockies/R2X/tree/main/packages/r2x-plexos-to-sienna) | <a href={`https://pypi.org/project/r2x-plexos-to-sienna/${releases["r2x-plexos-to-sienna"]}/`}>{releases["r2x-plexos-to-sienna"]}</a> | [PLEXOS → Sienna](/R2X/how-to/plexos-to-sienna/) · [properties](/R2X/reference/plexos-to-sienna-properties/) |
+| [`r2x-sienna-to-plexos`](https://github.com/NatLabRockies/R2X/tree/main/packages/r2x-sienna-to-plexos) | <a href={`https://pypi.org/project/r2x-sienna-to-plexos/${releases["r2x-sienna-to-plexos"]}/`}>{releases["r2x-sienna-to-plexos"]}</a> | [Sienna → PLEXOS](/R2X/how-to/sienna-to-plexos/) · [properties](/R2X/reference/sienna-to-plexos-properties/) |
 
 ## Compatibility
 
