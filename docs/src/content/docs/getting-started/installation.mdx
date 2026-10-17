@@ -7,6 +7,30 @@ Check the [prerequisites](/R2X/getting-started/prerequisites/) before installing
 Use published packages for normal use; a source checkout is only needed for
 [development](/R2X/how-to/development/).
 
+## Python environment installation
+
+For Python integration, create and activate a virtual environment using Python
+3.11, 3.12, or 3.13. Confirm `python --version` selects one of these versions.
+On macOS or Linux:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+```
+
+On Windows PowerShell, activate it with `.venv\Scripts\Activate.ps1` instead.
+Install the published translation package and check dependency consistency:
+
+```bash
+python -m pip install r2x-reeds-to-sienna
+python -m pip check
+python -m pip show r2x-reeds-to-sienna
+```
+
+`pip check` should report no broken requirements; `pip show` identifies the
+installed version and location. This environment is separate from the CLI's
+managed environment. Continue with the [Python workflow](/R2X/how-to/reeds-to-sienna/).
+
 ## CLI-managed installation
 
 After installing [r2x-cli](https://github.com/NatLabRockies/r2x-cli#install)
@@ -58,30 +82,6 @@ Expect `reeds-to-sienna` in the list. Follow the
 [ReEDS CLI tutorial](/R2X/tutorials/reeds-to-sienna-cli/) to install and verify the
 source parser and target exporter as well. Use compatible parser, translator,
 and exporter versions; the translation step does not read source data by itself.
-
-## Python environment installation
-
-For Python integration, create and activate a virtual environment using Python
-3.11, 3.12, or 3.13. Confirm `python --version` selects one of these versions.
-On macOS or Linux:
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-```
-
-On Windows PowerShell, activate it with `.venv\Scripts\Activate.ps1` instead.
-Install the published translation package and check dependency consistency:
-
-```bash
-python -m pip install r2x-reeds-to-sienna
-python -m pip check
-python -m pip show r2x-reeds-to-sienna
-```
-
-`pip check` should report no broken requirements; `pip show` identifies the
-installed version and location. This environment is separate from the CLI's
-managed environment. Continue with the [Python workflow](/R2X/how-to/reeds-to-sienna/).
 
 ## Verify your first use
 
