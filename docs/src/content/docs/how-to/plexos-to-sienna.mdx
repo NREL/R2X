@@ -73,7 +73,7 @@ the target model and time-series files to the configured results directory.
 >>> from r2x_plexos_to_sienna.plugin_config import PlexosToSiennaConfig
 >>> from r2x_plexos_to_sienna.translation import plexos_to_sienna
 >>> from r2x_sienna.exporter import SiennaExporter
->>> from r2x_sienna.plugin_config import SiennaConfig
+>>> from r2x_sienna.plugin_config import SiennaExporterConfig
 
 >>> from r2x_core import DataFile, DataStore, PluginContext
 >>> from r2x_core.logger import setup_logging
@@ -113,7 +113,7 @@ the target model and time-series files to the configured results directory.
 >>> results_dir = folder_path / "results"
 >>> results_dir.mkdir(exist_ok=True)
 >>> output_file = str(results_dir / f"{case_name}.json")
->>> sienna_config = SiennaConfig(system_name=case_name, model_year=model_year, output_path=output_file)
+>>> sienna_config = SiennaExporterConfig(output_path=output_file)
 
 >>> exporter_context = PluginContext(
 ...     config=sienna_config,
