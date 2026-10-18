@@ -1,6 +1,7 @@
 """Execute self-contained console examples from the maintained documentation."""
 
 import re
+import runpy
 import subprocess
 import sys
 from pathlib import Path
@@ -45,3 +46,19 @@ def test_console_examples(path: Path) -> None:
             check=False,
         )
         assert result.returncode == 0, result.stdout + result.stderr
+
+
+@pytest.mark.parametrize(
+    ("href", "valid"),
+    [("#local", True), ("?preview=1#local", True), ("#home", False), ("?preview=1#home", False)],
+)
+def test_non_index_page_fragments(tmp_path: Path, href: str, valid: bool) -> None:
+    """Check the owning page, even when a matching anchor exists on the homepage."""
+    (tmp_path / "index.html").write_text('<h1 id="home">Home</h1>')
+    (tmp_path / "404.html").write_text(f'<h1 id="local">Missing page</h1><a href="{href}">Jump</a>')
+    check_site = runpy.run_path(str(ROOT / "docs/check_site.py"))["check_site"]
+    if valid:
+        check_site(tmp_path)
+    else:
+        with pytest.raises(AssertionError, match=re.escape("404.html: missing fragment")):
+            check_site(tmp_path)

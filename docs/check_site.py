@@ -22,9 +22,9 @@ class Page(HTMLParser):
             self.links.append(href)
 
 
-def main() -> None:
+def check_site(root: Path) -> None:
     """Fail on missing internal pages or fragments, including archive links."""
-    root = Path(__file__).resolve().parent / "dist"
+    root = root.resolve()
     pages = {path: Page(path) for path in root.rglob("*.html")}
     assert pages, "Build the documentation before checking links"
     failures: list[str] = []
@@ -34,7 +34,9 @@ def main() -> None:
             url = urlsplit(href)
             if url.scheme or url.netloc:
                 continue
-            if url.path.startswith("/R2X/"):
+            if not url.path:
+                target = path
+            elif url.path.startswith("/R2X/"):
                 target = root / unquote(url.path.removeprefix("/R2X/"))
             elif url.path.startswith("/"):
                 failures.append(f"{path.relative_to(root)}: missing base prefix: {href}")
@@ -54,4 +56,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    check_site(Path(__file__).resolve().parent / "dist")
