@@ -1390,7 +1390,7 @@ requires-dist = [
 [[package]]
 name = "r2x-resolve"
 version = "0.0.0"
-source = { git = "https://github.com/NatLabRockies/r2x-resolve.git?branch=fix%2Fnyserda#049282e6327b40f48fbb3e5353a2fccc5e0daa40" }
+source = { git = "https://github.com/NatLabRockies/r2x-resolve.git?branch=main#aaf9eca30ea5c9b0eaf92a5828beb65985d97379" }
 dependencies = [
     { name = "r2x-core" },
 ]
@@ -1409,7 +1409,7 @@ dependencies = [
 requires-dist = [
     { name = "r2x-core", specifier = ">=0.8.0,<1.0.0" },
     { name = "r2x-plexos", git = "https://github.com/NatLabRockies/r2x-plexos.git?branch=main" },
-    { name = "r2x-resolve", git = "https://github.com/NatLabRockies/r2x-resolve.git?branch=fix%2Fnyserda" },
+    { name = "r2x-resolve", git = "https://github.com/NatLabRockies/r2x-resolve.git?branch=main" },
 ]
 
 [[package]]
