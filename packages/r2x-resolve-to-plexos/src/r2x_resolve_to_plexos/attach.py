@@ -16,8 +16,15 @@ from r2x_plexos.models import (
     PLEXOSMembership,
     PLEXOSPropertyValue,
     PLEXOSRegion,
+    PLEXOSReserve,
 )
-from r2x_resolve import InvestmentComponent, ResolveFuel, ResolveGroupedInterface, ResolveLoad
+from r2x_resolve import (
+    InvestmentComponent,
+    ResolveFuel,
+    ResolveGroupedInterface,
+    ResolveLoad,
+    ResolveReserve,
+)
 
 if TYPE_CHECKING:
     from r2x_core import PluginContext, System
@@ -28,6 +35,8 @@ LOAD_SERIES = "demand"
 PROFILE_SERIES = "max_active_power"
 # Monthly fuel prices at their own dates, written by the PLEXOS exporter as Price.
 FUEL_PRICE_SERIES = "fuel_price"
+# Hourly reserve requirement in MW, written by the PLEXOS exporter as Min Provision.
+RESERVE_SERIES = "requirement"
 
 
 def _systems(context: PluginContext) -> tuple[System, System]:
@@ -66,6 +75,16 @@ def attach_fuel_prices(context: PluginContext) -> None:
                 fuel, name=FUEL_PRICE_SERIES, time_series_type=NonSequentialTimeSeries
             )
             target.add_time_series(deepcopy(series), fuels[fuel.name])
+
+
+def attach_reserve_requirements(context: PluginContext) -> None:
+    """Attach each reserve's hourly requirement to its PLEXOS Reserve."""
+    source, target = _systems(context)
+    reserves = {reserve.name: reserve for reserve in target.get_components(PLEXOSReserve)}
+    for reserve in source.get_components(ResolveReserve):
+        if source.has_time_series(reserve, name=RESERVE_SERIES):
+            series = source.get_time_series(reserve, name=RESERVE_SERIES)
+            target.add_time_series(deepcopy(series), reserves[reserve.name])
 
 
 def add_interface_lines(context: PluginContext) -> None:

@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 
 from infrasys.time_series_models import NonSequentialTimeSeries, SingleTimeSeries
 from r2x_resolve import (
+    ReserveDirection,
     ResolveBatteryStorage,
     ResolveFuel,
     ResolveGasFO,
@@ -13,6 +14,7 @@ from r2x_resolve import (
     ResolveInterface,
     ResolveLoad,
     ResolveNuclear,
+    ResolveReserve,
     ResolveSolar,
     ResolveTransmissionLine,
     ResolveTransmissionRating,
@@ -70,6 +72,22 @@ def resolve_system() -> System:
         system.add_component(load)
         system.add_time_series(_series("demand", demand), load)
         system.add_time_series(_series("distributed_pv", [0.0, 10.0, 20.0]), load)
+
+    # NYISO-wide reserves sized from the summed demand above (4900, 5050, 5200 MW).
+    for name, direction, share in (
+        ("Spin", ReserveDirection.UP, 0.01),
+        ("Regulation Down", ReserveDirection.DOWN, 0.005),
+    ):
+        requirement = [share * mw for mw in (4900.0, 5050.0, 5200.0)]
+        reserve = ResolveReserve(
+            name=name,
+            direction=direction,
+            load_percent=share,
+            requirement=max(requirement),
+            ext={"zones": ["A", "J"]},
+        )
+        system.add_component(reserve)
+        system.add_time_series(_series("requirement", requirement), reserve)
 
     for name, fuel_type, price, zones in (
         ("NG_NYISO_A-E", "NG", 3.86, list("ABCDE")),

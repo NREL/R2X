@@ -9,9 +9,11 @@ from plexosdb import CollectionEnum
 from r2x_plexos.models import PLEXOSFuel, PLEXOSNode, PLEXOSRegion
 from r2x_resolve import (
     InvestmentComponent,
+    ReserveDirection,
     ResolveFuel,
     ResolveGroupedInterface,
     ResolveLoad,
+    ResolveReserve,
     ResolveTechnology,
     ResolveTransmissionLine,
     ResolveZone,
@@ -109,6 +111,20 @@ def interface_min_flow(
 ) -> Result[float, ValueError]:
     """Return the negative reverse limit, or no limit when Resolve has none."""
     return Ok(-1e30 if component.reverse_limit is None else -float(component.reverse_limit))
+
+
+# PLEXOS Reserve Type: 1 raises, 2 lowers. Every reserve uses only these two so that
+# no capacity counts toward two reserve types at once.
+RESERVE_TYPE_BY_DIRECTION: dict[ReserveDirection, int] = {
+    ReserveDirection.UP: 1,
+    ReserveDirection.DOWN: 2,
+}
+
+
+@getter(name="resolve_reserve_type")
+def reserve_type(component: ResolveReserve, context: PluginContext) -> Result[int, ValueError]:
+    """Return PLEXOS Reserve Type 1 (raise) for Up reserves and 2 (lower) for Down."""
+    return Ok(RESERVE_TYPE_BY_DIRECTION[component.direction])
 
 
 @getter(name="resolve_membership_parent")

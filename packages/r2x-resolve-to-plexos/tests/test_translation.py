@@ -14,6 +14,7 @@ from r2x_plexos.models import (
     PLEXOSNode,
     PLEXOSPurchaser,
     PLEXOSRegion,
+    PLEXOSReserve,
 )
 from r2x_resolve_to_plexos import ResolveToPlexosConfig, resolve_to_plexos
 
@@ -142,3 +143,14 @@ def test_reversed_interface_lines_get_a_negative_flow_coefficient(plexos: System
         for props in plexos.get_supplemental_attributes(CollectionProperties)
     }
     assert coefficients == {("Test East", "J_to_PJM_W:line"): -1}
+
+
+def test_reserves_raise_or_lower_with_their_hourly_requirement(plexos: System) -> None:
+    """Up reserves are PLEXOS Type 1 (Raise), Down reserves Type 2 (Lower), never other types."""
+    reserves = _by_name(plexos, PLEXOSReserve)
+    assert set(reserves) == {"Spin", "Regulation Down"}
+    assert reserves["Spin"].type == 1
+    assert reserves["Regulation Down"].type == 2
+    assert reserves["Spin"].category == "resolve-reserve"
+    requirement = plexos.get_time_series(reserves["Spin"], name="requirement")
+    assert list(requirement.data) == pytest.approx([49.0, 50.5, 52.0])

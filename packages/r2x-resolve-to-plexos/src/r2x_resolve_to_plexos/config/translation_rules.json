@@ -85,6 +85,22 @@
     }
   },
   {
+    "source_type": "ResolveReserve",
+    "target_type": "PLEXOSReserve",
+    "version": 1,
+    "field_map": {
+      "name": "name",
+      "min_provision": "requirement",
+      "ext": "ext"
+    },
+    "getters": {
+      "type": "resolve_reserve_type"
+    },
+    "defaults": {
+      "category": "resolve-reserve"
+    }
+  },
+  {
     "source_type": "PLEXOSNode",
     "target_type": "PLEXOSMembership",
     "version": 1,

@@ -23,6 +23,7 @@ Declarative mappings live in the packaged `config/translation_rules.json`;
 | `ResolveFuel` | `PLEXOSFuel` with the annual `price`, category from `fuel_type`, and the monthly `fuel_price` series at its own dates (exported as Price; requires an r2x-plexos exporter that writes non-sequential series). |
 | `ResolveTransmissionLine` | `PLEXOSLine` with Max Flow = `from_to` and Min Flow = -`to_from`, plus NodeFrom and NodeTo memberships. |
 | `ResolveGroupedInterface` | `PLEXOSInterface` with Max Flow = forward limit and Min Flow = -reverse limit (a missing limit is unlimited), plus Interface.Lines memberships. Lines against the interface direction (`ext["line_directions"]` -1) get a Flow Coefficient of -1 on their membership; +1 is the PLEXOS default (requires an r2x-plexos exporter that writes membership properties). |
+| `ResolveReserve` | `PLEXOSReserve` with Type 1 (raise) for Up reserves and 2 (lower) for Down, Min Provision from the hourly `requirement` series, and category `resolve-reserve`. Only types 1 and 2 are used, so no capacity counts toward two reserve types. Provider generators are not assigned yet. |
 
 Generator.Fuels memberships:
 
