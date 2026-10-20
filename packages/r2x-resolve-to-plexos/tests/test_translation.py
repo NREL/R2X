@@ -154,3 +154,11 @@ def test_reserves_raise_or_lower_with_their_hourly_requirement(plexos: System) -
     assert reserves["Spin"].category == "resolve-reserve"
     requirement = plexos.get_time_series(reserves["Spin"], name="requirement")
     assert list(requirement.data) == pytest.approx([49.0, 50.5, 52.0])
+
+
+def test_every_generator_can_provide_every_reserve(plexos: System) -> None:
+    """Each Reserve has every Generator in its Generators collection."""
+    generators = set(_by_name(plexos, PLEXOSGenerator))
+    providers = _memberships(plexos, "Generators")
+    for reserve in ("Spin", "Regulation Down"):
+        assert {child for parent, child in providers if parent == reserve} == generators

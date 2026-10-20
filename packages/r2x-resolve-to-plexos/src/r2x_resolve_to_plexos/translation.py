@@ -9,6 +9,7 @@ from r2x_core import PluginContext, Rule, System, apply_rules_to_context, expose
 
 from .attach import (
     add_interface_lines,
+    add_reserve_providers,
     attach_fuel_prices,
     attach_generator_profiles,
     attach_region_load,
@@ -39,6 +40,7 @@ def resolve_to_plexos(system: System, config: ResolveToPlexosConfig) -> System:
     attach_generator_profiles(context)
     attach_fuel_prices(context)
     attach_reserve_requirements(context)
+    add_reserve_providers(context)
     add_interface_lines(context)
 
     validation = validate_component_counts(system, context.target_system)

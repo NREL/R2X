@@ -87,6 +87,19 @@ def attach_reserve_requirements(context: PluginContext) -> None:
             target.add_time_series(deepcopy(series), reserves[reserve.name])
 
 
+def add_reserve_providers(context: PluginContext) -> None:
+    """Let every Generator provide every Reserve (battery and pumped storage are Generators)."""
+    _, target = _systems(context)
+    generators = list(target.get_components(PLEXOSGenerator))
+    for reserve in target.get_components(PLEXOSReserve):
+        for generator in generators:
+            membership = PLEXOSMembership(
+                parent_object=reserve, child_object=generator, collection=CollectionEnum.Generators
+            )
+            target.add_supplemental_attribute(reserve, membership)
+            target.add_supplemental_attribute(generator, membership)
+
+
 def add_interface_lines(context: PluginContext) -> None:
     """Add each grouped interface's member Lines; a Line may sit in several interfaces.
 
